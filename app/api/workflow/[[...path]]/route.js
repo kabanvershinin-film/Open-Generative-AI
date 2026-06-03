@@ -1150,7 +1150,20 @@ export async function GET(request, { params }) {
 
     if (path[0] === 'list') {
         const index = await tosLoadIndex();
-        return NextResponse.json(index);
+        // Merge: in-memory store has the freshest name (written synchronously on
+        // every save). The TOS index can be stale if tosUpdateIndex lost a race or
+        // the serverless instance restarted between the save and the index write.
+        const merged = index.map(entry => {
+            const mem = store.get(entry.id);
+            if (!mem) return entry;
+            return {
+                ...entry,
+                name: mem.name || entry.name,
+                thumbnail: mem.thumbnail || entry.thumbnail,
+                updated_at: mem.updated_at || entry.updated_at,
+            };
+        });
+        return NextResponse.json(merged);
     }
 
     if (path[0] === 'community') {
@@ -1163,6 +1176,12 @@ export async function GET(request, { params }) {
         let wf = store.get(id);
         if (!wf) { wf = await tosLoadWorkflow(id); if (wf) store.set(id, wf); }
         wf = wf || {};
+        // If the workflow has a real name, make sure the index reflects it — repairs
+        // cases where the index was written with "Untitled Workflow" before the user
+        // renamed it, or where tosUpdateIndex failed silently.
+        if (wf.name && wf.name !== 'Untitled Workflow' && wf.name !== 'Untitled') {
+            tosUpdateIndex(id, { id, name: wf.name, updated_at: wf.updated_at || new Date().toISOString(), thumbnail: wf.thumbnail || null }).catch(() => {});
+        }
         return NextResponse.json({
             workflow_id: id, id, name: wf.name || 'Untitled Workflow',
             data: { nodes: wf.nodes || [] },
