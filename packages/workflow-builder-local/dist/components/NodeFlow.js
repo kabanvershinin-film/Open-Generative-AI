@@ -511,7 +511,7 @@ var NodeFlow = function NodeFlow(_ref) {
       var _n$position$x2, _n$position3, _n$position$y2, _n$position4, _n$output_params3, _n$output_params4, _workflowData$run_his2;
       return {
         id: n.id,
-        type: n.category === "utility" ? n.model === "video-combiner" ? "vidConcatNode" : "concatNode" : "".concat(n.category, "Node"),
+        type: n.category === "utility" ? n.model === "video-combiner" ? "vidConcatNode" : "concatNode" : n.category === "character" ? "characterNode" : "".concat(n.category, "Node"),
         position: {
           x: (_n$position$x2 = (_n$position3 = n.position) === null || _n$position3 === void 0 ? void 0 : _n$position3.x) !== null && _n$position$x2 !== void 0 ? _n$position$x2 : 350,
           y: (_n$position$y2 = (_n$position4 = n.position) === null || _n$position4 === void 0 ? void 0 : _n$position4.y) !== null && _n$position$y2 !== void 0 ? _n$position$y2 : 0
@@ -1307,9 +1307,9 @@ var NodeFlow = function NodeFlow(_ref) {
       var inputNodes = connectedEdges.map(function (e) {
         return e.source;
       });
-      var category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "image" : "utility";
+      var category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : "utility";
       var isVideoCombiner = node.type === "vidConcatNode";
-      var model = (_node$data2 = node.data) !== null && _node$data2 !== void 0 && (_node$data2 = _node$data2.selectedModel) !== null && _node$data2 !== void 0 && _node$data2.id ? (_node$data3 = node.data) === null || _node$data3 === void 0 || (_node$data3 = _node$data3.selectedModel) === null || _node$data3 === void 0 ? void 0 : _node$data3.id : category === "utility" ? isVideoCombiner ? "video-combiner" : "prompt-concatenator" : "".concat(category, "-passthrough");
+      var model = (_node$data2 = node.data) !== null && _node$data2 !== void 0 && (_node$data2 = _node$data2.selectedModel) !== null && _node$data2 !== void 0 && _node$data2.id ? (_node$data3 = node.data) === null || _node$data3 === void 0 || (_node$data3 = _node$data3.selectedModel) === null || _node$data3 === void 0 ? void 0 : _node$data3.id : category === "utility" ? isVideoCombiner ? "video-combiner" : "prompt-concatenator" : category === "character" ? "character-passthrough" : "".concat(category, "-passthrough");
       var modelSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori4 = nodeSchemas.categories) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4[category]) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.models) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4[model]) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.input_schema) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.schemas) === null || _nodeSchemas$categori4 === void 0 ? void 0 : _nodeSchemas$categori4.input_data;
       var inputSchema = (modelSchema === null || modelSchema === void 0 ? void 0 : modelSchema.properties) || {};
       var wavespeedSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori5 = nodeSchemas.categories) === null || _nodeSchemas$categori5 === void 0 || (_nodeSchemas$categori5 = _nodeSchemas$categori5.api) === null || _nodeSchemas$categori5 === void 0 || (_nodeSchemas$categori5 = _nodeSchemas$categori5.models) === null || _nodeSchemas$categori5 === void 0 || (_nodeSchemas$categori5 = _nodeSchemas$categori5[model]) === null || _nodeSchemas$categori5 === void 0 ? void 0 : _nodeSchemas$categori5.input_schema;

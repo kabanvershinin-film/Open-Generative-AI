@@ -364,9 +364,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
     const restoredNodes = workflow.nodes.map(n => ({
       id: n.id,
-      type: n.category === "utility" 
-        ? (n.model === "video-combiner" ? "vidConcatNode" : "concatNode") 
-        : `${n.category}Node`,
+      type: n.category === "utility"
+        ? (n.model === "video-combiner" ? "vidConcatNode" : "concatNode")
+        : n.category === "character"
+          ? "characterNode"
+          : `${n.category}Node`,
       position: {
         x: n.position?.x ?? 350,
         y: n.position?.y ?? 0
@@ -1161,9 +1163,9 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       const connectedEdges = edges.filter((e) => e.target === node.id);
       const inputNodes = connectedEdges.map((e) => e.source);
-      const category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "image" : "utility";
+      const category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : "utility";
       const isVideoCombiner = node.type === "vidConcatNode";
-      const model = node.data?.selectedModel?.id ? node.data?.selectedModel?.id : category === "utility" ? (isVideoCombiner ? "video-combiner" : "prompt-concatenator") : `${category}-passthrough`;
+      const model = node.data?.selectedModel?.id ? node.data?.selectedModel?.id : category === "utility" ? (isVideoCombiner ? "video-combiner" : "prompt-concatenator") : category === "character" ? "character-passthrough" : `${category}-passthrough`;
       const modelSchema = nodeSchemas?.categories?.[category]?.models?.[model]?.input_schema?.schemas?.input_data;
       const inputSchema = modelSchema?.properties || {};
       const wavespeedSchema = nodeSchemas?.categories?.api?.models?.[model]?.input_schema;

@@ -30,7 +30,7 @@ const CharacterNode = ({ id, data, selected }) => {
   const fv = data.formValues || {};
 
   const [name, setName] = useState(fv.character_name || "");
-  const [tab, setTab] = useState("photo"); // "photo" | "uri"
+  const [tab, setTab] = useState((fv.face_asset || "").startsWith("asset://") ? "uri" : "photo");
   const [assetUri, setAssetUri] = useState(fv.face_asset || "");
   const [photoUrl, setPhotoUrl] = useState(fv.character_photo || "");
   const [library, setLibrary] = useState([]);
