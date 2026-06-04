@@ -445,8 +445,6 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         setHasFit(true);
       }, 100);
       return () => clearTimeout(timeout);
-    } else if (nodes.length === 0) {
-      setIsPresetsDismissed(false);
     };
   }, [nodes, hasFit, fitView, isRestoring]);
 
