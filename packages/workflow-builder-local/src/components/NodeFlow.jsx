@@ -1678,6 +1678,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       const response = await axios.post(`/api/workflow/workflow/${savedWorkflowId}/publish`, {
         publish: true,
+        name: formName,
         thumbnail: formThumbnail,
       });
       setIsRunning(0);

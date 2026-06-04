@@ -1485,9 +1485,18 @@ export async function POST(request, { params }) {
         // Builder sends { publish: true }, our UI sends { is_published: true }
         const published = body.publish !== undefined ? !!body.publish : (body.is_published !== false);
         if (published) {
+            // body.name takes priority — the publish form sends the display name directly,
+            // which avoids a race between the fire-and-forget TOS save from /create and
+            // this request potentially landing on a different serverless instance.
+            const communityName = body.name || wf.name || 'Untitled';
+            if (body.name && body.name !== wf.name) {
+                wf = { ...wf, name: body.name };
+                store.set(wfId, wf);
+                tosSaveWorkflow(wfId, wf).catch(() => {});
+            }
             await tosUpdateCommunity(wfId, {
                 id: wfId,
-                name: wf.name || 'Untitled',
+                name: communityName,
                 thumbnail: body.thumbnail || wf.thumbnail || null,
                 published_at: new Date().toISOString(),
                 nodes_count: (wf.nodes || []).length,

@@ -1928,6 +1928,7 @@ var NodeFlow = function NodeFlow(_ref) {
             _context7.n = 3;
             return _axios["default"].post("/api/workflow/workflow/".concat(savedWorkflowId, "/publish"), {
               publish: true,
+              name: formName,
               thumbnail: formThumbnail
             });
           case 3:
