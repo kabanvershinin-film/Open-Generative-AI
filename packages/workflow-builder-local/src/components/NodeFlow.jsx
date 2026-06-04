@@ -269,6 +269,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   const [isPresetsDismissed, setIsPresetsDismissed] = useState(true);
   const [isRestoring, setIsRestoring] = useState(!initialState);
   const [totalWorkflowCost, setTotalWorkflowCost] = useState(0);
+  const [publishModal, setPublishModal] = useState(null);
 
   useEffect(() => {
     const total = nodes.reduce((sum, node) => {
@@ -1660,6 +1661,39 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     }
   };
 
+  const handlePublishWithForm = async () => {
+    if (!interactionMode) return;
+    try {
+      setIsRunning(2);
+      const formName = publishModal.name.trim() || workflowName;
+      const formThumbnail = publishModal.thumbnail.trim() || null;
+      setPublishModal(null);
+      setWorkflowName(formName);
+
+      const workflowPayload = { ...buildWorkflowPayload(), name: formName };
+      const saveRes = await axios.post("/api/workflow/create", workflowPayload);
+      const savedWorkflowId = saveRes.data.workflow_id;
+      setWorkflowIds(savedWorkflowId, runId);
+      setWorkflowId(savedWorkflowId);
+
+      const response = await axios.post(`/api/workflow/workflow/${savedWorkflowId}/publish`, {
+        publish: true,
+        thumbnail: formThumbnail,
+      });
+      setIsRunning(0);
+      toast.success("Published successfully");
+      setPublishWorkflow(response.data.publish);
+    } catch (error) {
+      console.log(error);
+      if (error.response) {
+        toast.error(`Failed: ${error.response.data.detail || "Server error"}`);
+      } else {
+        toast.error(`Error: ${error.message}`);
+      }
+      setIsRunning(0);
+    }
+  };
+
   const handleTemplatePublish = async () => {
     if (!interactionMode) return;
     try {
@@ -2328,7 +2362,15 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                   type="button"
                   suppressHydrationWarning={true}
                   disabled={isRunning === 2 || !interactionMode}
-                  onClick={handlePublishWorkflow}
+                  onClick={() => {
+                    if (publishWorkflow) {
+                      handlePublishWorkflow();
+                    } else {
+                      const suggestedThumbnail =
+                        nodes.find(n => n.data?.resultUrl && n.type === 'imageNode')?.data?.resultUrl || '';
+                      setPublishModal({ name: workflowName, thumbnail: suggestedThumbnail });
+                    }
+                  }}
                   className="flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white"
                 >
                   {isRunning === 2 ? (
@@ -3042,6 +3084,69 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               >
                 <MdSave size={18} />
                 Save Category
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {publishModal && (
+        <div
+          className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black/30 backdrop-blur"
+          onClick={() => setPublishModal(null)}
+        >
+          <div className="bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base text-center font-semibold text-white">Publish Workflow</h3>
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-xs text-gray-400">Workflow Name</label>
+              <input
+                type="text"
+                value={publishModal.name}
+                autoFocus
+                onChange={(e) => setPublishModal(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter Workflow Name"
+                className="border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-xs text-gray-400">Preview Image URL</label>
+              <input
+                type="url"
+                value={publishModal.thumbnail}
+                onChange={(e) => setPublishModal(prev => ({ ...prev, thumbnail: e.target.value }))}
+                placeholder="https://..."
+                className="border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
+              />
+              {publishModal.thumbnail && (
+                <img
+                  src={publishModal.thumbnail}
+                  alt="preview"
+                  className="rounded-lg w-full h-32 object-cover border border-gray-700"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+            </div>
+            <div className="flex items-center w-full gap-2">
+              <button
+                type="button"
+                suppressHydrationWarning={true}
+                onClick={() => setPublishModal(null)}
+                className="px-4 py-2 bg-gray-700/50 text-white rounded-full text-sm hover:bg-gray-600/50 transition w-full cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                suppressHydrationWarning={true}
+                onClick={handlePublishWithForm}
+                disabled={isRunning === 2}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-black rounded-full hover:bg-blue-500 hover:text-white transition w-full text-sm cursor-pointer disabled:opacity-50"
+              >
+                {isRunning === 2 ? (
+                  <div className="w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin" />
+                ) : (
+                  <FaTelegramPlane size={14} />
+                )}
+                Publish
               </button>
             </div>
           </div>

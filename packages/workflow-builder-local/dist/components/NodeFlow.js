@@ -38,7 +38,7 @@ var _VideoCombiner = _interopRequireDefault(require("./VideoCombiner"));
 var _CharacterNode = _interopRequireDefault(require("./CharacterNode"));
 var _useGenerationCost2 = require("./useGenerationCost");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
-function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t9 in e) "default" !== _t9 && {}.hasOwnProperty.call(e, _t9) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t9)) && (i.get || i.set) ? o(f, _t9, i) : f[_t9] = e[_t9]); return f; })(e, t); }
+function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t0 in e) "default" !== _t0 && {}.hasOwnProperty.call(e, _t0) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t0)) && (i.get || i.set) ? o(f, _t0, i) : f[_t0] = e[_t0]); return f; })(e, t); }
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
 function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
 function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
@@ -386,6 +386,10 @@ var NodeFlow = function NodeFlow(_ref) {
     _useState40 = _slicedToArray(_useState39, 2),
     totalWorkflowCost = _useState40[0],
     setTotalWorkflowCost = _useState40[1];
+  var _useState41 = (0, _react.useState)(null),
+    _useState42 = _slicedToArray(_useState41, 2),
+    publishModal = _useState42[0],
+    setPublishModal = _useState42[1];
   (0, _react.useEffect)(function () {
     var total = nodes.reduce(function (sum, node) {
       var _node$data;
@@ -401,38 +405,38 @@ var NodeFlow = function NodeFlow(_ref) {
       (0, _WorkflowStore.setWorkflowIds)(id, initialState.metadata.runId);
     }
   }, [id, initialState]);
-  var _useState41 = (0, _react.useState)(false),
-    _useState42 = _slicedToArray(_useState41, 2),
-    isChatOpen = _useState42[0],
-    setIsChatOpen = _useState42[1];
-  var _useState43 = (0, _react.useState)([]),
+  var _useState43 = (0, _react.useState)(false),
     _useState44 = _slicedToArray(_useState43, 2),
-    chatMessages = _useState44[0],
-    setChatMessages = _useState44[1];
-  var _useState45 = (0, _react.useState)(false),
+    isChatOpen = _useState44[0],
+    setIsChatOpen = _useState44[1];
+  var _useState45 = (0, _react.useState)([]),
     _useState46 = _slicedToArray(_useState45, 2),
-    isChatLoading = _useState46[0],
-    setIsChatLoading = _useState46[1];
-  var _useState47 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat6 = initialState.metadata) === null || _initialState$metadat6 === void 0 ? void 0 : _initialState$metadat6.category) || "General"),
+    chatMessages = _useState46[0],
+    setChatMessages = _useState46[1];
+  var _useState47 = (0, _react.useState)(false),
     _useState48 = _slicedToArray(_useState47, 2),
-    workflowCategory = _useState48[0],
-    setWorkflowCategory = _useState48[1];
-  var _useState49 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat7 = initialState.metadata) === null || _initialState$metadat7 === void 0 ? void 0 : _initialState$metadat7.category) || "General"),
+    isChatLoading = _useState48[0],
+    setIsChatLoading = _useState48[1];
+  var _useState49 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat6 = initialState.metadata) === null || _initialState$metadat6 === void 0 ? void 0 : _initialState$metadat6.category) || "General"),
     _useState50 = _slicedToArray(_useState49, 2),
-    categoryInput = _useState50[0],
-    setCategoryInput = _useState50[1];
-  var _useState51 = (0, _react.useState)(false),
+    workflowCategory = _useState50[0],
+    setWorkflowCategory = _useState50[1];
+  var _useState51 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat7 = initialState.metadata) === null || _initialState$metadat7 === void 0 ? void 0 : _initialState$metadat7.category) || "General"),
     _useState52 = _slicedToArray(_useState51, 2),
-    isCategoryPopupOpen = _useState52[0],
-    setIsCategoryPopupOpen = _useState52[1];
+    categoryInput = _useState52[0],
+    setCategoryInput = _useState52[1];
   var _useState53 = (0, _react.useState)(false),
     _useState54 = _slicedToArray(_useState53, 2),
-    isSettingsOpen = _useState54[0],
-    setIsSettingsOpen = _useState54[1];
+    isCategoryPopupOpen = _useState54[0],
+    setIsCategoryPopupOpen = _useState54[1];
   var _useState55 = (0, _react.useState)(false),
     _useState56 = _slicedToArray(_useState55, 2),
-    isModelDropdownUp = _useState56[0],
-    setIsModelDropdownUp = _useState56[1];
+    isSettingsOpen = _useState56[0],
+    setIsSettingsOpen = _useState56[1];
+  var _useState57 = (0, _react.useState)(false),
+    _useState58 = _slicedToArray(_useState57, 2),
+    isModelDropdownUp = _useState58[0],
+    setIsModelDropdownUp = _useState58[1];
   var modelDropdownTriggerRef = (0, _react.useRef)(null);
   var _useReactFlow = (0, _reactflow.useReactFlow)(),
     zoomIn = _useReactFlow.zoomIn,
@@ -1893,9 +1897,9 @@ var NodeFlow = function NodeFlow(_ref) {
       return _ref1.apply(this, arguments);
     };
   }();
-  var handleTemplatePublish = /*#__PURE__*/function () {
+  var handlePublishWithForm = /*#__PURE__*/function () {
     var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
-      var savedWorkflowId, response, is_template, _t7;
+      var formName, formThumbnail, workflowPayload, saveRes, savedWorkflowId, response, _t7;
       return _regenerator().w(function (_context7) {
         while (1) switch (_context7.p = _context7.n) {
           case 0:
@@ -1906,25 +1910,31 @@ var NodeFlow = function NodeFlow(_ref) {
             return _context7.a(2);
           case 1:
             _context7.p = 1;
-            setIsRunning(4);
+            setIsRunning(2);
+            formName = publishModal.name.trim() || workflowName;
+            formThumbnail = publishModal.thumbnail.trim() || null;
+            setPublishModal(null);
+            setWorkflowName(formName);
+            workflowPayload = _objectSpread(_objectSpread({}, buildWorkflowPayload()), {}, {
+              name: formName
+            });
             _context7.n = 2;
-            return handleSaveWorkFlow();
+            return _axios["default"].post("/api/workflow/create", workflowPayload);
           case 2:
-            savedWorkflowId = _context7.v;
+            saveRes = _context7.v;
+            savedWorkflowId = saveRes.data.workflow_id;
+            (0, _WorkflowStore.setWorkflowIds)(savedWorkflowId, runId);
+            setWorkflowId(savedWorkflowId);
             _context7.n = 3;
-            return _axios["default"].post("/api/workflow/workflow/".concat(savedWorkflowId, "/template"), {
-              is_template: !template.isPublishedTemplate
+            return _axios["default"].post("/api/workflow/workflow/".concat(savedWorkflowId, "/publish"), {
+              publish: true,
+              thumbnail: formThumbnail
             });
           case 3:
             response = _context7.v;
-            is_template = response.data.is_template;
             setIsRunning(0);
-            _reactHotToast.toast.success(is_template ? "Published successfully" : "Unpublished successfully");
-            setTemplate(function (prev) {
-              return _objectSpread(_objectSpread({}, prev), {}, {
-                isPublishedTemplate: is_template
-              });
-            });
+            _reactHotToast.toast.success("Published successfully");
+            setPublishWorkflow(response.data.publish);
             _context7.n = 5;
             break;
           case 4:
@@ -1942,52 +1952,105 @@ var NodeFlow = function NodeFlow(_ref) {
         }
       }, _callee7, null, [[1, 4]]);
     }));
-    return function handleTemplatePublish() {
+    return function handlePublishWithForm() {
       return _ref10.apply(this, arguments);
     };
   }();
-  var handleCategorySave = /*#__PURE__*/function () {
+  var handleTemplatePublish = /*#__PURE__*/function () {
     var _ref11 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
-      var response, _t8;
+      var savedWorkflowId, response, is_template, _t8;
       return _regenerator().w(function (_context8) {
         while (1) switch (_context8.p = _context8.n) {
           case 0:
-            if (workflowId) {
+            if (interactionMode) {
               _context8.n = 1;
               break;
             }
-            _reactHotToast.toast.error("Workflow ID not found. Save the workflow first.");
             return _context8.a(2);
           case 1:
             _context8.p = 1;
+            setIsRunning(4);
             _context8.n = 2;
-            return _axios["default"].post("/api/workflow/update-category/".concat(workflowId), {
-              category: categoryInput
-            });
+            return handleSaveWorkFlow();
           case 2:
-            response = _context8.v;
-            console.log("Category updated:", response.data);
-            setWorkflowCategory(categoryInput);
-            setIsCategoryPopupOpen(false);
-            _reactHotToast.toast.success("Category updated successfully");
-            _context8.n = 4;
-            break;
+            savedWorkflowId = _context8.v;
+            _context8.n = 3;
+            return _axios["default"].post("/api/workflow/workflow/".concat(savedWorkflowId, "/template"), {
+              is_template: !template.isPublishedTemplate
+            });
           case 3:
-            _context8.p = 3;
+            response = _context8.v;
+            is_template = response.data.is_template;
+            setIsRunning(0);
+            _reactHotToast.toast.success(is_template ? "Published successfully" : "Unpublished successfully");
+            setTemplate(function (prev) {
+              return _objectSpread(_objectSpread({}, prev), {}, {
+                isPublishedTemplate: is_template
+              });
+            });
+            _context8.n = 5;
+            break;
+          case 4:
+            _context8.p = 4;
             _t8 = _context8.v;
-            console.error("Error updating category:", _t8);
+            console.log(_t8);
             if (_t8.response) {
               _reactHotToast.toast.error("Failed: ".concat(_t8.response.data.detail || "Server error"));
             } else {
               _reactHotToast.toast.error("Error: ".concat(_t8.message));
             }
-          case 4:
+            setIsRunning(0);
+          case 5:
             return _context8.a(2);
         }
-      }, _callee8, null, [[1, 3]]);
+      }, _callee8, null, [[1, 4]]);
+    }));
+    return function handleTemplatePublish() {
+      return _ref11.apply(this, arguments);
+    };
+  }();
+  var handleCategorySave = /*#__PURE__*/function () {
+    var _ref12 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
+      var response, _t9;
+      return _regenerator().w(function (_context9) {
+        while (1) switch (_context9.p = _context9.n) {
+          case 0:
+            if (workflowId) {
+              _context9.n = 1;
+              break;
+            }
+            _reactHotToast.toast.error("Workflow ID not found. Save the workflow first.");
+            return _context9.a(2);
+          case 1:
+            _context9.p = 1;
+            _context9.n = 2;
+            return _axios["default"].post("/api/workflow/update-category/".concat(workflowId), {
+              category: categoryInput
+            });
+          case 2:
+            response = _context9.v;
+            console.log("Category updated:", response.data);
+            setWorkflowCategory(categoryInput);
+            setIsCategoryPopupOpen(false);
+            _reactHotToast.toast.success("Category updated successfully");
+            _context9.n = 4;
+            break;
+          case 3:
+            _context9.p = 3;
+            _t9 = _context9.v;
+            console.error("Error updating category:", _t9);
+            if (_t9.response) {
+              _reactHotToast.toast.error("Failed: ".concat(_t9.response.data.detail || "Server error"));
+            } else {
+              _reactHotToast.toast.error("Error: ".concat(_t9.message));
+            }
+          case 4:
+            return _context9.a(2);
+        }
+      }, _callee9, null, [[1, 3]]);
     }));
     return function handleCategorySave() {
-      return _ref11.apply(this, arguments);
+      return _ref12.apply(this, arguments);
     };
   }();
   var runNodeFromFlow = function runNodeFromFlow(nodeId) {
@@ -2489,10 +2552,10 @@ var NodeFlow = function NodeFlow(_ref) {
     var _nodeSchemas$categori8, _nodeSchemas$categori9, _nodeSchemas$categori0, _nodeSchemas$categori1;
     if (!node || !(nodeSchemas !== null && nodeSchemas !== void 0 && nodeSchemas.categories)) return [];
     var mapModels = function mapModels(modelsMap) {
-      return modelsMap ? Object.entries(modelsMap).map(function (_ref12) {
-        var _ref13 = _slicedToArray(_ref12, 2),
-          id = _ref13[0],
-          model = _ref13[1];
+      return modelsMap ? Object.entries(modelsMap).map(function (_ref13) {
+        var _ref14 = _slicedToArray(_ref13, 2),
+          id = _ref14[0],
+          model = _ref14[1];
         return _objectSpread(_objectSpread({}, model), {}, {
           id: id,
           name: SPECIAL_MODEL_NAMES[id] || formatName(id)
@@ -2611,7 +2674,21 @@ var NodeFlow = function NodeFlow(_ref) {
     type: "button",
     suppressHydrationWarning: true,
     disabled: isRunning === 2 || !interactionMode,
-    onClick: handlePublishWorkflow,
+    onClick: function onClick() {
+      if (publishWorkflow) {
+        handlePublishWorkflow();
+      } else {
+        var _nodes$find;
+        var suggestedThumbnail = ((_nodes$find = nodes.find(function (n) {
+          var _n$data2;
+          return ((_n$data2 = n.data) === null || _n$data2 === void 0 ? void 0 : _n$data2.resultUrl) && n.type === 'imageNode';
+        })) === null || _nodes$find === void 0 || (_nodes$find = _nodes$find.data) === null || _nodes$find === void 0 ? void 0 : _nodes$find.resultUrl) || '';
+        setPublishModal({
+          name: workflowName,
+          thumbnail: suggestedThumbnail
+        });
+      }
+    },
     className: "flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white"
   }, isRunning === 2 ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-4 h-4 border-2 border-t-transparent border-black group-hover:border-white group-hover:border-t-transparent rounded-full animate-spin"
@@ -2879,11 +2956,11 @@ var NodeFlow = function NodeFlow(_ref) {
       className: "absolute top-0 z-10 text-[10px] font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 group disabled:cursor-not-allowed rounded-full text-white bg-blue-600 px-3 py-1 border border-blue-500/50 hover:bg-blue-500 transition-all self-end shadow-lg shadow-blue-900/20"
     }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data0 = selectedNode.data) === null || _selectedNode$data0 === void 0 ? void 0 : _selectedNode$data0.loading) === 1 ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
       className: "w-3 h-3 rounded-full border border-t-transparent group-hover:border-t-transparent border-black group-hover:border-white animate-spin"
-    }), "Generating...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, "Fetch Model")), Object.entries((selectedNode === null || selectedNode === void 0 || (_selectedNode$data1 = selectedNode.data) === null || _selectedNode$data1 === void 0 ? void 0 : _selectedNode$data1.taskData) || {}).map(function (_ref14, idx) {
+    }), "Generating...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, "Fetch Model")), Object.entries((selectedNode === null || selectedNode === void 0 || (_selectedNode$data1 = selectedNode.data) === null || _selectedNode$data1 === void 0 ? void 0 : _selectedNode$data1.taskData) || {}).map(function (_ref15, idx) {
       var _selectedNode$data10, _selectedNode$data11, _selectedNode$data12;
-      var _ref15 = _slicedToArray(_ref14, 2),
-        key = _ref15[0],
-        meta = _ref15[1];
+      var _ref16 = _slicedToArray(_ref15, 2),
+        key = _ref16[0],
+        meta = _ref16[1];
       var hardcodedKeys = Object.keys((selectedNode === null || selectedNode === void 0 || (_selectedNode$data10 = selectedNode.data) === null || _selectedNode$data10 === void 0 || (_selectedNode$data10 = _selectedNode$data10.selectedModel) === null || _selectedNode$data10 === void 0 || (_selectedNode$data10 = _selectedNode$data10.input_params) === null || _selectedNode$data10 === void 0 ? void 0 : _selectedNode$data10.properties) || {});
       var isHardcoded = hardcodedKeys === null || hardcodedKeys === void 0 ? void 0 : hardcodedKeys.includes(key);
       return /*#__PURE__*/_react["default"].createElement(_RenderApiField["default"], {
@@ -2959,11 +3036,11 @@ var NodeFlow = function NodeFlow(_ref) {
           }
         }
       });
-    })) : inputSchema !== null && inputSchema !== void 0 && inputSchema.properties || inputSchema && Object.keys(inputSchema).length > 0 ? Object.entries((inputSchema === null || inputSchema === void 0 ? void 0 : inputSchema.properties) || inputSchema).map(function (_ref16, idx) {
+    })) : inputSchema !== null && inputSchema !== void 0 && inputSchema.properties || inputSchema && Object.keys(inputSchema).length > 0 ? Object.entries((inputSchema === null || inputSchema === void 0 ? void 0 : inputSchema.properties) || inputSchema).map(function (_ref17, idx) {
       var _selectedNode$data14, _selectedNode$data15;
-      var _ref17 = _slicedToArray(_ref16, 2),
-        key = _ref17[0],
-        meta = _ref17[1];
+      var _ref18 = _slicedToArray(_ref17, 2),
+        key = _ref18[0],
+        meta = _ref18[1];
       if (key === "schemas") return null;
       // Hide the single image_url field on video nodes — connected
       // images are shown together in the combined gallery below.
@@ -3305,6 +3382,77 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex items-center gap-2 px-6 py-2.5 text-sm font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-95"
   }, /*#__PURE__*/_react["default"].createElement(_md.MdSave, {
     size: 18
-  }), "Save Category")))), /*#__PURE__*/_react["default"].createElement(_reactHotToast.Toaster, null));
+  }), "Save Category")))), publishModal && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black/30 backdrop-blur",
+    onClick: function onClick() {
+      return setPublishModal(null);
+    }
+  }, /*#__PURE__*/_react["default"].createElement("div", {
+    className: "bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4",
+    onClick: function onClick(e) {
+      return e.stopPropagation();
+    }
+  }, /*#__PURE__*/_react["default"].createElement("h3", {
+    className: "text-base text-center font-semibold text-white"
+  }, "Publish Workflow"), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col gap-1.5 w-full"
+  }, /*#__PURE__*/_react["default"].createElement("label", {
+    className: "text-xs text-gray-400"
+  }, "Workflow Name"), /*#__PURE__*/_react["default"].createElement("input", {
+    type: "text",
+    value: publishModal.name,
+    autoFocus: true,
+    onChange: function onChange(e) {
+      return setPublishModal(function (prev) {
+        return _objectSpread(_objectSpread({}, prev), {}, {
+          name: e.target.value
+        });
+      });
+    },
+    placeholder: "Enter Workflow Name",
+    className: "border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
+  })), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col gap-1.5 w-full"
+  }, /*#__PURE__*/_react["default"].createElement("label", {
+    className: "text-xs text-gray-400"
+  }, "Preview Image URL"), /*#__PURE__*/_react["default"].createElement("input", {
+    type: "url",
+    value: publishModal.thumbnail,
+    onChange: function onChange(e) {
+      return setPublishModal(function (prev) {
+        return _objectSpread(_objectSpread({}, prev), {}, {
+          thumbnail: e.target.value
+        });
+      });
+    },
+    placeholder: "https://...",
+    className: "border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
+  }), publishModal.thumbnail && /*#__PURE__*/_react["default"].createElement("img", {
+    src: publishModal.thumbnail,
+    alt: "preview",
+    className: "rounded-lg w-full h-32 object-cover border border-gray-700",
+    onError: function onError(e) {
+      e.target.style.display = 'none';
+    }
+  })), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center w-full gap-2"
+  }, /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    suppressHydrationWarning: true,
+    onClick: function onClick() {
+      return setPublishModal(null);
+    },
+    className: "px-4 py-2 bg-gray-700/50 text-white rounded-full text-sm hover:bg-gray-600/50 transition w-full cursor-pointer"
+  }, "Cancel"), /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    suppressHydrationWarning: true,
+    onClick: handlePublishWithForm,
+    disabled: isRunning === 2,
+    className: "flex items-center justify-center gap-2 px-4 py-2 bg-white text-black rounded-full hover:bg-blue-500 hover:text-white transition w-full text-sm cursor-pointer disabled:opacity-50"
+  }, isRunning === 2 ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"
+  }) : /*#__PURE__*/_react["default"].createElement(_fa2.FaTelegramPlane, {
+    size: 14
+  }), "Publish")))), /*#__PURE__*/_react["default"].createElement(_reactHotToast.Toaster, null));
 };
 var _default = exports["default"] = NodeFlow;
