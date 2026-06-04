@@ -1160,7 +1160,9 @@ export async function GET(request, { params }) {
 
     if (path[0] === 'get-workflow-def') {
         const id = path[1];
-        const wf = store.get(id) || {};
+        let wf = store.get(id);
+        if (!wf) { wf = await tosLoadWorkflow(id); if (wf) store.set(id, wf); }
+        wf = wf || {};
         return NextResponse.json({
             workflow_id: id, id, name: wf.name || 'Untitled Workflow',
             data: { nodes: wf.nodes || [] },
