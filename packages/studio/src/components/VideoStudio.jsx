@@ -308,6 +308,7 @@ export default function VideoStudio({
   const [generatingPrompt, setGeneratingPrompt] = useState("");
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
+  const [copiedPromptId, setCopiedPromptId] = useState(null);
   const [canvasUrl, setCanvasUrl] = useState(null);
   const [canvasModel, setCanvasModel] = useState(null);
   const [showCanvas, setShowCanvas] = useState(false);
@@ -1542,9 +1543,36 @@ export default function VideoStudio({
 
                   {/* Prompt & Details */}
                   <div className="p-3 bg-black/80 backdrop-blur-sm border-t border-white/5 flex-1 flex flex-col justify-between gap-2">
-                    <p className="text-white/70 text-xs line-clamp-3 leading-relaxed" title={entry.prompt}>
-                      {entry.prompt || "Запрос не указан"}
-                    </p>
+                    <div className="flex items-start gap-1.5">
+                      <p className="text-white/70 text-xs line-clamp-3 leading-relaxed flex-1" title={entry.prompt}>
+                        {entry.prompt || "Запрос не указан"}
+                      </p>
+                      {entry.prompt && (
+                        <button
+                          type="button"
+                          title="Скопировать промпт"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(entry.prompt).then(() => {
+                              setCopiedPromptId(entry.id || idx);
+                              setTimeout(() => setCopiedPromptId(null), 1500);
+                            }).catch(() => {});
+                          }}
+                          className="shrink-0 p-1 rounded-md text-white/30 hover:text-primary hover:bg-primary/10 transition-all"
+                        >
+                          {copiedPromptId === (entry.id || idx) ? (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          ) : (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+                            </svg>
+                          )}
+                        </button>
+                      )}
+                    </div>
                     <div className="flex items-center justify-between mt-1 flex-wrap gap-1">
                       <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20 whitespace-nowrap">
                         {entry.model?.replace("-", " ")}
