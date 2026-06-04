@@ -2679,14 +2679,24 @@ var NodeFlow = function NodeFlow(_ref) {
       if (publishWorkflow) {
         handlePublishWorkflow();
       } else {
-        var _nodes$find;
-        var suggestedThumbnail = ((_nodes$find = nodes.find(function (n) {
-          var _n$data2;
-          return ((_n$data2 = n.data) === null || _n$data2 === void 0 ? void 0 : _n$data2.resultUrl) && n.type === 'imageNode';
-        })) === null || _nodes$find === void 0 || (_nodes$find = _nodes$find.data) === null || _nodes$find === void 0 ? void 0 : _nodes$find.resultUrl) || '';
+        var isImg = function isImg(u) {
+          return u && !u.startsWith('asset://') && !/\.(mp4|webm|mov|avi|mkv|m3u8|mp3|wav|ogg|flac|aac)(\?|$)/i.test(u);
+        };
+        var candidates = _toConsumableArray(new Set(nodes.flatMap(function (n) {
+          var _n$data2, _n$data3;
+          var arr = [];
+          if (isImg((_n$data2 = n.data) === null || _n$data2 === void 0 ? void 0 : _n$data2.resultUrl)) arr.push(n.data.resultUrl);
+          (((_n$data3 = n.data) === null || _n$data3 === void 0 ? void 0 : _n$data3.outputHistory) || []).forEach(function (h) {
+            var _h$result3;
+            var v = (_h$result3 = h.result) === null || _h$result3 === void 0 || (_h$result3 = _h$result3.outputs) === null || _h$result3 === void 0 || (_h$result3 = _h$result3[0]) === null || _h$result3 === void 0 ? void 0 : _h$result3.value;
+            if (isImg(v)) arr.push(v);
+          });
+          return arr;
+        })));
         setPublishModal({
           name: workflowName,
-          thumbnail: suggestedThumbnail
+          thumbnail: candidates[0] || '',
+          candidates: candidates
         });
       }
     },
@@ -3416,26 +3426,35 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex flex-col gap-1.5 w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-xs text-gray-400"
-  }, "Preview Image URL"), /*#__PURE__*/_react["default"].createElement("input", {
-    type: "url",
-    value: publishModal.thumbnail,
-    onChange: function onChange(e) {
-      return setPublishModal(function (prev) {
-        return _objectSpread(_objectSpread({}, prev), {}, {
-          thumbnail: e.target.value
+  }, "\u041F\u0440\u0435\u0432\u044C\u044E"), (publishModal.candidates || []).length > 0 ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto"
+  }, (publishModal.candidates || []).map(function (url) {
+    return /*#__PURE__*/_react["default"].createElement("div", {
+      key: url,
+      onClick: function onClick() {
+        return setPublishModal(function (prev) {
+          return _objectSpread(_objectSpread({}, prev), {}, {
+            thumbnail: prev.thumbnail === url ? '' : url
+          });
         });
-      });
-    },
-    placeholder: "https://...",
-    className: "border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
-  }), publishModal.thumbnail && /*#__PURE__*/_react["default"].createElement("img", {
-    src: publishModal.thumbnail,
-    alt: "preview",
-    className: "rounded-lg w-full h-32 object-cover border border-gray-700",
-    onError: function onError(e) {
-      e.target.style.display = 'none';
-    }
-  })), /*#__PURE__*/_react["default"].createElement("div", {
+      },
+      className: "relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ".concat(publishModal.thumbnail === url ? 'border-blue-500' : 'border-gray-700 hover:border-gray-500')
+    }, /*#__PURE__*/_react["default"].createElement("img", {
+      src: url,
+      alt: "",
+      className: "w-full h-16 object-cover",
+      onError: function onError(e) {
+        e.target.parentElement.style.display = 'none';
+      }
+    }), publishModal.thumbnail === url && /*#__PURE__*/_react["default"].createElement("div", {
+      className: "absolute inset-0 bg-blue-500/30 flex items-center justify-center"
+    }, /*#__PURE__*/_react["default"].createElement(_fa.FaCheck, {
+      className: "text-white drop-shadow",
+      size: 16
+    })));
+  })) : /*#__PURE__*/_react["default"].createElement("p", {
+    className: "text-xs text-gray-500 italic py-2 text-center"
+  }, "\u041D\u0435\u0442 \u0441\u0433\u0435\u043D\u0435\u0440\u0438\u0440\u043E\u0432\u0430\u043D\u043D\u044B\u0445 \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0439")), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center w-full gap-2"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",

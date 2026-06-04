@@ -2367,9 +2367,19 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                     if (publishWorkflow) {
                       handlePublishWorkflow();
                     } else {
-                      const suggestedThumbnail =
-                        nodes.find(n => n.data?.resultUrl && n.type === 'imageNode')?.data?.resultUrl || '';
-                      setPublishModal({ name: workflowName, thumbnail: suggestedThumbnail });
+                      const isImg = (u) => u && !u.startsWith('asset://') && !/\.(mp4|webm|mov|avi|mkv|m3u8|mp3|wav|ogg|flac|aac)(\?|$)/i.test(u);
+                      const candidates = [...new Set(
+                        nodes.flatMap(n => {
+                          const arr = [];
+                          if (isImg(n.data?.resultUrl)) arr.push(n.data.resultUrl);
+                          (n.data?.outputHistory || []).forEach(h => {
+                            const v = h.result?.outputs?.[0]?.value;
+                            if (isImg(v)) arr.push(v);
+                          });
+                          return arr;
+                        })
+                      )];
+                      setPublishModal({ name: workflowName, thumbnail: candidates[0] || '', candidates });
                     }
                   }}
                   className="flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white"
@@ -3109,21 +3119,26 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               />
             </div>
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-xs text-gray-400">Preview Image URL</label>
-              <input
-                type="url"
-                value={publishModal.thumbnail}
-                onChange={(e) => setPublishModal(prev => ({ ...prev, thumbnail: e.target.value }))}
-                placeholder="https://..."
-                className="border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
-              />
-              {publishModal.thumbnail && (
-                <img
-                  src={publishModal.thumbnail}
-                  alt="preview"
-                  className="rounded-lg w-full h-32 object-cover border border-gray-700"
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
+              <label className="text-xs text-gray-400">Превью</label>
+              {(publishModal.candidates || []).length > 0 ? (
+                <div className="grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto">
+                  {(publishModal.candidates || []).map((url) => (
+                    <div
+                      key={url}
+                      onClick={() => setPublishModal(prev => ({ ...prev, thumbnail: prev.thumbnail === url ? '' : url }))}
+                      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${publishModal.thumbnail === url ? 'border-blue-500' : 'border-gray-700 hover:border-gray-500'}`}
+                    >
+                      <img src={url} alt="" className="w-full h-16 object-cover" onError={(e) => { e.target.parentElement.style.display = 'none'; }} />
+                      {publishModal.thumbnail === url && (
+                        <div className="absolute inset-0 bg-blue-500/30 flex items-center justify-center">
+                          <FaCheck className="text-white drop-shadow" size={16} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 italic py-2 text-center">Нет сгенерированных изображений</p>
               )}
             </div>
             <div className="flex items-center w-full gap-2">
