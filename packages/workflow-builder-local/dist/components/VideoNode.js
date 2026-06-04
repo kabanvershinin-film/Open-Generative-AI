@@ -389,8 +389,8 @@ var VideoGeneration = function VideoGeneration(_ref) {
   // "GENERATING…"); the short submit + poll requests here never hang.
   var runArkSeedanceBrowser = /*#__PURE__*/function () {
     var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
-      var _submit$data, _submit$data2, _data$selectedModel3;
-      var fast, src, body, submit, _e$response, _e$response2, taskId, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response3, status, histId, output, newHistory, _t, _t2;
+      var _submit$data, _submit$data2, _submit$data3, _data$selectedModel3;
+      var fast, src, body, submit, _e$response, _e$response2, _e$response3, _d$required, _d$balance, d, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response4, status, histId, output, newHistory, _t, _t2;
       return _regenerator().w(function (_context2) {
         while (1) switch (_context2.p = _context2.n) {
           case 0:
@@ -413,99 +413,108 @@ var VideoGeneration = function VideoGeneration(_ref) {
             return _axios["default"].post("/api/ark/seedance", body);
           case 2:
             submit = _context2.v;
-            _context2.n = 4;
+            _context2.n = 5;
             break;
           case 3:
             _context2.p = 3;
             _t = _context2.v;
-            throw new Error(((_e$response = _t.response) === null || _e$response === void 0 || (_e$response = _e$response.data) === null || _e$response === void 0 ? void 0 : _e$response.error) || "ARK submit ".concat(((_e$response2 = _t.response) === null || _e$response2 === void 0 ? void 0 : _e$response2.status) || "", ": ").concat(_t.message));
+            if (!(((_e$response = _t.response) === null || _e$response === void 0 ? void 0 : _e$response.status) === 402)) {
+              _context2.n = 4;
+              break;
+            }
+            d = _t.response.data || {};
+            throw new Error("\u041D\u0435\u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E \u0441\u0440\u0435\u0434\u0441\u0442\u0432. \u041D\u0443\u0436\u043D\u043E ".concat((_d$required = d.required) !== null && _d$required !== void 0 ? _d$required : "", "\u20BD, \u043D\u0430 \u0431\u0430\u043B\u0430\u043D\u0441\u0435 ").concat((_d$balance = d.balance) !== null && _d$balance !== void 0 ? _d$balance : 0, "\u20BD."));
           case 4:
+            throw new Error(((_e$response2 = _t.response) === null || _e$response2 === void 0 || (_e$response2 = _e$response2.data) === null || _e$response2 === void 0 ? void 0 : _e$response2.error) || "ARK submit ".concat(((_e$response3 = _t.response) === null || _e$response3 === void 0 ? void 0 : _e$response3.status) || "", ": ").concat(_t.message));
+          case 5:
             taskId = (_submit$data = submit.data) === null || _submit$data === void 0 ? void 0 : _submit$data.taskId;
             if (taskId) {
-              _context2.n = 5;
+              _context2.n = 6;
               break;
             }
             throw new Error(((_submit$data2 = submit.data) === null || _submit$data2 === void 0 ? void 0 : _submit$data2.error) || "ARK: задача не создана (нет taskId).");
-          case 5:
-            // Step 2: poll from the browser — each request is < 1s, so no connection hangs.
+          case 6:
+            // Signed charge token — echoed back to the poll so an async failure refunds.
+            bill = (_submit$data3 = submit.data) === null || _submit$data3 === void 0 ? void 0 : _submit$data3.bill;
+            billQs = bill ? "&bill=".concat(encodeURIComponent(bill)) : ""; // Step 2: poll from the browser — each request is < 1s, so no connection hangs.
             finishedUrl = null;
             pollErrors = 0;
             attempt = 0;
-          case 6:
-            if (!(attempt < 300)) {
-              _context2.n = 18;
-              break;
-            }
-            if (!arkCancelRef.current) {
-              _context2.n = 7;
-              break;
-            }
-            arkCancelRef.current = false;
-            return _context2.a(2);
           case 7:
-            _context2.n = 8;
-            return new Promise(function (r) {
-              return setTimeout(r, 5000);
-            });
-          case 8:
-            if (!arkCancelRef.current) {
-              _context2.n = 9;
-              break;
-            }
-            arkCancelRef.current = false;
-            return _context2.a(2);
-          case 9:
-            pd = void 0;
-            _context2.p = 10;
-            _context2.n = 11;
-            return _axios["default"].get("/api/ark/seedance?taskId=".concat(encodeURIComponent(taskId)));
-          case 11:
-            poll = _context2.v;
-            pd = poll.data;
-            pollErrors = 0;
-            _context2.n = 14;
-            break;
-          case 12:
-            _context2.p = 12;
-            _t2 = _context2.v;
-            if (!(++pollErrors >= 12)) {
-              _context2.n = 13;
-              break;
-            }
-            throw new Error(((_e$response3 = _t2.response) === null || _e$response3 === void 0 || (_e$response3 = _e$response3.data) === null || _e$response3 === void 0 ? void 0 : _e$response3.error) || "ARK: опрос статуса не отвечает.");
-          case 13:
-            return _context2.a(3, 17);
-          case 14:
-            status = String(((_pd = pd) === null || _pd === void 0 ? void 0 : _pd.status) || "").toLowerCase();
-            if (!(status === "succeeded" || status === "success" || status === "completed")) {
-              _context2.n = 16;
-              break;
-            }
-            if (pd.url) {
-              _context2.n = 15;
-              break;
-            }
-            throw new Error("ARK: видео готово, но URL не получен.");
-          case 15:
-            finishedUrl = pd.url;
-            return _context2.a(3, 18);
-          case 16:
-            if (!["failed", "error", "expired", "cancelled"].includes(status)) {
-              _context2.n = 17;
-              break;
-            }
-            throw new Error("ARK: \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C (".concat(pd.error || status, ")."));
-          case 17:
-            attempt++;
-            _context2.n = 6;
-            break;
-          case 18:
-            if (finishedUrl) {
+            if (!(attempt < 300)) {
               _context2.n = 19;
               break;
             }
-            throw new Error("ARK: превышено время ожидания генерации.");
+            if (!arkCancelRef.current) {
+              _context2.n = 8;
+              break;
+            }
+            arkCancelRef.current = false;
+            return _context2.a(2);
+          case 8:
+            _context2.n = 9;
+            return new Promise(function (r) {
+              return setTimeout(r, 5000);
+            });
+          case 9:
+            if (!arkCancelRef.current) {
+              _context2.n = 10;
+              break;
+            }
+            arkCancelRef.current = false;
+            return _context2.a(2);
+          case 10:
+            pd = void 0;
+            _context2.p = 11;
+            _context2.n = 12;
+            return _axios["default"].get("/api/ark/seedance?taskId=".concat(encodeURIComponent(taskId)).concat(billQs));
+          case 12:
+            poll = _context2.v;
+            pd = poll.data;
+            pollErrors = 0;
+            _context2.n = 15;
+            break;
+          case 13:
+            _context2.p = 13;
+            _t2 = _context2.v;
+            if (!(++pollErrors >= 12)) {
+              _context2.n = 14;
+              break;
+            }
+            throw new Error(((_e$response4 = _t2.response) === null || _e$response4 === void 0 || (_e$response4 = _e$response4.data) === null || _e$response4 === void 0 ? void 0 : _e$response4.error) || "ARK: опрос статуса не отвечает.");
+          case 14:
+            return _context2.a(3, 18);
+          case 15:
+            status = String(((_pd = pd) === null || _pd === void 0 ? void 0 : _pd.status) || "").toLowerCase();
+            if (!(status === "succeeded" || status === "success" || status === "completed")) {
+              _context2.n = 17;
+              break;
+            }
+            if (pd.url) {
+              _context2.n = 16;
+              break;
+            }
+            throw new Error("ARK: видео готово, но URL не получен.");
+          case 16:
+            finishedUrl = pd.url;
+            return _context2.a(3, 19);
+          case 17:
+            if (!["failed", "error", "expired", "cancelled"].includes(status)) {
+              _context2.n = 18;
+              break;
+            }
+            throw new Error("ARK: \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C (".concat(pd.error || status, ")."));
+          case 18:
+            attempt++;
+            _context2.n = 7;
+            break;
           case 19:
+            if (finishedUrl) {
+              _context2.n = 20;
+              break;
+            }
+            throw new Error("ARK: превышено время ожидания генерации.");
+          case 20:
             // Показываем результат СРАЗУ с ARK-ссылкой — не ждём TOS-зеркалирования.
             histId = taskId;
             output = [{
@@ -611,10 +620,10 @@ var VideoGeneration = function VideoGeneration(_ref) {
               // воркфлоу с постоянным TOS URL вместо истекающей ARK CDN ссылки.
               (_data$handleSaveWorkF = data.handleSaveWorkFlow) === null || _data$handleSaveWorkF === void 0 || _data$handleSaveWorkF.call(data);
             })["catch"](function () {/* ARK URL остаётся */});
-          case 20:
+          case 21:
             return _context2.a(2);
         }
-      }, _callee2, null, [[10, 12], [1, 3]]);
+      }, _callee2, null, [[11, 13], [1, 3]]);
     }));
     return function runArkSeedanceBrowser() {
       return _ref1.apply(this, arguments);

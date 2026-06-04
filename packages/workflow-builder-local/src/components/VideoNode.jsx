@@ -323,10 +323,18 @@ const VideoGeneration = ({ id, data, selected }) => {
     try {
       submit = await axios.post("/api/ark/seedance", body);
     } catch (e) {
+      // 402 → insufficient balance: surface a clear, money-specific message.
+      if (e.response?.status === 402) {
+        const d = e.response.data || {};
+        throw new Error(`Недостаточно средств. Нужно ${d.required ?? ""}₽, на балансе ${d.balance ?? 0}₽.`);
+      }
       throw new Error(e.response?.data?.error || `ARK submit ${e.response?.status || ""}: ${e.message}`);
     }
     const taskId = submit.data?.taskId;
     if (!taskId) throw new Error(submit.data?.error || "ARK: задача не создана (нет taskId).");
+    // Signed charge token — echoed back to the poll so an async failure refunds.
+    const bill = submit.data?.bill;
+    const billQs = bill ? `&bill=${encodeURIComponent(bill)}` : "";
 
     // Step 2: poll from the browser — each request is < 1s, so no connection hangs.
     let finishedUrl = null;
@@ -338,7 +346,7 @@ const VideoGeneration = ({ id, data, selected }) => {
 
       let pd;
       try {
-        const poll = await axios.get(`/api/ark/seedance?taskId=${encodeURIComponent(taskId)}`);
+        const poll = await axios.get(`/api/ark/seedance?taskId=${encodeURIComponent(taskId)}${billQs}`);
         pd = poll.data;
         pollErrors = 0;
       } catch (e) {

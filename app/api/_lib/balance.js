@@ -11,6 +11,7 @@
 // (so the app keeps working until auth + top-up are wired in the UI).
 
 import { createClient } from '@supabase/supabase-js';
+import { createHmac } from 'crypto';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
@@ -102,6 +103,76 @@ async function refund(userId, amount) {
 
 function round2(n) { return Math.round(n * 100) / 100; }
 
+// ── RPC-based charging (mirrors creator-club's spend_balance / refund_balance) ──
+// These hit the SAME shared Supabase ledger as creator-club, so balance and the
+// transaction history stay consistent across both apps. The RPCs resolve the
+// user from auth.uid(), so we must call them with a client scoped to the user's
+// JWT (not the service-role admin client).
+function userClient(request) {
+    if (!BILLING_ENABLED) return null;
+    const token = getAccessToken(request);
+    if (!token) return null;
+    return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false },
+        global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+}
+
+// Charge `amount` RUB via spend_balance. Returns the RPC result shape:
+//   { ok: true, balance }
+//   { ok: false, error: 'insufficient', balance, required }
+//   { ok: false, error: 'unauthorized' | <message> }
+async function spendBalance(request, amount, reason, meta = null) {
+    if (!BILLING_ENABLED) return { ok: true, free: true };
+    if (!(amount > 0)) return { ok: true, balance: null };
+    const db = userClient(request);
+    if (!db) return { ok: false, error: 'unauthorized' };
+    const { data, error } = await db.rpc('spend_balance', {
+        p_amount: round2(amount), p_reason: reason, p_meta: meta,
+    });
+    if (error) return { ok: false, error: error.message };
+    return data || { ok: false, error: 'no_response' };
+}
+
+// Best-effort refund via refund_balance (e.g. generation failed after charging).
+async function refundBalanceRpc(request, amount, reason) {
+    if (!BILLING_ENABLED || !(amount > 0)) return;
+    const db = userClient(request);
+    if (!db) return;
+    try {
+        await db.rpc('refund_balance', {
+            p_amount: round2(amount), p_reason: 'refund_' + reason, p_meta: null,
+        });
+    } catch { /* best-effort */ }
+}
+
+// ── Signed bill token ────────────────────────────────────────────────────────
+// Seedance uses a submit-then-poll flow split across two requests (and serverless
+// instances). To refund on async failure we hand the client a tamper-proof token
+// carrying the charged amount; the poll route verifies the HMAC before refunding,
+// so a client can't inflate or forge a refund. Signed with the service-role key
+// (server-only secret, always present when billing is on).
+function signBill(cost) {
+    if (!BILLING_ENABLED || !(cost > 0)) return '';
+    const payload = Buffer.from(JSON.stringify({ c: round2(cost), e: Date.now() + 3600_000 })).toString('base64url');
+    const sig = createHmac('sha256', SUPABASE_SERVICE_ROLE_KEY).update(payload).digest('base64url');
+    return `${payload}.${sig}`;
+}
+
+// Verify a bill token and return the charged amount, or 0 if invalid/expired.
+function verifyBill(token) {
+    if (!BILLING_ENABLED || !token || typeof token !== 'string') return 0;
+    const [payload, sig] = token.split('.');
+    if (!payload || !sig) return 0;
+    const expect = createHmac('sha256', SUPABASE_SERVICE_ROLE_KEY).update(payload).digest('base64url');
+    if (sig !== expect) return 0;
+    try {
+        const { c, e } = JSON.parse(Buffer.from(payload, 'base64url').toString());
+        if (!e || Date.now() > e) return 0;
+        return Number(c) || 0;
+    } catch { return 0; }
+}
+
 // Read the authenticated user's current balance (in RUB). Returns null when
 // billing is disabled or the user is not logged in.
 async function getBalance(request) {
@@ -115,4 +186,7 @@ async function getBalance(request) {
     } catch { return null; }
 }
 
-export { BILLING_ENABLED, getUser, getBalance, deduct, refund };
+export {
+    BILLING_ENABLED, getUser, getBalance, deduct, refund,
+    spendBalance, refundBalanceRpc, signBill, verifyBill,
+};

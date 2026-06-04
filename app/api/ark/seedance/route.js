@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
+import { BILLING_ENABLED, spendBalance, refundBalanceRpc, signBill, verifyBill } from '../../_lib/balance';
+import { priceRub } from '../../_lib/pricing';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
 // Auth: long-lived Ark API Key (Bearer). Set ARK_API_KEY in env.
+//
+// Billing: this path bypasses /api/workflow/run, so it bills here directly —
+// otherwise Seedance would generate for free. We pre-charge the user via the
+// shared spend_balance RPC at submit time (same ledger as creator-club), and
+// refund via refund_balance if the task is rejected or fails. A signed bill
+// token carries the charged amount to the poll request so async failures refund
+// the right (untamperable) amount.
 // Load balancing: round-robin across several inference endpoints (ep-...), set as a
 // comma-separated list in ARK_SEEDANCE_ENDPOINTS. Falls back to the model id.
 //
@@ -123,14 +132,40 @@ export async function POST(request) {
 
     const model = pickEndpoint(fast) || (fast ? FAST_MODEL_ID : STD_MODEL_ID);
 
-    const payload = { model, content, generate_audio, watermark: false };
+    let effRes = '720p';
     if (resolution) {
-      let res = String(resolution).toLowerCase();
-      if (fast && res === '1080p') res = '720p'; // Fast caps at 720p
-      payload.resolution = res;
+      effRes = String(resolution).toLowerCase();
+      if (fast && effRes === '1080p') effRes = '720p'; // Fast caps at 720p
     }
+    const effDur = (duration != null && duration !== '') ? Math.max(4, Math.min(15, Number(duration) || 5)) : 5;
+
+    // Pre-charge the user before creating the task. The model id (not the ep-...
+    // endpoint) drives the token-based Seedance price in pricing.js.
+    const billingModelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
+    const cost = priceRub('video', billingModelId, { duration: effDur, resolution: effRes });
+    let bill = '';
+    if (BILLING_ENABLED && cost > 0) {
+      const reason = `Seedance 2.0${fast ? ' Fast' : ''} ${effRes} ${effDur}s`;
+      const charge = await spendBalance(request, cost, reason, { model: billingModelId, resolution: effRes, durationSec: effDur });
+      if (!charge.ok) {
+        if (charge.error === 'unauthorized') {
+          return NextResponse.json({ error: 'Войдите в аккаунт, чтобы генерировать.' }, { status: 401 });
+        }
+        if (charge.error === 'insufficient') {
+          return NextResponse.json(
+            { error: 'insufficient_funds', required: cost, balance: charge.balance },
+            { status: 402 },
+          );
+        }
+        return NextResponse.json({ error: charge.error || 'Ошибка списания баланса' }, { status: 500 });
+      }
+      bill = signBill(cost);
+    }
+
+    const payload = { model, content, generate_audio, watermark: false };
+    if (resolution) payload.resolution = effRes; // only when the caller set it
     if (ratio) payload.ratio = ratio;
-    if (duration != null && duration !== '') payload.duration = Math.max(4, Math.min(15, Number(duration) || 5));
+    if (duration != null && duration !== '') payload.duration = effDur;
 
     const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {
       method: 'POST',
@@ -139,12 +174,14 @@ export async function POST(request) {
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
+      // Task rejected at submit → refund the pre-charge immediately.
+      if (BILLING_ENABLED && cost > 0) await refundBalanceRpc(request, cost, 'seedance_submit_failed');
       return NextResponse.json(
         { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
         { status: r.status },
       );
     }
-    return NextResponse.json({ taskId: data.id, endpoint: model });
+    return NextResponse.json({ taskId: data.id, endpoint: model, bill });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -172,6 +209,15 @@ export async function GET(request) {
     }
     const status = data.status || 'running';
     const url = data.content?.video_url || data.video_url || null;
+
+    // Async failure → refund the amount carried in the (HMAC-signed) bill token.
+    // The signature stops a client inflating or forging a refund.
+    const failed = ['failed', 'error', 'expired', 'cancelled'].includes(String(status).toLowerCase());
+    if (failed) {
+      const cost = verifyBill(searchParams.get('bill'));
+      if (cost > 0) await refundBalanceRpc(request, cost, 'seedance_failed');
+    }
+
     return NextResponse.json({ status, url, error: data.error?.message || null });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });

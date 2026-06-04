@@ -587,23 +587,32 @@ async function generateSeedanceArk(modelInfo, params) {
         body: JSON.stringify(body),
     });
     const submitData = await submit.json().catch(() => ({}));
-    if (!submit.ok) throw new Error(`Ark: ${submitData.error || submit.status}`);
+    if (!submit.ok) {
+        if (submit.status === 402) {
+            throw new Error(`Недостаточно средств. Нужно ${submitData.required ?? ''}₽, на балансе ${submitData.balance ?? 0}₽.`);
+        }
+        throw new Error(`Ark: ${submitData.error || submit.status}`);
+    }
     const taskId = submitData.taskId;
     if (!taskId) throw new Error('Ark: задача не создана (нет taskId).');
 
     // Notify the caller as soon as we have a taskId so it can persist it for
-    // resumption if the user navigates away before polling finishes.
-    params.onTaskId?.(taskId);
+    // resumption if the user navigates away before polling finishes. The bill
+    // token rides along so a resumed poll can still refund on failure.
+    params.onTaskId?.(taskId, submitData.bill);
 
-    return pollArkTask(taskId);
+    return pollArkTask(taskId, submitData.bill);
 }
 
 // Poll an already-submitted Ark Seedance task.
 // Exported so VideoStudio can resume an in-progress task after navigation.
-export async function pollArkTask(taskId) {
+// `bill` (optional) is the signed charge token; passed back so an async failure
+// refunds the right amount.
+export async function pollArkTask(taskId, bill) {
+    const billQs = bill ? `&bill=${encodeURIComponent(bill)}` : '';
     for (let attempt = 0; attempt < 300; attempt++) {
         await new Promise((r) => setTimeout(r, 5000));
-        const poll = await fetch(`/api/ark/seedance?taskId=${encodeURIComponent(taskId)}`);
+        const poll = await fetch(`/api/ark/seedance?taskId=${encodeURIComponent(taskId)}${billQs}`);
         const data = await poll.json().catch(() => ({}));
         if (!poll.ok) continue;
         const status = (data.status || '').toLowerCase();

@@ -1039,7 +1039,7 @@ export default function VideoStudio({
     // Task still in progress — resume polling.
     setGenerating(true);
     setGeneratingPrompt(stored.prompt || "");
-    pollArkTask(stored.taskId)
+    pollArkTask(stored.taskId, stored.bill)
       .then((res) => showResult(res.url, res.id || stored.taskId))
       .catch((e) => {
         if (cancelled) return;
@@ -1083,10 +1083,11 @@ export default function VideoStudio({
           face_asset: faceAsset?.uri || undefined,
           // Persist taskId to localStorage as soon as the ARK task is submitted so
           // we can resume polling if the user navigates away before it finishes.
-          onTaskId: (taskId) => {
+          onTaskId: (taskId, bill) => {
             try {
               localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
                 taskId,
+                bill,
                 model: selectedModel,
                 prompt: trimmedPrompt,
                 aspect_ratio: selectedAr,
