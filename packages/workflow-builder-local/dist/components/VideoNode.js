@@ -388,11 +388,11 @@ var VideoGeneration = function VideoGeneration(_ref) {
   // one HTTP connection up to ~290s (Vercel drops it → node stuck on
   // "GENERATING…"); the short submit + poll requests here never hang.
   var runArkSeedanceBrowser = /*#__PURE__*/function () {
-    var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
+    var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
       var _submit$data, _submit$data2, _data$selectedModel3;
       var fast, src, body, submit, _e$response, _e$response2, taskId, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response3, status, histId, output, newHistory, _t, _t2;
-      return _regenerator().w(function (_context) {
-        while (1) switch (_context.p = _context.n) {
+      return _regenerator().w(function (_context2) {
+        while (1) switch (_context2.p = _context2.n) {
           case 0:
             fast = /fast/.test("".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "").toLowerCase());
             src = formValues || {};
@@ -408,21 +408,21 @@ var VideoGeneration = function VideoGeneration(_ref) {
               duration: src.duration || undefined,
               face_asset: src.face_asset || undefined
             }; // Step 1: submit — fast, just creates the Ark task and returns a taskId.
-            _context.p = 1;
-            _context.n = 2;
+            _context2.p = 1;
+            _context2.n = 2;
             return _axios["default"].post("/api/ark/seedance", body);
           case 2:
-            submit = _context.v;
-            _context.n = 4;
+            submit = _context2.v;
+            _context2.n = 4;
             break;
           case 3:
-            _context.p = 3;
-            _t = _context.v;
+            _context2.p = 3;
+            _t = _context2.v;
             throw new Error(((_e$response = _t.response) === null || _e$response === void 0 || (_e$response = _e$response.data) === null || _e$response === void 0 ? void 0 : _e$response.error) || "ARK submit ".concat(((_e$response2 = _t.response) === null || _e$response2 === void 0 ? void 0 : _e$response2.status) || "", ": ").concat(_t.message));
           case 4:
             taskId = (_submit$data = submit.data) === null || _submit$data === void 0 ? void 0 : _submit$data.taskId;
             if (taskId) {
-              _context.n = 5;
+              _context2.n = 5;
               break;
             }
             throw new Error(((_submit$data2 = submit.data) === null || _submit$data2 === void 0 ? void 0 : _submit$data2.error) || "ARK: задача не создана (нет taskId).");
@@ -433,75 +433,75 @@ var VideoGeneration = function VideoGeneration(_ref) {
             attempt = 0;
           case 6:
             if (!(attempt < 300)) {
-              _context.n = 18;
+              _context2.n = 18;
               break;
             }
             if (!arkCancelRef.current) {
-              _context.n = 7;
+              _context2.n = 7;
               break;
             }
             arkCancelRef.current = false;
-            return _context.a(2);
+            return _context2.a(2);
           case 7:
-            _context.n = 8;
+            _context2.n = 8;
             return new Promise(function (r) {
               return setTimeout(r, 5000);
             });
           case 8:
             if (!arkCancelRef.current) {
-              _context.n = 9;
+              _context2.n = 9;
               break;
             }
             arkCancelRef.current = false;
-            return _context.a(2);
+            return _context2.a(2);
           case 9:
             pd = void 0;
-            _context.p = 10;
-            _context.n = 11;
+            _context2.p = 10;
+            _context2.n = 11;
             return _axios["default"].get("/api/ark/seedance?taskId=".concat(encodeURIComponent(taskId)));
           case 11:
-            poll = _context.v;
+            poll = _context2.v;
             pd = poll.data;
             pollErrors = 0;
-            _context.n = 14;
+            _context2.n = 14;
             break;
           case 12:
-            _context.p = 12;
-            _t2 = _context.v;
+            _context2.p = 12;
+            _t2 = _context2.v;
             if (!(++pollErrors >= 12)) {
-              _context.n = 13;
+              _context2.n = 13;
               break;
             }
             throw new Error(((_e$response3 = _t2.response) === null || _e$response3 === void 0 || (_e$response3 = _e$response3.data) === null || _e$response3 === void 0 ? void 0 : _e$response3.error) || "ARK: опрос статуса не отвечает.");
           case 13:
-            return _context.a(3, 17);
+            return _context2.a(3, 17);
           case 14:
             status = String(((_pd = pd) === null || _pd === void 0 ? void 0 : _pd.status) || "").toLowerCase();
             if (!(status === "succeeded" || status === "success" || status === "completed")) {
-              _context.n = 16;
+              _context2.n = 16;
               break;
             }
             if (pd.url) {
-              _context.n = 15;
+              _context2.n = 15;
               break;
             }
             throw new Error("ARK: видео готово, но URL не получен.");
           case 15:
             finishedUrl = pd.url;
-            return _context.a(3, 18);
+            return _context2.a(3, 18);
           case 16:
             if (!["failed", "error", "expired", "cancelled"].includes(status)) {
-              _context.n = 17;
+              _context2.n = 17;
               break;
             }
             throw new Error("ARK: \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C (".concat(pd.error || status, ")."));
           case 17:
             attempt++;
-            _context.n = 6;
+            _context2.n = 6;
             break;
           case 18:
             if (finishedUrl) {
-              _context.n = 19;
+              _context2.n = 19;
               break;
             }
             throw new Error("ARK: превышено время ожидания генерации.");
@@ -532,14 +532,50 @@ var VideoGeneration = function VideoGeneration(_ref) {
             // Сохраняем в Галерею (как Студия) — /api/gallery сам зеркалирует в TOS и
             // добавляет запись в gallery/{userId}/entries.json. Браузерный ARK-путь
             // минует серверный /run, который обычно это делает, поэтому зовём явно.
-            _axios["default"].post("/api/gallery", {
-              url: finishedUrl,
-              type: "video",
-              model: (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || ((_data$selectedModel3 = data.selectedModel) === null || _data$selectedModel3 === void 0 ? void 0 : _data$selectedModel3.id) || "",
-              prompt: src.prompt || ""
-            })["catch"](function (e) {
-              var _e$response4;
-              _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (((_e$response4 = e.response) === null || _e$response4 === void 0 || (_e$response4 = _e$response4.data) === null || _e$response4 === void 0 ? void 0 : _e$response4.error) || e.message || "ошибка"), {
+            // keepalive:true — запрос переживёт переход на другую страницу (напр. если
+            // пользователь сразу уходит в «Галерею»), иначе fire-and-forget POST
+            // прерывался навигацией и запись в галерею не создавалась.
+            fetch("/api/gallery", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              keepalive: true,
+              body: JSON.stringify({
+                url: finishedUrl,
+                type: "video",
+                model: (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || ((_data$selectedModel3 = data.selectedModel) === null || _data$selectedModel3 === void 0 ? void 0 : _data$selectedModel3.id) || "",
+                prompt: src.prompt || ""
+              })
+            }).then(/*#__PURE__*/function () {
+              var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(r) {
+                var err;
+                return _regenerator().w(function (_context) {
+                  while (1) switch (_context.n) {
+                    case 0:
+                      if (r.ok) {
+                        _context.n = 2;
+                        break;
+                      }
+                      _context.n = 1;
+                      return r.json()["catch"](function () {
+                        return {};
+                      });
+                    case 1:
+                      err = _context.v;
+                      _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), {
+                        duration: 4000
+                      });
+                    case 2:
+                      return _context.a(2);
+                  }
+                }, _callee);
+              }));
+              return function (_x) {
+                return _ref10.apply(this, arguments);
+              };
+            }())["catch"](function (e) {
+              _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), {
                 duration: 4000
               });
             });
@@ -576,40 +612,40 @@ var VideoGeneration = function VideoGeneration(_ref) {
               (_data$handleSaveWorkF = data.handleSaveWorkFlow) === null || _data$handleSaveWorkF === void 0 || _data$handleSaveWorkF.call(data);
             })["catch"](function () {/* ARK URL остаётся */});
           case 20:
-            return _context.a(2);
+            return _context2.a(2);
         }
-      }, _callee, null, [[10, 12], [1, 3]]);
+      }, _callee2, null, [[10, 12], [1, 3]]);
     }));
     return function runArkSeedanceBrowser() {
       return _ref1.apply(this, arguments);
     };
   }();
   var handleRunSingleNode = /*#__PURE__*/function () {
-    var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
+    var _ref11 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
       var _data$selectedModel4, _data$selectedModel5, _nodeSchemas$categori2, modelHay, isSeedance, _data$handleSaveWorkF2, _e$message, _e$message2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _error$response, _t3, _t4;
-      return _regenerator().w(function (_context2) {
-        while (1) switch (_context2.p = _context2.n) {
+      return _regenerator().w(function (_context3) {
+        while (1) switch (_context3.p = _context3.n) {
           case 0:
             if (!inFlightRef.current) {
-              _context2.n = 2;
+              _context3.n = 2;
               break;
             }
             if (data.isLoading) {
-              _context2.n = 1;
+              _context3.n = 1;
               break;
             }
             inFlightRef.current = false;
-            _context2.n = 2;
+            _context3.n = 2;
             break;
           case 1:
             (0, _reactHotToast.toast)("Генерация уже идёт — подождите завершения", {
               icon: "⏳"
             });
-            return _context2.a(2);
+            return _context3.a(2);
           case 2:
             inFlightRef.current = true;
             arkCancelRef.current = false;
-            _context2.p = 3;
+            _context3.p = 3;
             data.onDataChange(id, {
               isLoading: true
             });
@@ -622,11 +658,11 @@ var VideoGeneration = function VideoGeneration(_ref) {
             modelHay = "".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "", " ").concat(((_data$selectedModel4 = data.selectedModel) === null || _data$selectedModel4 === void 0 ? void 0 : _data$selectedModel4.id) || "", " ").concat(((_data$selectedModel5 = data.selectedModel) === null || _data$selectedModel5 === void 0 ? void 0 : _data$selectedModel5.name) || "").toLowerCase();
             isSeedance = /seedance[\s-]*2/.test(modelHay);
             if (!isSeedance) {
-              _context2.n = 8;
+              _context3.n = 8;
               break;
             }
-            _context2.p = 4;
-            _context2.n = 5;
+            _context3.p = 4;
+            _context3.n = 5;
             return runArkSeedanceBrowser();
           case 5:
             // Save immediately so the result survives SPA navigation.
@@ -634,43 +670,43 @@ var VideoGeneration = function VideoGeneration(_ref) {
             // onDataChange, so buildWorkflowPayload captures the correct resultUrl
             // even if the React setNodes update was cancelled by concurrent mode.
             (_data$handleSaveWorkF2 = data.handleSaveWorkFlow) === null || _data$handleSaveWorkF2 === void 0 || _data$handleSaveWorkF2.call(data);
-            _context2.n = 7;
+            _context3.n = 7;
             break;
           case 6:
-            _context2.p = 6;
-            _t3 = _context2.v;
+            _context3.p = 6;
+            _t3 = _context3.v;
             data.onDataChange(id, {
               isLoading: false,
               errorMsg: ((_e$message = _t3.message) === null || _e$message === void 0 ? void 0 : _e$message.slice(0, 120)) || "Ошибка генерации"
             });
             _reactHotToast.toast.error(((_e$message2 = _t3.message) === null || _e$message2 === void 0 ? void 0 : _e$message2.slice(0, 80)) || "Ошибка генерации");
           case 7:
-            return _context2.a(2);
+            return _context3.a(2);
           case 8:
-            _context2.n = 9;
+            _context3.n = 9;
             return data.handleSaveWorkFlow();
           case 9:
-            workflow_id = _context2.v;
+            workflow_id = _context3.v;
             if (workflow_id) {
-              _context2.n = 10;
+              _context3.n = 10;
               break;
             }
             _reactHotToast.toast.error("Failed to save workflow before running node");
             data.onDataChange(id, {
               isLoading: false
             });
-            return _context2.a(2);
+            return _context3.a(2);
           case 10:
             modelSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori2 = nodeSchemas.categories) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.video) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.models[selectedModel.id]) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.input_schema) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.schemas) === null || _nodeSchemas$categori2 === void 0 ? void 0 : _nodeSchemas$categori2.input_data;
             if (!(!modelSchema || !modelSchema.properties)) {
-              _context2.n = 11;
+              _context3.n = 11;
               break;
             }
             _reactHotToast.toast.error("No input schema found for this model");
             data.onDataChange(id, {
               isLoading: false
             });
-            return _context2.a(2);
+            return _context3.a(2);
           case 11:
             params = {};
             inputSchema = modelSchema.properties;
@@ -685,7 +721,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
             }
             // face_asset isn't in the schema — carry it through when present.
             if (localSources.face_asset) params.face_asset = localSources.face_asset;
-            _context2.n = 12;
+            _context3.n = 12;
             return _axios["default"].post("/api/workflow/".concat(workflow_id, "/node/").concat(id, "/run"), {
               run_id: runId,
               model: selectedModel.id,
@@ -694,7 +730,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
               node_id: "AI Video"
             });
           case 12:
-            response = _context2.v;
+            response = _context3.v;
             _r = response.data;
             _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]);
             _lt = _nd && _nd[_nd.length - 1];
@@ -715,29 +751,29 @@ var VideoGeneration = function VideoGeneration(_ref) {
             } else {
               pollNodeStatus(_r.run_id);
             }
-            _context2.n = 14;
+            _context3.n = 14;
             break;
           case 13:
-            _context2.p = 13;
-            _t4 = _context2.v;
+            _context3.p = 13;
+            _t4 = _context3.v;
             data.onDataChange(id, {
               isLoading: false
             });
             _reactHotToast.toast.error(((_error$response = _t4.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Error running node");
             console.error(_t4);
           case 14:
-            _context2.p = 14;
+            _context3.p = 14;
             inFlightRef.current = false;
-            return _context2.f(14);
+            return _context3.f(14);
           case 15:
             ;
           case 16:
-            return _context2.a(2);
+            return _context3.a(2);
         }
-      }, _callee2, null, [[4, 6], [3, 13, 14, 15]]);
+      }, _callee3, null, [[4, 6], [3, 13, 14, 15]]);
     }));
     return function handleRunSingleNode() {
-      return _ref10.apply(this, arguments);
+      return _ref11.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
@@ -839,25 +875,25 @@ var VideoGeneration = function VideoGeneration(_ref) {
     }
   };
   var handleDeleteHistory = /*#__PURE__*/function () {
-    var _ref11 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3(e) {
+    var _ref12 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4(e) {
       var currentHistory, _data$onDataChange2, newHistory, _error$response2, _t5;
-      return _regenerator().w(function (_context3) {
-        while (1) switch (_context3.p = _context3.n) {
+      return _regenerator().w(function (_context4) {
+        while (1) switch (_context4.p = _context4.n) {
           case 0:
             e.stopPropagation();
             currentHistory = outputHistory[currentHistoryIndex];
             if (!(!currentHistory || !currentHistory.node_run_id)) {
-              _context3.n = 1;
+              _context4.n = 1;
               break;
             }
-            return _context3.a(2);
+            return _context4.a(2);
           case 1:
             if (!window.confirm("Are you sure you want to delete this history entry?")) {
-              _context3.n = 5;
+              _context4.n = 5;
               break;
             }
-            _context3.p = 2;
-            _context3.n = 3;
+            _context4.p = 2;
+            _context4.n = 3;
             return _axios["default"]["delete"]("/api/workflow/node-run/".concat(currentHistory.node_run_id));
           case 3:
             newHistory = outputHistory.filter(function (_, i) {
@@ -875,20 +911,20 @@ var VideoGeneration = function VideoGeneration(_ref) {
               setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
             }
             _reactHotToast.toast.success("History entry deleted");
-            _context3.n = 5;
+            _context4.n = 5;
             break;
           case 4:
-            _context3.p = 4;
-            _t5 = _context3.v;
+            _context4.p = 4;
+            _t5 = _context4.v;
             _reactHotToast.toast.error(((_error$response2 = _t5.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Failed to delete history entry");
             console.error(_t5);
           case 5:
-            return _context3.a(2);
+            return _context4.a(2);
         }
-      }, _callee3, null, [[2, 4]]);
+      }, _callee4, null, [[2, 4]]);
     }));
-    return function handleDeleteHistory(_x) {
-      return _ref11.apply(this, arguments);
+    return function handleDeleteHistory(_x2) {
+      return _ref12.apply(this, arguments);
     };
   }();
   var currentOutputList = currentHistoryIndex !== -1 && outputHistory[currentHistoryIndex] ? ((_outputHistory$curren = outputHistory[currentHistoryIndex]) === null || _outputHistory$curren === void 0 || (_outputHistory$curren = _outputHistory$curren.result) === null || _outputHistory$curren === void 0 ? void 0 : _outputHistory$curren.outputs) || [] : data.outputs || [];

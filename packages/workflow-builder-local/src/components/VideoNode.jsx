@@ -381,14 +381,29 @@ const VideoGeneration = ({ id, data, selected }) => {
     // Сохраняем в Галерею (как Студия) — /api/gallery сам зеркалирует в TOS и
     // добавляет запись в gallery/{userId}/entries.json. Браузерный ARK-путь
     // минует серверный /run, который обычно это делает, поэтому зовём явно.
-    axios.post("/api/gallery", {
-      url: finishedUrl,
-      type: "video",
-      model: selectedModel?.id || data.selectedModel?.id || "",
-      prompt: src.prompt || "",
-    }).catch((e) => {
-      toast.error("Не удалось сохранить в галерею: " + (e.response?.data?.error || e.message || "ошибка"), { duration: 4000 });
-    });
+    // keepalive:true — запрос переживёт переход на другую страницу (напр. если
+    // пользователь сразу уходит в «Галерею»), иначе fire-and-forget POST
+    // прерывался навигацией и запись в галерею не создавалась.
+    fetch("/api/gallery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        url: finishedUrl,
+        type: "video",
+        model: selectedModel?.id || data.selectedModel?.id || "",
+        prompt: src.prompt || "",
+      }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
+        }
+      })
+      .catch((e) => {
+        toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 });
+      });
 
     // В фоне зеркалируем в TOS для постоянного хранения.
     // Если получится — тихо заменяем CDN URL на постоянный TOS URL и
