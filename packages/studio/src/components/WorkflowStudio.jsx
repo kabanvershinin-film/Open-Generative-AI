@@ -192,15 +192,6 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
                 Rename
               </button>
               <button
-                onClick={() => onPublish(workflow, !workflow.is_published)}
-                className="w-full px-4 py-2 text-left text-[11px] font-bold text-white/70 hover:text-[#22d3ee] hover:bg-white/5 transition-colors flex items-center gap-2"
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" />
-                </svg>
-                {workflow.is_published ? 'Unpublish' : 'Publish'}
-              </button>
-              <button
                 onClick={() => onDelete(workflow.id)}
                 className="w-full px-4 py-2 text-left text-[11px] font-bold text-red-500 hover:bg-red-500/10 transition-colors flex items-center gap-2"
               >
