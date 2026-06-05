@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
-import { priceRub } from '../../_lib/pricing';
-import { BILLING_ENABLED, getUser, getUserForGallery, deduct, refund } from '../../_lib/balance';
+import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
+import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund } from '../../_lib/balance';
 
 export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generations
 
@@ -394,7 +394,9 @@ async function generateVideoARK(model, params) {
             // ARK CDN (volces.com) has CORS restrictions — re-upload to TOS immediately
             // so the browser can play it. Falls back to ARK URL if TOS is unavailable.
             const finalUrl = await maybeUploadVideoToTOS(arkUrl);
-            return [{ type: 'video_url', value: finalUrl }];
+            // Carry ARK's real token usage so the run handler can charge by actuals.
+            const tokens = Number(p.usage?.total_tokens || p.content?.usage?.total_tokens || 0);
+            return [{ type: 'video_url', value: finalUrl, tokens }];
         }
         if (st === 'failed' || st === 'error' || st === 'expired' || st === 'cancelled') {
             throw new Error(p.error?.message || p.error || p.message || 'ARK video generation failed');
@@ -899,6 +901,25 @@ function modelCategory(model) {
 // Cost of a node run in rubles (0 for passthroughs / unknown free models).
 function costForNode(model, params) {
     return priceRub(modelCategory(model), model, params);
+}
+
+// Seedance 2.0 nodes are billed POST-generation by ARK's real token usage (like
+// the Studio): gate on the estimate, then charge exactly tokens × rate × live
+// курс × markup — one clean deduction instead of an estimate that may be off.
+function isSeedance2Node(model) {
+    return /doubao-seedance-2-0/.test(model || '');
+}
+
+// Exact ruble cost from the tokens generateVideoARK attached to the output.
+// Falls back to `estimate` when usage is missing.
+function seedanceActualCost(model, params, outputs, estimate) {
+    const tokens = Number(outputs?.[0]?.tokens || 0);
+    if (!(tokens > 0)) return estimate;
+    const res = params?.resolution || '720p';
+    const hasVideoInput = !!(params?.video_url);
+    const rate = seedance2RateCny(model, res, hasVideoInput);
+    const actual = rubFromTokens(tokens, rate);
+    return actual > 0 ? actual : estimate;
 }
 
 async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts = {}) {
@@ -1497,10 +1518,11 @@ export async function POST(request, { params }) {
             // Saved nodes use node.model (not node.data.selectedModel.id)
             const model = node.model || '';
             if (model) {
-                // Billing: charge this node before running it.
                 const cost = costForNode(model, params);
+                const seed2 = isSeedance2Node(model);
                 let billed = false;
-                if (billingUser && cost > 0) {
+                // Non-Seedance: pre-charge the estimate before running (as before).
+                if (billingUser && cost > 0 && !seed2) {
                     const charged = await deduct(billingUser.id, cost, model, { model });
                     if (!charged.ok && charged.reason === 'insufficient') {
                         return NextResponse.json(
@@ -1510,15 +1532,34 @@ export async function POST(request, { params }) {
                     }
                     billed = charged.ok;
                 }
+                // Seedance 2.0: only GATE on the estimate; the real charge happens
+                // after, by ARK's actual token usage (one clean deduction).
+                if (billingUser && cost > 0 && seed2) {
+                    const bal = await getBalance(request);
+                    if (bal !== null && bal < cost) {
+                        return NextResponse.json(
+                            { error: 'insufficient_funds', node: nodeId, required: cost, balance: bal },
+                            { status: 402 }
+                        );
+                    }
+                    await ensureCnyRate();
+                }
 
                 const nRunId = genId();
                 await runNode(nRunId, nodeId, model, params, apiKey, galleryUser?.id);
                 const nr = runStore.get(nRunId);
-                // Refund if this node failed.
+                const outs = nr?.nodes?.[nodeId]?.[0]?.result?.outputs || [];
+                // Non-Seedance: refund the estimate if the node failed.
                 if (billed && nr?.status === 'failed') {
                     await refund(billingUser.id, cost, `Возврат: ${model}`, { model }).catch(() => {});
                 }
-                const outs = nr?.nodes?.[nodeId]?.[0]?.result?.outputs || [];
+                // Seedance 2.0: charge the real cost once, on success (failure = free).
+                if (billingUser && seed2 && nr?.status === 'completed') {
+                    const actual = seedanceActualCost(model, params, outs, cost);
+                    if (actual > 0) {
+                        await deduct(billingUser.id, actual, model, { model, tokens: Number(outs?.[0]?.tokens || 0) }).catch(() => {});
+                    }
+                }
                 nodeOutputs[nodeId] = outs;
                 runNodes[nodeId] = nr?.nodes?.[nodeId] || [];
             }
@@ -1549,10 +1590,12 @@ export async function POST(request, { params }) {
         // Billing: deduct from balance only when billing is fully configured and
         // the model has a non-zero cost.
         const cost = costForNode(model, params);
+        const seed2 = isSeedance2Node(model);
         let billedUser = null;
         const galleryUser = await getUserForGallery(request);
         const galleryUserId = galleryUser?.id || null;
-        if (BILLING_ENABLED && galleryUser && cost > 0) {
+        // Non-Seedance: pre-charge the estimate before running (as before).
+        if (BILLING_ENABLED && galleryUser && cost > 0 && !seed2) {
             const charged = await deduct(galleryUser.id, cost, model, { model });
             if (!charged.ok && charged.reason === 'insufficient') {
                 return NextResponse.json(
@@ -1561,6 +1604,18 @@ export async function POST(request, { params }) {
                 );
             }
             if (charged.ok) billedUser = galleryUser;
+        }
+        // Seedance 2.0: only GATE on the estimate; the real charge happens after,
+        // by ARK's actual token usage — one clean deduction, like the Studio.
+        if (BILLING_ENABLED && galleryUser && cost > 0 && seed2) {
+            const bal = await getBalance(request);
+            if (bal !== null && bal < cost) {
+                return NextResponse.json(
+                    { error: 'insufficient_funds', required: cost, balance: bal },
+                    { status: 402 }
+                );
+            }
+            await ensureCnyRate(); // live CBR rate for the post-charge
         }
 
         // Mirror to TOS server-side (the server already holds the base64, so this
@@ -1571,11 +1626,20 @@ export async function POST(request, { params }) {
         await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id);
         const result = runStore.get(runId) || { status: 'processing', nodes: {} };
 
-        // Refund if the generation ended up failing.
+        // Non-Seedance: refund the estimate if the generation failed.
         if (billedUser && result.status === 'failed') {
             await refund(billedUser.id, cost, `Возврат: ${model}`, { model }).catch(() => {});
         }
-        return NextResponse.json({ run_id: runId, cost, ...result });
+        // Seedance 2.0: charge the real cost once, on success (failure = free).
+        let charged = cost;
+        if (BILLING_ENABLED && galleryUser && seed2 && result.status === 'completed') {
+            const outs = result.nodes?.[nodeId]?.[0]?.result?.outputs || [];
+            charged = seedanceActualCost(model, params, outs, cost);
+            if (charged > 0) {
+                await deduct(galleryUser.id, charged, model, { model, tokens: Number(outs?.[0]?.tokens || 0) }).catch(() => {});
+            }
+        }
+        return NextResponse.json({ run_id: runId, cost: charged, ...result });
     }
 
     // Publish: handles both /api/workflow/{id}/publish and /api/workflow/workflow/{id}/publish
