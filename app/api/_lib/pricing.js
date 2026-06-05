@@ -127,6 +127,22 @@ function isSeedance2(model) {
     return /doubao-seedance-2-0/.test(model);
 }
 
+// The ARK token rate (¥ per 1M tokens) for a Seedance 2.0 run — needed to turn
+// the actual usage.total_tokens reported by ARK into a final ruble price.
+function seedance2RateCny(model, resolution, hasVideoInput) {
+    if (!isSeedance2(model)) return 0;
+    const variant = model.includes('fast') ? 'fast' : 'standard';
+    const tier = resolution === '1080p' ? 'hd' : 'sd';
+    const r = SEEDANCE2_RATES[variant][tier];
+    return hasVideoInput ? r.withVideo : r.noVideo;
+}
+
+// Exact price from the real token count ARK billed: tokens × rate × курс × наценка.
+function rubFromTokens(tokens, rateCny) {
+    if (!(tokens > 0) || !(rateCny > 0)) return 0;
+    return round2((tokens / 1_000_000) * rateCny * CNY_TO_RUB * PLATFORM_MARKUP);
+}
+
 function videoPriceRub(model, durationSec, params) {
     // Seedance 2.0 — token-based ARK pricing (matches creator-club).
     if (isSeedance2(model)) {
@@ -192,4 +208,4 @@ function priceRub(category, model, params = {}) {
     return imagePriceRub(real);
 }
 
-export { priceRub, CNY_TO_RUB, PLATFORM_MARKUP };
+export { priceRub, seedance2RateCny, rubFromTokens, CNY_TO_RUB, PLATFORM_MARKUP };

@@ -203,25 +203,34 @@ async function refundBalanceRpc(request, amount, reason) {
 // carrying the charged amount; the poll route verifies the HMAC before refunding,
 // so a client can't inflate or forge a refund. Signed with the service-role key
 // (server-only secret, always present when billing is on).
-function signBill(cost) {
+// `extra` carries additional signed fields (e.g. the token rate `r`) used to
+// reconcile the pre-charge against actual usage when the task finishes.
+function signBill(cost, extra = {}) {
     if (!BILLING_ENABLED || !(cost > 0)) return '';
-    const payload = Buffer.from(JSON.stringify({ c: round2(cost), e: Date.now() + 3600_000 })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({ c: round2(cost), e: Date.now() + 3600_000, ...extra })).toString('base64url');
     const sig = createHmac('sha256', SUPABASE_SERVICE_ROLE_KEY).update(payload).digest('base64url');
     return `${payload}.${sig}`;
 }
 
-// Verify a bill token and return the charged amount, or 0 if invalid/expired.
-function verifyBill(token) {
-    if (!BILLING_ENABLED || !token || typeof token !== 'string') return 0;
+// Verify a bill token and return its full signed payload ({ c, e, ...extra }),
+// or null if invalid/expired. Tamper-proof: the HMAC is checked first.
+function verifyBillData(token) {
+    if (!BILLING_ENABLED || !token || typeof token !== 'string') return null;
     const [payload, sig] = token.split('.');
-    if (!payload || !sig) return 0;
+    if (!payload || !sig) return null;
     const expect = createHmac('sha256', SUPABASE_SERVICE_ROLE_KEY).update(payload).digest('base64url');
-    if (sig !== expect) return 0;
+    if (sig !== expect) return null;
     try {
-        const { c, e } = JSON.parse(Buffer.from(payload, 'base64url').toString());
-        if (!e || Date.now() > e) return 0;
-        return Number(c) || 0;
-    } catch { return 0; }
+        const data = JSON.parse(Buffer.from(payload, 'base64url').toString());
+        if (!data.e || Date.now() > data.e) return null;
+        return data;
+    } catch { return null; }
+}
+
+// Verify a bill token and return just the charged amount (0 if invalid/expired).
+function verifyBill(token) {
+    const d = verifyBillData(token);
+    return d ? (Number(d.c) || 0) : 0;
 }
 
 // Read the authenticated user's current balance (in RUB). Returns null when
@@ -239,5 +248,5 @@ async function getBalance(request) {
 
 export {
     BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund,
-    listTransactions, spendBalance, refundBalanceRpc, signBill, verifyBill,
+    listTransactions, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData,
 };

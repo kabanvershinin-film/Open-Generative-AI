@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { BILLING_ENABLED, spendBalance, refundBalanceRpc, signBill, verifyBill } from '../../_lib/balance';
-import { priceRub } from '../../_lib/pricing';
+import { BILLING_ENABLED, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData } from '../../_lib/balance';
+import { priceRub, seedance2RateCny, rubFromTokens } from '../../_lib/pricing';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
 // Auth: long-lived Ark API Key (Bearer). Set ARK_API_KEY in env.
@@ -142,7 +142,9 @@ export async function POST(request) {
     // Pre-charge the user before creating the task. The model id (not the ep-...
     // endpoint) drives the token-based Seedance price in pricing.js.
     const billingModelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
-    const cost = priceRub('video', billingModelId, { duration: effDur, resolution: effRes });
+    // A reference VIDEO (not an image first frame) switches to the cheaper rate.
+    const hasVideoInput = !!(video_url || (Array.isArray(video_urls) && video_urls.filter(Boolean).length));
+    const cost = priceRub('video', billingModelId, { duration: effDur, resolution: effRes, video_url, generate_audio });
     let bill = '';
     if (BILLING_ENABLED && cost > 0) {
       const reason = `Seedance 2.0${fast ? ' Fast' : ''} ${effRes} ${effDur}s`;
@@ -159,7 +161,10 @@ export async function POST(request) {
         }
         return NextResponse.json({ error: charge.error || 'Ошибка списания баланса' }, { status: 500 });
       }
-      bill = signBill(cost);
+      // Carry the token rate (¥/1M) in the signed bill so the poll route can turn
+      // ARK's actual usage.total_tokens into an exact price and reconcile.
+      const rate = seedance2RateCny(billingModelId, effRes, hasVideoInput);
+      bill = signBill(cost, { r: rate });
     }
 
     const payload = { model, content, generate_audio, watermark: false };
@@ -209,16 +214,39 @@ export async function GET(request) {
     }
     const status = data.status || 'running';
     const url = data.content?.video_url || data.video_url || null;
+    const tokens = Number(data.usage?.total_tokens || data.content?.usage?.total_tokens || 0);
+
+    const lc = String(status).toLowerCase();
+    const failed = ['failed', 'error', 'expired', 'cancelled'].includes(lc);
+    const succeeded = ['succeeded', 'success', 'completed'].includes(lc);
 
     // Async failure → refund the amount carried in the (HMAC-signed) bill token.
     // The signature stops a client inflating or forging a refund.
-    const failed = ['failed', 'error', 'expired', 'cancelled'].includes(String(status).toLowerCase());
     if (failed) {
       const cost = verifyBill(searchParams.get('bill'));
       if (cost > 0) await refundBalanceRpc(request, cost, 'seedance_failed');
     }
 
-    return NextResponse.json({ status, url, error: data.error?.message || null });
+    // Success → reconcile the pre-charge against ARK's ACTUAL usage. The bill
+    // carries the (signed) estimate `c` and token rate `r`; price = tokens × r ×
+    // курс × наценка. Refund overcharge / charge the (small) difference. The poll
+    // stops on the first success, so this runs once. Best-effort: a failed top-up
+    // here must never break delivering the finished video.
+    if (succeeded && BILLING_ENABLED && tokens > 0) {
+      const billData = verifyBillData(searchParams.get('bill'));
+      const rate = Number(billData?.r || 0);
+      const estimate = Number(billData?.c || 0);
+      if (rate > 0) {
+        const actual = rubFromTokens(tokens, rate);
+        const delta = Math.round((actual - estimate) * 100) / 100;
+        try {
+          if (delta > 0.01) await spendBalance(request, delta, 'Seedance: дозачёт по факту', { tokens, actual });
+          else if (delta < -0.01) await refundBalanceRpc(request, -delta, 'seedance_actual_overcharge');
+        } catch { /* delivering the video matters more than the kopeck delta */ }
+      }
+    }
+
+    return NextResponse.json({ status, url, tokens, error: data.error?.message || null });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
