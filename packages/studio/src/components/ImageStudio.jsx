@@ -760,6 +760,7 @@ export default function ImageStudio({
 }) {
   const PERSIST_KEY = "mf_image_studio_persistent";
   const PENDING_KEY = "mf_image_studio_pending";
+  const PENDING_RESULT_KEY = "mf_image_studio_pending_result";
 
   const router = useRouter();
   const [workflowPicker, setWorkflowPicker] = useState(null); // { url, prompt } | null
@@ -1197,6 +1198,7 @@ export default function ImageStudio({
         );
 
         let added = 0;
+        let tosCompleted = 0;
         results.forEach((res) => {
           if (res && res.url) {
             added++;
@@ -1230,6 +1232,24 @@ export default function ImageStudio({
                 );
               }
               persistEntryToStorage(finalEntry);
+
+              // Write to dedicated result key so the resume-poll can find the entry
+              // even if the component was unmounted and the save-effect ran in between.
+              try {
+                const rd = JSON.parse(localStorage.getItem(PENDING_RESULT_KEY) || '{"entries":[]}');
+                if (!Array.isArray(rd.entries)) rd.entries = [];
+                rd.entries.push(finalEntry);
+                rd.requestId = snap.requestId;
+                localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(rd));
+              } catch {}
+
+              // Remove PENDING_KEY only after every TOS upload and localStorage write
+              // is done — the resume-poll watches for its removal as the "done" signal.
+              tosCompleted++;
+              if (tosCompleted >= added) {
+                try { localStorage.removeItem(PENDING_KEY); } catch {}
+              }
+
               fetch("/api/gallery", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -1256,17 +1276,17 @@ export default function ImageStudio({
         // If the request "succeeded" but produced no usable image, surface it
         // instead of silently showing nothing.
         if (added === 0) {
+          try { localStorage.removeItem(PENDING_KEY); } catch {}
           throw new Error("Изображение не получено. Попробуйте другую модель.");
         }
       } catch (e) {
         console.error("[ImageStudio] Generation failed:", e);
         setGenerateError(e.message.slice(0, 120));
         setTimeout(() => setGenerateError(null), 6000);
+        // On error there are no TOS IIFEs to remove PENDING_KEY, so do it here.
+        try { localStorage.removeItem(PENDING_KEY); } catch {}
       } finally {
         setGenerating(false);
-        // Clear the pending marker only once the run actually finishes, so a
-        // tab closed mid-generation will resume on next load.
-        try { localStorage.removeItem(PENDING_KEY); } catch {}
       }
     },
     [apiKey, addToHistory, onGenerationComplete, persistEntryToStorage],
@@ -1303,17 +1323,23 @@ export default function ImageStudio({
       effect: showEffectBtn ? selectedEffect : "",
       selectedAr,
       batchSize,
+      requestId: Math.random().toString(36).slice(2, 11),
       ts: Date.now(),
     };
 
-    // Persist the in-flight request so it survives a tab close / reload.
+    // Persist the in-flight request so it survives a tab switch.
+    try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
     try { localStorage.setItem(PENDING_KEY, JSON.stringify(snap)); } catch {}
 
     setGeneratingPrompt(snap.prompt || "");
     runGeneration(snap);
   };
 
-  // ── Resume a generation that was interrupted by a tab close / reload ───────
+  // ── Resume a generation that was interrupted by a tab switch ────────────────
+  // When the user navigates away mid-generation and comes back, the original
+  // async request keeps running in the background and eventually writes its
+  // result to PENDING_RESULT_KEY then removes PENDING_KEY.  We show a spinner
+  // and poll every 2 s until we detect that signal, then surface the result.
   useEffect(() => {
     if (!apiKey) return;
     let snap;
@@ -1325,14 +1351,70 @@ export default function ImageStudio({
       try { localStorage.removeItem(PENDING_KEY); } catch {}
       return;
     }
-    // Only resume fresh requests (< 10 min) to avoid re-running stale ones.
-    if (!snap?.ts || Date.now() - snap.ts > 10 * 60 * 1000) {
+    // Discard stale or legacy snaps (no requestId = pre-fix format, or > 10 min old).
+    if (!snap?.requestId || !snap?.ts || Date.now() - snap.ts > 10 * 60 * 1000) {
       try { localStorage.removeItem(PENDING_KEY); } catch {}
       return;
     }
-    // Restore the prompt in the UI and re-run the generation.
+
     if (snap.prompt) setPrompt(snap.prompt);
-    runGeneration(snap);
+
+    const findResults = () => {
+      try {
+        const rd = JSON.parse(localStorage.getItem(PENDING_RESULT_KEY) || '{}');
+        if (rd.requestId !== snap.requestId) return [];
+        return Array.isArray(rd.entries) ? rd.entries : [];
+      } catch { return []; }
+    };
+
+    // If the generation already completed while we were away, just restore it.
+    const alreadyDone = findResults();
+    if (alreadyDone.length > 0) {
+      alreadyDone.forEach(e => {
+        setLocalHistory(prev => prev.some(p => p.id === e.id) ? prev : [e, ...prev.slice(0, 49)]);
+        setCurrentImageUrl(e.url);
+      });
+      try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
+      return;
+    }
+
+    // Generation still in flight — show spinner and poll for the done signal.
+    setGeneratingPrompt(snap.prompt || '');
+    setGenerating(true);
+
+    let cancelled = false;
+    const intervalId = setInterval(() => {
+      if (cancelled) return;
+
+      const stillPending = localStorage.getItem(PENDING_KEY);
+      if (!stillPending) {
+        // PENDING_KEY gone → background task finished writing PENDING_RESULT_KEY.
+        clearInterval(intervalId);
+        const entries = findResults();
+        entries.forEach(e => {
+          setLocalHistory(prev => prev.some(p => p.id === e.id) ? prev : [e, ...prev.slice(0, 49)]);
+          setCurrentImageUrl(e.url);
+        });
+        if (entries.length > 0) {
+          setActiveHistoryIdx(0);
+          try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+        }
+        setGenerating(false);
+        return;
+      }
+
+      if (Date.now() - snap.ts > 10 * 60 * 1000) {
+        clearInterval(intervalId);
+        try { localStorage.removeItem(PENDING_KEY); } catch {}
+        setGenerating(false);
+      }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiKey]);
 
