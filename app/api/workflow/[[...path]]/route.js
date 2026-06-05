@@ -837,7 +837,7 @@ function costForNode(model, params) {
     return priceRub(modelCategory(model), model, params);
 }
 
-async function runNode(runId, nodeId, model, params, apiKey, userId = null) {
+async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts = {}) {
     try {
         let outputs;
         // Passthroughs
@@ -853,7 +853,7 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null) {
         else if (CHAT_IMAGE_MODELS.has(model)) outputs = await generateChatImage(apiKey, model, params);
         else outputs = await generateImage(apiKey, model, params);
 
-        // Upload generated images to TOS SYNCHRONOUSLY so the client receives a
+        // Upload generated media to TOS SYNCHRONOUSLY so the client receives a
         // permanent public URL. Two reasons:
         //  1. base64 data URLs (gemini/chat-image): holding multi-MB base64 in a
         //     node field blows the workflow-save payload past Vercel's request-body
@@ -861,37 +861,39 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null) {
         //  2. remote provider URLs (gpt-image / dall-e / flux via response_format
         //     'url'): these hosted links expire after a day or two, which left
         //     broken thumbnails in the gallery. Mirror them to TOS so they persist.
-        for (const out of outputs) {
-            if (out.type === 'image_url' && out.value) {
-                const uploaded = await maybeUploadImageToTOS(out.value);
-                if (uploaded && uploaded !== out.value) out.value = uploaded;
+        //
+        // opts.skipMirror — single-node runs from the builder return the raw
+        // result immediately and mirror to TOS in the BROWSER (so the node shows
+        // its image the instant generation finishes instead of waiting on a slow
+        // cross-region upload). The browser then swaps in the permanent TOS url
+        // and re-saves the workflow + gallery. The full-workflow run keeps mirroring
+        // here because downstream nodes need a fetchable url, not base64.
+        if (!opts.skipMirror) {
+            for (const out of outputs) {
+                if (out.type === 'image_url' && out.value) {
+                    const uploaded = await maybeUploadImageToTOS(out.value);
+                    if (uploaded && uploaded !== out.value) out.value = uploaded;
+                }
             }
-        }
-
-        // Upload generated videos to TOS SYNCHRONOUSLY too — BEFORE saving to the
-        // gallery. Provider/CDN video links (ARK/Memefast) expire after a day or
-        // two, so a gallery entry that stored the raw provider URL would later
-        // point at a dead link and the video would silently vanish from the
-        // gallery. Mirroring first means the entry references a permanent TOS URL.
-        for (const out of outputs) {
-            if (out.type === 'video_url' && out.value) {
-                const uploaded = await maybeUploadVideoToTOS(out.value);
-                if (uploaded && uploaded !== out.value) out.value = uploaded;
+            for (const out of outputs) {
+                if (out.type === 'video_url' && out.value) {
+                    const uploaded = await maybeUploadVideoToTOS(out.value);
+                    if (uploaded && uploaded !== out.value) out.value = uploaded;
+                }
             }
         }
 
         const runResult = { status: 'completed', nodes: { [nodeId]: [{ status: 'succeeded', result: { outputs } }] } };
         runStore.set(runId, runResult);
 
-        // Save to user's gallery in the BACKGROUND — don't make the node wait on
-        // it. The image is already in TOS (mirrored above), and the browser also
-        // saves to the gallery via an explicit /api/gallery POST, so blocking the
-        // response here just delayed the node showing its result. Best-effort.
-        saveToGallery(userId, outputs, model, params.prompt).catch(() => {});
-
-        // Background: persist the run JSON for reload. Best-effort — a failure
-        // here only affects reload persistence, not display or the gallery.
-        tosSaveRun(runId, runResult).catch(() => {});
+        if (!opts.skipMirror) {
+            // Save to the gallery + persist the run JSON in the BACKGROUND. When
+            // skipMirror is set the browser owns both (gallery POST + workflow save),
+            // and the outputs still hold base64 here, so skip them to avoid a
+            // multi-MB run-JSON upload.
+            saveToGallery(userId, outputs, model, params.prompt).catch(() => {});
+            tosSaveRun(runId, runResult).catch(() => {});
+        }
     } catch (err) {
         console.error(`Node run error [${nodeId}]:`, err.message);
         const runResult = { status: 'failed', nodes: { [nodeId]: [{ status: 'failed', result: { outputs: [{ type: 'error', value: err.message }] } }] } };
@@ -1497,7 +1499,10 @@ export async function POST(request, { params }) {
             if (charged.ok) billedUser = galleryUser;
         }
 
-        await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id);
+        // skipMirror: return the raw result immediately and let the browser mirror
+        // it to TOS in the background — the node shows its image as soon as
+        // generation finishes instead of waiting on a slow cross-region upload.
+        await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id, { skipMirror: true });
         const result = runStore.get(runId) || { status: 'processing', nodes: {} };
 
         // Refund if the generation ended up failing.

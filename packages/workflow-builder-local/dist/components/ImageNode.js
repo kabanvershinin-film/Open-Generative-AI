@@ -295,6 +295,35 @@ var ImageGeneration = function ImageGeneration(_ref) {
       _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 });
     });
   };
+  // Mirror the just-shown result to TOS in the background, then swap the node's
+  // value to the permanent url, re-save the workflow, and save to the gallery.
+  var finalizeImage = function finalizeImage(val) {
+    if (!val || typeof val !== "string") return;
+    if (val.indexOf(".volces.com") !== -1) {
+      saveImageToGallery(val);
+      return;
+    }
+    var payload = val.indexOf("data:") === 0 ? { image: val } : { url: val };
+    _axios["default"].post("/api/upload-file", payload).then(function (r) {
+      var _r$data;
+      var tosUrl = r === null || r === void 0 || (_r$data = r.data) === null || _r$data === void 0 ? void 0 : _r$data.url;
+      if (!tosUrl) {
+        saveImageToGallery(val);
+        return;
+      }
+      var tosOut = [{ type: "image_url", value: tosUrl }];
+      var tosHistory = (data.outputHistory || []).map(function (h) {
+        var _h$result, _h$result$outputs;
+        var o = (_h$result = h.result) === null || _h$result === void 0 || (_h$result$outputs = _h$result.outputs) === null || _h$result$outputs === void 0 ? void 0 : _h$result$outputs[0];
+        return o && o.value === val ? Object.assign({}, h, { result: Object.assign({}, h.result, { outputs: tosOut }) }) : h;
+      });
+      data.onDataChange === null || data.onDataChange === void 0 || data.onDataChange(id, { outputs: tosOut, resultUrl: tosUrl, outputHistory: tosHistory });
+      data.handleSaveWorkFlow === null || data.handleSaveWorkFlow === void 0 || data.handleSaveWorkFlow();
+      saveImageToGallery(tosUrl);
+    })["catch"](function () {
+      saveImageToGallery(val);
+    });
+  };
   var pollNodeStatus = function pollNodeStatus(run_id) {
     var interval;
     var _check = function _check() {
@@ -331,7 +360,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
           });
           setCurrentHistoryIndex(newHistory.length - 1);
           setCurrentImageIndex(0);
-          saveImageToGallery(val);
+          finalizeImage(val);
           clearInterval(interval);
         }
         if (latest.status === "failed") {
@@ -430,7 +459,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
                 errorMsg: null,
                 outputHistory: (data.outputHistory || []).concat([_lt])
               });
-              saveImageToGallery(_o[0] && _o[0].value || "");
+              finalizeImage(_o[0] && _o[0].value || "");
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,

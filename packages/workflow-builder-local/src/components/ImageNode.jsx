@@ -240,6 +240,33 @@ const ImageGeneration = ({ id, data, selected }) => {
       });
   };
 
+  // Called on a successful generation. The node already shows `val` (base64 from
+  // the server, returned immediately — no waiting on a slow cross-region TOS
+  // upload). Here we mirror it to TOS in the BACKGROUND, then quietly swap the
+  // node's value to the permanent url, re-save the workflow, and save to the
+  // gallery with that permanent url. If it's already a TOS url, just save it.
+  const finalizeImage = (val) => {
+    if (!val || typeof val !== "string") return;
+    if (val.includes(".volces.com")) { saveImageToGallery(val); return; }
+    const payload = val.startsWith("data:") ? { image: val } : { url: val };
+    axios.post("/api/upload-file", payload)
+      .then((r) => {
+        const tosUrl = r.data?.url;
+        if (!tosUrl) { saveImageToGallery(val); return; }
+        const tosOut = [{ type: "image_url", value: tosUrl }];
+        const tosHistory = (data.outputHistory || []).map((h) => {
+          const o = h.result?.outputs?.[0];
+          return o && o.value === val
+            ? { ...h, result: { ...h.result, outputs: tosOut } }
+            : h;
+        });
+        data.onDataChange?.(id, { outputs: tosOut, resultUrl: tosUrl, outputHistory: tosHistory });
+        data.handleSaveWorkFlow?.();
+        saveImageToGallery(tosUrl);
+      })
+      .catch(() => { saveImageToGallery(val); });
+  };
+
   const pollNodeStatus = (run_id) => {
     let interval; const _check = () => {
       axios.get(`/api/workflow/run/${run_id}/status`)
@@ -264,7 +291,7 @@ const ImageGeneration = ({ id, data, selected }) => {
           data?.onDataChange?.(id, { outputs: output, resultUrl: val, isLoading: false, errorMsg: null, outputHistory: newHistory });
           setCurrentHistoryIndex(newHistory.length - 1);
           setCurrentImageIndex(0);
-          saveImageToGallery(val);
+          finalizeImage(val);
           clearInterval(interval);
         }
 
@@ -326,7 +353,7 @@ const ImageGeneration = ({ id, data, selected }) => {
         cost: generationCost,
         node_id: "AI Image"
       });
-      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); saveImageToGallery((_o[0] && _o[0].value) || ""); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
+      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); finalizeImage((_o[0] && _o[0].value) || ""); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
     } catch(error) {
       data.onDataChange(id, { isLoading: false });
       toast.error(error.response?.data?.detail || "Error running node");
