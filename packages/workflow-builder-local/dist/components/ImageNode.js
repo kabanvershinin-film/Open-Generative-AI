@@ -267,6 +267,34 @@ var ImageGeneration = function ImageGeneration(_ref) {
       loading: loading
     });
   }, [selectedModel, formValues, loading, data.formValues, data.selectedModel]);
+  // Save the generated image to the Gallery (mirrors Studio and VideoNode).
+  // /api/gallery mirrors to TOS and writes gallery/{userId}/entries/{id}.json.
+  // The cookie sb_access_token rides along on this same-origin fetch.
+  var saveImageToGallery = function saveImageToGallery(url) {
+    var _selectedModel, _data$selectedModelG, _formValues, _data$formValuesG;
+    if (!url || typeof url !== "string") return;
+    fetch("/api/gallery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        url: url,
+        type: "image",
+        model: ((_selectedModel = selectedModel) === null || _selectedModel === void 0 ? void 0 : _selectedModel.id) || (data && (_data$selectedModelG = data.selectedModel) !== null && _data$selectedModelG !== void 0 && _data$selectedModelG.id ? data.selectedModel.id : "") || "",
+        prompt: ((_formValues = formValues) === null || _formValues === void 0 ? void 0 : _formValues.prompt) || (data && (_data$formValuesG = data.formValues) !== null && _data$formValuesG !== void 0 && _data$formValuesG.prompt ? data.formValues.prompt : "") || ""
+      })
+    }).then(function (r) {
+      if (!r.ok) {
+        return r.json()["catch"](function () {
+          return {};
+        }).then(function (err) {
+          _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
+        });
+      }
+    })["catch"](function (e) {
+      _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 });
+    });
+  };
   var pollNodeStatus = function pollNodeStatus(run_id) {
     var interval;
     var _check = function _check() {
@@ -303,6 +331,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
           });
           setCurrentHistoryIndex(newHistory.length - 1);
           setCurrentImageIndex(0);
+          saveImageToGallery(val);
           clearInterval(interval);
         }
         if (latest.status === "failed") {
@@ -401,6 +430,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
                 errorMsg: null,
                 outputHistory: (data.outputHistory || []).concat([_lt])
               });
+              saveImageToGallery(_o[0] && _o[0].value || "");
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,

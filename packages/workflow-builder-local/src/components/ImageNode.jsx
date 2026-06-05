@@ -208,6 +208,38 @@ const ImageGeneration = ({ id, data, selected }) => {
     data.onDataChange(id, { selectedModel, formValues, loading });
   }, [selectedModel, formValues, loading, data.formValues, data.selectedModel]);
   
+  // Сохраняем картинку в Галерею (как Студия и VideoNode) — /api/gallery сам
+  // зеркалирует в TOS и добавляет запись gallery/{userId}/entries/{id}.json.
+  // Серверный /run тоже пытается это сделать, но если он не смог опознать
+  // пользователя (нет токена в контексте запроса), запись не создаётся —
+  // картинка попадает только в общее хранилище images/, но не в галерею.
+  // Поэтому, как и VideoNode, зовём явно из браузера (cookie sb_access_token
+  // едет автоматически). keepalive:true — запрос переживёт уход на другую
+  // страницу (напр. сразу в «Галерею»), иначе fire-and-forget POST прервётся.
+  const saveImageToGallery = (url) => {
+    if (!url || typeof url !== "string") return;
+    fetch("/api/gallery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        url,
+        type: "image",
+        model: selectedModel?.id || data.selectedModel?.id || "",
+        prompt: formValues?.prompt || data.formValues?.prompt || "",
+      }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
+        }
+      })
+      .catch((e) => {
+        toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 });
+      });
+  };
+
   const pollNodeStatus = (run_id) => {
     let interval; const _check = () => {
       axios.get(`/api/workflow/run/${run_id}/status`)
@@ -232,6 +264,7 @@ const ImageGeneration = ({ id, data, selected }) => {
           data?.onDataChange?.(id, { outputs: output, resultUrl: val, isLoading: false, errorMsg: null, outputHistory: newHistory });
           setCurrentHistoryIndex(newHistory.length - 1);
           setCurrentImageIndex(0);
+          saveImageToGallery(val);
           clearInterval(interval);
         }
 
@@ -293,7 +326,7 @@ const ImageGeneration = ({ id, data, selected }) => {
         cost: generationCost,
         node_id: "AI Image"
       });
-      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
+      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); saveImageToGallery((_o[0] && _o[0].value) || ""); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
     } catch(error) {
       data.onDataChange(id, { isLoading: false });
       toast.error(error.response?.data?.detail || "Error running node");
