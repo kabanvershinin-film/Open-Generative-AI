@@ -184,6 +184,30 @@ async function fetchEntry(host, key) {
     }
 }
 
+// Append an entry to the per-user index file gallery/{uid}/entries.json.
+// The gallery read lists per-file entries with tosList (ListObjectsV2), but some
+// TOS access keys lack the ListObjects permission — then writes succeed yet the
+// listing returns nothing and nothing shows. A single index file is read with a
+// direct (signed) GetObject, which does work, so maintaining it makes the gallery
+// independent of ListObjects. Read-modify-write; dedupes by id and url.
+async function appendToIndex(host, userId, entry) {
+    if (!TOS_ENABLED || !userId || !entry) return;
+    try {
+        const key = `gallery/${userId}/entries.json`;
+        let list = null;
+        const r = await fetch(`https://${host}/${key}`);
+        if (r.ok) list = await r.json().catch(() => null);
+        else list = await tosGetSignedJson(host, key);
+        if (!Array.isArray(list)) list = [];
+        const exists = list.some((e) => e && (e.id === entry.id || e.url === entry.url));
+        if (!exists) list.unshift(entry);
+        if (list.length > 1000) list = list.slice(0, 1000);
+        await tosUpload(key, Buffer.from(JSON.stringify(list)), 'application/json');
+    } catch (e) {
+        logStep('appendToIndex error', { message: e.message });
+    }
+}
+
 export async function GET(request) {
     try {
         const user = await getUser(request);
@@ -214,6 +238,16 @@ export async function GET(request) {
         let entries = [...byId.values()].sort(
             (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
         );
+        // Collapse entries that point at the same media url (the client POST and
+        // the server-side save can each persist the same image under different
+        // ids) — keep the newest, which is already first after the sort above.
+        const seenUrl = new Set();
+        entries = entries.filter((e) => {
+            if (!e?.url) return true;
+            if (seenUrl.has(e.url)) return false;
+            seenUrl.add(e.url);
+            return true;
+        });
         const type = new URL(request.url).searchParams.get('type');
         if (type) entries = entries.filter((e) => e.type === type);
 
@@ -255,6 +289,11 @@ export async function POST(request) {
         const key = `gallery/${user.id}/entries/${entry.id}.json`;
         const result = await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json');
         if (!result) { logStep('POST entry write failed', { key }); return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 }); }
+
+        // Also record the entry in the single index file so it shows even when the
+        // TOS key cannot ListObjects (the per-file write above would be invisible).
+        const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+        await appendToIndex(host, user.id, entry);
 
         logStep('POST ok', { id: entry.id, type });
         return NextResponse.json({ success: true, entry });
