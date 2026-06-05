@@ -7,10 +7,51 @@ import { supabase } from '@/lib/supabaseClient';
 const PRESETS = [500, 1000, 2000, 5000];
 const ADMIN_EMAILS = ['kaban.vershinin@gmail.com', 'didig.vershinin@yandex.ru'];
 
+// Map known model ids / reasons to friendly Russian labels for the history list.
+function txnLabel(t) {
+    const r = t.reason || '';
+    if (r === 'admin_topup') return 'Пополнение (админ)';
+    if (r === 'topup' || r === 'payment') return 'Пополнение';
+    if (/^Возврат/i.test(r)) return r;
+    const model = t.meta?.model || r;
+    return model ? `Генерация · ${model}` : 'Операция';
+}
+
+function fmtDate(s) {
+    if (!s) return '';
+    try {
+        return new Date(s).toLocaleString('ru-RU', {
+            day: '2-digit', month: '2-digit', year: '2-digit',
+            hour: '2-digit', minute: '2-digit',
+        });
+    } catch { return ''; }
+}
+
 export default function CabinetModal() {
     const { cabinetOpen, setCabinetOpen, profile, balance, logout, refreshBalance, user } = useAuth();
     const [amount, setAmount] = useState('1000');
     const [busy, setBusy] = useState(false);
+    const [txns, setTxns] = useState(null); // null = not loaded, [] = loaded empty
+    const [txnsLoading, setTxnsLoading] = useState(false);
+
+    // Load spending history whenever the cabinet opens.
+    const loadTxns = useCallback(async () => {
+        setTxnsLoading(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const headers = {};
+            if (session?.access_token) headers['x-sb-token'] = session.access_token;
+            const r = await fetch('/api/transactions', { headers });
+            const j = await r.json().catch(() => ({}));
+            setTxns(Array.isArray(j.transactions) ? j.transactions : []);
+        } catch {
+            setTxns([]);
+        } finally {
+            setTxnsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => { if (cabinetOpen) loadTxns(); }, [cabinetOpen, loadTxns]);
 
     // After returning from Точка (?payment=success&order=...), verify & credit.
     const verifyReturn = useCallback(async () => {
@@ -73,7 +114,7 @@ export default function CabinetModal() {
     return (
         <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
              onClick={() => setCabinetOpen(false)}>
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-5"
+            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-5 max-h-[90vh] overflow-y-auto"
                  onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-white">Личный кабинет</h3>
@@ -109,6 +150,33 @@ export default function CabinetModal() {
                         {busy ? '...' : 'Пополнить через Точку'}
                     </button>
                     <div className="text-xs text-white/30 text-center">Карта или СБП · от 100 ₽</div>
+                </div>
+
+                <div className="space-y-2">
+                    <div className="text-sm text-white/70">История операций</div>
+                    {txnsLoading && (txns === null) ? (
+                        <div className="text-xs text-white/40 py-3 text-center">Загрузка…</div>
+                    ) : (txns && txns.length > 0) ? (
+                        <div className="rounded-xl border border-white/10 divide-y divide-white/5 max-h-60 overflow-y-auto">
+                            {txns.map((t) => {
+                                const amt = Number(t.amount) || 0;
+                                const spend = amt < 0;
+                                return (
+                                    <div key={t.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                                        <div className="min-w-0">
+                                            <div className="text-sm text-white/90 truncate">{txnLabel(t)}</div>
+                                            <div className="text-[11px] text-white/35">{fmtDate(t.created_at)}</div>
+                                        </div>
+                                        <div className={`text-sm font-medium whitespace-nowrap ${spend ? 'text-red-400' : 'text-green-400'}`}>
+                                            {spend ? '' : '+'}{amt.toFixed(2)} ₽
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-xs text-white/40 py-3 text-center">Пока нет операций</div>
+                    )}
                 </div>
 
                 {ADMIN_EMAILS.some(e => e.toLowerCase() === (user?.email || '').toLowerCase()) && (

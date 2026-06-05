@@ -67,11 +67,24 @@ async function getUserForGallery(request) {
     } catch { return null; }
 }
 
+// Best-effort transaction log so the user can see their spending history in the
+// cabinet. Spends are stored as a negative amount, credits/refunds as positive
+// (matching the admin top-up rows, which insert a positive amount). Never throws
+// and never blocks the charge — a failed log must not fail a generation.
+function logTxn(userId, amount, reason, meta) {
+    if (!BILLING_ENABLED || !userId) return;
+    try {
+        admin().from('balance_transactions')
+            .insert({ user_id: userId, amount: round2(amount), reason: reason || null, meta: meta || null })
+            .then(() => {}, () => {});
+    } catch { /* best-effort */ }
+}
+
 // Atomic compare-and-swap deduction. Returns:
 //   { ok: true, balance }                — charged successfully
 //   { ok: false, reason: 'insufficient', balance, required }
 //   { ok: false, reason: 'error' | 'race', ... }
-async function deduct(userId, amount) {
+async function deduct(userId, amount, reason = 'Генерация', meta = null) {
     if (amount <= 0) return { ok: true, balance: null };
     const db = admin();
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -90,14 +103,17 @@ async function deduct(userId, amount) {
             .eq('balance', balance)
             .select();
         if (updErr) return { ok: false, reason: 'error', error: updErr.message };
-        if (updated && updated.length) return { ok: true, balance: newBalance };
+        if (updated && updated.length) {
+            logTxn(userId, -amount, reason, meta);
+            return { ok: true, balance: newBalance };
+        }
         // Someone changed the balance between read and write — retry.
     }
     return { ok: false, reason: 'race' };
 }
 
 // Best-effort refund (e.g. when generation fails after charging).
-async function refund(userId, amount) {
+async function refund(userId, amount, reason = 'Возврат', meta = null) {
     if (!BILLING_ENABLED || amount <= 0) return;
     const db = admin();
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -112,8 +128,24 @@ async function refund(userId, amount) {
             .eq('balance', balance)
             .select();
         if (updErr) return;
-        if (updated && updated.length) return;
+        if (updated && updated.length) { logTxn(userId, amount, reason, meta); return; }
     }
+}
+
+// List a user's recent balance transactions (newest first). Returns [] when
+// billing is off or on any error — never throws.
+async function listTransactions(userId, limit = 50) {
+    if (!BILLING_ENABLED || !userId) return [];
+    try {
+        const { data, error } = await admin()
+            .from('balance_transactions')
+            .select('id, amount, reason, meta, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+        if (error) return [];
+        return data || [];
+    } catch { return []; }
 }
 
 function round2(n) { return Math.round(n * 100) / 100; }
@@ -207,5 +239,5 @@ async function getBalance(request) {
 
 export {
     BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund,
-    spendBalance, refundBalanceRpc, signBill, verifyBill,
+    listTransactions, spendBalance, refundBalanceRpc, signBill, verifyBill,
 };

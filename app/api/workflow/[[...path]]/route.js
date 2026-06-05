@@ -1432,7 +1432,7 @@ export async function POST(request, { params }) {
                 const cost = costForNode(model, params);
                 let billed = false;
                 if (billingUser && cost > 0) {
-                    const charged = await deduct(billingUser.id, cost);
+                    const charged = await deduct(billingUser.id, cost, model, { model });
                     if (!charged.ok && charged.reason === 'insufficient') {
                         return NextResponse.json(
                             { error: 'insufficient_funds', node: nodeId, required: cost, balance: charged.balance },
@@ -1447,7 +1447,7 @@ export async function POST(request, { params }) {
                 const nr = runStore.get(nRunId);
                 // Refund if this node failed.
                 if (billed && nr?.status === 'failed') {
-                    await refund(billingUser.id, cost).catch(() => {});
+                    await refund(billingUser.id, cost, `Возврат: ${model}`, { model }).catch(() => {});
                 }
                 const outs = nr?.nodes?.[nodeId]?.[0]?.result?.outputs || [];
                 nodeOutputs[nodeId] = outs;
@@ -1484,7 +1484,7 @@ export async function POST(request, { params }) {
         const galleryUser = await getUserForGallery(request);
         const galleryUserId = galleryUser?.id || null;
         if (BILLING_ENABLED && galleryUser && cost > 0) {
-            const charged = await deduct(galleryUser.id, cost);
+            const charged = await deduct(galleryUser.id, cost, model, { model });
             if (!charged.ok && charged.reason === 'insufficient') {
                 return NextResponse.json(
                     { error: 'insufficient_funds', required: cost, balance: charged.balance },
@@ -1499,7 +1499,7 @@ export async function POST(request, { params }) {
 
         // Refund if the generation ended up failing.
         if (billedUser && result.status === 'failed') {
-            await refund(billedUser.id, cost).catch(() => {});
+            await refund(billedUser.id, cost, `Возврат: ${model}`, { model }).catch(() => {});
         }
         return NextResponse.json({ run_id: runId, cost, ...result });
     }
