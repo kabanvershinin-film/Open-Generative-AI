@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { toast } from "react-hot-toast";
 import { generateVideo, generateI2V, processV2V, uploadFile, pollArkTask } from "../muapi.js";
 import {
   t2vModels,
@@ -1026,8 +1027,16 @@ export default function VideoStudio({
       fetch("/api/gallery", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        keepalive: true,
         body: JSON.stringify({ url, type: "video", model: stored.model, prompt: stored.prompt || "" }),
-      }).catch(() => {});
+      })
+        .then(async (r) => {
+          if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
+          }
+        })
+        .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
     };
 
     // Task already finished while we were away — show result immediately.
@@ -1122,8 +1131,16 @@ export default function VideoStudio({
           fetch('/api/gallery', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            keepalive: true,
             body: JSON.stringify({ url: res.url, type: 'video', model: selectedModel, prompt: trimmedPrompt }),
-          }).catch(() => {});
+          })
+            .then(async (r) => {
+              if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
+              }
+            })
+            .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
           if (onGenerationComplete)
             onGenerationComplete({ url: res.url, model: selectedModel, prompt: trimmedPrompt, type: "video" });
         } else {

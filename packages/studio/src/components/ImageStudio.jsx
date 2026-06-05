@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import { generateImage, generateI2I, uploadFile, persistImageToTOS, getUserWorkflows } from "../muapi.js";
 import {
   t2iModels,
@@ -1229,6 +1230,19 @@ export default function ImageStudio({
                 );
               }
               persistEntryToStorage(finalEntry);
+              fetch("/api/gallery", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                keepalive: true,
+                body: JSON.stringify({ url: permUrl, type: "image", model: snap.selectedModelId, prompt: promptTrim }),
+              })
+                .then(async (r) => {
+                  if (!r.ok) {
+                    const err = await r.json().catch(() => ({}));
+                    toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
+                  }
+                })
+                .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
               onGenerationComplete?.({
                 url: permUrl,
                 model: snap.selectedModelId,
