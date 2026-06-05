@@ -118,16 +118,18 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     };
     img.src = imageUrl;
 
-    fetch(imageUrl, { method: 'HEAD' })
-      .then(res => {
-        if (cancelled) return;
-        const size = res.headers.get('content-length');
-        setImageMetadata(prev => ({
-          ...prev,
-          size: size ? (parseInt(size) / (1024 * 1024)).toFixed(2) + ' MB' : null,
-        }));
-      })
-      .catch(() => { if (!cancelled) setImageMetadata(prev => ({ ...prev, size: null })); });
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      fetch(imageUrl, { method: 'HEAD' })
+        .then(res => {
+          if (cancelled) return;
+          const size = res.headers.get('content-length');
+          setImageMetadata(prev => ({
+            ...prev,
+            size: size ? (parseInt(size) / (1024 * 1024)).toFixed(2) + ' MB' : null,
+          }));
+        })
+        .catch(() => { if (!cancelled) setImageMetadata(prev => ({ ...prev, size: null })); });
+    }
 
     return () => { cancelled = true; };
   }, [imageUrl, acceptType]);

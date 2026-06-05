@@ -88,32 +88,24 @@ async function maybeUploadToTOS(dataUrl) {
     return (await tosUpload(tosKey, buffer, contentType)) || dataUrl;
 }
 
-// Save generation to user's gallery index
+// Save generation to user's gallery (per-file format: one JSON per entry)
 async function saveToGallery(userId, outputs, model, prompt) {
     if (!userId || !TOS_ENABLED || !outputs?.length) return;
     try {
-        const key = `gallery/${userId}/entries.json`;
-        const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/${key}`;
-        let entries = [];
-        try {
-            const r = await fetch(url);
-            if (r.ok) entries = await r.json();
-        } catch {}
-
-        // Add new entries for each output
         for (const out of outputs) {
-            if (out.type === 'error') continue; // skip errors
-            entries.unshift({
-                id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+            if (out.type === 'error' || !out.value) continue;
+            const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+            const entry = {
+                id,
                 type: out.type.replace('_url', ''), // image_url → image, etc.
                 url: out.value,
                 model,
                 prompt: prompt || '',
-                created_at: new Date().toISOString()
-            });
+                created_at: new Date().toISOString(),
+            };
+            const key = `gallery/${userId}/entries/${id}.json`;
+            await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json').catch(() => {});
         }
-        const buf = Buffer.from(JSON.stringify(entries));
-        await tosUpload(key, buf, 'application/json').catch(() => {});
     } catch { /* best-effort */ }
 }
 

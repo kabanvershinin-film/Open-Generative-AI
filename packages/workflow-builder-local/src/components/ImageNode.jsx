@@ -430,19 +430,21 @@ const ImageGeneration = ({ id, data, selected }) => {
       };
       img.src = currentOutput;
       
-      fetch(currentOutput, { method: 'HEAD' })
-        .then(res => {
-          const size = res.headers.get('content-length');
-          if (size) {
-            const sizeInMB = (parseInt(size) / (1024 * 1024)).toFixed(2);
-            setImageMetadata(prev => ({ ...prev, size: sizeInMB + ' MB' }));
-          } else {
+      if (currentOutput.startsWith('http://') || currentOutput.startsWith('https://')) {
+        fetch(currentOutput, { method: 'HEAD' })
+          .then(res => {
+            const size = res.headers.get('content-length');
+            if (size) {
+              const sizeInMB = (parseInt(size) / (1024 * 1024)).toFixed(2);
+              setImageMetadata(prev => ({ ...prev, size: sizeInMB + ' MB' }));
+            } else {
+              setImageMetadata(prev => ({ ...prev, size: null }));
+            }
+          })
+          .catch(() => {
             setImageMetadata(prev => ({ ...prev, size: null }));
-          }
-        })
-        .catch(() => {
-          setImageMetadata(prev => ({ ...prev, size: null }));
-        });
+          });
+      }
     } else {
       setImageMetadata({ width: 0, height: 0, size: null });
     }
