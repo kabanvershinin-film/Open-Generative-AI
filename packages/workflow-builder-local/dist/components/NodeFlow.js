@@ -3353,18 +3353,7 @@ var NodeFlow = function NodeFlow(_ref) {
       return setIsPresetsDismissed(true);
     },
     className: "mt-4 px-5 py-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-xs text-gray-300 font-medium transition-colors border border-gray-700 hover:border-gray-500"
-  }, "Dismiss & Enter Empty Canvas"))), interactionMode && /*#__PURE__*/_react["default"].createElement(_ChatWidget["default"], {
-    isOpen: isChatOpen,
-    toggleChat: function toggleChat() {
-      return setIsChatOpen(!isChatOpen);
-    },
-    messages: chatMessages,
-    onSendMessage: handleSendMessage,
-    isLoading: isChatLoading,
-    onClearHistory: function onClearHistory() {
-      return setChatMessages([]);
-    }
-  }), isCategoryPopupOpen && /*#__PURE__*/_react["default"].createElement("div", {
+  }, "Dismiss & Enter Empty Canvas"))), isCategoryPopupOpen && /*#__PURE__*/_react["default"].createElement("div", {
     className: "fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "bg-[#1b1e23] border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"

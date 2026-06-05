@@ -3056,16 +3056,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           </div>
         </div>
       )}
-      {interactionMode && (
-        <ChatWidget
-          isOpen={isChatOpen}
-          toggleChat={() => setIsChatOpen(!isChatOpen)}
-          messages={chatMessages}
-          onSendMessage={handleSendMessage}
-          isLoading={isChatLoading}
-          onClearHistory={() => setChatMessages([])}
-        />
-      )}
+      {/* Assistant chat widget (bottom-right robot button) removed per request. */}
       {isCategoryPopupOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
           <div className="bg-[#1b1e23] border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">

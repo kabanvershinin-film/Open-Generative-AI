@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-seedance-tags-v42',
+  generateBuildId: async () => 'build-no-assistant-v43',
 };
 
 export default nextConfig;
