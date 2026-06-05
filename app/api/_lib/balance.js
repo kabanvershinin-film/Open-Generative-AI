@@ -127,11 +127,15 @@ async function spendBalance(request, amount, reason, meta = null) {
     if (!(amount > 0)) return { ok: true, balance: null };
     const db = userClient(request);
     if (!db) return { ok: false, error: 'unauthorized' };
-    const { data, error } = await db.rpc('spend_balance', {
-        p_amount: round2(amount), p_reason: reason, p_meta: meta,
-    });
-    if (error) return { ok: false, error: error.message };
-    return data || { ok: false, error: 'no_response' };
+    try {
+        const { data, error } = await db.rpc('spend_balance', {
+            p_amount: round2(amount), p_reason: reason, p_meta: meta,
+        });
+        if (error) return { ok: false, error: error.message };
+        return data || { ok: false, error: 'no_response' };
+    } catch (e) {
+        return { ok: false, error: e.message };
+    }
 }
 
 // Best-effort refund via refund_balance (e.g. generation failed after charging).

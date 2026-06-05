@@ -26,9 +26,11 @@ async function getUser(request) {
     const auth = request.headers.get('authorization') || '';
     const jwt = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
     if (!jwt) return null;
-    const { data, error } = await anon().auth.getUser(jwt);
-    if (error || !data?.user) return null;
-    return data.user;
+    try {
+        const { data, error } = await anon().auth.getUser(jwt);
+        if (error || !data?.user) return null;
+        return data.user;
+    } catch { return null; }
 }
 
 async function createPayment(request) {
