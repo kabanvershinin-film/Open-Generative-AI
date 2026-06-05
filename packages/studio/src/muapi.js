@@ -588,6 +588,10 @@ async function generateSeedanceArk(modelInfo, params) {
     });
     const submitData = await submit.json().catch(() => ({}));
     if (!submit.ok) {
+        if (submit.status === 401) {
+            notifyAuthRequired(401, submitData.error);
+            throw new Error(submitData.error || 'Войдите в аккаунт, чтобы генерировать.');
+        }
         if (submit.status === 402) {
             throw new Error(`Недостаточно средств. Нужно ${submitData.required ?? ''}₽, на балансе ${submitData.balance ?? 0}₽.`);
         }

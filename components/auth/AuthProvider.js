@@ -67,6 +67,13 @@ export function AuthProvider({ children }) {
         return () => { sub?.unsubscribe?.(); };
     }, [loadProfile]);
 
+    // Open login modal when any generation route returns 401
+    useEffect(() => {
+        const handler = () => setLoginOpen(true);
+        window.addEventListener('muapi:auth-required', handler);
+        return () => window.removeEventListener('muapi:auth-required', handler);
+    }, []);
+
     // Global 402 handler → prompt top-up
     useEffect(() => {
         const id = axios.interceptors.response.use(

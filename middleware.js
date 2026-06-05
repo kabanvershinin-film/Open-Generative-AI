@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server';
 
+// Require Supabase auth on generation routes when Supabase is configured.
+const AUTH_REQUIRED = !!(process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY);
+
+function hasAuthToken(request) {
+    const cookie = request.headers.get('cookie') || '';
+    if (cookie.includes('sb_access_token=')) return true;
+    return !!request.headers.get('x-sb-token');
+}
+
 export function middleware(request) {
     const url = request.nextUrl;
 
@@ -8,6 +17,12 @@ export function middleware(request) {
     if (url.pathname.startsWith('/api/mf/') &&
         !url.pathname.startsWith('/api/mf/workflow') &&
         !url.pathname.startsWith('/api/mf/agents')) {
+        if (AUTH_REQUIRED && !hasAuthToken(request)) {
+            return NextResponse.json(
+                { error: 'Unauthorized', message: 'Войдите в аккаунт, чтобы генерировать.' },
+                { status: 401 },
+            );
+        }
         const targetPath = url.pathname.replace('/api/mf', '');
         const targetUrl = new URL(targetPath + url.search, 'https://memefast.top');
         return NextResponse.rewrite(targetUrl);
