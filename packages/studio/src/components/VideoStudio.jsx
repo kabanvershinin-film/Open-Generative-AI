@@ -245,6 +245,8 @@ export default function VideoStudio({
 }) {
   const PERSIST_KEY = "mf_video_studio_persistent";
   const ARK_TASK_KEY = "mf_video_active_ark_task";
+  const PENDING_KEY = "mf_video_studio_pending";
+  const PENDING_RESULT_KEY = "mf_video_studio_pending_result";
 
   // ── mode state ──
   const [imageMode, setImageMode] = useState(false); // i2v
@@ -983,6 +985,18 @@ export default function VideoStudio({
     [v2vMode, imageMode, applyControlsForModel],
   );
 
+  // Write a completed entry directly to PERSIST_KEY even when unmounted.
+  const persistVideoEntryToStorage = useCallback((entry) => {
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      const prev = Array.isArray(data.localHistory) ? data.localHistory : [];
+      if (prev.some((e) => e.id === entry.id)) return;
+      data.localHistory = [entry, ...prev].slice(0, 30);
+      localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
+    } catch {}
+  }, []);
+
   // ── add to local history ──────────────────────────────────────────────────
   const addToLocalHistory = useCallback((entry) => {
     setLocalHistory((prev) => [entry, ...prev].slice(0, 30));
@@ -1059,6 +1073,66 @@ export default function VideoStudio({
       .finally(() => { if (!cancelled) setGenerating(false); });
 
     return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── resume a non-ARK Memefast generation after a tab switch ───────────────
+  useEffect(() => {
+    let snap;
+    try {
+      const raw = localStorage.getItem(PENDING_KEY);
+      if (!raw) return;
+      snap = JSON.parse(raw);
+    } catch {
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
+      return;
+    }
+    if (!snap?.requestId || !snap?.ts || Date.now() - snap.ts > 10 * 60 * 1000) {
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
+      return;
+    }
+
+    if (snap.prompt) setPrompt(snap.prompt);
+
+    const findResult = () => {
+      try {
+        const rd = JSON.parse(localStorage.getItem(PENDING_RESULT_KEY) || '{}');
+        if (rd.requestId !== snap.requestId) return null;
+        return rd.entry || null;
+      } catch { return null; }
+    };
+
+    const restore = (entry) => {
+      setLocalHistory(prev => prev.some(p => p.id === entry.id) ? prev : [entry, ...prev].slice(0, 30));
+      setActiveHistoryIdx(0);
+      showVideoInCanvas(entry.url, entry.model);
+      try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
+    };
+
+    const alreadyDone = findResult();
+    if (alreadyDone) { restore(alreadyDone); return; }
+
+    setGeneratingPrompt(snap.prompt || '');
+    setGenerating(true);
+
+    let cancelled = false;
+    const intervalId = setInterval(() => {
+      if (cancelled) return;
+      if (!localStorage.getItem(PENDING_KEY)) {
+        clearInterval(intervalId);
+        const entry = findResult();
+        if (entry) restore(entry);
+        if (!cancelled) setGenerating(false);
+        return;
+      }
+      if (Date.now() - snap.ts > 10 * 60 * 1000) {
+        clearInterval(intervalId);
+        try { localStorage.removeItem(PENDING_KEY); } catch {}
+        if (!cancelled) setGenerating(false);
+      }
+    }, 2000);
+
+    return () => { cancelled = true; clearInterval(intervalId); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── generate ──────────────────────────────────────────────────────────────
@@ -1200,6 +1274,15 @@ export default function VideoStudio({
     setGeneratingPrompt(trimmedPrompt);
     setGenerateError(null);
 
+    const pendingSnap = {
+      requestId: Math.random().toString(36).slice(2, 11),
+      model: selectedModel,
+      prompt: trimmedPrompt,
+      ts: Date.now(),
+    };
+    try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(pendingSnap)); } catch {}
+
     let hadError = false;
 
     try {
@@ -1232,6 +1315,11 @@ export default function VideoStudio({
           timestamp: new Date().toISOString(),
         };
         addToLocalHistory(entry);
+        persistVideoEntryToStorage(entry);
+        try {
+          localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
+          localStorage.removeItem(PENDING_KEY);
+        } catch {}
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
@@ -1280,6 +1368,11 @@ export default function VideoStudio({
           timestamp: new Date().toISOString(),
         };
         addToLocalHistory(entry);
+        persistVideoEntryToStorage(entry);
+        try {
+          localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
+          localStorage.removeItem(PENDING_KEY);
+        } catch {}
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
@@ -1334,6 +1427,11 @@ export default function VideoStudio({
           timestamp: new Date().toISOString(),
         };
         addToLocalHistory(entry);
+        persistVideoEntryToStorage(entry);
+        try {
+          localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
+          localStorage.removeItem(PENDING_KEY);
+        } catch {}
         showVideoInCanvas(res.url, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
@@ -1348,6 +1446,7 @@ export default function VideoStudio({
       console.error("[VideoStudio]", e);
       setGenerateError(e.message?.slice(0, 80) || "Ошибка генерации");
       setTimeout(() => setGenerateError(null), 4000);
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
     } finally {
       setGenerating(false);
     }
@@ -1374,6 +1473,7 @@ export default function VideoStudio({
     getCurrentDurations,
     getCurrentResolutions,
     addToLocalHistory,
+    persistVideoEntryToStorage,
     showVideoInCanvas,
     onGenerationComplete,
   ]);

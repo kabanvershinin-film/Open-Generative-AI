@@ -323,6 +323,8 @@ export default function LipSyncStudio({
   onFilesHandled,
 }) {
   const PERSIST_KEY = "mf_lipsync_studio_persistent";
+  const PENDING_KEY = "mf_lipsync_studio_pending";
+  const PENDING_RESULT_KEY = "mf_lipsync_studio_pending_result";
 
   // ── Mode & model state ──────────────────────────────────────────────────
   const [inputMode, setInputMode] = useState("image"); // 'image' | 'video'
@@ -449,6 +451,66 @@ export default function LipSyncStudio({
     prompt,
     internalHistory,
   ]);
+
+  // ── Resume a generation interrupted by a tab switch ──────────────────────
+  useEffect(() => {
+    let snap;
+    try {
+      const raw = localStorage.getItem(PENDING_KEY);
+      if (!raw) return;
+      snap = JSON.parse(raw);
+    } catch {
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
+      return;
+    }
+    if (!snap?.requestId || !snap?.ts || Date.now() - snap.ts > 10 * 60 * 1000) {
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
+      return;
+    }
+
+    if (snap.prompt) setPrompt(snap.prompt);
+
+    const findResult = () => {
+      try {
+        const rd = JSON.parse(localStorage.getItem(PENDING_RESULT_KEY) || '{}');
+        if (rd.requestId !== snap.requestId) return null;
+        return rd.entry || null;
+      } catch { return null; }
+    };
+
+    const restore = (entry) => {
+      setInternalHistory(prev => prev.some(p => p.id === entry.id) ? prev : [entry, ...prev].slice(0, 30));
+      setActiveHistoryIdx(0);
+      setActiveResultUrl(entry.url);
+      setView("result");
+      try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
+    };
+
+    const alreadyDone = findResult();
+    if (alreadyDone) { restore(alreadyDone); return; }
+
+    setIsGenerating(true);
+
+    let cancelled = false;
+    const intervalId = setInterval(() => {
+      if (cancelled) return;
+      if (!localStorage.getItem(PENDING_KEY)) {
+        clearInterval(intervalId);
+        const entry = findResult();
+        if (entry) restore(entry);
+        if (!cancelled) setIsGenerating(false);
+        return;
+      }
+      if (Date.now() - snap.ts > 10 * 60 * 1000) {
+        clearInterval(intervalId);
+        try { localStorage.removeItem(PENDING_KEY); } catch {}
+        if (!cancelled) setIsGenerating(false);
+      }
+    }, 2000);
+
+    return () => { cancelled = true; clearInterval(intervalId); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Derived model info ──────────────────────────────────────────────────
   const selectedModel = lipsyncModels.find((m) => m.id === selectedModelId);
@@ -606,6 +668,18 @@ export default function LipSyncStudio({
     setInternalHistory((prev) => [entry, ...prev].slice(0, 30));
   }, []);
 
+  // Write a completed entry directly to PERSIST_KEY even when unmounted.
+  const persistLipSyncEntryToStorage = useCallback((entry) => {
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      const prev = Array.isArray(data.internalHistory) ? data.internalHistory : [];
+      if (prev.some((e) => e.id === entry.id)) return;
+      data.internalHistory = [entry, ...prev].slice(0, 30);
+      localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
+    } catch {}
+  }, []);
+
   const downloadFile = async (url, filename) => {
     try {
       const response = await fetch(url);
@@ -641,6 +715,15 @@ export default function LipSyncStudio({
     setIsGenerating(true);
     setGenerateError(null);
 
+    const pendingSnap = {
+      requestId: Math.random().toString(36).slice(2, 11),
+      model: selectedModelId,
+      prompt,
+      ts: Date.now(),
+    };
+    try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+    try { localStorage.setItem(PENDING_KEY, JSON.stringify(pendingSnap)); } catch {}
+
     try {
       const lipsyncParams = {
         model: selectedModelId,
@@ -666,6 +749,11 @@ export default function LipSyncStudio({
       };
 
       if (!historyItems) addToInternalHistory(entry);
+      persistLipSyncEntryToStorage(entry);
+      try {
+        localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
+        localStorage.removeItem(PENDING_KEY);
+      } catch {}
 
       setActiveResultUrl(res.url);
       setActiveHistoryIdx(0);
@@ -683,6 +771,7 @@ export default function LipSyncStudio({
       console.error("[LipSyncStudio]", e);
       setGenerateError(e.message?.slice(0, 80) ?? "Неизвестная ошибка");
       setTimeout(() => setGenerateError(null), 4000);
+      try { localStorage.removeItem(PENDING_KEY); } catch {}
     } finally {
       setIsGenerating(false);
     }
