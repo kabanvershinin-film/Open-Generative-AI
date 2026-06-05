@@ -1499,10 +1499,12 @@ export async function POST(request, { params }) {
             if (charged.ok) billedUser = galleryUser;
         }
 
-        // skipMirror: return the raw result immediately and let the browser mirror
-        // it to TOS in the background — the node shows its image as soon as
-        // generation finishes instead of waiting on a slow cross-region upload.
-        await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id, { skipMirror: true });
+        // Mirror to TOS server-side (the server already holds the base64, so this
+        // avoids sending a multi-MB body from the browser, which Vercel caps at
+        // ~4.5MB and which broke saving for larger images). The gallery save runs
+        // in the background (see runNode), so the only thing on the critical path
+        // is the single image upload — the node shows its permanent url right after.
+        await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id);
         const result = runStore.get(runId) || { status: 'processing', nodes: {} };
 
         // Refund if the generation ended up failing.
