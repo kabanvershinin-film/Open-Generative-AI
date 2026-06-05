@@ -74,20 +74,20 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
   var edges = (0, _reactflow.useStore)(function (s) {
     return s.edges;
   });
-  var nodes = (0, _reactflow.useStore)(function (s) {
-    return s.nodes;
-  });
 
   // Auto-detect references wired into the video/image node this prompt node feeds,
   // and surface them as clickable @-chips (с миниатюрами) — like creator-club.
   // E.g. a Character "Жека" → @Жека, a connected image → @изображение1.
+  // reactflow v11 keeps nodes in nodeInternals (no store.nodes), so read them via
+  // getNodes(); `edges` in the dep array drives recompute when a wire changes.
   var availableTags = (0, _react.useMemo)(function () {
+    var allNodes = getNodes() || [];
     var genIds = new Set(edges.filter(function (e) {
       return e.source === id;
     }).map(function (e) {
       return e.target;
     }).filter(function (tid) {
-      var n = nodes.find(function (nn) {
+      var n = allNodes.find(function (nn) {
         return nn.id === tid;
       });
       return n && (n.type === "videoNode" || n.type === "imageNode");
@@ -108,7 +108,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
           var e = _step.value;
           if (!genIds.has(e.target) || e.source === id || seen.has(e.source)) return 0; // continue
           seen.add(e.source);
-          var n = nodes.find(function (nn) {
+          var n = allNodes.find(function (nn) {
             return nn.id === e.source;
           });
           if (!n) return 0; // continue
@@ -160,7 +160,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
       _iterator.f();
     }
     return out;
-  }, [edges, nodes, id]);
+  }, [edges, id]);
 
   // On reload the saved state arrives in data.formValues (input_params); fall back to it.
   var fv = data.formValues || {};
