@@ -67,6 +67,16 @@ export function AuthProvider({ children }) {
         return () => { sub?.unsubscribe?.(); };
     }, [loadProfile]);
 
+    // First-time visitors (not logged in and haven't dismissed it) are greeted
+    // with the registration modal. The modal sets `og_welcome_seen` on close so
+    // it never nags twice; existing users can still open it from "Войти".
+    useEffect(() => {
+        if (loading || user) return;
+        try { if (localStorage.getItem('og_welcome_seen')) return; } catch {}
+        const t = setTimeout(() => setLoginOpen(true), 600);
+        return () => clearTimeout(t);
+    }, [loading, user]);
+
     // Open login modal when any generation route returns 401 — but only if
     // the user is not already authenticated (avoids spurious popups on token
     // refresh races or transient Memefast 401s for logged-in users).

@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-no-assistant-v43',
+  generateBuildId: async () => 'build-welcome-modal-v44',
 };
 
 export default nextConfig;
