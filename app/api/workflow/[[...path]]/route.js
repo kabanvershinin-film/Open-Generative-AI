@@ -126,6 +126,26 @@ async function maybeUploadVideoToTOS(videoUrl) {
     } catch { return videoUrl; }
 }
 
+// Mirror an image to TOS so the gallery keeps a permanent copy. Handles BOTH
+// base64 data URLs (gemini/chat-image models) AND remote provider URLs
+// (gpt-image / dall-e / flux via response_format:'url'), whose hosted links
+// expire after a day or two and would otherwise leave broken gallery thumbnails.
+async function maybeUploadImageToTOS(imageUrl) {
+    if (!imageUrl || !TOS_ENABLED) return imageUrl;
+    if (imageUrl.startsWith('data:')) return maybeUploadToTOS(imageUrl);
+    const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+    if (imageUrl.startsWith(`https://${tosHost}`)) return imageUrl; // already in TOS
+    try {
+        const r = await fetch(imageUrl);
+        if (!r.ok) return imageUrl;
+        const buf = Buffer.from(await r.arrayBuffer());
+        const ct = r.headers.get('content-type') || 'image/png';
+        const ext = (ct.split('/')[1] || 'png').split('+')[0];
+        const tosKey = `images/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        return (await tosUpload(tosKey, buf, ct)) || imageUrl;
+    } catch { return imageUrl; }
+}
+
 // Persist workflow to TOS (so it survives Vercel cold starts)
 async function tosSaveWorkflow(id, data) {
     if (!TOS_ENABLED) return;
@@ -825,13 +845,17 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null) {
         else if (CHAT_IMAGE_MODELS.has(model)) outputs = await generateChatImage(apiKey, model, params);
         else outputs = await generateImage(apiKey, model, params);
 
-        // Upload generated base64 images to TOS SYNCHRONOUSLY so the client
-        // receives a public URL instead of a multi-MB base64 data URL. Holding
-        // base64 in node fields blows the workflow-save payload past Vercel's
-        // request-body limit (413) when this image is wired into another node.
+        // Upload generated images to TOS SYNCHRONOUSLY so the client receives a
+        // permanent public URL. Two reasons:
+        //  1. base64 data URLs (gemini/chat-image): holding multi-MB base64 in a
+        //     node field blows the workflow-save payload past Vercel's request-body
+        //     limit (413) when the image is wired into another node.
+        //  2. remote provider URLs (gpt-image / dall-e / flux via response_format
+        //     'url'): these hosted links expire after a day or two, which left
+        //     broken thumbnails in the gallery. Mirror them to TOS so they persist.
         for (const out of outputs) {
-            if (out.type === 'image_url' && out.value?.startsWith('data:')) {
-                const uploaded = await maybeUploadToTOS(out.value);
+            if (out.type === 'image_url' && out.value) {
+                const uploaded = await maybeUploadImageToTOS(out.value);
                 if (uploaded && uploaded !== out.value) out.value = uploaded;
             }
         }
