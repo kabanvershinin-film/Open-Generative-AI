@@ -52,6 +52,21 @@ async function getUser(request) {
     } catch { return null; }
 }
 
+// Identify the user using only the public anon key — no service-role key
+// needed. Works even when BILLING_ENABLED is false (service role key absent).
+// Use this for gallery saves so they work independently of the billing setup.
+const AUTH_ENABLED = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+async function getUserForGallery(request) {
+    if (!AUTH_ENABLED) return null;
+    const token = getAccessToken(request);
+    if (!token) return null;
+    try {
+        const { data, error } = await anon().auth.getUser(token);
+        if (error || !data?.user) return null;
+        return data.user;
+    } catch { return null; }
+}
+
 // Atomic compare-and-swap deduction. Returns:
 //   { ok: true, balance }                — charged successfully
 //   { ok: false, reason: 'insufficient', balance, required }
@@ -191,6 +206,6 @@ async function getBalance(request) {
 }
 
 export {
-    BILLING_ENABLED, getUser, getBalance, deduct, refund,
+    BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund,
     spendBalance, refundBalanceRpc, signBill, verifyBill,
 };

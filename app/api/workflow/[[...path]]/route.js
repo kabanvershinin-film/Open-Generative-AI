@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { priceRub } from '../../_lib/pricing';
-import { BILLING_ENABLED, getUser, deduct, refund } from '../../_lib/balance';
+import { BILLING_ENABLED, getUser, getUserForGallery, deduct, refund } from '../../_lib/balance';
 
 export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generations
 
@@ -1354,8 +1354,11 @@ export async function POST(request, { params }) {
         const cookieKey1 = request.headers.get('cookie')?.match(/muapi_key=([^;]+)/)?.[1] || '';
         const apiKey = request.headers.get('authorization')?.replace('Bearer ', '') || cookieKey1 || '';
         const inputs = body.inputs || {};
-        // Resolve the billing user once for the whole workflow run.
-        const billingUser = BILLING_ENABLED ? await getUser(request) : null;
+        // Resolve the user once for the whole workflow run. getUserForGallery uses
+        // only the public anon key so it works even when billing is off.
+        // galleryUser is used for gallery saves; billingUser additionally gates deductions.
+        const galleryUser = await getUserForGallery(request);
+        const billingUser = BILLING_ENABLED ? galleryUser : null;
 
         let wf = store.get(wfId);
         if (!wf) { wf = await tosLoadWorkflow(wfId); if (wf) store.set(wfId, wf); }
@@ -1440,7 +1443,7 @@ export async function POST(request, { params }) {
                 }
 
                 const nRunId = genId();
-                await runNode(nRunId, nodeId, model, params, apiKey, billingUser?.id);
+                await runNode(nRunId, nodeId, model, params, apiKey, galleryUser?.id);
                 const nr = runStore.get(nRunId);
                 // Refund if this node failed.
                 if (billed && nr?.status === 'failed') {
@@ -1471,26 +1474,24 @@ export async function POST(request, { params }) {
         const model = body.model || '';
         const params = body.params || {};
 
-        // Billing: charge the logged-in user's balance before generating.
-        // No-op when billing is disabled or the user isn't authenticated.
-        // Always resolve the user (when Supabase is configured) so gallery saves
-        // work even for zero-cost models or when a billing deduction fails.
+        // Gallery: identify the user unconditionally (needs only the public anon
+        // key — no service-role key) so photos/videos are saved to the gallery
+        // even when billing is disabled (BILLING_ENABLED = false).
+        // Billing: deduct from balance only when billing is fully configured and
+        // the model has a non-zero cost.
         const cost = costForNode(model, params);
         let billedUser = null;
-        let galleryUserId = null;
-        if (BILLING_ENABLED) {
-            const user = await getUser(request);
-            galleryUserId = user?.id || null;
-            if (user && cost > 0) {
-                const charged = await deduct(user.id, cost);
-                if (!charged.ok && charged.reason === 'insufficient') {
-                    return NextResponse.json(
-                        { error: 'insufficient_funds', required: cost, balance: charged.balance },
-                        { status: 402 }
-                    );
-                }
-                if (charged.ok) billedUser = user;
+        const galleryUser = await getUserForGallery(request);
+        const galleryUserId = galleryUser?.id || null;
+        if (BILLING_ENABLED && galleryUser && cost > 0) {
+            const charged = await deduct(galleryUser.id, cost);
+            if (!charged.ok && charged.reason === 'insufficient') {
+                return NextResponse.json(
+                    { error: 'insufficient_funds', required: cost, balance: charged.balance },
+                    { status: 402 }
+                );
             }
+            if (charged.ok) billedUser = galleryUser;
         }
 
         await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id);
