@@ -148,13 +148,40 @@ async function maybeUploadMediaToTOS(srcUrl, kind) {
     }
 }
 
+// Signed GET of a single object. Needed because gallery entry JSONs are stored
+// with private ACL (only images/ & videos/ are covered by the bucket's public
+// read policy), so an unsigned fetch returns 403 and the entry would silently
+// vanish from the gallery. Signing mirrors tosList's TOS4 GET signature.
+async function tosGetSignedJson(host, key) {
+    if (!TOS_ENABLED) return null;
+    const { date, datetime } = tosDateParts();
+    const path = '/' + key.split('/').map(encodeURIComponent).join('/');
+    const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
+    const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
+    const canonical = `GET\n${path}\n\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
+    const scope = `${date}/${TOS_REGION}/tos/request`;
+    const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+    const sig = createHmac('sha256', tosSigningKey(date)).update(strToSign).digest('hex');
+    const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+    const r = await fetch(`https://${host}${path}`, {
+        headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime },
+    });
+    if (!r.ok) return null;
+    return r.json();
+}
+
 async function fetchEntry(host, key) {
     try {
+        // Try an unsigned read first (cheap when the object is public); fall back
+        // to a signed read so private gallery entries still load.
+        let data = null;
         const r = await fetch(`https://${host}/${key}`);
-        if (!r.ok) return null;
-        const data = await r.json();
+        if (r.ok) data = await r.json();
+        else data = await tosGetSignedJson(host, key);
         return data && data.id ? data : null;
-    } catch { return null; }
+    } catch {
+        try { const d = await tosGetSignedJson(host, key); return d && d.id ? d : null; } catch { return null; }
+    }
 }
 
 export async function GET(request) {
@@ -174,12 +201,13 @@ export async function GET(request) {
 
         // MIGRATION (remove after ~1 week): merge old single entries.json.
         try {
-            const r = await fetch(`https://${host}/gallery/${user.id}/entries.json`);
-            if (r.ok) {
-                const legacy = await r.json();
-                if (Array.isArray(legacy)) {
-                    legacy.forEach((e) => { if (e?.id && !byId.has(e.id)) byId.set(e.id, e); });
-                }
+            const legacyKey = `gallery/${user.id}/entries.json`;
+            let legacy = null;
+            const r = await fetch(`https://${host}/${legacyKey}`);
+            if (r.ok) legacy = await r.json();
+            else legacy = await tosGetSignedJson(host, legacyKey);
+            if (Array.isArray(legacy)) {
+                legacy.forEach((e) => { if (e?.id && !byId.has(e.id)) byId.set(e.id, e); });
             }
         } catch { /* no legacy file */ }
 
