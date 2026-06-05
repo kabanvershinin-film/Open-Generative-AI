@@ -3,8 +3,6 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthProvider';
 
-const WELCOME_KEY = 'og_welcome_seen';
-
 export default function LoginModal() {
     const { loginOpen, setLoginOpen, login, register, loginWithGoogle } = useAuth();
     // New visitors land on the registration form; existing users switch to "Войти".
@@ -16,10 +14,7 @@ export default function LoginModal() {
 
     if (!loginOpen) return null;
 
-    const close = () => {
-        try { localStorage.setItem(WELCOME_KEY, '1'); } catch {}
-        setLoginOpen(false);
-    };
+    const close = () => setLoginOpen(false);
 
     const submit = async (e) => {
         e.preventDefault();
@@ -34,7 +29,6 @@ export default function LoginModal() {
             return;
         }
         if (err) { toast.error(err); return; }
-        try { localStorage.setItem(WELCOME_KEY, '1'); } catch {}
         toast.success(mode === 'login' ? 'Вход выполнен' : 'Аккаунт создан');
     };
 

@@ -67,12 +67,11 @@ export function AuthProvider({ children }) {
         return () => { sub?.unsubscribe?.(); };
     }, [loadProfile]);
 
-    // First-time visitors (not logged in and haven't dismissed it) are greeted
-    // with the registration modal. The modal sets `og_welcome_seen` on close so
-    // it never nags twice; existing users can still open it from "Войти".
+    // Every logged-out visitor is greeted with the registration modal on each
+    // visit (until they sign up). It stays dismissible so they can still look
+    // around, but reappears on the next load while they remain unregistered.
     useEffect(() => {
         if (loading || user) return;
-        try { if (localStorage.getItem('og_welcome_seen')) return; } catch {}
         const t = setTimeout(() => setLoginOpen(true), 600);
         return () => clearTimeout(t);
     }, [loading, user]);
