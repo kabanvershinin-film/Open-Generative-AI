@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { Handle, Position, useReactFlow, useStore } from "reactflow";
 import { toast } from "react-hot-toast";
 
@@ -29,6 +29,49 @@ const SeedancePromptNode = ({ id, data }) => {
   const { getNodes, getEdges, setNodes, setEdges } = useReactFlow();
   const ideaRef = useRef(null);
   const edges = useStore((s) => s.edges);
+  const nodes = useStore((s) => s.nodes);
+
+  // Auto-detect references wired into the video/image node this prompt node feeds,
+  // and surface them as clickable @-chips (с миниатюрами) — like creator-club.
+  // E.g. a Character "Жека" → @Жека, a connected image → @изображение1.
+  const availableTags = useMemo(() => {
+    const genIds = new Set(
+      edges.filter((e) => e.source === id)
+        .map((e) => e.target)
+        .filter((tid) => {
+          const n = nodes.find((nn) => nn.id === tid);
+          return n && (n.type === "videoNode" || n.type === "imageNode");
+        }),
+    );
+    if (!genIds.size) return [];
+    const out = [];
+    const seen = new Set();
+    const counters = { images: 0, video: 0, audio: 0 };
+    for (const e of edges) {
+      if (!genIds.has(e.target) || e.source === id || seen.has(e.source)) continue;
+      seen.add(e.source);
+      const n = nodes.find((nn) => nn.id === e.source);
+      if (!n) continue;
+      const d = n.data || {};
+      const fvN = d.formValues || {};
+      const rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl
+        || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url;
+      const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
+      if (n.type === "characterNode") {
+        out.push({ id: n.id, label: (fvN.character_name || "Персонаж").trim() || "Персонаж", kind: "character", url });
+      } else if (n.type === "videoNode") {
+        counters.video += 1;
+        out.push({ id: n.id, label: `видео${counters.video}`, kind: "video", url });
+      } else if (n.type === "audioNode") {
+        counters.audio += 1;
+        out.push({ id: n.id, label: `аудио${counters.audio}`, kind: "audio", url });
+      } else {
+        counters.images += 1;
+        out.push({ id: n.id, label: `изображение${counters.images}`, kind: "images", url });
+      }
+    }
+    return out;
+  }, [edges, nodes, id]);
 
   // On reload the saved state arrives in data.formValues (input_params); fall back to it.
   const fv = data.formValues || {};
@@ -148,21 +191,30 @@ const SeedancePromptNode = ({ id, data }) => {
         {/* Idea */}
         <div>
           <label className="text-[9px] text-purple-400/60 uppercase tracking-wider mb-1 block">💡 Ваша идея</label>
-          {(photoRefs > 0 || videoRefs > 0 || audioRefs > 0) && (
-            <div className="flex flex-wrap gap-1 mb-1 nodrag">
-              {[
-                ...Array.from({ length: photoRefs }, (_, i) => `Изображение${i + 1}`),
-                ...Array.from({ length: videoRefs }, (_, i) => `Видео${i + 1}`),
-                ...Array.from({ length: audioRefs }, (_, i) => `Аудио${i + 1}`),
-              ].map((t) => (
+          {availableTags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-1 nodrag">
+              {availableTags.map((t) => (
                 <button
-                  key={t}
+                  key={`${t.id}-${t.label}`}
                   type="button"
                   onMouseDown={(e) => e.stopPropagation()}
-                  onClick={() => insertTag(t)}
-                  title={`Вставить @${t}`}
-                  className="px-1.5 py-0.5 rounded-md text-[9px] bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
-                >@{t}</button>
+                  onClick={() => insertTag(t.label)}
+                  title={`Вставить @${t.label} в промпт`}
+                  className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
+                >
+                  {t.url ? (
+                    t.kind === "video" ? (
+                      <video src={t.url} className="w-6 h-6 rounded object-cover flex-shrink-0" muted />
+                    ) : (
+                      <img src={t.url} alt={t.label} className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                    )
+                  ) : (
+                    <span className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0">
+                      {t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"}
+                    </span>
+                  )}
+                  <span className="text-[10px]">@{t.label}</span>
+                </button>
               ))}
             </div>
           )}

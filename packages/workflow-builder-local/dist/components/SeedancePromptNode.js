@@ -9,10 +9,6 @@ var _react = _interopRequireWildcard(require("react"));
 var _reactflow = require("reactflow");
 var _reactHotToast = require("react-hot-toast");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t2 in e) "default" !== _t2 && {}.hasOwnProperty.call(e, _t2) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t2)) && (i.get || i.set) ? o(f, _t2, i) : f[_t2] = e[_t2]); return f; })(e, t); }
-function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
 function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
@@ -24,10 +20,11 @@ function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" 
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
-function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 // Style presets (label → English style string) — ported from creator-club.
 var STYLE_PRESETS = [{
   label: "🎬 Кино",
@@ -77,6 +74,93 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
   var edges = (0, _reactflow.useStore)(function (s) {
     return s.edges;
   });
+  var nodes = (0, _reactflow.useStore)(function (s) {
+    return s.nodes;
+  });
+
+  // Auto-detect references wired into the video/image node this prompt node feeds,
+  // and surface them as clickable @-chips (с миниатюрами) — like creator-club.
+  // E.g. a Character "Жека" → @Жека, a connected image → @изображение1.
+  var availableTags = (0, _react.useMemo)(function () {
+    var genIds = new Set(edges.filter(function (e) {
+      return e.source === id;
+    }).map(function (e) {
+      return e.target;
+    }).filter(function (tid) {
+      var n = nodes.find(function (nn) {
+        return nn.id === tid;
+      });
+      return n && (n.type === "videoNode" || n.type === "imageNode");
+    }));
+    if (!genIds.size) return [];
+    var out = [];
+    var seen = new Set();
+    var counters = {
+      images: 0,
+      video: 0,
+      audio: 0
+    };
+    var _iterator = _createForOfIteratorHelper(edges),
+      _step;
+    try {
+      var _loop = function _loop() {
+          var _d$outputs$;
+          var e = _step.value;
+          if (!genIds.has(e.target) || e.source === id || seen.has(e.source)) return 0; // continue
+          seen.add(e.source);
+          var n = nodes.find(function (nn) {
+            return nn.id === e.source;
+          });
+          if (!n) return 0; // continue
+          var d = n.data || {};
+          var fvN = d.formValues || {};
+          var rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl || Array.isArray(d.outputs) && ((_d$outputs$ = d.outputs[0]) === null || _d$outputs$ === void 0 ? void 0 : _d$outputs$.value) || fvN.image_url;
+          var url = typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg") ? rawThumb : undefined;
+          if (n.type === "characterNode") {
+            out.push({
+              id: n.id,
+              label: (fvN.character_name || "Персонаж").trim() || "Персонаж",
+              kind: "character",
+              url: url
+            });
+          } else if (n.type === "videoNode") {
+            counters.video += 1;
+            out.push({
+              id: n.id,
+              label: "\u0432\u0438\u0434\u0435\u043E".concat(counters.video),
+              kind: "video",
+              url: url
+            });
+          } else if (n.type === "audioNode") {
+            counters.audio += 1;
+            out.push({
+              id: n.id,
+              label: "\u0430\u0443\u0434\u0438\u043E".concat(counters.audio),
+              kind: "audio",
+              url: url
+            });
+          } else {
+            counters.images += 1;
+            out.push({
+              id: n.id,
+              label: "\u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435".concat(counters.images),
+              kind: "images",
+              url: url
+            });
+          }
+        },
+        _ret;
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        _ret = _loop();
+        if (_ret === 0) continue;
+      }
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+    return out;
+  }, [edges, nodes, id]);
 
   // On reload the saved state arrives in data.formValues (input_params); fall back to it.
   var fv = data.formValues || {};
@@ -322,33 +406,33 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
     className: "p-3 flex flex-col gap-2"
   }, /*#__PURE__*/_react["default"].createElement("div", null, /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-[9px] text-purple-400/60 uppercase tracking-wider mb-1 block"
-  }, "\uD83D\uDCA1 \u0412\u0430\u0448\u0430 \u0438\u0434\u0435\u044F"), (photoRefs > 0 || videoRefs > 0 || audioRefs > 0) && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-wrap gap-1 mb-1 nodrag"
-  }, [].concat(_toConsumableArray(Array.from({
-    length: photoRefs
-  }, function (_, i) {
-    return "\u0418\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435".concat(i + 1);
-  })), _toConsumableArray(Array.from({
-    length: videoRefs
-  }, function (_, i) {
-    return "\u0412\u0438\u0434\u0435\u043E".concat(i + 1);
-  })), _toConsumableArray(Array.from({
-    length: audioRefs
-  }, function (_, i) {
-    return "\u0410\u0443\u0434\u0438\u043E".concat(i + 1);
-  }))).map(function (t) {
+  }, "\uD83D\uDCA1 \u0412\u0430\u0448\u0430 \u0438\u0434\u0435\u044F"), availableTags.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-wrap gap-1.5 mb-1 nodrag"
+  }, availableTags.map(function (t) {
     return /*#__PURE__*/_react["default"].createElement("button", {
-      key: t,
+      key: "".concat(t.id, "-").concat(t.label),
       type: "button",
       onMouseDown: function onMouseDown(e) {
         return e.stopPropagation();
       },
       onClick: function onClick() {
-        return insertTag(t);
+        return insertTag(t.label);
       },
-      title: "\u0412\u0441\u0442\u0430\u0432\u0438\u0442\u044C @".concat(t),
-      className: "px-1.5 py-0.5 rounded-md text-[9px] bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
-    }, "@", t);
+      title: "\u0412\u0441\u0442\u0430\u0432\u0438\u0442\u044C @".concat(t.label, " \u0432 \u043F\u0440\u043E\u043C\u043F\u0442"),
+      className: "flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
+    }, t.url ? t.kind === "video" ? /*#__PURE__*/_react["default"].createElement("video", {
+      src: t.url,
+      className: "w-6 h-6 rounded object-cover flex-shrink-0",
+      muted: true
+    }) : /*#__PURE__*/_react["default"].createElement("img", {
+      src: t.url,
+      alt: t.label,
+      className: "w-6 h-6 rounded object-cover flex-shrink-0"
+    }) : /*#__PURE__*/_react["default"].createElement("span", {
+      className: "w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0"
+    }, t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"), /*#__PURE__*/_react["default"].createElement("span", {
+      className: "text-[10px]"
+    }, "@", t.label));
   })), /*#__PURE__*/_react["default"].createElement("textarea", {
     ref: ideaRef,
     value: idea,
