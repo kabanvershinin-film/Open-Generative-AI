@@ -67,12 +67,14 @@ export function AuthProvider({ children }) {
         return () => { sub?.unsubscribe?.(); };
     }, [loadProfile]);
 
-    // Open login modal when any generation route returns 401
+    // Open login modal when any generation route returns 401 — but only if
+    // the user is not already authenticated (avoids spurious popups on token
+    // refresh races or transient Memefast 401s for logged-in users).
     useEffect(() => {
-        const handler = () => setLoginOpen(true);
+        const handler = () => { if (!user) setLoginOpen(true); };
         window.addEventListener('muapi:auth-required', handler);
         return () => window.removeEventListener('muapi:auth-required', handler);
-    }, []);
+    }, [user]);
 
     // Global 402 handler → prompt top-up
     useEffect(() => {
