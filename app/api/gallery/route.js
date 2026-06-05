@@ -3,7 +3,9 @@ import { createHmac, createHash } from 'crypto';
 import { getUser } from '../_lib/balance';
 
 // Allow time to download the generated video from the CDN and re-upload to TOS.
-export const maxDuration = 60;
+// Videos cross two regions (ARK CDN in China → Vercel → TOS in China), so 60s was
+// too tight and the save 504'd; match the workflow route's 5-minute ceiling.
+export const maxDuration = 300;
 
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
 const TOS_BUCKET   = process.env.TOS_BUCKET   || '';
