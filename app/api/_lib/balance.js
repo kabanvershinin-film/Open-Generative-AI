@@ -67,6 +67,23 @@ async function getUserForGallery(request) {
     } catch { return null; }
 }
 
+// ── Admin helpers ─────────────────────────────────────────────────────────────
+const ADMIN_EMAILS = ['kaban.vershinin@gmail.com', 'didig.vershinin@yandex.ru'];
+function isAdminUser(user) {
+    return !!(user?.email && ADMIN_EMAILS.some(e => e.toLowerCase() === user.email.toLowerCase()));
+}
+// Resolve user ids → emails (admin/service-role read of profiles). Returns {} on
+// any failure or when billing/service-role isn't configured.
+async function getEmailsForIds(ids) {
+    const out = {};
+    if (!BILLING_ENABLED || !Array.isArray(ids) || !ids.length) return out;
+    try {
+        const { data } = await admin().from('profiles').select('id, email').in('id', ids);
+        (data || []).forEach(p => { if (p?.id) out[p.id] = p.email || null; });
+    } catch { /* best-effort */ }
+    return out;
+}
+
 // Best-effort transaction log so the user can see their spending history in the
 // cabinet. Spends are stored as a negative amount, credits/refunds as positive
 // (matching the admin top-up rows, which insert a positive amount). Never throws
@@ -270,5 +287,5 @@ async function getBalance(request) {
 export {
     BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund,
     listTransactions, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData,
-    chargeForTask,
+    chargeForTask, isAdminUser, getEmailsForIds,
 };

@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-no-card-publish-v48',
+  generateBuildId: async () => 'build-admin-moderate-v49',
 };
 
 export default nextConfig;

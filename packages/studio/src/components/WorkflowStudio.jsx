@@ -130,7 +130,7 @@ const WorkflowUI = dynamic(() => import("./WorkflowUI"), {
   ),
 });
 
-function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPublish }) {
+function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPublish, onModerate }) {
   const [showOptions, setShowOptions] = useState(false);
 
   return (
@@ -226,6 +226,19 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
         </div>
       )}
 
+      {/* Admin moderation: remove from community (top-right, below the badge) */}
+      {activeTab === 'published' && workflow.can_moderate && (
+        <button
+          onClick={(e) => { e.stopPropagation(); if (window.confirm('Снять этот воркфлоу с публикации в Community?')) onModerate?.(workflow.id); }}
+          title="Снять с публикации (админ)"
+          className={`absolute right-2 z-30 grid place-items-center w-7 h-7 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/40 hover:text-white transition-colors ${workflow.is_mine ? 'top-10' : 'top-2'}`}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+          </svg>
+        </button>
+      )}
+
       <div className="absolute inset-x-0 bottom-0 p-4">
         <div className="text-[10px] font-bold text-[#22d3ee] uppercase tracking-wider mb-1 opacity-80">
           {workflow.category || "General"}
@@ -233,6 +246,11 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
         <h3 className="text-sm font-bold text-white truncate group-hover:text-[#22d3ee] transition-colors">
           {workflow.name || "Untitled Flow"}
         </h3>
+        {activeTab === 'published' && workflow.can_moderate && (
+          <p className="text-[10px] text-white/45 truncate mt-0.5" title={workflow.author_email || ''}>
+            👤 {workflow.author_email || 'неизвестно'}
+          </p>
+        )}
       </div>
     </div>
   );
@@ -395,6 +413,20 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
     } catch (err) {
       console.error("Publish failed:", err);
       alert("Failed to publish workflow");
+    }
+  };
+
+  // Admin/owner: take a workflow down from the Community list.
+  const handleModerate = async (wfId) => {
+    try {
+      await fetch(`/api/workflow/${wfId}/community-remove`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      });
+      setWorkflows((prev) => prev.filter((w) => w.id !== wfId));
+    } catch (err) {
+      console.error('Moderate failed:', err);
+      alert('Не удалось снять с публикации');
     }
   };
 
@@ -732,6 +764,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 }}
                 onDelete={handleDeleteWorkflow}
                 onPublish={handlePublishWorkflow}
+                onModerate={handleModerate}
               />
             ))}
             {!loading && workflows.length === 0 && (

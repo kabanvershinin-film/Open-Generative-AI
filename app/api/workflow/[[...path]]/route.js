@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
-import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund } from '../../_lib/balance';
+import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund, isAdminUser, getEmailsForIds } from '../../_lib/balance';
 
 export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generations
 
@@ -1291,10 +1291,20 @@ export async function GET(request, { params }) {
 
     if (path[0] === 'community') {
         const list = await tosLoadCommunity();
-        // Flag the caller's own published workflows so the UI can badge them.
         const user = await getUserForGallery(request);
-        const withMine = list.map((e) => ({ ...e, is_mine: !!(user && e && e.owner_id && e.owner_id === user.id) }));
-        return NextResponse.json(withMine);
+        const admin = isAdminUser(user);
+        // Admins also see who published each workflow (to moderate bad names).
+        let emails = {};
+        if (admin) {
+            const ids = [...new Set(list.map((e) => e && e.owner_id).filter(Boolean))];
+            emails = await getEmailsForIds(ids);
+        }
+        const out = list.map((e) => ({
+            ...e,
+            is_mine: !!(user && e && e.owner_id && e.owner_id === user.id),
+            ...(admin ? { can_moderate: true, author_email: e.owner_id ? (emails[e.owner_id] || null) : null } : {}),
+        }));
+        return NextResponse.json(out);
     }
 
     if (path[0] === 'get-workflow-def') {
@@ -1716,6 +1726,25 @@ export async function POST(request, { params }) {
         store.set(wfId, updated);
         tosSaveWorkflow(wfId, updated).catch(() => {});
         return NextResponse.json({ success: true, publish: published, is_published: published });
+    }
+
+    // Moderation: remove a workflow from the Community list. Allowed for the
+    // owner or an admin (e.g. to take down a profane/abusive name).
+    if (path[1] === 'community-remove') {
+        const wfId = path[0];
+        const user = await getUserForGallery(request);
+        const wf = store.get(wfId) || (await tosLoadWorkflow(wfId)) || null;
+        const isOwner = !!(wf?.owner_id && user?.id && wf.owner_id === user.id);
+        if (!isOwner && !isAdminUser(user)) {
+            return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        }
+        await tosRemoveFromCommunity(wfId);
+        if (wf) {
+            const updated = { ...wf, is_published: false, updated_at: new Date().toISOString() };
+            store.set(wfId, updated);
+            tosSaveWorkflow(wfId, updated).catch(() => {});
+        }
+        return NextResponse.json({ success: true });
     }
 
     if (['template', 'update-category', 'thumbnail'].includes(path[1])) {
