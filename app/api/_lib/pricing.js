@@ -8,8 +8,32 @@
 //   CNY_TO_RUB       — yuan→ruble rate (CBR), default 10.55
 //   PLATFORM_MARKUP  — platform margin, default 1.15 (+15%)
 
-const CNY_TO_RUB = Number(process.env.CNY_TO_RUB || 10.55);
+let CNY_TO_RUB = Number(process.env.CNY_TO_RUB || 10.55); // live CBR rate, see ensureCnyRate()
 const PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.15);
+
+// Refresh CNY→RUB from the Central Bank of Russia (same source as creator-club),
+// cached in-memory for 1h. Updates the module-level CNY_TO_RUB used by every
+// price function. Best-effort: on any failure we keep the current/fallback rate.
+// Call `await ensureCnyRate()` right before a charge so рубли follow the real rate.
+let _rateAt = 0;
+async function ensureCnyRate() {
+    const now = Date.now();
+    if (now - _rateAt < 3600_000) return CNY_TO_RUB; // fresh (<1h)
+    try {
+        const r = await fetch('https://www.cbr-xml-daily.ru/daily_json.js', { signal: AbortSignal.timeout(5000) });
+        const data = await r.json();
+        const cny = data?.Valute?.CNY;
+        if (cny?.Value) {
+            CNY_TO_RUB = Math.round((cny.Value / (cny.Nominal || 1)) * 100) / 100;
+            _rateAt = now;
+        } else {
+            _rateAt = now - 3300_000; // couldn't parse → retry in ~5 min
+        }
+    } catch {
+        _rateAt = now - 3300_000; // CBR unreachable → retry in ~5 min, keep fallback
+    }
+    return CNY_TO_RUB;
+}
 
 // ── Memefast VIDEO prices in CNY (¥) ────────────────────────────────────────
 const MEMEFAST_VIDEO_CNY = {
@@ -208,4 +232,4 @@ function priceRub(category, model, params = {}) {
     return imagePriceRub(real);
 }
 
-export { priceRub, seedance2RateCny, rubFromTokens, CNY_TO_RUB, PLATFORM_MARKUP };
+export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP };

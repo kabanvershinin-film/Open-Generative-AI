@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BILLING_ENABLED, getBalance, signBill, verifyBillData, chargeForTask } from '../../_lib/balance';
-import { priceRub, seedance2RateCny, rubFromTokens } from '../../_lib/pricing';
+import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
 // Auth: long-lived Ark API Key (Bearer). Set ARK_API_KEY in env.
@@ -148,6 +148,7 @@ export async function POST(request) {
     const billingModelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
     // A reference VIDEO (not an image first frame) switches to the cheaper rate.
     const hasVideoInput = !!(video_url || (Array.isArray(video_urls) && video_urls.filter(Boolean).length));
+    await ensureCnyRate(); // live CBR rate for the estimate gate
     const cost = priceRub('video', billingModelId, { duration: effDur, resolution: effRes, video_url, generate_audio });
     let bill = '';
     if (BILLING_ENABLED && cost > 0) {
@@ -224,6 +225,7 @@ export async function GET(request) {
     if (succeeded && BILLING_ENABLED) {
       const billData = verifyBillData(searchParams.get('bill'));
       if (billData) {
+        await ensureCnyRate(); // live CBR rate so the charge follows the real ¥→₽
         const rate = Number(billData.r || 0);
         const actual = (tokens > 0 && rate > 0) ? rubFromTokens(tokens, rate) : Number(billData.c || 0);
         if (actual > 0) {
