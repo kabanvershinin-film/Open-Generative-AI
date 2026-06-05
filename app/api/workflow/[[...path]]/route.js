@@ -1441,11 +1441,15 @@ export async function POST(request, { params }) {
 
         // Billing: charge the logged-in user's balance before generating.
         // No-op when billing is disabled or the user isn't authenticated.
+        // Always resolve the user (when Supabase is configured) so gallery saves
+        // work even for zero-cost models or when a billing deduction fails.
         const cost = costForNode(model, params);
         let billedUser = null;
-        if (BILLING_ENABLED && cost > 0) {
+        let galleryUserId = null;
+        if (BILLING_ENABLED) {
             const user = await getUser(request);
-            if (user) {
+            galleryUserId = user?.id || null;
+            if (user && cost > 0) {
                 const charged = await deduct(user.id, cost);
                 if (!charged.ok && charged.reason === 'insufficient') {
                     return NextResponse.json(
@@ -1457,7 +1461,7 @@ export async function POST(request, { params }) {
             }
         }
 
-        await runNode(runId, nodeId, model, params, apiKey, billedUser?.id);
+        await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id);
         const result = runStore.get(runId) || { status: 'processing', nodes: {} };
 
         // Refund if the generation ended up failing.
