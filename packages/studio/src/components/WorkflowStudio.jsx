@@ -228,6 +228,13 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
         </div>
       )}
 
+      {/* "Yours" badge on community cards the current user published */}
+      {activeTab === 'published' && workflow.is_mine && (
+        <div className="absolute top-2 right-2 z-20 px-2 py-1 bg-purple-500/25 border border-purple-400/50 rounded-full backdrop-blur-md">
+          <span className="text-[9px] font-black text-purple-200 uppercase tracking-widest">★ Ваш</span>
+        </div>
+      )}
+
       <div className="absolute inset-x-0 bottom-0 p-4">
         <div className="text-[10px] font-bold text-[#22d3ee] uppercase tracking-wider mb-1 opacity-80">
           {workflow.category || "General"}

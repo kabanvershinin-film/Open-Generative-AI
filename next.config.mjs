@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-welcome-modal-v46',
+  generateBuildId: async () => 'build-community-mine-v47',
 };
 
 export default nextConfig;

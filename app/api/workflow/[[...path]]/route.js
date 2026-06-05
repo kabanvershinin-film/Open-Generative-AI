@@ -1291,7 +1291,10 @@ export async function GET(request, { params }) {
 
     if (path[0] === 'community') {
         const list = await tosLoadCommunity();
-        return NextResponse.json(list);
+        // Flag the caller's own published workflows so the UI can badge them.
+        const user = await getUserForGallery(request);
+        const withMine = list.map((e) => ({ ...e, is_mine: !!(user && e && e.owner_id && e.owner_id === user.id) }));
+        return NextResponse.json(withMine);
     }
 
     if (path[0] === 'get-workflow-def') {
@@ -1704,6 +1707,7 @@ export async function POST(request, { params }) {
                 thumbnail: body.thumbnail || wf.thumbnail || null,
                 published_at: new Date().toISOString(),
                 nodes_count: (wf.nodes || []).length,
+                owner_id: wf.owner_id || null, // so the author can spot their own card
             });
         } else {
             await tosRemoveFromCommunity(wfId);
