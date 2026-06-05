@@ -42,6 +42,7 @@ import ChatWidget from "./ChatWidget";
 import { AiOutlineAudio } from "react-icons/ai";
 import VideoCombiner from "./VideoCombiner";
 import CharacterNode from "./CharacterNode";
+import SeedancePromptNode from "./SeedancePromptNode";
 import { useGenerationCost } from "./useGenerationCost";
 
 const nodeTypes = {
@@ -52,7 +53,8 @@ const nodeTypes = {
   concatNode: PromptConcate,
   vidConcatNode: VideoCombiner,
   apiNode: ApiNode,
-  characterNode: CharacterNode
+  characterNode: CharacterNode,
+  seedancePromptNode: SeedancePromptNode
 }
 
 const initialNodes = [
@@ -1164,7 +1166,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       const connectedEdges = edges.filter((e) => e.target === node.id);
       const inputNodes = connectedEdges.map((e) => e.source);
-      const category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : "utility";
+      const category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : node.type === "seedancePromptNode" ? "seedancePrompt" : "utility";
       const isVideoCombiner = node.type === "vidConcatNode";
       const model = node.data?.selectedModel?.id ? node.data?.selectedModel?.id : category === "utility" ? (isVideoCombiner ? "video-combiner" : "prompt-concatenator") : category === "character" ? "character-passthrough" : `${category}-passthrough`;
       const modelSchema = nodeSchemas?.categories?.[category]?.models?.[model]?.input_schema?.schemas?.input_data;

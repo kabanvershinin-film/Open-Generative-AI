@@ -36,6 +36,7 @@ var _ChatWidget = _interopRequireDefault(require("./ChatWidget"));
 var _ai = require("react-icons/ai");
 var _VideoCombiner = _interopRequireDefault(require("./VideoCombiner"));
 var _CharacterNode = _interopRequireDefault(require("./CharacterNode"));
+var _SeedancePromptNode = _interopRequireDefault(require("./SeedancePromptNode"));
 var _useGenerationCost2 = require("./useGenerationCost");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t0 in e) "default" !== _t0 && {}.hasOwnProperty.call(e, _t0) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t0)) && (i.get || i.set) ? o(f, _t0, i) : f[_t0] = e[_t0]); return f; })(e, t); }
@@ -67,7 +68,8 @@ var nodeTypes = {
   concatNode: _PromptConcate["default"],
   vidConcatNode: _VideoCombiner["default"],
   apiNode: _ApiNode["default"],
-  characterNode: _CharacterNode["default"]
+  characterNode: _CharacterNode["default"],
+  seedancePromptNode: _SeedancePromptNode["default"]
 };
 var initialNodes = [{
   id: "text1",
@@ -1311,7 +1313,7 @@ var NodeFlow = function NodeFlow(_ref) {
       var inputNodes = connectedEdges.map(function (e) {
         return e.source;
       });
-      var category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : "utility";
+      var category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : node.type === "seedancePromptNode" ? "seedancePrompt" : "utility";
       var isVideoCombiner = node.type === "vidConcatNode";
       var model = (_node$data2 = node.data) !== null && _node$data2 !== void 0 && (_node$data2 = _node$data2.selectedModel) !== null && _node$data2 !== void 0 && _node$data2.id ? (_node$data3 = node.data) === null || _node$data3 === void 0 || (_node$data3 = _node$data3.selectedModel) === null || _node$data3 === void 0 ? void 0 : _node$data3.id : category === "utility" ? isVideoCombiner ? "video-combiner" : "prompt-concatenator" : category === "character" ? "character-passthrough" : "".concat(category, "-passthrough");
       var modelSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori4 = nodeSchemas.categories) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4[category]) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.models) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4[model]) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.input_schema) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.schemas) === null || _nodeSchemas$categori4 === void 0 ? void 0 : _nodeSchemas$categori4.input_data;

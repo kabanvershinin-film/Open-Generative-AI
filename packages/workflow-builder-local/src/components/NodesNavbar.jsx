@@ -159,6 +159,16 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
         // Edit Video removed.
       ]
     },
+    {
+      label: "AI",
+      items: [
+        {
+          label: "Seedance Промпт",
+          icon: <MdAutoFixHigh />,
+          action: () => handleAddNode("seedancePromptNode", { id: "text-passthrough", name: "Seedance Промпт" }),
+        },
+      ]
+    },
     // Audio (Generate Audio) and API Models (Api Node) sections removed.
   ];
 
