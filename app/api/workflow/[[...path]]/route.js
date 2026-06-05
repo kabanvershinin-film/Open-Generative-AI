@@ -223,8 +223,14 @@ async function tosSaveWorkflow(id, data) {
     if (!TOS_ENABLED) return;
     const buf = Buffer.from(JSON.stringify(data));
     await tosUpload(`workflows/${id}.json`, buf, 'application/json').catch(() => {});
-    // Update workflow index
-    await tosUpdateIndex(id, { id, name: data.name || 'Untitled', updated_at: data.updated_at || new Date().toISOString(), thumbnail: data.thumbnail || null }).catch(() => {});
+    // Update workflow index (carry owner_id so the list can be scoped per user;
+    // only set it when known so we never null out an existing owner).
+    await tosUpdateIndex(id, {
+        id, name: data.name || 'Untitled',
+        updated_at: data.updated_at || new Date().toISOString(),
+        thumbnail: data.thumbnail || null,
+        ...(data.owner_id ? { owner_id: data.owner_id } : {}),
+    }).catch(() => {});
 }
 
 async function tosLoadIndex() {
@@ -1263,7 +1269,10 @@ export async function GET(request, { params }) {
     const { path = [] } = await params;
 
     if (path[0] === 'list') {
-        const index = await tosLoadIndex();
+        // Workflows are private: only the owner sees them. Guests get nothing.
+        const user = await getUserForGallery(request);
+        if (!user?.id) return NextResponse.json([]);
+        const index = (await tosLoadIndex()).filter(e => e && e.owner_id === user.id);
         // Merge: in-memory store has the freshest name (written synchronously on
         // every save). The TOS index can be stale if tosUpdateIndex lost a race or
         // the serverless instance restarted between the save and the index write.
@@ -1287,14 +1296,35 @@ export async function GET(request, { params }) {
 
     if (path[0] === 'get-workflow-def') {
         const id = path[1];
+        const user = await getUserForGallery(request);
         let wf = store.get(id);
         if (!wf) { wf = await tosLoadWorkflow(id); if (wf) store.set(id, wf); }
         wf = wf || {};
+
+        // Privacy gate: never expose another user's nodes. Return an EMPTY workflow
+        // (so the builder opens blank instead of erroring) when the caller isn't the
+        // owner. Legacy workflows with no owner are claimed by the first logged-in
+        // user who opens them (so the real owner re-gains them after this change).
+        const ownerId = wf.owner_id || null;
+        const emptyDef = {
+            workflow_id: id, id, name: 'Workflow', data: { nodes: [] }, edges: [],
+            is_owner: false, is_published: false, is_template: false,
+            show_temp_button: false, run_id: null, category: 'General',
+        };
+        if (ownerId) {
+            if (!user || user.id !== ownerId) return NextResponse.json(emptyDef);
+        } else if (wf.nodes || wf.edges) {
+            if (!user?.id) return NextResponse.json(emptyDef);
+            wf = { ...wf, owner_id: user.id };
+            store.set(id, wf);
+            tosSaveWorkflow(id, wf).catch(() => {});
+        }
+
         // If the workflow has a real name, make sure the index reflects it — repairs
         // cases where the index was written with "Untitled Workflow" before the user
         // renamed it, or where tosUpdateIndex failed silently.
         if (wf.name && wf.name !== 'Untitled Workflow' && wf.name !== 'Untitled') {
-            tosUpdateIndex(id, { id, name: wf.name, updated_at: wf.updated_at || new Date().toISOString(), thumbnail: wf.thumbnail || null }).catch(() => {});
+            tosUpdateIndex(id, { id, name: wf.name, updated_at: wf.updated_at || new Date().toISOString(), thumbnail: wf.thumbnail || null, ...(wf.owner_id ? { owner_id: wf.owner_id } : {}) }).catch(() => {});
         }
         return NextResponse.json({
             workflow_id: id, id, name: wf.name || 'Untitled Workflow',
@@ -1425,13 +1455,20 @@ export async function POST(request, { params }) {
     }
 
     if (path[0] === 'create' || path.length === 0) {
+        const owner = await getUserForGallery(request);
         const id = body.workflow_id || genId();
+        const existing = store.get(id) || (await tosLoadWorkflow(id)) || null;
+        // Don't let one user overwrite another user's workflow.
+        if (existing?.owner_id && owner?.id && existing.owner_id !== owner.id) {
+            return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        }
         const wf = {
             workflow_id: id, id,
             name: body.name || 'Untitled Workflow',
             nodes: stripBase64(body.data?.nodes || []),
             edges: body.edges || [],
-            created_at: new Date().toISOString(),
+            owner_id: existing?.owner_id || owner?.id || null,
+            created_at: existing?.created_at || new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
         store.set(id, wf);
@@ -1690,8 +1727,13 @@ export async function POST(request, { params }) {
     }
 
     const id = path[0];
-    const existing = store.get(id) || emptyWorkflow(id);
-    const updated = { ...existing, ...body, workflow_id: id, id, updated_at: new Date().toISOString() };
+    const owner = await getUserForGallery(request);
+    const existing = store.get(id) || (await tosLoadWorkflow(id)) || emptyWorkflow(id);
+    if (existing.owner_id && owner?.id && existing.owner_id !== owner.id) {
+        return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+    }
+    // Preserve/own the workflow; never let the body override owner_id.
+    const updated = { ...existing, ...body, workflow_id: id, id, owner_id: existing.owner_id || owner?.id || null, updated_at: new Date().toISOString() };
     store.set(id, updated);
     tosSaveWorkflow(id, updated).catch(() => {});
     return NextResponse.json(updated);
