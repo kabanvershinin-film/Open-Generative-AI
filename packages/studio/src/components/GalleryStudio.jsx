@@ -45,6 +45,14 @@ export default function GalleryStudio({ apiKey }) {
     }
   };
 
+  // Small resized preview from TOS (image-processing) instead of the full
+  // multi-MB original — big speedup since the bucket is in a far region. Only
+  // rewrites TOS-hosted images; <img onError> falls back to the original.
+  const toThumb = (u) => {
+    if (!u || typeof u !== 'string' || u.startsWith('data:') || !u.includes('.volces.com')) return u;
+    return u + (u.includes('?') ? '&' : '?') + 'x-tos-process=image/resize,w_512';
+  };
+
   const getIcon = (type) => {
     const icons = {
       image: '🖼️',
@@ -97,8 +105,11 @@ export default function GalleryStudio({ apiKey }) {
                 {/* Thumbnail */}
                 {entry.type === 'image' && (
                   <img
-                    src={entry.url}
+                    src={toThumb(entry.url)}
                     alt={entry.model}
+                    loading="lazy"
+                    decoding="async"
+                    onError={(e) => { if (entry.url && e.currentTarget.src !== entry.url) e.currentTarget.src = entry.url; }}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                 )}

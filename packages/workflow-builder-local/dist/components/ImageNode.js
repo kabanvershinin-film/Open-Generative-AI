@@ -608,6 +608,12 @@ var ImageGeneration = function ImageGeneration(_ref) {
   }();
   var currentOutputList = currentHistoryIndex !== -1 && outputHistory[currentHistoryIndex] ? ((_outputHistory$curren = outputHistory[currentHistoryIndex]) === null || _outputHistory$curren === void 0 || (_outputHistory$curren = _outputHistory$curren.result) === null || _outputHistory$curren === void 0 ? void 0 : _outputHistory$curren.outputs) || [] : data.outputs || [];
   var currentOutput = currentOutputList.length > 0 ? ((_currentOutputList$cu = currentOutputList[currentImageIndex]) === null || _currentOutputList$cu === void 0 ? void 0 : _currentOutputList$cu.value) || ((_currentOutputList$ = currentOutputList[0]) === null || _currentOutputList$ === void 0 ? void 0 : _currentOutputList$.value) || data.resultUrl : data.resultUrl;
+  // Show a small resized preview (TOS image-processing) instead of the full
+  // multi-MB original; onError on the <img> falls back to the original.
+  var toThumb = function toThumb(u) {
+    if (!u || typeof u !== "string" || u.startsWith("data:") || u.indexOf(".volces.com") === -1) return u;
+    return u + (u.indexOf("?") !== -1 ? "&" : "?") + "x-tos-process=image/resize,w_640";
+  };
   (0, _react.useEffect)(function () {
     if (currentOutput) {
       var img = new Image();
@@ -835,8 +841,13 @@ var ImageGeneration = function ImageGeneration(_ref) {
     size: 16
   }))), /*#__PURE__*/_react["default"].createElement("img", {
     key: currentOutput,
-    src: currentOutput,
+    src: toThumb(currentOutput),
     alt: "Generated",
+    loading: "lazy",
+    decoding: "async",
+    onError: function onError(e) {
+      if (currentOutput && e.currentTarget.src !== currentOutput) e.currentTarget.src = currentOutput;
+    },
     className: "w-full h-full object-contain rounded-b-xl animate-in fade-in duration-500"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none rounded-b-xl flex flex-col justify-end"

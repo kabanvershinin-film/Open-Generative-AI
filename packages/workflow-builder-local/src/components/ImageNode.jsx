@@ -451,6 +451,15 @@ const ImageGeneration = ({ id, data, selected }) => {
     ? currentOutputList[currentImageIndex]?.value || currentOutputList[0]?.value || data.resultUrl
     : data.resultUrl;
 
+  // Show a small resized preview (TOS image-processing) instead of the full
+  // multi-MB original — a big speedup since the bucket lives in a far region.
+  // Only rewrites TOS-hosted images; onError on the <img> falls back to the
+  // original if the bucket doesn't have image-processing enabled.
+  const toThumb = (u) => {
+    if (!u || typeof u !== "string" || u.startsWith("data:") || !u.includes(".volces.com")) return u;
+    return u + (u.includes("?") ? "&" : "?") + "x-tos-process=image/resize,w_640";
+  };
+
   useEffect(() => {
     if (currentOutput) {
       const img = new Image();
@@ -652,8 +661,11 @@ const ImageGeneration = ({ id, data, selected }) => {
               )}
               <img
                 key={currentOutput}
-                src={currentOutput}
+                src={toThumb(currentOutput)}
                 alt="Generated"
+                loading="lazy"
+                decoding="async"
+                onError={(e) => { if (currentOutput && e.currentTarget.src !== currentOutput) e.currentTarget.src = currentOutput; }}
                 className="w-full h-full object-contain rounded-b-xl animate-in fade-in duration-500"
               />
               <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none rounded-b-xl flex flex-col justify-end">
