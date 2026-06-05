@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { BILLING_ENABLED, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData } from '../../_lib/balance';
+import { BILLING_ENABLED, getBalance, signBill, verifyBillData, chargeForTask } from '../../_lib/balance';
 import { priceRub, seedance2RateCny, rubFromTokens } from '../../_lib/pricing';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
@@ -139,32 +139,29 @@ export async function POST(request) {
     }
     const effDur = (duration != null && duration !== '') ? Math.max(4, Math.min(15, Number(duration) || 5)) : 5;
 
-    // Pre-charge the user before creating the task. The model id (not the ep-...
-    // endpoint) drives the token-based Seedance price in pricing.js.
+    // Post-paid billing: DON'T charge at submit. We only GATE here (require login
+    // and enough balance for the estimate) so a user can't start a job they can't
+    // pay for. The real, single charge happens when the task finishes, based on
+    // ARK's actual usage.total_tokens — so the cabinet shows one clean deduction
+    // instead of a pre-charge + refund pair. The model id (not the ep-... endpoint)
+    // drives the token-based Seedance price in pricing.js.
     const billingModelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
     // A reference VIDEO (not an image first frame) switches to the cheaper rate.
     const hasVideoInput = !!(video_url || (Array.isArray(video_urls) && video_urls.filter(Boolean).length));
     const cost = priceRub('video', billingModelId, { duration: effDur, resolution: effRes, video_url, generate_audio });
     let bill = '';
     if (BILLING_ENABLED && cost > 0) {
-      const reason = `Seedance 2.0${fast ? ' Fast' : ''} ${effRes} ${effDur}s`;
-      const charge = await spendBalance(request, cost, reason, { model: billingModelId, resolution: effRes, durationSec: effDur });
-      if (!charge.ok) {
-        if (charge.error === 'unauthorized') {
-          return NextResponse.json({ error: 'Войдите в аккаунт, чтобы генерировать.' }, { status: 401 });
-        }
-        if (charge.error === 'insufficient') {
-          return NextResponse.json(
-            { error: 'insufficient_funds', required: cost, balance: charge.balance },
-            { status: 402 },
-          );
-        }
-        return NextResponse.json({ error: charge.error || 'Ошибка списания баланса' }, { status: 500 });
+      const balance = await getBalance(request);
+      if (balance === null) {
+        return NextResponse.json({ error: 'Войдите в аккаунт, чтобы генерировать.' }, { status: 401 });
       }
-      // Carry the token rate (¥/1M) in the signed bill so the poll route can turn
-      // ARK's actual usage.total_tokens into an exact price and reconcile.
+      if (balance < cost) {
+        return NextResponse.json({ error: 'insufficient_funds', required: cost, balance }, { status: 402 });
+      }
+      // Sign the rate (¥/1M) + estimate fallback so the poll route can compute the
+      // exact price from ARK's real token count and charge it once.
       const rate = seedance2RateCny(billingModelId, effRes, hasVideoInput);
-      bill = signBill(cost, { r: rate });
+      bill = signBill(cost, { r: rate, m: billingModelId, res: effRes, d: effDur });
     }
 
     const payload = { model, content, generate_audio, watermark: false };
@@ -217,32 +214,27 @@ export async function GET(request) {
     const tokens = Number(data.usage?.total_tokens || data.content?.usage?.total_tokens || 0);
 
     const lc = String(status).toLowerCase();
-    const failed = ['failed', 'error', 'expired', 'cancelled'].includes(lc);
     const succeeded = ['succeeded', 'success', 'completed'].includes(lc);
 
-    // Async failure → refund the amount carried in the (HMAC-signed) bill token.
-    // The signature stops a client inflating or forging a refund.
-    if (failed) {
-      const cost = verifyBill(searchParams.get('bill'));
-      if (cost > 0) await refundBalanceRpc(request, cost, 'seedance_failed');
-    }
-
-    // Success → reconcile the pre-charge against ARK's ACTUAL usage. The bill
-    // carries the (signed) estimate `c` and token rate `r`; price = tokens × r ×
-    // курс × наценка. Refund overcharge / charge the (small) difference. The poll
-    // stops on the first success, so this runs once. Best-effort: a failed top-up
-    // here must never break delivering the finished video.
-    if (succeeded && BILLING_ENABLED && tokens > 0) {
+    // Nothing was pre-charged, so a failure costs the user nothing — no refund needed.
+    // On SUCCESS, charge the exact price from ARK's real token usage, ONCE (idempotent
+    // on taskId so a re-poll / page-resume can't double-charge). The signed bill
+    // carries the token rate `r` (and an estimate `c` as a fallback if usage is
+    // missing). Best-effort: a billing hiccup must never block delivering the video.
+    if (succeeded && BILLING_ENABLED) {
       const billData = verifyBillData(searchParams.get('bill'));
-      const rate = Number(billData?.r || 0);
-      const estimate = Number(billData?.c || 0);
-      if (rate > 0) {
-        const actual = rubFromTokens(tokens, rate);
-        const delta = Math.round((actual - estimate) * 100) / 100;
-        try {
-          if (delta > 0.01) await spendBalance(request, delta, 'Seedance: дозачёт по факту', { tokens, actual });
-          else if (delta < -0.01) await refundBalanceRpc(request, -delta, 'seedance_actual_overcharge');
-        } catch { /* delivering the video matters more than the kopeck delta */ }
+      if (billData) {
+        const rate = Number(billData.r || 0);
+        const actual = (tokens > 0 && rate > 0) ? rubFromTokens(tokens, rate) : Number(billData.c || 0);
+        if (actual > 0) {
+          const fastM = String(billData.m || '').includes('fast');
+          const reason = `Seedance 2.0${fastM ? ' Fast' : ''} ${billData.res || ''} ${billData.d || ''}s`.replace(/\s+/g, ' ').trim();
+          try {
+            await chargeForTask(request, taskId, actual, reason, {
+              model: billData.m, tokens, resolution: billData.res, durationSec: billData.d,
+            });
+          } catch { /* delivering the video matters more than the charge */ }
+        }
       }
     }
 

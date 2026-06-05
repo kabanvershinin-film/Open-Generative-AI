@@ -132,6 +132,27 @@ async function refund(userId, amount, reason = 'Возврат', meta = null) {
     }
 }
 
+// Charge `amount` for a finished task EXACTLY ONCE — used for post-paid billing
+// where the charge happens after the work completes (e.g. Seedance, billed on
+// ARK's real token usage). Idempotent on taskId: a poll/resume that re-observes
+// the same success won't double-charge, because we skip if a transaction already
+// carries this taskId in its meta. Resolves the user from the request (cookie/JWT).
+async function chargeForTask(request, taskId, amount, reason = 'Генерация', meta = {}) {
+    if (!BILLING_ENABLED) return { ok: true, free: true };
+    if (!(amount > 0)) return { ok: true };
+    const user = await getUser(request);
+    if (!user?.id) return { ok: false, reason: 'unauthorized' };
+    if (taskId) {
+        try {
+            const { data } = await admin()
+                .from('balance_transactions')
+                .select('id').eq('user_id', user.id).eq('meta->>taskId', String(taskId)).limit(1);
+            if (data && data.length) return { ok: true, already: true };
+        } catch { /* check failed → fall through and charge (don't lose revenue) */ }
+    }
+    return deduct(user.id, amount, reason, { ...meta, taskId: String(taskId) });
+}
+
 // List a user's recent balance transactions (newest first). Returns [] when
 // billing is off or on any error — never throws.
 async function listTransactions(userId, limit = 50) {
@@ -249,4 +270,5 @@ async function getBalance(request) {
 export {
     BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund,
     listTransactions, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData,
+    chargeForTask,
 };
