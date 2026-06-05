@@ -57,12 +57,9 @@ export default function LoginModal() {
                         От креаторов · для креаторов
                     </p>
 
-                    <h2 className="text-2xl font-bold text-white text-center">
+                    <h2 className="text-2xl font-bold text-white text-center mb-6">
                         {isRegister ? 'Создайте аккаунт' : 'С возвращением'}
                     </h2>
-                    <p className="text-center text-sm text-white/45 mt-1.5 mb-6">
-                        {isRegister ? 'Бесплатный старт — генерируйте за минуту' : 'Войдите, чтобы продолжить творить'}
-                    </p>
 
                     <form onSubmit={submit} className="space-y-3">
                         {isRegister && (
