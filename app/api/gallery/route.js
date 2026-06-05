@@ -192,20 +192,33 @@ async function fetchEntry(host, key) {
 // independent of ListObjects. Read-modify-write; dedupes by id and url.
 async function appendToIndex(host, userId, entry) {
     if (!TOS_ENABLED || !userId || !entry) return;
-    try {
-        const key = `gallery/${userId}/entries.json`;
-        let list = null;
-        const r = await fetch(`https://${host}/${key}`);
-        if (r.ok) list = await r.json().catch(() => null);
-        else list = await tosGetSignedJson(host, key);
+    const key = `gallery/${userId}/entries.json`;
+    const readList = async () => {
+        try {
+            const r = await fetch(`https://${host}/${key}`);
+            if (r.ok) return await r.json().catch(() => null);
+            return await tosGetSignedJson(host, key);
+        } catch { return null; }
+    };
+    // Read-modify-write with verify+retry. The index is a single shared file, so
+    // two generations finishing close together would otherwise overwrite each
+    // other (the "saved then vanished" bug). TOS is read-after-write consistent,
+    // so re-reading after the write reliably tells us whether our entry stuck;
+    // if a concurrent writer clobbered it we retry (with jitter) until it does.
+    for (let attempt = 0; attempt < 6; attempt++) {
+        let list = await readList();
         if (!Array.isArray(list)) list = [];
-        const exists = list.some((e) => e && (e.id === entry.id || e.url === entry.url));
-        if (!exists) list.unshift(entry);
-        if (list.length > 1000) list = list.slice(0, 1000);
-        await tosUpload(key, Buffer.from(JSON.stringify(list)), 'application/json');
-    } catch (e) {
-        logStep('appendToIndex error', { message: e.message });
+        if (list.some((e) => e && (e.id === entry.id || e.url === entry.url))) return; // already saved
+        let next = [entry, ...list];
+        if (next.length > 1000) next = next.slice(0, 1000);
+        const ok = await tosUpload(key, Buffer.from(JSON.stringify(next)), 'application/json');
+        if (ok) {
+            const check = await readList();
+            if (Array.isArray(check) && check.some((e) => e && e.id === entry.id)) return; // survived
+        }
+        await new Promise((r) => setTimeout(r, 70 + Math.floor(Math.random() * 130)));
     }
+    logStep('appendToIndex gave up (contention)', { userId });
 }
 
 export async function GET(request) {

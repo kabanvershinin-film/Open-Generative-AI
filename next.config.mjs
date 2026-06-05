@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-instant-image-v37',
+  generateBuildId: async () => 'build-gallery-race-v38',
 };
 
 export default nextConfig;

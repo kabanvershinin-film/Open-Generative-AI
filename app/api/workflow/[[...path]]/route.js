@@ -122,18 +122,32 @@ async function tosGetJsonSigned(key) {
 // GET reads this file directly. Read-modify-write; dedupes by id and url.
 async function appendToIndex(userId, entry) {
     if (!TOS_ENABLED || !userId || !entry) return;
-    try {
-        const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-        const key = `gallery/${userId}/entries.json`;
-        let list = null;
-        const r = await fetch(`https://${host}/${key}`);
-        if (r.ok) list = await r.json().catch(() => null);
-        else list = await tosGetJsonSigned(key);
+    const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+    const key = `gallery/${userId}/entries.json`;
+    const readList = async () => {
+        try {
+            const r = await fetch(`https://${host}/${key}`);
+            if (r.ok) return await r.json().catch(() => null);
+            return await tosGetJsonSigned(key);
+        } catch { return null; }
+    };
+    // Read-modify-write with verify+retry — the index is a single shared file, so
+    // concurrent generations would otherwise overwrite each other. TOS is
+    // read-after-write consistent, so re-reading confirms our entry stuck; retry
+    // (with jitter) if a concurrent writer clobbered it.
+    for (let attempt = 0; attempt < 6; attempt++) {
+        let list = await readList();
         if (!Array.isArray(list)) list = [];
-        if (!list.some((e) => e && (e.id === entry.id || e.url === entry.url))) list.unshift(entry);
-        if (list.length > 1000) list = list.slice(0, 1000);
-        await tosUpload(key, Buffer.from(JSON.stringify(list)), 'application/json');
-    } catch { /* best-effort */ }
+        if (list.some((e) => e && (e.id === entry.id || e.url === entry.url))) return;
+        let next = [entry, ...list];
+        if (next.length > 1000) next = next.slice(0, 1000);
+        const ok = await tosUpload(key, Buffer.from(JSON.stringify(next)), 'application/json');
+        if (ok) {
+            const check = await readList();
+            if (Array.isArray(check) && check.some((e) => e && e.id === entry.id)) return;
+        }
+        await new Promise((r) => setTimeout(r, 70 + Math.floor(Math.random() * 130)));
+    }
 }
 
 // Save generation to user's gallery (per-file entry + single index file)

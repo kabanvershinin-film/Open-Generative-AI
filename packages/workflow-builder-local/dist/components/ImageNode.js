@@ -360,7 +360,8 @@ var ImageGeneration = function ImageGeneration(_ref) {
           });
           setCurrentHistoryIndex(newHistory.length - 1);
           setCurrentImageIndex(0);
-          finalizeImage(val);
+          // Gallery + TOS save is done server-side (single writer) to avoid
+          // clobbering the shared gallery index with a concurrent client write.
           clearInterval(interval);
         }
         if (latest.status === "failed") {
@@ -459,7 +460,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
                 errorMsg: null,
                 outputHistory: (data.outputHistory || []).concat([_lt])
               });
-              finalizeImage(_o[0] && _o[0].value || "");
+              // Gallery + TOS save is done server-side (single writer).
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,
