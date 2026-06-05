@@ -88,7 +88,55 @@ async function maybeUploadToTOS(dataUrl) {
     return (await tosUpload(tosKey, buffer, contentType)) || dataUrl;
 }
 
-// Save generation to user's gallery (per-file format: one JSON per entry)
+const EMPTY_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+
+// Signed GET of a private JSON object (the gallery index is private — only
+// images/ & videos/ are public), so an unsigned read returns 403.
+async function tosGetJsonSigned(key) {
+    if (!TOS_ENABLED) return null;
+    try {
+        const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+        const date = iso.slice(0, 8);
+        const datetime = iso;
+        const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+        const path = '/' + key.split('/').map(encodeURIComponent).join('/');
+        const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
+        const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
+        const canonical = `GET\n${path}\n\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
+        const scope = `${date}/${TOS_REGION}/tos/request`;
+        const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+        const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
+        const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
+        const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+        const r = await fetch(`https://${host}${path}`, {
+            headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime },
+        });
+        if (!r.ok) return null;
+        return await r.json();
+    } catch { return null; }
+}
+
+// Append an entry to the single per-user index file gallery/{uid}/entries.json
+// so the gallery shows it WITHOUT a ListObjects call (the TOS key may lack that
+// permission — then per-file entries are written but never listed). The gallery
+// GET reads this file directly. Read-modify-write; dedupes by id and url.
+async function appendToIndex(userId, entry) {
+    if (!TOS_ENABLED || !userId || !entry) return;
+    try {
+        const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+        const key = `gallery/${userId}/entries.json`;
+        let list = null;
+        const r = await fetch(`https://${host}/${key}`);
+        if (r.ok) list = await r.json().catch(() => null);
+        else list = await tosGetJsonSigned(key);
+        if (!Array.isArray(list)) list = [];
+        if (!list.some((e) => e && (e.id === entry.id || e.url === entry.url))) list.unshift(entry);
+        if (list.length > 1000) list = list.slice(0, 1000);
+        await tosUpload(key, Buffer.from(JSON.stringify(list)), 'application/json');
+    } catch { /* best-effort */ }
+}
+
+// Save generation to user's gallery (per-file entry + single index file)
 async function saveToGallery(userId, outputs, model, prompt) {
     if (!userId || !TOS_ENABLED || !outputs?.length) return;
     try {
@@ -113,6 +161,8 @@ async function saveToGallery(userId, outputs, model, prompt) {
             };
             const key = `gallery/${userId}/entries/${id}.json`;
             await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json').catch(() => {});
+            // Also record it in the index so it shows without ListObjects.
+            await appendToIndex(userId, entry);
         }
     } catch { /* best-effort */ }
 }
@@ -886,14 +936,14 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         const runResult = { status: 'completed', nodes: { [nodeId]: [{ status: 'succeeded', result: { outputs } }] } };
         runStore.set(runId, runResult);
 
-        if (!opts.skipMirror) {
-            // Save to the gallery + persist the run JSON in the BACKGROUND. When
-            // skipMirror is set the browser owns both (gallery POST + workflow save),
-            // and the outputs still hold base64 here, so skip them to avoid a
-            // multi-MB run-JSON upload.
-            saveToGallery(userId, outputs, model, params.prompt).catch(() => {});
-            tosSaveRun(runId, runResult).catch(() => {});
-        }
+        // Save to the gallery. AWAITED on purpose — Vercel can freeze the function
+        // right after the response is sent, so a fire-and-forget save would often
+        // never complete (the symptom: image in TOS but missing from the gallery).
+        // The image is already in TOS by now, so this is just two small JSON writes.
+        await saveToGallery(userId, outputs, model, params.prompt);
+
+        // Persist the run JSON for reload — best-effort, fine to lose.
+        tosSaveRun(runId, runResult).catch(() => {});
     } catch (err) {
         console.error(`Node run error [${nodeId}]:`, err.message);
         const runResult = { status: 'failed', nodes: { [nodeId]: [{ status: 'failed', result: { outputs: [{ type: 'error', value: err.message }] } }] } };
