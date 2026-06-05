@@ -94,11 +94,19 @@ async function saveToGallery(userId, outputs, model, prompt) {
     try {
         for (const out of outputs) {
             if (out.type === 'error' || !out.value) continue;
+            // Safety net: never persist a raw provider/CDN link in the gallery —
+            // they expire. Callers should mirror first, but mirror again here in
+            // case a code path saves before mirroring (the calls below are no-ops
+            // when the URL already points at TOS).
+            let url = out.value;
+            if (out.type === 'video_url') url = await maybeUploadVideoToTOS(url);
+            else if (out.type === 'image_url') url = await maybeUploadImageToTOS(url);
+            if (!url) continue;
             const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
             const entry = {
                 id,
                 type: out.type.replace('_url', ''), // image_url → image, etc.
-                url: out.value,
+                url,
                 model,
                 prompt: prompt || '',
                 created_at: new Date().toISOString(),
@@ -860,27 +868,27 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null) {
             }
         }
 
+        // Upload generated videos to TOS SYNCHRONOUSLY too — BEFORE saving to the
+        // gallery. Provider/CDN video links (ARK/Memefast) expire after a day or
+        // two, so a gallery entry that stored the raw provider URL would later
+        // point at a dead link and the video would silently vanish from the
+        // gallery. Mirroring first means the entry references a permanent TOS URL.
+        for (const out of outputs) {
+            if (out.type === 'video_url' && out.value) {
+                const uploaded = await maybeUploadVideoToTOS(out.value);
+                if (uploaded && uploaded !== out.value) out.value = uploaded;
+            }
+        }
+
         const runResult = { status: 'completed', nodes: { [nodeId]: [{ status: 'succeeded', result: { outputs } }] } };
         runStore.set(runId, runResult);
 
-        // Save to user's gallery
+        // Save to user's gallery (outputs now carry permanent TOS URLs).
         await saveToGallery(userId, outputs, model, params.prompt);
 
-        // Background: upload video outputs to TOS and persist the run JSON.
-        // Fire-and-forget — failure here only affects reload persistence, not display.
-        (async () => {
-            try {
-                let changed = false;
-                for (const out of outputs) {
-                    if (out.type === 'video_url' && out.value) {
-                        const uploaded = await maybeUploadVideoToTOS(out.value);
-                        if (uploaded && uploaded !== out.value) { out.value = uploaded; changed = true; }
-                    }
-                }
-                if (changed) runStore.set(runId, runResult);
-                await tosSaveRun(runId, runResult);
-            } catch { /* best-effort */ }
-        })();
+        // Background: persist the run JSON for reload. Best-effort — a failure
+        // here only affects reload persistence, not display or the gallery.
+        tosSaveRun(runId, runResult).catch(() => {});
     } catch (err) {
         console.error(`Node run error [${nodeId}]:`, err.message);
         const runResult = { status: 'failed', nodes: { [nodeId]: [{ status: 'failed', result: { outputs: [{ type: 'error', value: err.message }] } }] } };
