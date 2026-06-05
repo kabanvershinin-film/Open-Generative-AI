@@ -190,6 +190,14 @@ var formatName = function formatName(id) {
 };
 var getModelObjStatic = function getModelObjStatic(category, modelId, nodeSchemas) {
   var _nodeSchemas$categori2;
+  // Seedance Промпт is a custom node (text-passthrough under the hood) with no
+  // schema entry — return a stable model object so consumers never see undefined.
+  if (category === "seedancePrompt") {
+    return {
+      id: modelId || "text-passthrough",
+      name: "Seedance Промпт"
+    };
+  }
   if (category === "api") {
     var _nodeSchemas$categori;
     // We can't easily access filteredApiNodeModels statically without passing it, 

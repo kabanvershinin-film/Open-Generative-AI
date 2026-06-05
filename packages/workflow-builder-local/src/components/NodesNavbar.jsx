@@ -42,6 +42,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
   const menuRef = useRef(null);
 
   const getNodeTypeFromSubmenuId = (id) => {
+    if (!id) return null; // direct-action items (e.g. Seedance Промпт) have no submenu id
     if (id === 'inputs') return ['textNode', 'imageNode', 'videoNode', 'audioNode'];
     if (id.includes('text-llms') || id === 'text-llms') return 'textNode';
     if (id === 'concat' || id === 'text-utils' || id === 'utilities') return ['concatNode', 'vidConcatNode'];
@@ -164,6 +165,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
       items: [
         {
           label: "Seedance Промпт",
+          id: "seedance-prompt",
           icon: <MdAutoFixHigh />,
           action: () => handleAddNode("seedancePromptNode", { id: "text-passthrough", name: "Seedance Промпт" }),
         },

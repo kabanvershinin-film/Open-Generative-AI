@@ -66,6 +66,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     setSearchQuery = _useState4[1];
   var menuRef = (0, _react.useRef)(null);
   var getNodeTypeFromSubmenuId = function getNodeTypeFromSubmenuId(id) {
+    if (!id) return null; // direct-action items (e.g. Seedance Промпт) have no submenu id
     if (id === 'inputs') return ['textNode', 'imageNode', 'videoNode', 'audioNode'];
     if (id.includes('text-llms') || id === 'text-llms') return 'textNode';
     if (id === 'concat' || id === 'text-utils' || id === 'utilities') return ['concatNode', 'vidConcatNode'];
@@ -218,6 +219,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     label: "AI",
     items: [{
       label: "Seedance Промпт",
+      id: "seedance-prompt",
       icon: /*#__PURE__*/_react["default"].createElement(_md.MdAutoFixHigh, null),
       action: function action() {
         return handleAddNode("seedancePromptNode", {

@@ -151,6 +151,11 @@ const SPECIAL_MODEL_NAMES = {
 const formatName = (id) => id.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
 const getModelObjStatic = (category, modelId, nodeSchemas) => {
+  // Seedance Промпт is a custom node (text-passthrough under the hood) with no
+  // schema entry — return a stable model object so consumers never see undefined.
+  if (category === "seedancePrompt") {
+    return { id: modelId || "text-passthrough", name: "Seedance Промпт" };
+  }
   if (category === "api") {
     // We can't easily access filteredApiNodeModels statically without passing it, 
     // but we can compute it on the fly or just return null and let useEffect handle it if needed.
