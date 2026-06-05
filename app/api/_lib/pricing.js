@@ -103,14 +103,22 @@ const SEEDANCE2_RATES = {
 };
 const SEEDANCE2_DIMS = { '480p': [864, 496], '720p': [1280, 720], '1080p': [1920, 1080] };
 
-function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, generateAudio) {
+// Mirrors creator-club's calculateCost (video branch) exactly:
+//   tier   = 1080p → hd, else sd
+//   rate   = hasVideoInput ? withVideo : noVideo   (¥ per 1M tokens)
+//   tokens = round((inputSec + outputSec) × w × h × 24 / 1024); ×2 if generateAudio
+//   ₽      = tokens/1e6 × rate × CNY_TO_RUB × PLATFORM_MARKUP
+function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, generateAudio, inputVideoSec) {
     const variant = model.includes('fast') ? 'fast' : 'standard';
     const tier = resolution === '1080p' ? 'hd' : 'sd';
-    const rate = hasVideoInput ? SEEDANCE2_RATES[variant][tier].withVideo : SEEDANCE2_RATES[variant][tier].noVideo;
+    const rate = hasVideoInput
+        ? SEEDANCE2_RATES[variant][tier].withVideo
+        : SEEDANCE2_RATES[variant][tier].noVideo;
     if (rate === 0) return 0;
     const [w, h] = SEEDANCE2_DIMS[resolution] || SEEDANCE2_DIMS['720p'];
-    const inputSec = hasVideoInput ? (durationSec || 5) : 0;
-    const base = Math.round(((inputSec + (durationSec || 5)) * w * h * 24) / 1024);
+    const inputSec = hasVideoInput ? (inputVideoSec || 0) : 0;
+    const outputSec = durationSec || 5;
+    const base = Math.round(((inputSec + outputSec) * w * h * 24) / 1024);
     const tokens = generateAudio !== false ? base * 2 : base;
     return round2((tokens / 1_000_000) * rate * CNY_TO_RUB * PLATFORM_MARKUP);
 }
@@ -120,11 +128,16 @@ function isSeedance2(model) {
 }
 
 function videoPriceRub(model, durationSec, params) {
-    // Seedance 2.0 — token-based ARK pricing (720p default, audio on, no video input)
+    // Seedance 2.0 — token-based ARK pricing (matches creator-club).
     if (isSeedance2(model)) {
         const res = params?.resolution || '720p';
-        const hasVideoInput = !!(params?.image_url);  // image is not video input
-        return seedance2PriceRub(model, durationSec || 5, res, false, true);
+        // hasVideoInput = a real reference VIDEO (video-to-video), not an image
+        // first frame — only that switches to the cheaper withVideo rate.
+        const hasVideoInput = !!(params?.video_url);
+        // generate_audio defaults ON (doubles tokens), как в creator-club.
+        const generateAudio = params?.generate_audio !== false;
+        const inputVideoSec = params?.inputVideoSec || 0;
+        return seedance2PriceRub(model, durationSec || 5, res, hasVideoInput, generateAudio, inputVideoSec);
     }
     const baseCny = MEMEFAST_VIDEO_CNY[model] ?? 2.0;        // default ¥2
     const dur = durationSec || 5;
