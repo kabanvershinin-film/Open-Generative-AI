@@ -883,8 +883,11 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null) {
         const runResult = { status: 'completed', nodes: { [nodeId]: [{ status: 'succeeded', result: { outputs } }] } };
         runStore.set(runId, runResult);
 
-        // Save to user's gallery (outputs now carry permanent TOS URLs).
-        await saveToGallery(userId, outputs, model, params.prompt);
+        // Save to user's gallery in the BACKGROUND — don't make the node wait on
+        // it. The image is already in TOS (mirrored above), and the browser also
+        // saves to the gallery via an explicit /api/gallery POST, so blocking the
+        // response here just delayed the node showing its result. Best-effort.
+        saveToGallery(userId, outputs, model, params.prompt).catch(() => {});
 
         // Background: persist the run JSON for reload. Best-effort — a failure
         // here only affects reload persistence, not display or the gallery.
