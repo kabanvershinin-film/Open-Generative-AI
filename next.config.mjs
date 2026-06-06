@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-face-reg-fix-v53',
+  generateBuildId: async () => 'build-face-qr-v54',
 };
 
 export default nextConfig;

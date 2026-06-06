@@ -442,9 +442,13 @@ function FaceRegistrationDialog(_ref) {
     className: "text-sm font-medium text-white"
   }, "\u041E\u0442\u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0439\u0442\u0435 QR-\u043A\u043E\u0434 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u043E\u043C"), qrUrl && /*#__PURE__*/_react["default"].createElement("div", {
     className: "bg-white p-3 rounded-xl inline-block mx-auto"
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-[220px] h-[220px] bg-white flex items-center justify-center text-center text-xs text-gray-400"
-  }, "QR: ", qrUrl.slice(0, 30), "...")), /*#__PURE__*/_react["default"].createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("img", {
+    src: "https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=".concat(encodeURIComponent(qrUrl)),
+    alt: "QR-\u043A\u043E\u0434 \u0434\u043B\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u043B\u0438\u0446\u0430",
+    width: 220,
+    height: 220,
+    className: "w-[220px] h-[220px] block"
+  })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-center gap-2 text-xs text-[#22d3ee]"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaSpinner, {
     className: "h-3.5 w-3.5 animate-spin"

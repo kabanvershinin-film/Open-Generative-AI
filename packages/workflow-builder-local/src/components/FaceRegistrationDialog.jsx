@@ -252,9 +252,13 @@ export default function FaceRegistrationDialog({ open, onClose, onRegistered }) 
             <p className="text-sm font-medium text-white">Отсканируйте QR-код телефоном</p>
             {qrUrl && (
               <div className="bg-white p-3 rounded-xl inline-block mx-auto">
-                <div className="w-[220px] h-[220px] bg-white flex items-center justify-center text-center text-xs text-gray-400">
-                  QR: {qrUrl.slice(0, 30)}...
-                </div>
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(qrUrl)}`}
+                  alt="QR-код для проверки лица"
+                  width={220}
+                  height={220}
+                  className="w-[220px] h-[220px] block"
+                />
               </div>
             )}
             <div className="flex items-center justify-center gap-2 text-xs text-[#22d3ee]">
