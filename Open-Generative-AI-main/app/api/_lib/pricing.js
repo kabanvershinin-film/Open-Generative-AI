@@ -1,0 +1,235 @@
+// Server-side pricing for Open-Generative-AI generations.
+// Ported from creator-club src/lib/billing.ts.
+//
+// Method: ruble_price = memefast_cost_in_CNY (¥) × CNY_TO_RUB × PLATFORM_MARKUP.
+// The CNY ("🍐") cost per model is memefast's "your price" from memefast.top/pricing.
+//
+// Tune via env (or edit the constants below):
+//   CNY_TO_RUB       — yuan→ruble rate (CBR), default 10.55
+//   PLATFORM_MARKUP  — platform margin, default 1.15 (+15%)
+
+let CNY_TO_RUB = Number(process.env.CNY_TO_RUB || 10.55); // live CBR rate, see ensureCnyRate()
+const PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.15);
+
+// Refresh CNY→RUB from the Central Bank of Russia (same source as creator-club),
+// cached in-memory for 1h. Updates the module-level CNY_TO_RUB used by every
+// price function. Best-effort: on any failure we keep the current/fallback rate.
+// Call `await ensureCnyRate()` right before a charge so рубли follow the real rate.
+let _rateAt = 0;
+async function ensureCnyRate() {
+    const now = Date.now();
+    if (now - _rateAt < 3600_000) return CNY_TO_RUB; // fresh (<1h)
+    try {
+        const r = await fetch('https://www.cbr-xml-daily.ru/daily_json.js', { signal: AbortSignal.timeout(5000) });
+        const data = await r.json();
+        const cny = data?.Valute?.CNY;
+        if (cny?.Value) {
+            CNY_TO_RUB = Math.round((cny.Value / (cny.Nominal || 1)) * 100) / 100;
+            _rateAt = now;
+        } else {
+            _rateAt = now - 3300_000; // couldn't parse → retry in ~5 min
+        }
+    } catch {
+        _rateAt = now - 3300_000; // CBR unreachable → retry in ~5 min, keep fallback
+    }
+    return CNY_TO_RUB;
+}
+
+// ── Memefast VIDEO prices in CNY (¥) ────────────────────────────────────────
+const MEMEFAST_VIDEO_CNY = {
+    'veo3.1': 0.980, 'veo3.1-fast': 0.980, 'veo3.1-components': 0.980,
+    'veo3.1-4k': 1.400, 'veo3.1-pro': 4.900, 'veo3.1-pro-4k': 4.900,
+    'veo3.1-components-4k': 1.400,
+    'veo_3_1': 1.022, 'veo_3_1-fast': 0.602, 'veo_3_1-components': 1.022,
+    'veo_3_1-4K': 1.190, 'veo_3_1-fast-4K': 0.602, 'veo_3_1-components-4K': 1.190,
+    'veo_3_1-fast-components-4K': 1.204,
+    'sora-2': 0.060, 'sora-2-pro': 1.800,
+    'grok-video-3': 0.600, 'grok-video-3-10s': 0.600,
+    'omni-flash': 2.600, 'omni-flash-components': 2.600,
+    'kling-video': 1.190, 'kling-omni-video': 1.190, 'kling-v2-5-turbo': 1.190,
+    'kling-v2-6': 1.190, 'kling-motion-control': 0.595,
+    'kling-avatar-image2video': 1.700, 'kling-effects': 1.700,
+    'kling-video-extend': 1.190, 'kling-video-sound': 0.595,
+    'vidu2.0': 1.000, 'viduq1': 1.000, 'viduq1-classic': 4.000,
+    'viduq2': 0.1875, 'viduq2-pro': 0.250, 'viduq2-turbo': 0.1875,
+    'viduq3': 2.500, 'viduq3-pro': 2.188, 'viduq3-turbo': 1.250, 'viduq3-mix': 6.250,
+    'MiniMax-Hailuo-02': 3.200, 'MiniMax-Hailuo-2.3': 3.200,
+    'happyhorse-1.0-t2v': 1.260, 'happyhorse-1.0-i2v': 1.260,
+    'happyhorse-1.0-r2v': 1.260, 'happyhorse-1.0-video-edit': 1.260,
+    'wan2.5-i2v-preview': 1.000, 'wan2.6-i2v': 1.000, 'wan2.6-v2v': 1.000,
+    'mj_video': 1.000,
+    'pixverse-video': 0.600, 'pixverse-multi-transition': 0.600, 'pixverse-mimic': 0.600,
+    'pixverse-modify': 0.600, 'pixverse-restyle': 0.600, 'pixverse-lipsync': 0.600,
+    'doubao-seedance-1-5-pro-251215': 24.000,
+    'doubao-seedance-1-0-pro-250528': 22.500,
+    'doubao-seedance-1-0-pro-fast-251015': 6.300,
+    'doubao-seedance-1-0-lite-t2v-250428': 15.000,
+    'doubao-seedance-1-0-lite-i2v-250428': 15.000,
+    'doubao-seedance-video-edit': 15.000,
+};
+
+// ── Memefast IMAGE prices in CNY (¥) ────────────────────────────────────────
+const MEMEFAST_IMAGE_CNY = {
+    'gemini-3-pro-image-preview': 0.330, 'gemini-3.1-flash-image-preview': 0.1655,
+    'gemini-2.5-flash-image': 0.360, 'gemini-2.5-flash-image-preview': 0.360,
+    'gpt-image-2': 0.14, 'gpt-image-1.5': 0.10, 'gpt-image-1': 0.10, 'gpt-image-1-mini': 0.05,
+    'flux-1.1-pro': 0.30, 'flux-2-pro': 0.30, 'flux.1-kontext-pro': 0.12,
+    'doubao-seedream-5-0-260128': 0.22, 'doubao-seedream-4-5-251128': 0.25,
+    'doubao-seedream-4-0-250828': 0.20, 'doubao-seedream-3-0-t2i-250415': 0.10,
+    'mj_imagine': 0.18, 'mj_edits': 0.18, 'mj_inpaint': 0.01, 'mj_variation': 0.18,
+    'kling-image': 0.0425, 'kling-omni-image': 0.340,
+    'grok-4.2-image': 0.12, 'grok-4.1-image': 0.10, 'grok-4-image': 0.08,
+    'grok-imagine-image': 0.208, 'grok-imagine-image-pro': 0.728,
+    'qwen-image-max': 0.50, 'qwen-image-2.0-2026-03-03': 0.26, 'qwen-image-edit-2509': 0.12,
+    'z-image-turbo': 0.10, 'wan2.7-image-pro': 0.65,
+    'dall-e-3': 0.30,
+};
+
+// ── Audio prices in CNY (¥) — approximate flat per call ──────────────────────
+const MEMEFAST_AUDIO_CNY = {
+    'tts-1': 0.05, 'tts-1-hd': 0.10, 'gpt-4o-mini-tts': 0.05,
+    'speech-02-hd': 0.05, 'speech-02-turbo': 0.03,
+    'speech-2.6-hd': 0.05, 'speech-2.6-turbo': 0.03,
+    'speech-2.8-hd': 0.05, 'speech-2.8-turbo': 0.03,
+    'MiniMax-Voice-Clone': 0.10, 'MiniMax-Voice-Design': 0.08,
+    'qwen3-tts-flash': 0.03, 'vidu-tts': 0.03,
+    'kling-sound-effect': 0.20, 'kling-tts': 0.05, 'kling-video-sound': 0.30,
+    'suno-inspire': 0.50, 'suno-custom': 0.50, 'suno-continue': 0.50,
+};
+
+// Schema key → real model id (mirror of MODEL_ID_MAP in route.js, for pricing lookups)
+const PRICE_MODEL_ALIAS = {
+    'flux-edit-kontext-pro': 'flux.1-kontext-pro',
+    'kling-omni-image-edit': 'kling-omni-image',
+    'grok-imagine-image-reference': 'grok-imagine-image-pro',
+    'mj_inpaint-edit': 'mj_inpaint', 'mj_variation-reference': 'mj_variation',
+    'gemini-2.5-flash-image-edit': 'gemini-2.5-flash-image',
+    'gemini-3-pro-image-edit': 'gemini-3-pro-image-preview',
+    'gemini-3.1-flash-image-edit': 'gemini-3.1-flash-image-preview',
+    'gpt-image-2-edit': 'gpt-image-2', 'gpt-image-1.5-edit': 'gpt-image-1.5',
+    'gpt-image-1-edit': 'gpt-image-1',
+    'pixverse-video-edit': 'pixverse-modify', 'pixverse-restyle-edit': 'pixverse-restyle',
+    'pixverse-lipsync-edit': 'pixverse-lipsync',
+    'pixverse-multi-transition-edit': 'pixverse-multi-transition',
+    'kling-video-edit-extend': 'kling-video-extend', 'kling-effects-edit': 'kling-effects',
+    'wan2.6-v2v-edit': 'wan2.6-v2v', 'seedance-video-edit': 'doubao-seedance-video-edit',
+};
+
+function round2(n) { return Math.round(n * 100) / 100; }
+
+// ── Seedance 2.0 token-based pricing (Volcano Engine ARK) ───────────────────
+// Source: https://www.volcengine.com/docs/82379/1099320
+// tokens = (inputSec + outputSec) × width × height × 24fps / 1024
+// generate_audio=true doubles tokens (audio = same compute as video)
+const SEEDANCE2_RATES = {
+    standard: { sd: { noVideo: 46, withVideo: 28 }, hd: { noVideo: 51, withVideo: 31 } },
+    fast:     { sd: { noVideo: 37, withVideo: 22 }, hd: { noVideo: 0,  withVideo: 0  } },
+};
+const SEEDANCE2_DIMS = { '480p': [864, 496], '720p': [1280, 720], '1080p': [1920, 1080] };
+
+// Mirrors creator-club's calculateCost (video branch) exactly:
+//   tier   = 1080p → hd, else sd
+//   rate   = hasVideoInput ? withVideo : noVideo   (¥ per 1M tokens)
+//   tokens = round((inputSec + outputSec) × w × h × 24 / 1024); ×2 if generateAudio
+//   ₽      = tokens/1e6 × rate × CNY_TO_RUB × PLATFORM_MARKUP
+function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, generateAudio, inputVideoSec) {
+    const variant = model.includes('fast') ? 'fast' : 'standard';
+    const tier = resolution === '1080p' ? 'hd' : 'sd';
+    const rate = hasVideoInput
+        ? SEEDANCE2_RATES[variant][tier].withVideo
+        : SEEDANCE2_RATES[variant][tier].noVideo;
+    if (rate === 0) return 0;
+    const [w, h] = SEEDANCE2_DIMS[resolution] || SEEDANCE2_DIMS['720p'];
+    const inputSec = hasVideoInput ? (inputVideoSec || 0) : 0;
+    const outputSec = durationSec || 5;
+    const base = Math.round(((inputSec + outputSec) * w * h * 24) / 1024);
+    const tokens = generateAudio !== false ? base * 2 : base;
+    return round2((tokens / 1_000_000) * rate * CNY_TO_RUB * PLATFORM_MARKUP);
+}
+
+function isSeedance2(model) {
+    return /doubao-seedance-2-0/.test(model);
+}
+
+// The ARK token rate (¥ per 1M tokens) for a Seedance 2.0 run — needed to turn
+// the actual usage.total_tokens reported by ARK into a final ruble price.
+function seedance2RateCny(model, resolution, hasVideoInput) {
+    if (!isSeedance2(model)) return 0;
+    const variant = model.includes('fast') ? 'fast' : 'standard';
+    const tier = resolution === '1080p' ? 'hd' : 'sd';
+    const r = SEEDANCE2_RATES[variant][tier];
+    return hasVideoInput ? r.withVideo : r.noVideo;
+}
+
+// Exact price from the real token count ARK billed: tokens × rate × курс × наценка.
+function rubFromTokens(tokens, rateCny) {
+    if (!(tokens > 0) || !(rateCny > 0)) return 0;
+    return round2((tokens / 1_000_000) * rateCny * CNY_TO_RUB * PLATFORM_MARKUP);
+}
+
+function videoPriceRub(model, durationSec, params) {
+    // Seedance 2.0 — token-based ARK pricing (matches creator-club).
+    if (isSeedance2(model)) {
+        const res = params?.resolution || '720p';
+        // hasVideoInput = a real reference VIDEO (video-to-video), not an image
+        // first frame — only that switches to the cheaper withVideo rate.
+        const hasVideoInput = !!(params?.video_url);
+        // generate_audio defaults ON (doubles tokens), как в creator-club.
+        const generateAudio = params?.generate_audio !== false;
+        const inputVideoSec = params?.inputVideoSec || 0;
+        return seedance2PriceRub(model, durationSec || 5, res, hasVideoInput, generateAudio, inputVideoSec);
+    }
+    const baseCny = MEMEFAST_VIDEO_CNY[model] ?? 2.0;        // default ¥2
+    const dur = durationSec || 5;
+    const durMult = dur <= 8 ? 1.0 : dur <= 10 ? 1.5 : 2.0; // scale by duration
+    return round2(baseCny * durMult * CNY_TO_RUB * PLATFORM_MARKUP);
+}
+
+function imagePriceRub(model) {
+    const cny = MEMEFAST_IMAGE_CNY[model] ?? 0.30;          // default ¥0.30
+    return round2(cny * CNY_TO_RUB * PLATFORM_MARKUP);
+}
+
+function audioPriceRub(model) {
+    const cny = MEMEFAST_AUDIO_CNY[model] ?? 0.05;          // default ¥0.05
+    return round2(cny * CNY_TO_RUB * PLATFORM_MARKUP);
+}
+
+// Passthrough / free models never charge.
+const FREE_MODELS = new Set([
+    'image-passthrough', 'video-passthrough', 'audio-passthrough', 'text-passthrough',
+]);
+
+// Sets mirroring route.js categorisation (kept local to avoid a circular import).
+const VIDEO_SET = new Set(Object.keys(MEMEFAST_VIDEO_CNY).concat([
+    'veo3.1-pro', 'veo3.1-4k',
+    'doubao-seedance-2-0-260128', 'doubao-seedance-2-0-fast-260128',
+]));
+const AUDIO_SET = new Set(Object.keys(MEMEFAST_AUDIO_CNY));
+const IMAGE_SET = new Set(Object.keys(MEMEFAST_IMAGE_CNY));
+
+/**
+ * Cost of one generation in rubles. `category` is one of
+ * 'image' | 'video' | 'audio' | 'text' (from the node-schema category).
+ * Returns 0 for free/passthrough models.
+ */
+function priceRub(category, model, params = {}) {
+    if (!model || FREE_MODELS.has(model)) return 0;
+    const real = PRICE_MODEL_ALIAS[model] || model;
+
+    if (category === 'video' || VIDEO_SET.has(real)) {
+        const dur = parseInt(String(params.duration ?? 5), 10) || 5;
+        return videoPriceRub(real, dur, params);
+    }
+    if (category === 'audio' || AUDIO_SET.has(real)) {
+        return audioPriceRub(real);
+    }
+    if (category === 'text') {
+        // Flat estimate for LLM/vision calls
+        return round2(0.05 * CNY_TO_RUB * PLATFORM_MARKUP);
+    }
+    // default → image
+    return imagePriceRub(real);
+}
+
+export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP };
