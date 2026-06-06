@@ -43,17 +43,18 @@ const CharacterNode = ({ id, data, selected }) => {
 
   // Called when a face is registered as a Seedance trusted asset (asset://…).
   // Adopt the asset, name and save it to the shared library.
-  const onFaceRegistered = (uri, regName) => {
+  const onFaceRegistered = (uri, regName, photo) => {
     if (!uri) return;
     setAssetUri(uri);
     setTab("uri");
+    if (photo) setPhotoUrl(photo); // show the registered selfie on the node too
     const finalName = (regName || name || "").trim();
     if (finalName && !name) setName(finalName);
     const item = {
       id: Date.now().toString(),
       name: finalName || uri.replace(/^asset:\/\//, "").slice(0, 16),
       assetUri: uri,
-      thumbnail: photoUrl || null,
+      thumbnail: photo || photoUrl || null, // use the uploaded selfie as the library thumbnail
       addedAt: Date.now(),
     };
     setLibrary((prev) => {

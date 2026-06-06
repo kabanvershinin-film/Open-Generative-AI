@@ -2494,8 +2494,8 @@ export default function VideoStudio({
       <FaceRegistrationDialog
         open={faceRegOpen}
         onClose={() => setFaceRegOpen(false)}
-        onRegistered={(assetUri, displayName) => {
-          setFaceAsset({ uri: assetUri, name: displayName });
+        onRegistered={(assetUri, displayName, photo) => {
+          setFaceAsset({ uri: assetUri, name: displayName, thumbnail: photo || null });
           insertRefToken("@" + String(displayName || "лицо").trim().replace(/\s+/g, "_"));
         }}
       />

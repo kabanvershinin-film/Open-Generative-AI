@@ -349,7 +349,7 @@ function FaceRegistrationDialog(_ref) {
             setStep('done');
             setStatusText('');
             setBusy(false);
-            onRegistered === null || onRegistered === void 0 || onRegistered(uri, displayName.trim());
+            onRegistered === null || onRegistered === void 0 || onRegistered(uri, displayName.trim(), photo);
             _reactHotToast.toast.success('Лицо зарегистрировано!');
             return _context3.a(2);
           case 15:

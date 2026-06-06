@@ -160,7 +160,7 @@ export default function FaceRegistrationDialog({ open, onClose, onRegistered }) 
           setStep('done');
           setStatusText('');
           setBusy(false);
-          onRegistered?.(uri, displayName.trim());
+          onRegistered?.(uri, displayName.trim(), photo);
           toast.success('Лицо зарегистрировано!');
           return;
         }
