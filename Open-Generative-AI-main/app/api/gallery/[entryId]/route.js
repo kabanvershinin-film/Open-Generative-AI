@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
-import { getUser } from '../../_lib/balance';
+import { resolveGalleryUser } from '../../_lib/gallery-user';
 
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
 const TOS_BUCKET   = process.env.TOS_BUCKET   || '';
@@ -88,27 +88,27 @@ async function tosDeleteObj(key) {
 
 export async function DELETE(request, { params }) {
     try {
-        const user = await getUser(request);
-        logStep('DELETE start', { user: user?.id || null });
-        if (!user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const { id: userId, source } = await resolveGalleryUser(request);
+        logStep('DELETE start', { userId, source });
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         if (!TOS_ENABLED) { logStep('DELETE aborted: TOS not enabled'); return NextResponse.json({ error: 'TOS not enabled' }, { status: 503 }); }
 
         const { entryId } = await params;
         const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
 
         // NEW per-file format: delete the single object.
-        const ok = await tosDeleteObj(`gallery/${user.id}/entries/${entryId}.json`);
-        logStep('DELETE per-file', { entryId, ok });
+        const ok = await tosDeleteObj(`gallery/${userId}/entries/${entryId}.json`);
+        logStep('DELETE per-file', { userId, source, entryId, ok });
 
         // MIGRATION fallback (remove after ~1 week): drop id from old entries.json too.
         try {
-            const r = await fetch(`https://${host}/gallery/${user.id}/entries.json`);
+            const r = await fetch(`https://${host}/gallery/${userId}/entries.json`);
             if (r.ok) {
                 let entries = await r.json();
                 if (Array.isArray(entries) && entries.some((e) => e.id === entryId)) {
                     entries = entries.filter((e) => e.id !== entryId);
-                    await tosUpload(`gallery/${user.id}/entries.json`, Buffer.from(JSON.stringify(entries)), 'application/json');
-                    logStep('DELETE legacy updated', { entryId });
+                    await tosUpload(`gallery/${userId}/entries.json`, Buffer.from(JSON.stringify(entries)), 'application/json');
+                    logStep('DELETE legacy updated', { userId, entryId });
                 }
             }
         } catch { /* no legacy file */ }

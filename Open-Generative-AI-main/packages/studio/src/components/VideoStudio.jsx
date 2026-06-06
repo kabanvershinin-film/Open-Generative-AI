@@ -514,7 +514,7 @@ export default function VideoStudio({
 
   // ── Persistence: Save ────────────────────────────────────────────────────
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const save = () => {
       try {
         const state = {
           imageMode,
@@ -537,8 +537,12 @@ export default function VideoStudio({
       } catch (err) {
         console.warn("Failed to save VideoStudio persistence:", err);
       }
-    }, 500); // 500ms debounce
-    return () => clearTimeout(timer);
+    };
+    const timer = setTimeout(save, 500); // 500ms debounce
+    return () => {
+      clearTimeout(timer);
+      save();
+    };
   }, [
     imageMode,
     v2vMode,
@@ -1038,9 +1042,12 @@ export default function VideoStudio({
         duration: stored.duration, timestamp: new Date().toISOString(),
       });
       showVideoInCanvas(url, stored.model);
+      const headers = { "Content-Type": "application/json" };
+      if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
       fetch("/api/gallery", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         keepalive: true,
         body: JSON.stringify({ url, type: "video", model: stored.model, prompt: stored.prompt || "" }),
       })

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
-import { getUser } from '../_lib/balance';
+import { resolveGalleryUser } from '../_lib/gallery-user';
 
 // Allow time to download the generated video from the CDN and re-upload to TOS.
 // Videos cross two regions (ARK CDN in China → Vercel → TOS in China), so 60s was
@@ -224,23 +224,28 @@ async function appendToIndex(host, userId, entry) {
 }
 
 export async function GET(request) {
+    let userId = null;
+    let source = 'unknown';
     try {
-        const user = await getUser(request);
-        if (!user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const resolved = await resolveGalleryUser(request);
+        userId = resolved.id;
+        source = resolved.source;
+        logStep('GET auth', { userId, source });
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         if (!TOS_READ_ENABLED) return NextResponse.json({ entries: [] });
 
         const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
         const byId = new Map();
 
         // NEW per-file format: list gallery/{uid}/entries/ and fetch each.
-        const prefix = `gallery/${user.id}/entries/`;
+        const prefix = `gallery/${userId}/entries/`;
         const keys = (await tosList(prefix)).filter((k) => k.endsWith('.json'));
         const fetched = await Promise.all(keys.map((k) => fetchEntry(host, k)));
         fetched.forEach((e) => { if (e) byId.set(e.id, e); });
 
         // MIGRATION (remove after ~1 week): merge old single entries.json.
         try {
-            const legacyKey = `gallery/${user.id}/entries.json`;
+            const legacyKey = `gallery/${userId}/entries.json`;
             let legacy = null;
             const r = await fetch(`https://${host}/${legacyKey}`);
             if (r.ok) legacy = await r.json();
@@ -266,19 +271,23 @@ export async function GET(request) {
         const type = new URL(request.url).searchParams.get('type');
         if (type) entries = entries.filter((e) => e.type === type);
 
-        logStep('GET ok', { user: user.id, perFile: keys.length, total: entries.length });
+        logStep('GET ok', { userId, source, perFile: keys.length, total: entries.length });
         return NextResponse.json({ entries });
     } catch (error) {
-        logStep('GET error', { message: error.message });
+        logStep('GET error', { userId, source, message: error.message });
         return NextResponse.json({ entries: [] });
     }
 }
 
 export async function POST(request) {
+    let userId = null;
+    let source = 'unknown';
     try {
-        const user = await getUser(request);
-        logStep('POST start', { user: user?.id || null, tosEnabled: TOS_ENABLED });
-        if (!user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const resolved = await resolveGalleryUser(request);
+        userId = resolved.id;
+        source = resolved.source;
+        logStep('POST start', { userId, source, tosEnabled: TOS_ENABLED });
+        if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         if (!TOS_ENABLED) { logStep('POST aborted: TOS not enabled'); return NextResponse.json({ error: 'TOS not enabled' }, { status: 503 }); }
 
         const body = await request.json();
@@ -301,19 +310,19 @@ export async function POST(request) {
             created_at: new Date().toISOString(),
         };
 
-        const key = `gallery/${user.id}/entries/${entry.id}.json`;
+        const key = `gallery/${userId}/entries/${entry.id}.json`;
         const result = await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json');
         if (!result) { logStep('POST entry write failed', { key }); return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 }); }
 
         // Also record the entry in the single index file so it shows even when the
         // TOS key cannot ListObjects (the per-file write above would be invisible).
         const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-        await appendToIndex(host, user.id, entry);
+        await appendToIndex(host, userId, entry);
 
-        logStep('POST ok', { id: entry.id, type });
+        logStep('POST ok', { userId, source, id: entry.id, type });
         return NextResponse.json({ success: true, entry });
     } catch (error) {
-        logStep('POST error', { message: error.message });
+        logStep('POST error', { userId, source, message: error.message });
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

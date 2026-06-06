@@ -898,7 +898,7 @@ export default function ImageStudio({
 
   // ── Persistence: Save ────────────────────────────────────────────────────
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const save = () => {
       try {
         const state = {
           imageMode,
@@ -917,8 +917,12 @@ export default function ImageStudio({
       } catch (err) {
         console.warn("Failed to save ImageStudio persistence:", err);
       }
-    }, 500); // 500ms debounce
-    return () => clearTimeout(timer);
+    };
+    const timer = setTimeout(save, 500); // 500ms debounce
+    return () => {
+      clearTimeout(timer);
+      save();
+    };
   }, [
     imageMode,
     selectedModelId,
