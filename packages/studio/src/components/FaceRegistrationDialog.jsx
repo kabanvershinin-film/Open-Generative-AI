@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import QRCanvas from './QRCanvas';
 import {
   FaTimes,
   FaSpinner,
@@ -254,13 +255,7 @@ export default function FaceRegistrationDialog({ open, onClose, onRegistered }) 
             <p className="text-sm font-medium text-white">Отсканируйте QR-код телефоном</p>
             {qrUrl && (
               <div className="bg-white p-3 rounded-xl inline-block mx-auto">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&ecc=M&data=${encodeURIComponent(qrUrl)}`}
-                  alt="QR-код для проверки лица"
-                  width={240}
-                  height={240}
-                  className="w-[240px] h-[240px] block"
-                />
+                <QRCanvas value={qrUrl} size={240} />
               </div>
             )}
             <div className="flex items-center justify-center gap-2 text-xs text-[#22d3ee]">

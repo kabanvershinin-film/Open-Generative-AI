@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-face-qr-copy-v55',
+  generateBuildId: async () => 'build-face-qr-local-v56',
 };
 
 export default nextConfig;
