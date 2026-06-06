@@ -176,10 +176,10 @@ var iconMap = {
   })
 };
 var SPECIAL_MODEL_NAMES = {
-  "text-passthrough": "Input Text",
-  "image-passthrough": "Input Image",
-  "video-passthrough": "Input Video",
-  "audio-passthrough": "Input Audio",
+  "text-passthrough": "Текст",
+  "image-passthrough": "Изображение",
+  "video-passthrough": "Видео",
+  "audio-passthrough": "Аудио",
   "doubao-seedance-2-0-260128": "Seedance 2.0",
   "doubao-seedance-2-0-fast-260128": "Seedance 2.0 Fast"
 };

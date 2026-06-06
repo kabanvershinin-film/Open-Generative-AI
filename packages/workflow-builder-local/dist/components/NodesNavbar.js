@@ -37,10 +37,10 @@ var formatName = function formatName(id) {
   }).join(' ');
 };
 var SPECIAL_MODEL_NAMES = {
-  "text-passthrough": "Input Text",
-  "image-passthrough": "Input Image",
-  "video-passthrough": "Input Video",
-  "audio-passthrough": "Input Audio",
+  "text-passthrough": "Текст",
+  "image-passthrough": "Изображение",
+  "video-passthrough": "Видео",
+  "audio-passthrough": "Аудио",
   "gpt-image-2": "GPT Image 2",
   "gemini-3.1-flash-image-preview": "Nano Banana 2",
   "gemini-3-pro-image-preview": "Nano Banana Pro"
@@ -183,9 +183,9 @@ var NodesNavbar = function NodesNavbar(_ref) {
     setSearchQuery("");
   };
   var menuStructure = [{
-    label: "Inputs",
+    label: "Входные",
     items: [{
-      label: "Input Models",
+      label: "Входные данные",
       icon: /*#__PURE__*/_react["default"].createElement(_lu.LuUpload, null),
       hasSubmenu: true,
       id: "inputs"
@@ -193,9 +193,9 @@ var NodesNavbar = function NodesNavbar(_ref) {
   },
   // Text section (Text LLMs + Utilities) removed.
   {
-    label: "Image",
+    label: "Изображение",
     items: [{
-      label: "Generate Image",
+      label: "Генерация фото",
       icon: /*#__PURE__*/_react["default"].createElement(_io.IoImageOutline, null),
       hasSubmenu: true,
       id: "generate-image"
@@ -206,9 +206,9 @@ var NodesNavbar = function NodesNavbar(_ref) {
     // { label: "Image Utilities", icon: <MdCrop />, hasSubmenu: true, id: "image-utils" },
     ]
   }, {
-    label: "Video",
+    label: "Видео",
     items: [{
-      label: "Generate Video",
+      label: "Генерация видео",
       icon: /*#__PURE__*/_react["default"].createElement(_io.IoVideocamOutline, null),
       hasSubmenu: true,
       id: "generate-video"
@@ -216,7 +216,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     // Edit Video removed.
     ]
   }, {
-    label: "AI",
+    label: "ИИ",
     items: [{
       label: "Seedance Промпт",
       id: "seedance-prompt",
@@ -397,7 +397,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
       }), item.type === "apiNode" && /*#__PURE__*/_react["default"].createElement(_ri.RiInputMethodLine, null), /*#__PURE__*/_react["default"].createElement("span", null, item.name));
     }) : /*#__PURE__*/_react["default"].createElement("div", {
       className: "px-3 py-2 text-xs text-gray-500"
-    }, "No results found"));
+    }, "\u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E"));
   };
   var anchorRef = (0, _react.useRef)(null);
   var _useState5 = (0, _react.useState)({
@@ -467,7 +467,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     className: "text-gray-400"
   }), /*#__PURE__*/_react["default"].createElement("input", {
     type: "search",
-    placeholder: "Search nodes or models",
+    placeholder: "\u041F\u043E\u0438\u0441\u043A \u043D\u043E\u0434 \u0438\u043B\u0438 \u043C\u043E\u0434\u0435\u043B\u0435\u0439",
     className: "w-full h-full py-2 px-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 bg-transparent",
     value: searchQuery,
     onChange: function onChange(e) {
@@ -579,7 +579,7 @@ var Submenu = function Submenu(_ref4) {
   };
   var getLabelIcon = function getLabelIcon(label) {
     switch (label) {
-      case "Input Models":
+      case "Входные данные":
         return /*#__PURE__*/_react["default"].createElement(_lu.LuUpload, null);
       case "Text (LLMs)":
         return /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, null);
@@ -588,7 +588,7 @@ var Submenu = function Submenu(_ref4) {
         return /*#__PURE__*/_react["default"].createElement(_tb.TbArrowMerge, {
           className: "rotate-90"
         });
-      case "Generate Image":
+      case "Генерация фото":
         return /*#__PURE__*/_react["default"].createElement(_io.IoImageOutline, null);
       case "Edit Image":
         return /*#__PURE__*/_react["default"].createElement(_ri.RiImageAiLine, null);
@@ -596,7 +596,7 @@ var Submenu = function Submenu(_ref4) {
         return /*#__PURE__*/_react["default"].createElement(_md.MdCrop, null);
       case "Image Utilities":
         return /*#__PURE__*/_react["default"].createElement(_md.MdAutoFixHigh, null);
-      case "Generate Video":
+      case "Генерация видео":
         return /*#__PURE__*/_react["default"].createElement(_io.IoVideocamOutline, null);
       case "Edit Video":
         return /*#__PURE__*/_react["default"].createElement(_ri.RiVideoOnAiLine, null);

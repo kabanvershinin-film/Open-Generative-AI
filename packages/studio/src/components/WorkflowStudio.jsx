@@ -123,7 +123,7 @@ const WorkflowUI = dynamic(() => import("./WorkflowUI"), {
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-4 border-white/5 border-t-[#22d3ee] rounded-full animate-spin" />
         <div className="text-[10px] font-black text-white/20 uppercase tracking-widest">
-          Loading Builder...
+          Загрузка билдера...
         </div>
       </div>
     </div>
@@ -189,7 +189,7 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
-                Rename
+                Переименовать
               </button>
               <button
                 onClick={() => onDelete(workflow.id)}
@@ -198,7 +198,7 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                 </svg>
-                Delete
+                Удалить
               </button>
             </div>
           )}
@@ -208,14 +208,14 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
       {/* Published badge on my-workflows */}
       {activeTab === 'my-workflows' && workflow.is_published && (
         <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-[#22d3ee]/20 border border-[#22d3ee]/40 rounded-full">
-          <span className="text-[9px] font-black text-[#22d3ee] uppercase tracking-widest">Published</span>
+          <span className="text-[9px] font-black text-[#22d3ee] uppercase tracking-widest">Опубликовано</span>
         </div>
       )}
 
       {/* Community nodes count */}
       {activeTab === 'published' && workflow.nodes_count > 0 && (
         <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full">
-          <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">{workflow.nodes_count} nodes</span>
+          <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">{workflow.nodes_count} нод</span>
         </div>
       )}
 
@@ -241,10 +241,10 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
 
       <div className="absolute inset-x-0 bottom-0 p-4">
         <div className="text-[10px] font-bold text-[#22d3ee] uppercase tracking-wider mb-1 opacity-80">
-          {workflow.category || "General"}
+          {workflow.category || "Общее"}
         </div>
         <h3 className="text-sm font-bold text-white truncate group-hover:text-[#22d3ee] transition-colors">
-          {workflow.name || "Untitled Flow"}
+          {workflow.name || "Без названия"}
         </h3>
         {activeTab === 'published' && workflow.can_moderate && (
           <p className="text-[10px] text-white/45 truncate mt-0.5" title={workflow.author_email || ''}>
@@ -631,7 +631,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-12 h-12 border-4 border-white/5 border-t-[#22d3ee] rounded-full animate-spin" />
                   <div className="text-[10px] font-black text-white/20 uppercase tracking-widest">
-                    Loading Builder...
+                    Загрузка билдера...
                   </div>
                 </div>
               </div>
@@ -695,10 +695,10 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
           <div className="flex items-end justify-between">
             <div>
               <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
-                Workflows
+                Процессы
               </h1>
               <p className="text-white/40 text-sm font-medium">
-                Create and manage your asynchronous AI processing pipelines
+                Создавайте и управляйте своими ИИ-процессами
               </p>
             </div>
             <button
@@ -718,7 +718,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
               </svg>
-              Create Workflow
+              Создать процесс
             </button>
           </div>
 
@@ -731,7 +731,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                   : "text-white/30 border-transparent hover:text-white"
               }`}
             >
-              My Workflows
+              Мои процессы
             </button>
             <button
               onClick={() => setActiveMainTab("published")}
@@ -770,7 +770,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
             {!loading && workflows.length === 0 && (
               <div className="col-span-full py-24 text-center border-2 border-dashed border-white/5 rounded-2xl bg-white/[0.02]">
                 <div className="text-white/20 text-sm font-medium italic">
-                  No workflows found in this section.
+                  В этом разделе пока нет процессов.
                 </div>
               </div>
             )}
@@ -786,18 +786,18 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
             onSubmit={handleRenameWorkflow}
             className="relative w-full max-w-sm bg-[#0a0a0a] border border-white/10 rounded-2xl p-8 shadow-2xl animate-in fade-in zoom-in duration-300"
           >
-            <h3 className="text-xl font-bold text-white mb-2">Rename Workflow</h3>
-            <p className="text-white/40 text-sm mb-6">Enter a new descriptive name for your pipeline.</p>
+            <h3 className="text-xl font-bold text-white mb-2">Переименовать процесс</h3>
+            <p className="text-white/40 text-sm mb-6">Введите новое название для процесса.</p>
             
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-[#22d3ee] uppercase tracking-widest">Workflow Name</label>
+                <label className="text-[10px] font-black text-[#22d3ee] uppercase tracking-widest">Название процесса</label>
                 <input
                   autoFocus
                   type="text"
                   value={newWorkflowName}
                   onChange={(e) => setNewWorkflowName(e.target.value)}
-                  placeholder="e.g. Cinematic Video Flow"
+                  placeholder="напр. Кинематографичный ролик"
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#22d3ee]/50 transition-colors"
                 />
               </div>
@@ -808,13 +808,13 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                   onClick={() => setRenamingWorkflow(null)}
                   className="flex-1 px-4 py-3 text-xs font-black text-white/40 uppercase tracking-widest hover:text-white transition-colors"
                 >
-                  Cancel
+                  Отмена
                 </button>
                 <button
                   type="submit"
                   className="flex-1 bg-[#22d3ee] text-black px-4 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 active:scale-95"
                 >
-                  Save Name
+                  Сохранить
                 </button>
               </div>
             </div>

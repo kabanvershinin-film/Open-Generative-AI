@@ -19,10 +19,10 @@ import { LuUpload } from "react-icons/lu";
 
 const formatName = (id) => id.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 const SPECIAL_MODEL_NAMES = {
-  "text-passthrough": "Input Text",
-  "image-passthrough": "Input Image",
-  "video-passthrough": "Input Video",
-  "audio-passthrough": "Input Audio",
+  "text-passthrough": "Текст",
+  "image-passthrough": "Изображение",
+  "video-passthrough": "Видео",
+  "audio-passthrough": "Аудио",
   "gpt-image-2": "GPT Image 2",
   "gemini-3.1-flash-image-preview": "Nano Banana 2",
   "gemini-3-pro-image-preview": "Nano Banana Pro",
@@ -137,16 +137,16 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
 
   const menuStructure = [
     {
-      label: "Inputs",
+      label: "Входные",
       items: [
-        { label: "Input Models", icon: <LuUpload />, hasSubmenu: true, id: "inputs" },
+        { label: "Входные данные", icon: <LuUpload />, hasSubmenu: true, id: "inputs" },
       ]
     },
     // Text section (Text LLMs + Utilities) removed.
     {
-      label: "Image",
+      label: "Изображение",
       items: [
-        { label: "Generate Image", icon: <IoImageOutline />, hasSubmenu: true, id: "generate-image" },
+        { label: "Генерация фото", icon: <IoImageOutline />, hasSubmenu: true, id: "generate-image" },
         // Edit Image disabled — generation only.
         // { label: "Edit Image", icon: <RiImageAiLine />, hasSubmenu: true, id: "edit-image" },
         // { label: "Upscale Image", icon: <MdOutlineImage />, hasSubmenu: true, id: "upscale-image" },
@@ -154,14 +154,14 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
       ]
     },
     {
-      label: "Video",
+      label: "Видео",
       items: [
-        { label: "Generate Video", icon: <IoVideocamOutline />, hasSubmenu: true, id: "generate-video" },
+        { label: "Генерация видео", icon: <IoVideocamOutline />, hasSubmenu: true, id: "generate-video" },
         // Edit Video removed.
       ]
     },
     {
-      label: "AI",
+      label: "ИИ",
       items: [
         {
           label: "Seedance Промпт",
@@ -241,7 +241,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             <span>{item.name}</span>
           </button>
         )) : (
-          <div className="px-3 py-2 text-xs text-gray-500">No results found</div>
+          <div className="px-3 py-2 text-xs text-gray-500">Ничего не найдено</div>
         )}
       </div>
     );
@@ -314,7 +314,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
           <AiOutlineSearch className="text-gray-400" />
           <input
             type="search"
-            placeholder="Search nodes or models"
+            placeholder="Поиск нод или моделей"
             className="w-full h-full py-2 px-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 bg-transparent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -422,14 +422,14 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
 
   const getLabelIcon = (label) => {
     switch (label) {
-      case "Input Models":
+      case "Входные данные":
         return <LuUpload />;
       case "Text (LLMs)":
         return <TfiText />;
       case "Text Utilities":
       case "Utilities":
         return <TbArrowMerge className="rotate-90" />;
-      case "Generate Image":
+      case "Генерация фото":
         return <IoImageOutline />;
       case "Edit Image":
         return <RiImageAiLine />;
@@ -437,7 +437,7 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
         return <MdCrop />;
       case "Image Utilities":
         return <MdAutoFixHigh />;
-      case "Generate Video":
+      case "Генерация видео":
         return <IoVideocamOutline />;
       case "Edit Video":
         return <RiVideoOnAiLine />;
