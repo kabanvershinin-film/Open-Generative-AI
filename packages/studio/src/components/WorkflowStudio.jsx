@@ -741,7 +741,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                   : "text-white/30 border-transparent hover:text-white"
               }`}
             >
-              Community
+              Сообщество
             </button>
           </div>
         </div>

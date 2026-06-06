@@ -8,7 +8,7 @@ const nextConfig = {
   experimental: {
     serverBodySizeLimit: '50mb',
   },
-  generateBuildId: async () => 'build-ru-workflows-v50',
+  generateBuildId: async () => 'build-ru-community-v51',
 };
 
 export default nextConfig;
