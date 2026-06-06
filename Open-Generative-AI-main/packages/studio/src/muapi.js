@@ -550,10 +550,10 @@ async function generateImageEdit(apiKey, params) {
 
 export async function generateI2I(apiKey, params) {
     const modelInfo = getModelById(params.model);
-    if (!modelInfo?.editEndpoint && Array.isArray(params.images_list) && params.images_list.length > 0) {
-        throw new Error('This model does not support image input.');
+    const hasImages = Array.isArray(params.images_list) && params.images_list.length > 0;
+    if (hasImages && !modelInfo?.editEndpoint && !modelInfo?.acceptsImage) {
+        throw new Error('Эта модель не поддерживает загрузку изображений.');
     }
-    const modelInfo = getModelById(params.model);
     if (modelInfo?.editEndpoint) {
         return generateImageEdit(apiKey, params);
     }

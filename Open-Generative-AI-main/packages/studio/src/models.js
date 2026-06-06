@@ -66,6 +66,7 @@ export const i2iModels = [
     name: "GPT Image 2",
     apiId: "gpt-image-2",
     editEndpoint: true,
+    acceptsImage: true,
     inputs: {
       prompt: { type: "string" },
       size: { enum: ["1024x1024", "1536x1024", "1024x1536", "2048x2048", "2048x1152", "3840x2160", "2160x3840"], default: "1024x1024" },
@@ -81,6 +82,7 @@ export const i2iModels = [
     id: "gemini-3.1-flash-image-preview-edit",
     name: "Nano Banana 2",
     apiId: "gemini-3.1-flash-image-preview",
+    acceptsImage: true,
     inputs: {
       prompt: { type: "string" },
       aspect_ratio: { enum: GEMINI_AR, default: "1:1" },
@@ -91,6 +93,7 @@ export const i2iModels = [
     id: "gemini-3-pro-image-preview-edit",
     name: "Nano Banana Pro",
     apiId: "gemini-3-pro-image-preview",
+    acceptsImage: true,
     inputs: {
       prompt: { type: "string" },
       aspect_ratio: { enum: GEMINI_AR, default: "1:1" },
