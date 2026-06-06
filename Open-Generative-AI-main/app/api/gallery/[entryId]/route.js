@@ -87,8 +87,12 @@ async function tosDeleteObj(key) {
 }
 
 export async function DELETE(request, { params }) {
+    let userId = null;
+    let source = 'unknown';
     try {
-        const { id: userId, source } = await resolveGalleryUser(request);
+        const resolved = await resolveGalleryUser(request);
+        userId = resolved.id;
+        source = resolved.source;
         logStep('DELETE start', { userId, source });
         if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         if (!TOS_ENABLED) { logStep('DELETE aborted: TOS not enabled'); return NextResponse.json({ error: 'TOS not enabled' }, { status: 503 }); }
@@ -115,7 +119,7 @@ export async function DELETE(request, { params }) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        logStep('DELETE error', { message: error.message });
+        logStep('DELETE error', { userId, source, message: error.message });
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

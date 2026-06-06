@@ -1254,9 +1254,12 @@ export default function ImageStudio({
                 try { localStorage.removeItem(PENDING_KEY); } catch {}
               }
 
+              const headers = { "Content-Type": "application/json" };
+              if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
               fetch("/api/gallery", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers,
                 keepalive: true,
                 body: JSON.stringify({ url: permUrl, type: "image", model: snap.selectedModelId, prompt: promptTrim }),
               })

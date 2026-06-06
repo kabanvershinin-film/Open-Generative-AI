@@ -1036,11 +1036,17 @@ export default function VideoStudio({
       localStorage.removeItem(ARK_TASK_KEY);
       setLastGenerationId(genId);
       setLastGenerationModel(stored.model);
-      addToLocalHistory({
-        id: genId, url, prompt: stored.prompt || "",
-        model: stored.model, aspect_ratio: stored.aspect_ratio,
-        duration: stored.duration, timestamp: new Date().toISOString(),
-      });
+      const entry = {
+        id: genId,
+        url,
+        prompt: stored.prompt || "",
+        model: stored.model,
+        aspect_ratio: stored.aspect_ratio,
+        duration: stored.duration,
+        timestamp: new Date().toISOString(),
+      };
+      addToLocalHistory(entry);
+      persistVideoEntryToStorage(entry);
       showVideoInCanvas(url, stored.model);
       const headers = { "Content-Type": "application/json" };
       if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
