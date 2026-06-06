@@ -918,10 +918,10 @@ export default function ImageStudio({
         console.warn("Failed to save ImageStudio persistence:", err);
       }
     };
+    save();
     const timer = setTimeout(save, 500); // 500ms debounce
     return () => {
       clearTimeout(timer);
-      save();
     };
   }, [
     imageMode,
