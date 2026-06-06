@@ -443,23 +443,31 @@ function FaceRegistrationDialog(_ref) {
   }, "\u041E\u0442\u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0439\u0442\u0435 QR-\u043A\u043E\u0434 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u043E\u043C"), qrUrl && /*#__PURE__*/_react["default"].createElement("div", {
     className: "bg-white p-3 rounded-xl inline-block mx-auto"
   }, /*#__PURE__*/_react["default"].createElement("img", {
-    src: "https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=".concat(encodeURIComponent(qrUrl)),
+    src: "https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&ecc=M&data=".concat(encodeURIComponent(qrUrl)),
     alt: "QR-\u043A\u043E\u0434 \u0434\u043B\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u043B\u0438\u0446\u0430",
-    width: 220,
-    height: 220,
-    className: "w-[220px] h-[220px] block"
+    width: 240,
+    height: 240,
+    className: "w-[240px] h-[240px] block"
   })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-center gap-2 text-xs text-[#22d3ee]"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaSpinner, {
     className: "h-3.5 w-3.5 animate-spin"
   }), "\u041E\u0436\u0438\u0434\u0430\u0435\u043C \u043F\u0440\u043E\u0445\u043E\u0436\u0434\u0435\u043D\u0438\u0435 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438\u2026"), /*#__PURE__*/_react["default"].createElement("p", {
     className: "text-xs text-white/50 leading-relaxed"
-  }, "\u041D\u0430\u0432\u0435\u0434\u0438\u0442\u0435 \u043A\u0430\u043C\u0435\u0440\u0443 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0430 \u043D\u0430 QR-\u043A\u043E\u0434 \u2192 \u043E\u0442\u043A\u0440\u043E\u0435\u0442\u0441\u044F \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0430 \u043B\u0438\u0446\u0430. \u0421\u0434\u0435\u043B\u0430\u0439\u0442\u0435 \u0441\u0435\u043B\u0444\u0438 \u043F\u043E \u0438\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0438. \u041E\u043A\u043D\u043E \u043E\u0431\u043D\u043E\u0432\u0438\u0442\u0441\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438."), /*#__PURE__*/_react["default"].createElement("button", {
+  }, "\u041D\u0435 \u0441\u043A\u0430\u043D\u0438\u0440\u0443\u0435\u0442\u0441\u044F? \u0421\u043A\u043E\u043F\u0438\u0440\u0443\u0439\u0442\u0435 \u0441\u0441\u044B\u043B\u043A\u0443 \u0438 \u043E\u0442\u043A\u0440\u043E\u0439\u0442\u0435 \u0435\u0451 \u043D\u0430 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0435 (\u0438\u043B\u0438 \u043F\u0440\u0438\u0448\u043B\u0438\u0442\u0435 \u0441\u0435\u0431\u0435 \u0432 \u043C\u0435\u0441\u0441\u0435\u043D\u0434\u0436\u0435\u0440)."), /*#__PURE__*/_react["default"].createElement("button", {
+    onClick: function onClick() {
+      navigator.clipboard.writeText(h5Link);
+      _reactHotToast.toast.success('Ссылка скопирована — откройте её на телефоне');
+    },
+    className: "w-full py-2.5 rounded-xl bg-[#22d3ee]/15 hover:bg-[#22d3ee]/30 border border-[#22d3ee]/30 text-[#22d3ee] text-sm font-medium transition-colors flex items-center justify-center gap-2"
+  }, /*#__PURE__*/_react["default"].createElement(_fa.FaCopy, {
+    className: "h-3.5 w-3.5"
+  }), " \u0421\u043A\u043E\u043F\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u0441\u0441\u044B\u043B\u043A\u0443 \u0434\u043B\u044F \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0430"), /*#__PURE__*/_react["default"].createElement("button", {
     onClick: function onClick() {
       return window.open(h5Link, '_blank');
     },
     className: "text-xs text-white/60 hover:text-[#22d3ee] underline"
-  }, "\u0418\u043B\u0438 \u043F\u0440\u043E\u0439\u0442\u0438 \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 \u2192")), step === 'photo' && /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("p", {
+  }, "\u0418\u043B\u0438 \u043F\u0440\u043E\u0439\u0442\u0438 \u043D\u0430 \u044D\u0442\u043E\u043C \u0443\u0441\u0442\u0440\u043E\u0439\u0441\u0442\u0432\u0435 (\u043D\u0443\u0436\u043D\u0430 \u043A\u0430\u043C\u0435\u0440\u0430) \u2192")), step === 'photo' && /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("p", {
     className: "text-xs text-white/60"
   }, "\u2713 \u041B\u0438\u0446\u043E \u043F\u043E\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043D\u043E. \u0422\u0435\u043F\u0435\u0440\u044C \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u0444\u043E\u0442\u043E \u044D\u0442\u043E\u0433\u043E \u0436\u0435 \u0447\u0435\u043B\u043E\u0432\u0435\u043A\u0430 \u2014 \u0430\u043D\u0444\u0430\u0441, \u043B\u0438\u0446\u043E \u043A\u0440\u0443\u043F\u043D\u044B\u043C \u043F\u043B\u0430\u043D\u043E\u043C, \u0431\u0435\u0437 \u0434\u0440\u0443\u0433\u0438\u0445 \u043B\u044E\u0434\u0435\u0439."), /*#__PURE__*/_react["default"].createElement("input", {
     ref: fileRef,

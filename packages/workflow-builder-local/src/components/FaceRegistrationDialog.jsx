@@ -253,11 +253,11 @@ export default function FaceRegistrationDialog({ open, onClose, onRegistered }) 
             {qrUrl && (
               <div className="bg-white p-3 rounded-xl inline-block mx-auto">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=${encodeURIComponent(qrUrl)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&ecc=M&data=${encodeURIComponent(qrUrl)}`}
                   alt="QR-код для проверки лица"
-                  width={220}
-                  height={220}
-                  className="w-[220px] h-[220px] block"
+                  width={240}
+                  height={240}
+                  className="w-[240px] h-[240px] block"
                 />
               </div>
             )}
@@ -266,14 +266,19 @@ export default function FaceRegistrationDialog({ open, onClose, onRegistered }) 
               Ожидаем прохождение проверки…
             </div>
             <p className="text-xs text-white/50 leading-relaxed">
-              Наведите камеру телефона на QR-код → откроется проверка лица.
-              Сделайте селфи по инструкции. Окно обновится автоматически.
+              Не сканируется? Скопируйте ссылку и откройте её на телефоне (или пришлите себе в мессенджер).
             </p>
+            <button
+              onClick={() => { navigator.clipboard.writeText(h5Link); toast.success('Ссылка скопирована — откройте её на телефоне'); }}
+              className="w-full py-2.5 rounded-xl bg-[#22d3ee]/15 hover:bg-[#22d3ee]/30 border border-[#22d3ee]/30 text-[#22d3ee] text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              <FaCopy className="h-3.5 w-3.5" /> Скопировать ссылку для телефона
+            </button>
             <button
               onClick={() => window.open(h5Link, '_blank')}
               className="text-xs text-white/60 hover:text-[#22d3ee] underline"
             >
-              Или пройти на этом устройстве →
+              Или пройти на этом устройстве (нужна камера) →
             </button>
           </div>
         )}
