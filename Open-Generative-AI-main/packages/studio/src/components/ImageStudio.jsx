@@ -1118,9 +1118,8 @@ export default function ImageStudio({
       const raw = localStorage.getItem(PERSIST_KEY);
       const data = raw ? JSON.parse(raw) : {};
       const prevHistory = Array.isArray(data.localHistory) ? data.localHistory : [];
-      // Avoid duplicates by id.
-      if (prevHistory.some((e) => e.id === entry.id)) return;
-      data.localHistory = [entry, ...prevHistory].slice(0, 50);
+      const filtered = prevHistory.filter((e) => e?.id !== entry.id);
+      data.localHistory = [entry, ...filtered].slice(0, 50);
       localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
     } catch (err) {
       console.warn("persistEntryToStorage failed:", err?.message);
@@ -1219,6 +1218,7 @@ export default function ImageStudio({
             // Show the result IMMEDIATELY (raw url / base64) — don't make the user
             // wait for the TOS upload. Display is in-memory only at this point.
             addToHistory(entry);
+            persistEntryToStorage(entry);
 
             // Mirror to TOS in the background, then swap the raw url for the
             // permanent one, persist to localStorage and notify the parent.
