@@ -6,12 +6,14 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 var _react = _interopRequireWildcard(require("react"));
+var _reactDom = require("react-dom");
 var _reactflow = require("reactflow");
 var _reactHotToast = require("react-hot-toast");
 var _axios = _interopRequireDefault(require("axios"));
 var _fi = require("react-icons/fi");
 var _io = require("react-icons/io5");
 var _utility = require("./utility");
+var _FaceRegistrationDialog = _interopRequireDefault(require("./FaceRegistrationDialog"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
@@ -79,7 +81,35 @@ var CharacterNode = function CharacterNode(_ref) {
     _useState12 = _slicedToArray(_useState11, 2),
     progress = _useState12[0],
     setProgress = _useState12[1];
+  var _useState13 = (0, _react.useState)(false),
+    _useState14 = _slicedToArray(_useState13, 2),
+    faceRegOpen = _useState14[0],
+    setFaceRegOpen = _useState14[1];
   var prevSig = (0, _react.useRef)("");
+
+  // Called when a face is registered as a Seedance trusted asset (asset://…).
+  // Adopt the asset, name and save it to the shared library.
+  var onFaceRegistered = function onFaceRegistered(uri, regName) {
+    if (!uri) return;
+    setAssetUri(uri);
+    setTab("uri");
+    var finalName = (regName || name || "").trim();
+    if (finalName && !name) setName(finalName);
+    var item = {
+      id: Date.now().toString(),
+      name: finalName || uri.replace(/^asset:\/\//, "").slice(0, 16),
+      assetUri: uri,
+      thumbnail: photoUrl || null,
+      addedAt: Date.now()
+    };
+    setLibrary(function (prev) {
+      var next = [item].concat(_toConsumableArray(prev.filter(function (f) {
+        return f.assetUri !== uri;
+      })));
+      saveLibrary(next);
+      return next;
+    });
+  };
   (0, _react.useEffect)(function () {
     setLibrary(loadLibrary());
   }, []);
@@ -261,7 +291,14 @@ var CharacterNode = function CharacterNode(_ref) {
     className: "h-8 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ".concat(tab === "uri" ? "bg-purple-600/30 border-purple-500/50 text-purple-100" : "bg-white/5 border-zinc-800 text-zinc-400 hover:text-white")
   }, /*#__PURE__*/_react["default"].createElement(_fi.FiLink, {
     size: 12
-  }), " Asset URI")), tab === "photo" ? uploading ? /*#__PURE__*/_react["default"].createElement("div", {
+  }), " Asset URI")), /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      return setFaceRegOpen(true);
+    },
+    className: "h-9 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-white bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-lg shadow-purple-600/20",
+    title: "\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u043B\u0438\u0446\u0430 \u0434\u043B\u044F Seedance 2.0"
+  }, "\u2728 \u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043B\u0438\u0446\u043E"), tab === "photo" ? uploading ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1.5 py-2"
   }, /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[11px] text-zinc-400"
@@ -361,6 +398,14 @@ var CharacterNode = function CharacterNode(_ref) {
     "data-type": "purple"
   }), /*#__PURE__*/_react["default"].createElement("p", {
     className: "absolute -right-12 top-[100px] text-xs text-purple-400 transition-opacity duration-200 ".concat(data.activeHandleColor === "purple" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "\u041B\u0438\u0446\u043E"));
+  }, "\u041B\u0438\u0446\u043E"), faceRegOpen && typeof document !== "undefined" && /*#__PURE__*/(0, _reactDom.createPortal)(/*#__PURE__*/_react["default"].createElement(_FaceRegistrationDialog["default"], {
+    open: faceRegOpen,
+    onClose: function onClose() {
+      return setFaceRegOpen(false);
+    },
+    onRegistered: function onRegistered(uri, regName) {
+      return onFaceRegistered(uri, regName);
+    }
+  }), document.body));
 };
 var _default = exports["default"] = CharacterNode;

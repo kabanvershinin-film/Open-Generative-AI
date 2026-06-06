@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Handle, Position, useReactFlow } from "reactflow";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 import { FiUpload, FiLink } from "react-icons/fi";
 import { IoPersonCircleOutline, IoTrashOutline } from "react-icons/io5";
 import { stableStringify } from "./utility";
+import FaceRegistrationDialog from "./FaceRegistrationDialog";
 
 // Shared with Video Studio's FaceAssetDialog — the same saved-faces library.
 const LIBRARY_KEY = "face_library_v1";
@@ -36,7 +38,30 @@ const CharacterNode = ({ id, data, selected }) => {
   const [library, setLibrary] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [faceRegOpen, setFaceRegOpen] = useState(false);
   const prevSig = useRef("");
+
+  // Called when a face is registered as a Seedance trusted asset (asset://…).
+  // Adopt the asset, name and save it to the shared library.
+  const onFaceRegistered = (uri, regName) => {
+    if (!uri) return;
+    setAssetUri(uri);
+    setTab("uri");
+    const finalName = (regName || name || "").trim();
+    if (finalName && !name) setName(finalName);
+    const item = {
+      id: Date.now().toString(),
+      name: finalName || uri.replace(/^asset:\/\//, "").slice(0, 16),
+      assetUri: uri,
+      thumbnail: photoUrl || null,
+      addedAt: Date.now(),
+    };
+    setLibrary((prev) => {
+      const next = [item, ...prev.filter((f) => f.assetUri !== uri)];
+      saveLibrary(next);
+      return next;
+    });
+  };
 
   useEffect(() => {
     setLibrary(loadLibrary());
@@ -207,6 +232,16 @@ const CharacterNode = ({ id, data, selected }) => {
           </button>
         </div>
 
+        {/* Register a real face as a Seedance trusted asset (asset://…) */}
+        <button
+          type="button"
+          onClick={() => setFaceRegOpen(true)}
+          className="h-9 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-white bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-lg shadow-purple-600/20"
+          title="Регистрация лица для Seedance 2.0"
+        >
+          ✨ Зарегистрировать лицо
+        </button>
+
         {/* Tab content */}
         {tab === "photo" ? (
           uploading ? (
@@ -322,6 +357,17 @@ const CharacterNode = ({ id, data, selected }) => {
       >
         Лицо
       </p>
+
+      {/* Face registration modal — portaled to body so reactflow's canvas
+          transforms don't break the fixed-position overlay. */}
+      {faceRegOpen && typeof document !== "undefined" && createPortal(
+        <FaceRegistrationDialog
+          open={faceRegOpen}
+          onClose={() => setFaceRegOpen(false)}
+          onRegistered={(uri, regName) => onFaceRegistered(uri, regName)}
+        />,
+        document.body
+      )}
     </div>
   );
 };
