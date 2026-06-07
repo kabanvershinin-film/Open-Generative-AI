@@ -1326,21 +1326,163 @@ export default function ImageStudio({
       }
     }
 
+    const pickOption = (options, current, fallback) => {
+      if (!options || options.length === 0) return null;
+      if (current != null && options.includes(current)) return current;
+      if (fallback != null && options.includes(fallback)) return fallback;
+      return options[0];
+    };
+
+    let finalModelId = selectedModelId;
+    let finalModelName = selectedModelName;
+    let finalAr = selectedAr;
+    let finalQuality = selectedQuality;
+    let finalQualityOpt = currentQualityOptions.length > 0 ? selectedQualityOpt : null;
+    let finalFormat = currentFormatOptions.length > 0 ? selectedFormat : null;
+    let finalBackground = currentBackgroundOptions.length > 0 ? selectedBackground : null;
+    let finalModeration = currentModerationOptions.length > 0 ? selectedModeration : null;
+    let finalImageSize = currentImageSizeOptions.length > 0 ? selectedImageSize : null;
+    let finalEffect = showEffectBtn ? selectedEffect : "";
+    let finalQualityField = currentQualityField;
+    let finalMaxImages = maxImages;
+
+    if (imageMode) {
+      if (!i2iModels.length) {
+        alert("Модели image-to-image недоступны.");
+        return;
+      }
+
+      const matchedById = i2iModels.find((m) => m.id === selectedModelId);
+      const sourceT2I =
+        t2iModels.find((m) => m.id === selectedModelId) ||
+        t2iModels.find((m) => m.name === selectedModelName);
+      const matchedByApi = sourceT2I
+        ? i2iModels.find((m) => m.apiId === sourceT2I.apiId)
+        : null;
+      const matchedByName = i2iModels.find((m) => m.name === selectedModelName);
+      const targetI2I = matchedById || matchedByApi || matchedByName || i2iModels[0];
+
+      if (!targetI2I) {
+        alert("Модели image-to-image недоступны.");
+        return;
+      }
+
+      finalModelId = targetI2I.id;
+      finalModelName = targetI2I.name;
+
+      const arOptions = getAspectRatiosForI2IModel(finalModelId);
+      if (arOptions.length > 0) {
+        finalAr = pickOption(arOptions, selectedAr, arOptions[0]);
+      }
+      if (!finalAr) finalAr = "1:1";
+
+      finalQualityField = getQualityFieldForI2IModel(finalModelId);
+      const resolutionOptions = getResolutionsForI2IModel(finalModelId);
+      if (resolutionOptions.length > 0) {
+        finalQuality = pickOption(resolutionOptions, selectedQuality, resolutionOptions[0]);
+      } else {
+        const qualityFieldOptions = finalQualityField
+          ? getImageInputOptions(finalModelId, finalQualityField)
+          : [];
+        finalQuality =
+          qualityFieldOptions.length > 0
+            ? pickOption(
+                qualityFieldOptions,
+                selectedQuality,
+                getImageInputDefault(finalModelId, finalQualityField),
+              )
+            : null;
+      }
+
+      const qualityOptOptions = getImageInputOptions(finalModelId, "quality");
+      finalQualityOpt =
+        qualityOptOptions.length > 0
+          ? pickOption(
+              qualityOptOptions,
+              selectedQualityOpt,
+              getImageInputDefault(finalModelId, "quality"),
+            )
+          : null;
+
+      const formatOptions = getImageInputOptions(finalModelId, "format");
+      finalFormat =
+        formatOptions.length > 0
+          ? pickOption(
+              formatOptions,
+              selectedFormat,
+              getImageInputDefault(finalModelId, "format"),
+            )
+          : null;
+
+      const backgroundOptions = getImageInputOptions(finalModelId, "background");
+      finalBackground =
+        backgroundOptions.length > 0
+          ? pickOption(
+              backgroundOptions,
+              selectedBackground,
+              getImageInputDefault(finalModelId, "background"),
+            )
+          : null;
+
+      const moderationOptions = getImageInputOptions(finalModelId, "moderation");
+      finalModeration =
+        moderationOptions.length > 0
+          ? pickOption(
+              moderationOptions,
+              selectedModeration,
+              getImageInputDefault(finalModelId, "moderation"),
+            )
+          : null;
+
+      const imageSizeOptions = getImageInputOptions(finalModelId, "imageSize");
+      finalImageSize =
+        imageSizeOptions.length > 0
+          ? pickOption(
+              imageSizeOptions,
+              selectedImageSize,
+              getImageInputDefault(finalModelId, "imageSize"),
+            )
+          : null;
+
+      const effects = getEffectsForI2IModel(finalModelId);
+      if (effects.length > 0) {
+        const defaultEffect =
+          getDefaultEffectForI2IModel(finalModelId) || effects[0];
+        finalEffect = effects.includes(selectedEffect) ? selectedEffect : defaultEffect;
+      } else {
+        finalEffect = "";
+      }
+
+      finalMaxImages = getMaxImagesForI2IModel(finalModelId) || 1;
+
+      if (finalModelId !== selectedModelId) setSelectedModelId(finalModelId);
+      if (finalModelName !== selectedModelName) setSelectedModelName(finalModelName);
+      if (finalAr !== selectedAr) setSelectedAr(finalAr);
+      if (finalQuality !== selectedQuality) setSelectedQuality(finalQuality);
+      if (finalQualityOpt !== selectedQualityOpt) setSelectedQualityOpt(finalQualityOpt);
+      if (finalFormat !== selectedFormat) setSelectedFormat(finalFormat);
+      if (finalBackground !== selectedBackground) setSelectedBackground(finalBackground);
+      if (finalModeration !== selectedModeration) setSelectedModeration(finalModeration);
+      if (finalImageSize !== selectedImageSize) setSelectedImageSize(finalImageSize);
+      if (finalEffect !== selectedEffect) setSelectedEffect(finalEffect);
+      if (finalMaxImages !== maxImages) setMaxImages(finalMaxImages);
+    }
+
     const snap = {
       imageMode,
-      selectedModelId,
+      selectedModelId: finalModelId,
       uploadedImageUrls,
       prompt,
-      qualityField: currentQualityField,
-      selectedQuality,
-      selectedQualityOpt: currentQualityOptions.length > 0 ? selectedQualityOpt : null,
-      selectedFormat: currentFormatOptions.length > 0 ? selectedFormat : null,
-      selectedBackground: currentBackgroundOptions.length > 0 ? selectedBackground : null,
-      selectedModeration: currentModerationOptions.length > 0 ? selectedModeration : null,
-      selectedImageSize: currentImageSizeOptions.length > 0 ? selectedImageSize : null,
+      qualityField: finalQualityField,
+      selectedQuality: finalQuality,
+      selectedQualityOpt: finalQualityOpt,
+      selectedFormat: finalFormat,
+      selectedBackground: finalBackground,
+      selectedModeration: finalModeration,
+      selectedImageSize: finalImageSize,
       selectedRouting,
-      effect: showEffectBtn ? selectedEffect : "",
-      selectedAr,
+      effect: finalEffect,
+      selectedAr: finalAr,
       batchSize,
       requestId: Math.random().toString(36).slice(2, 11),
       ts: Date.now(),
