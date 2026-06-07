@@ -832,6 +832,12 @@ export default function ImageStudio({
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
   const [copiedPromptId, setCopiedPromptId] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editModalLoading, setEditModalLoading] = useState(false);
+  const [editModalError, setEditModalError] = useState(null);
+  const [editModalPrompt, setEditModalPrompt] = useState("");
+  const [editModalDragging, setEditModalDragging] = useState(false);
+  const [editModalSelectedUrls, setEditModalSelectedUrls] = useState([]);
 
   // Notify parent when generation state changes (drives the corner indicator).
   // ImageStudio stays mounted across tabs, so this state is always accurate.
@@ -852,6 +858,7 @@ export default function ImageStudio({
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
   const uploadPickerResetRef = useRef(null); // not used directly — managed via key
+  const editModalInputRef = useRef(null);
 
   // ── Close dropdown on outside click ─────────────────────────────────────
   useEffect(() => {
@@ -1070,6 +1077,96 @@ export default function ImageStudio({
     },
     [imageMode, selectedModelId, selectedModelName],
   );
+
+  const closeEditModal = useCallback(() => {
+    setEditModalOpen(false);
+    setEditModalLoading(false);
+    setEditModalError(null);
+    setEditModalDragging(false);
+    setEditModalSelectedUrls([]);
+    setEditModalPrompt("");
+  }, []);
+
+  const openEditModal = useCallback(() => {
+    const initialUrls = uploadedImageUrls.length
+      ? uploadedImageUrls
+      : currentImageUrl
+        ? [currentImageUrl]
+        : [];
+    setEditModalSelectedUrls(initialUrls);
+    setEditModalPrompt(prompt);
+    setEditModalError(null);
+    setEditModalDragging(false);
+    setEditModalLoading(false);
+    setEditModalOpen(true);
+  }, [prompt, uploadedImageUrls, currentImageUrl]);
+
+  const ingestEditModalFiles = useCallback(
+    async (fileList) => {
+      if (!fileList || fileList.length === 0) return;
+      const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+      if (!files.length) {
+        setEditModalError("Поддерживаются только файлы изображений.");
+        return;
+      }
+
+      setEditModalLoading(true);
+      setEditModalError(null);
+      try {
+        const urls = await Promise.all(
+          files.map(async (file) => uploadFile(apiKey, file)),
+        );
+        setEditModalSelectedUrls(urls);
+      } catch (err) {
+        setEditModalError(err?.message || "Не удалось загрузить изображение.");
+      } finally {
+        setEditModalLoading(false);
+      }
+    },
+    [apiKey],
+  );
+
+  const handleEditModalFileChange = useCallback(
+    (e) => {
+      ingestEditModalFiles(e.target.files);
+      e.target.value = "";
+    },
+    [ingestEditModalFiles],
+  );
+
+  const handleEditModalDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setEditModalDragging(false);
+      ingestEditModalFiles(e.dataTransfer?.files);
+    },
+    [ingestEditModalFiles],
+  );
+
+  const handleEditModalDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!editModalDragging) setEditModalDragging(true);
+  }, [editModalDragging]);
+
+  const handleEditModalDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setEditModalDragging(false);
+  }, []);
+
+  const handleEditModalStart = useCallback(() => {
+    if (!editModalSelectedUrls.length) {
+      setEditModalError("Загрузите изображение для редактирования.");
+      return;
+    }
+    applyReferenceImages(editModalSelectedUrls, {
+      forceEditMode: true,
+      promptOverride: editModalPrompt,
+    });
+    closeEditModal();
+  }, [editModalSelectedUrls, editModalPrompt, applyReferenceImages, closeEditModal]);
 
   // ── Upload picker callbacks ──────────────────────────────────────────────
   const handleUploadSelect = useCallback(
@@ -1838,6 +1935,17 @@ export default function ImageStudio({
               onClear={handleUploadClear}
               initialUrls={uploadedImageUrls}
             />
+            <button
+              type="button"
+              onClick={openEditModal}
+              className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-md text-[11px] font-semibold text-white/70 transition-all flex items-center gap-2 shrink-0"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="opacity-70">
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+              </svg>
+              <span>Редактировать фото</span>
+            </button>
             <div className="flex-1 flex flex-col gap-2">
               <textarea
                 ref={textareaRef}
@@ -2306,6 +2414,127 @@ export default function ImageStudio({
             <button type="button" onClick={() => setWorkflowPicker(null)} className="mt-4 w-full py-2 text-xs text-white/30 hover:text-white transition-colors">
               Отмена
             </button>
+          </div>
+        </div>
+      )}
+
+      {editModalOpen && (
+        <div className="fixed inset-0 z-[180] flex items-center justify-center p-6">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur"
+            onClick={closeEditModal}
+          />
+          <div className="relative w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl animate-fade-in-up">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-white">Редактирование изображения</h3>
+                <p className="text-xs text-white/40 mt-1">
+                  Загрузите референсное изображение и при необходимости скорректируйте промпт.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEditModal}
+                className="p-2 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            <div
+              className={`relative border-2 border-dashed rounded-xl p-6 transition-all ${
+                editModalDragging ? "border-[#22d3ee] bg-[#22d3ee]/10" : "border-white/10 bg-white/5"
+              }`}
+              onDrop={handleEditModalDrop}
+              onDragOver={handleEditModalDragOver}
+              onDragLeave={handleEditModalDragLeave}
+            >
+              <input
+                ref={editModalInputRef}
+                type="file"
+                className="hidden"
+                accept="image/*"
+                multiple
+                onChange={handleEditModalFileChange}
+              />
+              <div className="flex flex-col items-center gap-2 text-white/60">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <polyline points="16 3 21 3 21 8" />
+                  <line x1="16" y1="8" x2="21" y2="3" />
+                </svg>
+                <span className="text-sm font-semibold">Перетащите изображение сюда</span>
+                <span className="text-[11px] text-white/30">или</span>
+                <button
+                  type="button"
+                  onClick={() => editModalInputRef.current?.click()}
+                  className="px-3 py-1.5 bg-[#22d3ee]/10 hover:bg-[#22d3ee]/20 border border-[#22d3ee]/30 text-[#22d3ee] text-[11px] font-semibold rounded-full transition-all"
+                  disabled={editModalLoading}
+                >
+                  Выбрать файл
+                </button>
+                {editModalLoading && (
+                  <span className="text-[10px] text-white/40 mt-1 animate-pulse">Загрузка...</span>
+                )}
+                {editModalError && (
+                  <span className="text-[11px] text-red-400 mt-2 text-center max-w-[240px]">{editModalError}</span>
+                )}
+              </div>
+            </div>
+
+            {editModalSelectedUrls.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {editModalSelectedUrls.map((url) => (
+                  <div key={url} className="relative rounded-lg overflow-hidden border border-white/10">
+                    <img src={url} alt="Выбранное" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setEditModalSelectedUrls((prev) => prev.filter((u) => u !== url))}
+                      className="absolute top-1 right-1 w-6 h-6 bg-black/70 rounded-full flex items-center justify-center text-white/70 hover:text-white"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-5">
+              <label className="text-xs text-white/40 font-semibold uppercase tracking-widest">Промпт</label>
+              <textarea
+                value={editModalPrompt}
+                onChange={(e) => setEditModalPrompt(e.target.value)}
+                className="mt-2 w-full bg-black/40 border border-white/10 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-[#22d3ee]/50 resize-y min-h-[90px]"
+                placeholder="Опишите желаемые изменения (необязательно)"
+              />
+            </div>
+
+            <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <button
+                type="button"
+                onClick={handleEditModalStart}
+                disabled={editModalLoading}
+                className="px-4 py-2 bg-[#22d3ee] text-black text-sm font-bold rounded-md hover:bg-[#e5ff33] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Начать редактирование
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditModalSelectedUrls([]);
+                  setEditModalPrompt("");
+                }}
+                className="text-xs text-white/40 hover:text-white transition-colors"
+              >
+                Сбросить
+              </button>
+            </div>
           </div>
         </div>
       )}
