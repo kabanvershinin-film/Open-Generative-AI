@@ -1496,6 +1496,7 @@ export default function ImageStudio({
     const snap = {
       imageMode: shouldEditImages,
       selectedModelId: finalModelId,
+      selectedModelName: finalModelName,
       uploadedImageUrls,
       prompt,
       qualityField: finalQualityField,
