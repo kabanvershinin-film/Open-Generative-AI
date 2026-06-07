@@ -1023,25 +1023,37 @@ export default function ImageStudio({
       setUploadedImageUrls(newUrls);
 
       if (!imageMode) {
-        const firstI2I = i2iModels[0];
-        const ars = getAspectRatiosForI2IModel(firstI2I.id);
-        const resolutions = getResolutionsForI2IModel(firstI2I.id);
-        const effects = getEffectsForI2IModel(firstI2I.id);
+        const currentT2IModel = t2iModels.find((m) => m.id === selectedModelId);
+        const matchedI2I =
+          currentT2IModel &&
+          i2iModels.find((m) => m.apiId === currentT2IModel.apiId);
+        const targetI2I = matchedI2I || i2iModels[0];
+        if (!targetI2I) return;
+
+        const ars = getAspectRatiosForI2IModel(targetI2I.id);
+        const resolutions = getResolutionsForI2IModel(targetI2I.id);
+        const effects = getEffectsForI2IModel(targetI2I.id);
+        const defaultQualityOpt = getImageInputDefault(targetI2I.id, "quality");
+        const defaultFormat = getImageInputDefault(targetI2I.id, "format");
+        const defaultBackground = getImageInputDefault(targetI2I.id, "background");
+        const defaultModeration = getImageInputDefault(targetI2I.id, "moderation");
+        const defaultImageSize = getImageInputDefault(targetI2I.id, "imageSize");
+        const defaultEffect = getDefaultEffectForI2IModel(targetI2I.id);
         setImageMode(true);
-        setSelectedModelId(firstI2I.id);
-        setSelectedModelName(firstI2I.name);
+        setSelectedModelId(targetI2I.id);
+        setSelectedModelName(targetI2I.name);
         setSelectedAr(ars[0] || "1:1");
         setSelectedQuality(resolutions[0] || null);
-        setSelectedQualityOpt(getImageInputDefault(firstI2I.id, "quality"));
-        setSelectedFormat(getImageInputDefault(firstI2I.id, "format"));
-        setSelectedBackground(getImageInputDefault(firstI2I.id, "background"));
-        setSelectedModeration(getImageInputDefault(firstI2I.id, "moderation"));
-        setSelectedImageSize(getImageInputDefault(firstI2I.id, "imageSize"));
-        setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(firstI2I.id) || effects[0]) : "");
-        setMaxImages(getMaxImagesForI2IModel(firstI2I.id));
+        setSelectedQualityOpt(defaultQualityOpt);
+        setSelectedFormat(defaultFormat);
+        setSelectedBackground(defaultBackground);
+        setSelectedModeration(defaultModeration);
+        setSelectedImageSize(defaultImageSize);
+        setSelectedEffect(effects.length > 0 ? defaultEffect || effects[0] : "");
+        setMaxImages(getMaxImagesForI2IModel(targetI2I.id));
       }
     },
-    [imageMode],
+    [imageMode, selectedModelId],
   );
 
   const handleUploadClear = useCallback(() => {
