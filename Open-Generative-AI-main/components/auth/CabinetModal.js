@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import { useEffect, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthProvider';
@@ -10,11 +10,11 @@ const ADMIN_EMAILS = ['kaban.vershinin@gmail.com', 'didig.vershinin@yandex.ru'];
 // Map known model ids / reasons to friendly Russian labels for the history list.
 function txnLabel(t) {
     const r = t.reason || '';
-    if (r === 'admin_topup') return 'Пополнение (админ)';
-    if (r === 'topup' || r === 'payment') return 'Пополнение';
-    if (/^Возврат/i.test(r)) return r;
+    if (r === 'admin_topup') return 'РџРѕРїРѕР»РЅРµРЅРёРµ (Р°РґРјРёРЅ)';
+    if (r === 'topup' || r === 'payment') return 'РџРѕРїРѕР»РЅРµРЅРёРµ';
+    if (/^Р’РѕР·РІСЂР°С‚/i.test(r)) return r;
     const model = t.meta?.model || r;
-    return model ? `Генерация · ${model}` : 'Операция';
+    return model ? `Р“РµРЅРµСЂР°С†РёСЏ В· ${model}` : 'РћРїРµСЂР°С†РёСЏ';
 }
 
 function fmtDate(s) {
@@ -53,17 +53,18 @@ export default function CabinetModal() {
 
     useEffect(() => { if (cabinetOpen) loadTxns(); }, [cabinetOpen, loadTxns]);
 
-    // After returning from Точка (?payment=success&order=...), verify & credit.
+    // After returning from РўРѕС‡РєР° (?payment=success&order=...), verify & credit.
     const verifyReturn = useCallback(async () => {
         if (typeof window === 'undefined') return;
         const url = new URL(window.location.href);
         if (url.searchParams.get('payment') !== 'success') return;
         const order = url.searchParams.get('order');
         if (!order) return;
+        setCabinetOpen(true);
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
-            // Poll verify a few times (Точка may confirm with a slight delay)
+            // Poll verify a few times (РўРѕС‡РєР° may confirm with a slight delay)
             for (let i = 0; i < 10; i++) {
                 const r = await fetch('/api/payments/verify', {
                     method: 'POST',
@@ -73,7 +74,7 @@ export default function CabinetModal() {
                 const j = await r.json();
                 if (j.status === 'paid') {
                     await refreshBalance();
-                    if (j.credited) toast.success('Баланс пополнен');
+                    if (j.credited) toast.success('Р‘Р°Р»Р°РЅСЃ РїРѕРїРѕР»РЅРµРЅ');
                     break;
                 }
                 await new Promise(res => setTimeout(res, 2000));
@@ -91,21 +92,21 @@ export default function CabinetModal() {
 
     const topup = async () => {
         const value = Number(amount);
-        if (!Number.isFinite(value) || value < 100) { toast.error('Минимум 100 руб'); return; }
+        if (!Number.isFinite(value) || value < 100) { toast.error('РњРёРЅРёРјСѓРј 100 СЂСѓР±'); return; }
         setBusy(true);
         try {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) { toast.error('Сессия истекла, войдите снова'); return; }
+            if (!session) { toast.error('РЎРµСЃСЃРёСЏ РёСЃС‚РµРєР»Р°, РІРѕР№РґРёС‚Рµ СЃРЅРѕРІР°'); return; }
             const r = await fetch('/api/payments/create', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
                 body: JSON.stringify({ amount: value }),
             });
             const j = await r.json();
-            if (!r.ok || !j.paymentUrl) { toast.error(j.error || 'Не удалось создать платёж'); return; }
+            if (!r.ok || !j.paymentUrl) { toast.error(j.error || 'РќРµ СѓРґР°Р»РѕСЃСЊ СЃРѕР·РґР°С‚СЊ РїР»Р°С‚С‘Р¶'); return; }
             window.location.href = j.paymentUrl;
         } catch (e) {
-            toast.error(e?.message || 'Ошибка сети');
+            toast.error(e?.message || 'РћС€РёР±РєР° СЃРµС‚Рё');
         } finally {
             setBusy(false);
         }
@@ -117,19 +118,19 @@ export default function CabinetModal() {
             <div className="bg-neutral-900 border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-5 max-h-[90vh] overflow-y-auto"
                  onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-white">Личный кабинет</h3>
-                    <button onClick={() => setCabinetOpen(false)} className="text-white/40 hover:text-white">✕</button>
+                    <h3 className="text-lg font-semibold text-white">Р›РёС‡РЅС‹Р№ РєР°Р±РёРЅРµС‚</h3>
+                    <button onClick={() => setCabinetOpen(false)} className="text-white/40 hover:text-white">вњ•</button>
                 </div>
 
                 <div className="text-sm text-white/50">{profile?.email}</div>
 
                 <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                    <div className="text-xs text-white/50">Ваш баланс</div>
-                    <div className="text-2xl font-bold text-white">{balance.toFixed(2)} ₽</div>
+                    <div className="text-xs text-white/50">Р’Р°С€ Р±Р°Р»Р°РЅСЃ</div>
+                    <div className="text-2xl font-bold text-white">{balance.toFixed(2)} в‚Ѕ</div>
                 </div>
 
                 <div className="space-y-3">
-                    <div className="text-sm text-white/70">Пополнить баланс</div>
+                    <div className="text-sm text-white/70">РџРѕРїРѕР»РЅРёС‚СЊ Р±Р°Р»Р°РЅСЃ</div>
                     <div className="grid grid-cols-4 gap-2">
                         {PRESETS.map(p => (
                             <button key={p} onClick={() => setAmount(String(p))}
@@ -137,25 +138,25 @@ export default function CabinetModal() {
                                         amount === String(p)
                                             ? 'bg-purple-600 border-purple-500 text-white'
                                             : 'bg-black/40 border-white/10 text-white/70 hover:border-white/30'}`}>
-                                {p}₽
+                                {p}в‚Ѕ
                             </button>
                         ))}
                     </div>
                     <input type="number" min={100} max={100000} value={amount}
                            onChange={(e) => setAmount(e.target.value)}
                            className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-purple-500"
-                           placeholder="Сумма, ₽" />
+                           placeholder="РЎСѓРјРјР°, в‚Ѕ" />
                     <button onClick={topup} disabled={busy}
                             className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors">
-                        {busy ? '...' : 'Пополнить через Точку'}
+                        {busy ? '...' : 'РџРѕРїРѕР»РЅРёС‚СЊ С‡РµСЂРµР· РўРѕС‡РєСѓ'}
                     </button>
-                    <div className="text-xs text-white/30 text-center">Карта или СБП · от 100 ₽</div>
+                    <div className="text-xs text-white/30 text-center">РљР°СЂС‚Р° РёР»Рё РЎР‘Рџ В· РѕС‚ 100 в‚Ѕ</div>
                 </div>
 
                 <div className="space-y-2">
-                    <div className="text-sm text-white/70">История операций</div>
+                    <div className="text-sm text-white/70">РСЃС‚РѕСЂРёСЏ РѕРїРµСЂР°С†РёР№</div>
                     {txnsLoading && (txns === null) ? (
-                        <div className="text-xs text-white/40 py-3 text-center">Загрузка…</div>
+                        <div className="text-xs text-white/40 py-3 text-center">Р—Р°РіСЂСѓР·РєР°вЂ¦</div>
                     ) : (txns && txns.length > 0) ? (
                         <div className="rounded-xl border border-white/10 divide-y divide-white/5 max-h-60 overflow-y-auto">
                             {txns.map((t) => {
@@ -168,29 +169,32 @@ export default function CabinetModal() {
                                             <div className="text-[11px] text-white/35">{fmtDate(t.created_at)}</div>
                                         </div>
                                         <div className={`text-sm font-medium whitespace-nowrap ${spend ? 'text-red-400' : 'text-green-400'}`}>
-                                            {spend ? '' : '+'}{amt.toFixed(2)} ₽
+                                            {spend ? '' : '+'}{amt.toFixed(2)} в‚Ѕ
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="text-xs text-white/40 py-3 text-center">Пока нет операций</div>
+                        <div className="text-xs text-white/40 py-3 text-center">РџРѕРєР° РЅРµС‚ РѕРїРµСЂР°С†РёР№</div>
                     )}
                 </div>
 
                 {ADMIN_EMAILS.some(e => e.toLowerCase() === (user?.email || '').toLowerCase()) && (
                     <a href="/admin"
                        className="w-full py-2 text-sm text-purple-400 hover:text-purple-300 transition-colors text-center block">
-                        ⚙ Админ-панель
+                        вљ™ РђРґРјРёРЅ-РїР°РЅРµР»СЊ
                     </a>
                 )}
 
                 <button onClick={logout}
                         className="w-full py-2 text-sm text-white/50 hover:text-red-400 transition-colors">
-                    Выйти из аккаунта
+                    Р’С‹Р№С‚Рё РёР· Р°РєРєР°СѓРЅС‚Р°
                 </button>
             </div>
         </div>
     );
 }
+
+
+
