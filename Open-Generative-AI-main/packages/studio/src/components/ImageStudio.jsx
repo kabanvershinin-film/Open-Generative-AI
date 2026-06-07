@@ -1338,16 +1338,16 @@ export default function ImageStudio({
   const handleGenerate = () => {
     if (generating) return;
 
-    if (imageMode) {
+    const shouldEditImages = imageMode || uploadedImageUrls.length > 0;
+
+    if (shouldEditImages) {
       if (uploadedImageUrls.length === 0) {
         alert("Пожалуйста, сначала загрузите референсное изображение.");
         return;
       }
-    } else {
-      if (!prompt.trim()) {
-        alert("Пожалуйста, введите запрос для генерации изображения.");
-        return;
-      }
+    } else if (!prompt.trim()) {
+      alert("Пожалуйста, введите запрос для генерации изображения.");
+      return;
     }
 
     const pickOption = (options, current, fallback) => {
@@ -1370,7 +1370,7 @@ export default function ImageStudio({
     let finalQualityField = currentQualityField;
     let finalMaxImages = maxImages;
 
-    if (imageMode) {
+    if (shouldEditImages) {
       if (!i2iModels.length) {
         alert("Модели image-to-image недоступны.");
         return;
@@ -1479,6 +1479,7 @@ export default function ImageStudio({
 
       finalMaxImages = getMaxImagesForI2IModel(finalModelId) || 1;
 
+      if (!imageMode) setImageMode(true);
       if (finalModelId !== selectedModelId) setSelectedModelId(finalModelId);
       if (finalModelName !== selectedModelName) setSelectedModelName(finalModelName);
       if (finalAr !== selectedAr) setSelectedAr(finalAr);
@@ -1493,7 +1494,7 @@ export default function ImageStudio({
     }
 
     const snap = {
-      imageMode,
+      imageMode: shouldEditImages,
       selectedModelId: finalModelId,
       uploadedImageUrls,
       prompt,
