@@ -506,7 +506,9 @@ function aspectRatioToSize(ratio) {
 async function generateImageEdit(apiKey, params) {
     const form = new FormData();
     const modelInfo = getModelById(params.model);
-    form.append('model', applyRouting(modelInfo?.apiId || params.model, params.routing));
+    // The edits endpoint expects the edit-capable model id itself, not the
+    // base generation apiId, so keep the edit suffix intact here.
+    form.append('model', applyRouting(modelInfo?.id || params.model, params.routing));
     form.append('prompt', params.prompt || '');
     form.append('n', '1');
 
