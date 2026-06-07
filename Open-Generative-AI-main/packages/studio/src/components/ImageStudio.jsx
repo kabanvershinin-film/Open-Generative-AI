@@ -1016,44 +1016,68 @@ export default function ImageStudio({
     el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
   };
 
+  const applyReferenceImages = useCallback(
+    (referenceUrls, { forceEditMode = false, promptOverride } = {}) => {
+      const newUrls = Array.isArray(referenceUrls)
+        ? referenceUrls.filter(Boolean)
+        : referenceUrls
+          ? [referenceUrls]
+          : [];
+
+      if (newUrls.length === 0) return;
+
+      setUploadedImageUrls(newUrls);
+      if (typeof promptOverride === "string") {
+        setPrompt(promptOverride);
+      }
+
+      if (imageMode && !forceEditMode) return;
+
+      if (!i2iModels.length) {
+        alert("Модели image-to-image недоступны.");
+        return;
+      }
+
+      const currentT2IModel = t2iModels.find((m) => m.id === selectedModelId);
+      const currentI2IModel = i2iModels.find((m) => m.id === selectedModelId);
+      const matchedByApi = currentT2IModel
+        ? i2iModels.find((m) => m.apiId === currentT2IModel.apiId)
+        : null;
+      const matchedByName = i2iModels.find((m) => m.name === selectedModelName);
+      const targetI2I = currentI2IModel || matchedByApi || matchedByName || i2iModels[0];
+
+      if (!targetI2I) {
+        alert("Модели image-to-image недоступны.");
+        return;
+      }
+
+      const ars = getAspectRatiosForI2IModel(targetI2I.id);
+      const resolutions = getResolutionsForI2IModel(targetI2I.id);
+      const effects = getEffectsForI2IModel(targetI2I.id);
+
+      setImageMode(true);
+      setSelectedModelId(targetI2I.id);
+      setSelectedModelName(targetI2I.name);
+      setSelectedAr(ars[0] || "1:1");
+      setSelectedQuality(resolutions[0] || null);
+      setSelectedQualityOpt(getImageInputDefault(targetI2I.id, "quality"));
+      setSelectedFormat(getImageInputDefault(targetI2I.id, "format"));
+      setSelectedBackground(getImageInputDefault(targetI2I.id, "background"));
+      setSelectedModeration(getImageInputDefault(targetI2I.id, "moderation"));
+      setSelectedImageSize(getImageInputDefault(targetI2I.id, "imageSize"));
+      setSelectedEffect(effects.length > 0 ? getDefaultEffectForI2IModel(targetI2I.id) || effects[0] : "");
+      setMaxImages(getMaxImagesForI2IModel(targetI2I.id));
+    },
+    [imageMode, selectedModelId, selectedModelName],
+  );
+
   // ── Upload picker callbacks ──────────────────────────────────────────────
   const handleUploadSelect = useCallback(
     ({ url, urls }) => {
       const newUrls = urls || [url];
-      setUploadedImageUrls(newUrls);
-
-      if (!imageMode) {
-        const currentT2IModel = t2iModels.find((m) => m.id === selectedModelId);
-        const matchedI2I =
-          currentT2IModel &&
-          i2iModels.find((m) => m.apiId === currentT2IModel.apiId);
-        const targetI2I = matchedI2I || i2iModels[0];
-        if (!targetI2I) return;
-
-        const ars = getAspectRatiosForI2IModel(targetI2I.id);
-        const resolutions = getResolutionsForI2IModel(targetI2I.id);
-        const effects = getEffectsForI2IModel(targetI2I.id);
-        const defaultQualityOpt = getImageInputDefault(targetI2I.id, "quality");
-        const defaultFormat = getImageInputDefault(targetI2I.id, "format");
-        const defaultBackground = getImageInputDefault(targetI2I.id, "background");
-        const defaultModeration = getImageInputDefault(targetI2I.id, "moderation");
-        const defaultImageSize = getImageInputDefault(targetI2I.id, "imageSize");
-        const defaultEffect = getDefaultEffectForI2IModel(targetI2I.id);
-        setImageMode(true);
-        setSelectedModelId(targetI2I.id);
-        setSelectedModelName(targetI2I.name);
-        setSelectedAr(ars[0] || "1:1");
-        setSelectedQuality(resolutions[0] || null);
-        setSelectedQualityOpt(defaultQualityOpt);
-        setSelectedFormat(defaultFormat);
-        setSelectedBackground(defaultBackground);
-        setSelectedModeration(defaultModeration);
-        setSelectedImageSize(defaultImageSize);
-        setSelectedEffect(effects.length > 0 ? defaultEffect || effects[0] : "");
-        setMaxImages(getMaxImagesForI2IModel(targetI2I.id));
-      }
+      applyReferenceImages(newUrls);
     },
-    [imageMode, selectedModelId],
+    [applyReferenceImages],
   );
 
   const handleUploadClear = useCallback(() => {
@@ -1641,6 +1665,23 @@ export default function ImageStudio({
                 
                 {/* Overlay actions */}
                 <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    title="Редактировать изображение"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      applyReferenceImages(entry.url, {
+                        forceEditMode: true,
+                        promptOverride: entry.prompt || "",
+                      });
+                    }}
+                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-[#22d3ee] hover:text-black transition-all border border-white/10"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.1 2.1 0 113 3L7 19l-4 1 1-4 12.5-12.5z" />
+                    </svg>
+                  </button>
                   <button
                     type="button"
                     title="На весь экран"
