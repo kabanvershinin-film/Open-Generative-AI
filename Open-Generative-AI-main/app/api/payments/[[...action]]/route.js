@@ -144,7 +144,8 @@ async function verifyPayment(request) {
 
 async function pollPending(request) {
     const auth = request.headers.get('authorization') || '';
-    if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+    const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+    if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}` && !isVercelCron) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     if (!TOCHKA_TOKEN || !SUPABASE_SERVICE_ROLE_KEY) {
