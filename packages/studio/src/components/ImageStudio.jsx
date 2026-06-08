@@ -812,6 +812,24 @@ export default function ImageStudio({
     }
   }, []);
 
+  const mergeHistoryEntries = useCallback((primary, secondary = []) => {
+    const seenIds = new Set();
+    const seenUrls = new Set();
+    const merged = [];
+    for (const entry of [...(Array.isArray(primary) ? primary : []), ...(Array.isArray(secondary) ? secondary : [])]) {
+      if (!entry?.url) continue;
+      const keyId = entry.id || null;
+      const keyUrl = entry.url;
+      if ((keyId && seenIds.has(keyId)) || seenUrls.has(keyUrl)) continue;
+      if (keyId) seenIds.add(keyId);
+      seenUrls.add(keyUrl);
+      merged.push(entry);
+    }
+    return merged
+      .sort((a, b) => new Date(b.timestamp || b.created_at || 0) - new Date(a.timestamp || a.created_at || 0))
+      .slice(0, 50);
+  }, []);
+
   const router = useRouter();
   const [workflowPicker, setWorkflowPicker] = useState(null); // { url, prompt } | null
   const [pickerWorkflows, setPickerWorkflows] = useState([]);
@@ -942,6 +960,39 @@ export default function ImageStudio({
       console.warn("Failed to load ImageStudio persistence:", err);
     }
   }, []);
+
+  // ── Restore image history from server gallery ─────────────────────────────
+  useEffect(() => {
+    if (historyItems !== undefined) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = await fetch("/api/gallery?type=image");
+        if (!response.ok) return;
+        const payload = await response.json().catch(() => ({}));
+        const entries = Array.isArray(payload.entries) ? payload.entries : [];
+        const normalized = entries
+          .filter((entry) => entry?.url)
+          .map((entry) => ({
+            id: entry.id,
+            url: entry.url,
+            prompt: entry.prompt || "",
+            model: entry.model || null,
+            aspect_ratio: entry.aspect_ratio || null,
+            timestamp: entry.created_at || entry.timestamp || new Date().toISOString(),
+          }));
+        if (cancelled || normalized.length === 0) return;
+        setLocalHistory((prev) => mergeHistoryEntries(prev, normalized));
+      } catch (err) {
+        console.warn("Failed to restore ImageStudio history from gallery:", err?.message);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [historyItems, mergeHistoryEntries]);
 
   // ── Adjust height on load ────────────────────────────────────────────────
   useEffect(() => {
