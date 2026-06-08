@@ -1453,8 +1453,11 @@ export default function ImageStudio({
           throw new Error("Изображение не получено. Попробуйте другую модель.");
         }
 
-        await Promise.allSettled(postProcessTasks);
-        try { localStorage.removeItem(PENDING_KEY); } catch {}
+        Promise.allSettled(postProcessTasks)
+          .catch(() => {})
+          .finally(() => {
+            try { localStorage.removeItem(PENDING_KEY); } catch {}
+          });
       } catch (e) {
         console.error("[ImageStudio] Generation failed:", e);
         setGenerateError(e.message.slice(0, 120));
