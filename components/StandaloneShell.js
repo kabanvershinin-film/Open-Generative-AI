@@ -21,6 +21,7 @@ import ApiKeyModal from './ApiKeyModal';
 const TABS = [
   { id: 'image',   label: 'Студия фото' },
   { id: 'video',   label: 'Студия видео' },
+  { id: 'audio',   label: 'Студия аудио' },
   { id: 'workflows', label: 'Процессы' },
   { id: 'gallery', label: 'Галерея' },
 ];
@@ -315,6 +316,7 @@ export default function StandaloneShell() {
           <ImageStudio apiKey={apiKey} droppedFiles={activeTab === 'image' ? droppedFiles : null} onFilesHandled={handleFilesHandled} onGeneratingChange={setIsGenerating} />
         </div>
         {activeTab === 'video'   && <VideoStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
+        {activeTab === 'audio'   && <AudioStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
         {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
         {activeTab === 'gallery' && <GalleryStudio apiKey={apiKey} />}
 
