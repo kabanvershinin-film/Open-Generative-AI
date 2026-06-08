@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
@@ -33,6 +33,7 @@ export default function CabinetModal() {
     const [busy, setBusy] = useState(false);
     const [txns, setTxns] = useState(null); // null = not loaded, [] = loaded empty
     const [txnsLoading, setTxnsLoading] = useState(false);
+    const paymentReturnAttemptedRef = useRef(false);
 
     // Load spending history whenever the cabinet opens.
     const loadTxns = useCallback(async () => {
@@ -60,9 +61,13 @@ export default function CabinetModal() {
         if (url.searchParams.get('payment') !== 'success') return;
         const order = url.searchParams.get('order');
         if (!order) return;
+        let shouldScrub = false;
         try {
+            setCabinetOpen(true);
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
+            paymentReturnAttemptedRef.current = true;
+            shouldScrub = true;
             // Poll verify a few times (Точка may confirm with a slight delay)
             for (let i = 0; i < 10; i++) {
                 const r = await fetch('/api/payments/verify', {
@@ -73,19 +78,29 @@ export default function CabinetModal() {
                 const j = await r.json();
                 if (j.status === 'paid') {
                     await refreshBalance();
+                    await loadTxns();
                     if (j.credited) toast.success('Баланс пополнен');
                     break;
                 }
                 await new Promise(res => setTimeout(res, 2000));
             }
         } finally {
-            url.searchParams.delete('payment');
-            url.searchParams.delete('order');
-            window.history.replaceState({}, '', url.toString());
+            if (shouldScrub && paymentReturnAttemptedRef.current) {
+                url.searchParams.delete('payment');
+                url.searchParams.delete('order');
+                window.history.replaceState({}, '', url.toString());
+            }
         }
-    }, [refreshBalance]);
+    }, [loadTxns, refreshBalance, setCabinetOpen]);
 
-    useEffect(() => { verifyReturn(); }, [verifyReturn]);
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('payment') !== 'success') return;
+        if (!url.searchParams.get('order')) return;
+        if (!user) return;
+        verifyReturn();
+    }, [user, verifyReturn]);
 
     if (!cabinetOpen) return null;
 

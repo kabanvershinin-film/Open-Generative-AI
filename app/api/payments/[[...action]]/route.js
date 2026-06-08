@@ -8,7 +8,7 @@
 //   TOCHKA_TOKEN, TOCHKA_CUSTOMER_CODE, PUBLIC_BASE_URL, CRON_SECRET
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getBalance } from '../../_lib/balance';
+import { creditBalance, getBalance } from '../../_lib/balance';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hsyuvhvjrjxdpvuzivvv.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_9bCiI4pZI45ObKbC2W1xvw_bscZtpFJ';
@@ -131,10 +131,14 @@ async function verifyPayment(request) {
             if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 });
             if (!claimed || claimed.length === 0) return NextResponse.json({ status: 'paid', credited: false });
 
-            const { data: profile } = await db.from('profiles').select('balance').eq('id', user.id).single();
-            const newBalance = Number(profile?.balance || 0) + Number(payment.amount);
-            await db.from('profiles').update({ balance: newBalance }).eq('id', user.id);
-            return NextResponse.json({ status: 'paid', credited: true, balance: newBalance });
+            const credited = await creditBalance(user.id, Number(payment.amount), 'payment', { orderId });
+            if (!credited.ok) {
+                await db.from('payments')
+                    .update({ status: 'pending', paid_at: null })
+                    .eq('id', orderId);
+                return NextResponse.json({ status: 'paid', credited: false });
+            }
+            return NextResponse.json({ status: 'paid', credited: true, balance: credited.balance });
         }
         return NextResponse.json({ status: 'pending', tochkaStatus: status });
     } catch (err) {
@@ -176,10 +180,14 @@ async function pollPending(request) {
                     .update({ status: 'paid', paid_at: new Date().toISOString() })
                     .eq('id', p.id).neq('status', 'paid').select();
                 if (claimed && claimed.length) {
-                    const { data: profile } = await db.from('profiles').select('balance').eq('id', p.user_id).single();
-                    const newBalance = Number(profile?.balance || 0) + Number(p.amount);
-                    await db.from('profiles').update({ balance: newBalance }).eq('id', p.user_id);
-                    credited++;
+                    const result = await creditBalance(p.user_id, Number(p.amount), 'payment', { orderId: p.id, cron: true });
+                    if (result.ok) {
+                        credited++;
+                    } else {
+                        await db.from('payments')
+                            .update({ status: 'pending', paid_at: null })
+                            .eq('id', p.id);
+                    }
                 }
             } else if (['REJECTED', 'CANCELLED', 'EXPIRED', 'FAILED'].includes(status)) {
                 await db.from('payments').update({ status: 'failed' }).eq('id', p.id);
