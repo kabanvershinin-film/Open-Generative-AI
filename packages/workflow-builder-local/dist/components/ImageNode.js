@@ -296,11 +296,13 @@ var ImageGeneration = function ImageGeneration(_ref) {
       _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 });
     });
   };
-  // Mirror the just-shown result to TOS in the background, then swap the node's
-  // value to the permanent url, re-save the workflow, and save to the gallery.
+  // Most builder runs now already receive a permanent TOS url from the server;
+  // save the workflow immediately so a quick refresh cannot lose it. The
+  // background upload path remains as a fallback for older/raw image values.
   var finalizeImage = function finalizeImage(val) {
     if (!val || typeof val !== "string") return;
     if (val.indexOf(".volces.com") !== -1) {
+      data.handleSaveWorkFlow === null || data.handleSaveWorkFlow === void 0 || data.handleSaveWorkFlow();
       saveImageToGallery(val);
       return;
     }

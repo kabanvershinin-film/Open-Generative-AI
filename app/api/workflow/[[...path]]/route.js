@@ -971,10 +971,10 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         //     'url'): these hosted links expire after a day or two, which left
         //     broken thumbnails in the gallery. Mirror them to TOS so they persist.
         //
-        // opts.skipMirror — single image-node runs from the builder return the raw
-        // result immediately and mirror to TOS in the browser, matching ImageStudio:
-        // show the image first, persist it in the background. Full workflow runs
-        // still mirror on the server because downstream nodes need durable URLs.
+        // Single image-node runs also mirror on the server now. Returning a
+        // permanent URL avoids a race where the browser showed a temporary
+        // base64/provider URL, but the page refreshed before the background
+        // finalize step had uploaded it to TOS and saved the workflow.
         if (!opts.skipMirror) {
             for (const out of outputs) {
                 if (out.type === 'image_url' && out.value) {
@@ -993,8 +993,8 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         const runResult = { status: 'completed', nodes: { [nodeId]: [{ status: 'succeeded', result: { outputs } }] } };
         runStore.set(runId, runResult);
 
-        // Single-node image runs finalize in the browser (mirror → workflow save →
-        // gallery save), so skip the awaited server gallery write for that path.
+        // Builder single-node image runs still save to the gallery in the browser
+        // so we can keep using the authenticated cookie context there.
         if (!opts.skipGallery) {
             await saveToGallery(userId, outputs, model, params.prompt);
         }
@@ -1707,7 +1707,7 @@ export async function POST(request, { params }) {
             params,
             apiKey,
             galleryUserId || billedUser?.id,
-            singleNodeImageRun ? { skipMirror: true, skipGallery: true } : {},
+            singleNodeImageRun ? { skipGallery: true } : {},
         );
         const result = runStore.get(runId) || { status: 'processing', nodes: {} };
 

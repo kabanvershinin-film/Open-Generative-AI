@@ -243,14 +243,17 @@ const ImageGeneration = ({ id, data, selected }) => {
       });
   };
 
-  // Called on a successful generation. The node already shows `val` (base64 from
-  // the server, returned immediately — no waiting on a slow cross-region TOS
-  // upload). Here we mirror it to TOS in the BACKGROUND, then quietly swap the
-  // node's value to the permanent url, re-save the workflow, and save to the
-  // gallery with that permanent url. If it's already a TOS url, just save it.
+  // Called on a successful generation. Most builder runs now already receive a
+  // permanent TOS url from the server; save the workflow immediately so a quick
+  // refresh cannot lose it. The background upload path remains as a fallback for
+  // older/raw image values.
   const finalizeImage = (val) => {
     if (!val || typeof val !== "string") return;
-    if (val.includes(".volces.com")) { saveImageToGallery(val); return; }
+    if (val.includes(".volces.com")) {
+      data.handleSaveWorkFlow?.();
+      saveImageToGallery(val);
+      return;
+    }
     const payload = val.startsWith("data:") ? { image: val } : { url: val };
     axios.post("/api/upload-file", payload)
       .then((r) => {
