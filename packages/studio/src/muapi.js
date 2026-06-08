@@ -500,6 +500,80 @@ function aspectRatioToSize(ratio) {
     return map[ratio] || '1024x1024';
 }
 
+function parseSizeDimensions(size) {
+    const m = String(size || '').match(/^(\d+)x(\d+)$/);
+    if (!m) return null;
+    return { width: Number(m[1]), height: Number(m[2]) };
+}
+
+function canvasToBlob(canvas, mimeType, quality) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('Не удалось подготовить изображение для редактирования.'));
+        }, mimeType, quality);
+    });
+}
+
+async function loadImageBitmap(blob) {
+    if (typeof createImageBitmap === 'function') {
+        return createImageBitmap(blob);
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    try {
+        const img = await new Promise((resolve, reject) => {
+            const el = new Image();
+            el.onload = () => resolve(el);
+            el.onerror = () => reject(new Error('Не удалось открыть референсное изображение.'));
+            el.src = objectUrl;
+        });
+        return img;
+    } finally {
+        URL.revokeObjectURL(objectUrl);
+    }
+}
+
+// Vercel functions reject oversized multipart payloads before the request even
+// reaches the upstream edits API. Downscale/compress large reference images in
+// the browser so GPT Image edits stay below the function body limit.
+async function optimizeEditImageBlob(blob, { maxBytes, maxDimension }) {
+    if (typeof window === 'undefined' || !(blob instanceof Blob) || !blob.type.startsWith('image/')) {
+        return blob;
+    }
+    if (blob.size <= maxBytes) return blob;
+
+    const source = await loadImageBitmap(blob);
+    let width = source.width;
+    let height = source.height;
+    let currentMaxDimension = maxDimension;
+    let best = blob;
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+        const scale = Math.min(1, currentMaxDimension / Math.max(width, height));
+        const targetWidth = Math.max(1, Math.round(width * scale));
+        const targetHeight = Math.max(1, Math.round(height * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d', { alpha: false });
+        if (!ctx) break;
+        ctx.drawImage(source, 0, 0, targetWidth, targetHeight);
+
+        let candidate = await canvasToBlob(canvas, 'image/jpeg', 0.9);
+        let quality = 0.9;
+        while (candidate.size > maxBytes && quality > 0.55) {
+            quality -= 0.1;
+            candidate = await canvasToBlob(canvas, 'image/jpeg', quality);
+        }
+        best = candidate;
+        if (candidate.size <= maxBytes) break;
+        currentMaxDimension = Math.max(1024, Math.round(currentMaxDimension * 0.8));
+    }
+
+    if (typeof source.close === 'function') source.close();
+    return best.size < blob.size ? best : blob;
+}
+
 // Image editing via POST /v1/images/edits (multipart/form-data).
 // Fetches each image URL as a blob and appends it to the form.
 // Used by gpt-image-2 and any model with editEndpoint: true in models.js.
@@ -523,12 +597,20 @@ async function generateImageEdit(apiKey, params) {
     const urls = Array.isArray(params.images_list) && params.images_list.length > 0
         ? params.images_list
         : params.image_url ? [params.image_url] : [];
+    const sizeDims = parseSizeDimensions(size);
+    const perImageBudget = Math.max(900_000, Math.floor(3_200_000 / Math.max(urls.length, 1)));
+    const maxDimension = Math.max(1024, Math.min(2048, Math.round(Math.max(sizeDims?.width || 1024, sizeDims?.height || 1024) * 1.5)));
     for (const url of urls) {
         const r = await fetch(url);
         if (!r.ok) throw new Error(`Не удалось загрузить изображение: ${url}`);
         const blob = await r.blob();
-        const ext = blob.type.includes('png') ? 'png' : 'jpeg';
-        form.append('image', blob, `image.${ext}`);
+        const optimizedBlob = await optimizeEditImageBlob(blob, {
+            maxBytes: perImageBudget,
+            maxDimension,
+        });
+        const mime = optimizedBlob.type || blob.type || 'image/jpeg';
+        const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpeg';
+        form.append('image', optimizedBlob, `image.${ext}`);
     }
 
     const response = await fetch(`${BASE_URL}/v1/images/edits`, {
@@ -539,6 +621,9 @@ async function generateImageEdit(apiKey, params) {
     if (!response.ok) {
         const errText = await response.text();
         notifyAuthRequired(response.status, errText);
+        if (response.status === 413) {
+            throw new Error('Выбранное изображение слишком большое для редактирования. Попробуйте JPG/PNG меньшего размера.');
+        }
         throw new Error(`API Request Failed: ${response.status} - ${errText.slice(0, 200)}`);
     }
     const data = await response.json();
