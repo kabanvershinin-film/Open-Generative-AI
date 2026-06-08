@@ -523,8 +523,21 @@ function computeImageSize(aspectRatio, resolution, width, height) {
     return `${Math.round(w * scale)}x${Math.round(h * scale)}`;
 }
 
+function applyImageRouting(modelId, routing) {
+    if (routing && routing !== 'default') return `${modelId}:${routing}`;
+    return modelId;
+}
+
+function isImageWorkflowModel(model) {
+    if (!model) return false;
+    if (model === 'image-passthrough') return true;
+    if (CHAT_IMAGE_MODELS.has(model)) return true;
+    if (model in FAL_IMAGE_MODEL_MAP) return true;
+    return !VIDEO_MODELS.has(model) && !TEXT_MODELS.has(model) && !AUDIO_MODELS.has(model);
+}
+
 async function generateImage(apiKey, model, params) {
-    const apiModel = MODEL_ID_MAP[model] || model;
+    const apiModel = applyImageRouting(MODEL_ID_MAP[model] || model, params.routing);
     // Prefer an explicit pixel size (e.g. gpt-image-2 "Size" field); otherwise
     // derive it from aspect_ratio + resolution for models that use those.
     const size = params.size || computeImageSize(params.aspect_ratio, params.resolution, params.width, params.height);
@@ -545,19 +558,23 @@ async function generateImage(apiKey, model, params) {
         form.append('size', size);
         if (params.quality) form.append('quality', params.quality);
         if (params.format) form.append('format', params.format);
+        if (params.background) form.append('background', params.background);
+        if (params.moderation) form.append('moderation', params.moderation);
         for (const u of imgs) form.append('image[]', u);
         const editRes = await fetch(`${MEMEFAST}/v1/images/edits`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}` },
             body: form,
         });
-        if (editRes.ok) {
-            const editData = await editRes.json();
-            const editItem = editData.data?.[0];
-            const editUrl = editItem?.url || (editItem?.b64_json ? `data:image/png;base64,${editItem.b64_json}` : '') || '';
-            if (editUrl) return [{ type: 'image_url', value: editUrl }];
+        if (!editRes.ok) {
+            const txt = await editRes.text().catch(() => editRes.statusText);
+            throw new Error(`Image Edit API ${editRes.status}: ${txt.slice(0, 300)}`);
         }
-        // Fall through to standard generations if edits fails
+        const editData = await editRes.json();
+        const editItem = editData.data?.[0];
+        const editUrl = editItem?.url || (editItem?.b64_json ? `data:image/png;base64,${editItem.b64_json}` : '') || '';
+        if (editUrl) return [{ type: 'image_url', value: editUrl }];
+        throw new Error('Image Edit API returned no image URL');
     }
 
     const body = { model: apiModel, prompt: params.prompt || '', n: 1, size, response_format: 'url' };
@@ -623,11 +640,12 @@ async function generateFalImage(apiKey, model, params) {
 async function urlToInlineData(url) {
     try {
         if (!url) return null;
-        if (url.startsWith('data:')) {
-            const m = url.match(/^data:([^;]+);base64,(.+)$/s);
+        const resolved = await resolveImageUrl(url);
+        if (resolved.startsWith('data:')) {
+            const m = resolved.match(/^data:([^;]+);base64,(.+)$/s);
             return m ? { mime_type: m[1], data: m[2] } : null;
         }
-        const r = await fetch(url);
+        const r = await fetch(resolved);
         if (!r.ok) return null;
         const ct = r.headers.get('content-type') || 'image/png';
         const buf = Buffer.from(await r.arrayBuffer());
@@ -641,7 +659,7 @@ async function urlToInlineData(url) {
 // Honours generationConfig.imageConfig (aspectRatio + imageSize) and embeds an
 // optional reference image inline as base64.
 async function generateChatImage(apiKey, model, params) {
-    const apiModel = MODEL_ID_MAP[model] || model;
+    const apiModel = applyImageRouting(MODEL_ID_MAP[model] || model, params.routing);
     const parts = [{ text: params.prompt || '' }];
     // Embed every wired reference image (images_list, plus a single image_url).
     const imgs = [
@@ -953,12 +971,10 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         //     'url'): these hosted links expire after a day or two, which left
         //     broken thumbnails in the gallery. Mirror them to TOS so they persist.
         //
-        // opts.skipMirror — single-node runs from the builder return the raw
-        // result immediately and mirror to TOS in the BROWSER (so the node shows
-        // its image the instant generation finishes instead of waiting on a slow
-        // cross-region upload). The browser then swaps in the permanent TOS url
-        // and re-saves the workflow + gallery. The full-workflow run keeps mirroring
-        // here because downstream nodes need a fetchable url, not base64.
+        // opts.skipMirror — single image-node runs from the builder return the raw
+        // result immediately and mirror to TOS in the browser, matching ImageStudio:
+        // show the image first, persist it in the background. Full workflow runs
+        // still mirror on the server because downstream nodes need durable URLs.
         if (!opts.skipMirror) {
             for (const out of outputs) {
                 if (out.type === 'image_url' && out.value) {
@@ -977,11 +993,11 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         const runResult = { status: 'completed', nodes: { [nodeId]: [{ status: 'succeeded', result: { outputs } }] } };
         runStore.set(runId, runResult);
 
-        // Save to the gallery. AWAITED on purpose — Vercel can freeze the function
-        // right after the response is sent, so a fire-and-forget save would often
-        // never complete (the symptom: image in TOS but missing from the gallery).
-        // The image is already in TOS by now, so this is just two small JSON writes.
-        await saveToGallery(userId, outputs, model, params.prompt);
+        // Single-node image runs finalize in the browser (mirror → workflow save →
+        // gallery save), so skip the awaited server gallery write for that path.
+        if (!opts.skipGallery) {
+            await saveToGallery(userId, outputs, model, params.prompt);
+        }
 
         // Persist the run JSON for reload — best-effort, fine to lose.
         tosSaveRun(runId, runResult).catch(() => {});
@@ -998,7 +1014,7 @@ function getNodeSchemas() {
         prompt:        { type: "string", title: "Prompt", description: "Describe what you want to generate", examples: [""] },
         width:         { type: "int", title: "Width", default: 1024, minValue: 256, maxValue: 4096, step: 64 },
         height:        { type: "int", title: "Height", default: 1024, minValue: 256, maxValue: 4096, step: 64 },
-        images_list:   { type: "array", title: "Input Images", field: "images_list", maxItems: 5, description: "Images to edit or use as reference", examples: [] },
+        images_list:   { type: "array", title: "Input Images", field: "images_list", maxItems: 16, description: "Images to edit or use as reference", examples: [] },
         image_url:     { type: "string", title: "Image URL", field: "image", description: "URL of the input image", examples: [] },
         video_url:     { type: "string", title: "Video URL", field: "video", description: "URL of the input video", examples: [] },
         audio_url:     { type: "string", title: "Audio URL", field: "audio", description: "URL of the input audio", examples: [] },
@@ -1010,17 +1026,25 @@ function getNodeSchemas() {
         ar_std:        { enum: ["1:1","16:9","9:16","4:3","3:4"], type: "string", title: "Aspect Ratio", default: "1:1" },
         ar_ext:        { enum: ["1:1","16:9","9:16","4:3","3:4","3:2","2:3"], type: "string", title: "Aspect Ratio", default: "1:1" },
         ar_wide:       { enum: ["1:1","16:9","9:16","4:3","3:4","3:2","2:3","21:9"], type: "string", title: "Aspect Ratio", default: "1:1" },
+        ar_gemini:     { enum: ["1:1","16:9","9:16","4:3","3:4","2:3","3:2","4:5","5:4","1:4","4:1","1:8","8:1","21:9"], type: "string", title: "Aspect Ratio", default: "1:1" },
         ar_video:      { enum: ["16:9","9:16","1:1","4:3"], type: "string", title: "Aspect Ratio", default: "16:9" },
         ar_seed2:      { enum: ["21:9","16:9","4:3","1:1","3:4","9:16"], type: "string", title: "Aspect Ratio", default: "16:9" },
         // Resolution presets per model capability
         res_2k:        { enum: ["1k","2k"], type: "string", title: "Resolution", default: "1k" },
         res_4k:        { enum: ["1k","2k","4k"], type: "string", title: "Resolution", default: "1k" },
+        gpt2_size:     { enum: ["1024x1024","1536x1024","1024x1536","2048x2048","2048x1152","3840x2160","2160x3840"], type: "string", title: "Size", default: "1024x1024" },
+        image_size:    { enum: ["1K","2K","4K","512"], type: "string", title: "Resolution", default: "1K" },
         res_video:     { enum: ["480p","720p","1080p"], type: "string", title: "Resolution", default: "1080p" },
         res_video_fast:{ enum: ["480p","720p"], type: "string", title: "Resolution", default: "720p" },
         dur_seed2:     { type: "int", title: "Duration (sec)", default: 5, minValue: 4, maxValue: 15, step: 1 },
         // Quality presets
         quality_hq:    { enum: ["low","medium","high"], type: "string", title: "Quality", default: "low" },
+        quality_gpt2:  { enum: ["auto","high","medium","low"], type: "string", title: "Quality", default: "auto" },
         quality_std:   { enum: ["standard","hd"], type: "string", title: "Quality", default: "standard" },
+        image_format:  { enum: ["jpeg","png","webp"], type: "string", title: "Format", default: "jpeg" },
+        background:    { enum: ["auto","transparent","opaque"], type: "string", title: "Background", default: "auto" },
+        moderation:    { enum: ["auto","low"], type: "string", title: "Moderation", default: "auto" },
+        routing:       { enum: ["default","nitro","floor","stable"], type: "string", title: "Routing", default: "default" },
         // Suno music fields
         lyrics:        { type: "string", title: "Lyrics", description: "Song lyrics", examples: [""] },
         style:         { type: "string", title: "Music Style", description: "Describe the musical style", examples: ["pop", "rock", "jazz"] },
@@ -1031,19 +1055,21 @@ function getNodeSchemas() {
 
     const T = {
         // Image generation — model-specific schemas
-        t2i_gpt2:   ms({ prompt: F.prompt, aspect_ratio: F.ar_ext,    resolution: F.res_4k, quality: F.quality_hq }),
+        t2i_gpt2:   ms({ prompt: F.prompt, images_list: F.images_list, size: F.gpt2_size, quality: F.quality_gpt2, format: F.image_format, background: F.background, moderation: F.moderation, routing: F.routing }),
         t2i_gpt1:   ms({ prompt: F.prompt, aspect_ratio: F.ar_ext,    resolution: F.res_2k, quality: F.quality_hq }),
         t2i_dalle:  ms({ prompt: F.prompt, aspect_ratio: F.ar_simple }),
         t2i_flux:   ms({ prompt: F.prompt, aspect_ratio: F.ar_std,    resolution: F.res_2k }),
         t2i_kling:  ms({ prompt: F.prompt, aspect_ratio: F.ar_wide,   resolution: F.res_2k }),
         t2i_seed:   ms({ prompt: F.prompt, aspect_ratio: F.ar_std }),
         t2i_std:    ms({ prompt: F.prompt, aspect_ratio: F.ar_std }),
+        t2i_gemini: ms({ prompt: F.prompt, images_list: F.images_list, aspect_ratio: F.ar_gemini, imageSize: F.image_size, routing: F.routing }),
         t2i_simple: ms({ prompt: F.prompt, aspect_ratio: F.ar_simple }),
         t2iWH:      ms({ prompt: F.prompt, width: F.width, height: F.height }),
         // Image editing — model-specific schemas
-        i2i_gpt2:   ms({ prompt: F.prompt, images_list: F.images_list, resolution: F.res_4k, quality: F.quality_hq }),
+        i2i_gpt2:   ms({ prompt: F.prompt, images_list: F.images_list, size: F.gpt2_size, quality: F.quality_gpt2, format: F.image_format, background: F.background, moderation: F.moderation, routing: F.routing }),
         i2i_gpt1:   ms({ prompt: F.prompt, images_list: F.images_list, resolution: F.res_2k, quality: F.quality_hq }),
         i2i:        ms({ prompt: F.prompt, images_list: F.images_list }),
+        i2i_gemini: ms({ prompt: F.prompt, images_list: F.images_list, aspect_ratio: F.ar_gemini, imageSize: F.image_size, routing: F.routing }),
         imgRef:     ms({ prompt: F.prompt, image_url: F.image_url }),
         // Passthrough
         imgPass:    ms({ image_url: F.image_url }),
@@ -1147,13 +1173,13 @@ function getNodeSchemas() {
                     // Wan Image — width/height sliders
                     "wan2.7-image-pro":               T.t2iWH,
                     // Gemini Image — standard AR (generate)
-                    "gemini-3.1-flash-image-preview": T.t2i_std,
-                    "gemini-3-pro-image-preview":     T.t2i_std,
+                    "gemini-3.1-flash-image-preview": T.t2i_gemini,
+                    "gemini-3-pro-image-preview":     T.t2i_gemini,
                     "gemini-2.5-flash-image":         T.t2i_std,
                     // Gemini Edit Image — prompt + image ref
                     "gemini-2.5-flash-image-edit":    T.imgRef,
-                    "gemini-3-pro-image-edit":        T.imgRef,
-                    "gemini-3.1-flash-image-edit":    T.imgRef,
+                    "gemini-3-pro-image-edit":        T.i2i_gemini,
+                    "gemini-3.1-flash-image-edit":    T.i2i_gemini,
                 }
             },
             video: {
@@ -1673,7 +1699,16 @@ export async function POST(request, { params }) {
         // ~4.5MB and which broke saving for larger images). The gallery save runs
         // in the background (see runNode), so the only thing on the critical path
         // is the single image upload — the node shows its permanent url right after.
-        await runNode(runId, nodeId, model, params, apiKey, galleryUserId || billedUser?.id);
+        const singleNodeImageRun = isImageWorkflowModel(model);
+        await runNode(
+            runId,
+            nodeId,
+            model,
+            params,
+            apiKey,
+            galleryUserId || billedUser?.id,
+            singleNodeImageRun ? { skipMirror: true, skipGallery: true } : {},
+        );
         const result = runStore.get(runId) || { status: 'processing', nodes: {} };
 
         // Non-Seedance: refund the estimate if the generation failed.

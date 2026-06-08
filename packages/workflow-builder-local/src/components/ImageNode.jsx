@@ -291,8 +291,7 @@ const ImageGeneration = ({ id, data, selected }) => {
           data?.onDataChange?.(id, { outputs: output, resultUrl: val, isLoading: false, errorMsg: null, outputHistory: newHistory });
           setCurrentHistoryIndex(newHistory.length - 1);
           setCurrentImageIndex(0);
-          // Gallery + TOS save is done server-side (single writer) to avoid
-          // clobbering the shared gallery index with a concurrent client write.
+          finalizeImage(val);
           clearInterval(interval);
         }
 
@@ -354,7 +353,7 @@ const ImageGeneration = ({ id, data, selected }) => {
         cost: generationCost,
         node_id: "AI Image"
       });
-      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
+      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; var _val = (_o[0] && _o[0].value) || ""; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: _val, isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); finalizeImage(_val); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
     } catch(error) {
       data.onDataChange(id, { isLoading: false });
       toast.error(error.response?.data?.detail || "Error running node");
