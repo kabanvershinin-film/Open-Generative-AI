@@ -1233,6 +1233,23 @@ export default function ImageStudio({
     }
   }, [sanitizeHistoryForStorage, writePersistentState]);
 
+  const saveImageToGallery = useCallback((url, model, promptText) => {
+    if (!url) return;
+    fetch("/api/gallery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({ url, type: "image", model, prompt: promptText }),
+    })
+      .then(async (r) => {
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
+        }
+      })
+      .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
+  }, []);
+
   // ── View state ─────────────────────────────────────
 
   const resetToPrompt = () => {
@@ -1325,6 +1342,14 @@ export default function ImageStudio({
             // Show the result IMMEDIATELY (raw url / base64) — don't make the user
             // wait for the TOS upload. Display is in-memory only at this point.
             addToHistory(entry);
+            // Kick off server-side persistence immediately so a fast page refresh
+            // still finds the fresh image in /api/gallery after reload.
+            saveImageToGallery(rawUrl, snap.selectedModelId, promptTrim);
+            // Persist any non-data URL immediately so reload can restore it even
+            // before the background TOS mirroring finishes.
+            if (typeof rawUrl === "string" && !rawUrl.startsWith("data:")) {
+              persistEntryToStorage(entry);
+            }
 
             // Mirror to TOS in the background, then swap the raw url for the
             // permanent one, persist to localStorage and notify the parent.
@@ -1360,19 +1385,9 @@ export default function ImageStudio({
                 try { localStorage.removeItem(PENDING_KEY); } catch {}
               }
 
-              fetch("/api/gallery", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                keepalive: true,
-                body: JSON.stringify({ url: permUrl, type: "image", model: snap.selectedModelId, prompt: promptTrim }),
-              })
-                .then(async (r) => {
-                  if (!r.ok) {
-                    const err = await r.json().catch(() => ({}));
-                    toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
-                  }
-                })
-                .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
+              if (permUrl !== rawUrl) {
+                saveImageToGallery(permUrl, snap.selectedModelId, promptTrim);
+              }
               onGenerationComplete?.({
                 url: permUrl,
                 model: snap.selectedModelId,
@@ -1399,7 +1414,7 @@ export default function ImageStudio({
         setGenerating(false);
       }
     },
-    [apiKey, addToHistory, onGenerationComplete, persistEntryToStorage],
+    [apiKey, addToHistory, onGenerationComplete, persistEntryToStorage, saveImageToGallery],
   );
 
   const handleGenerate = () => {
