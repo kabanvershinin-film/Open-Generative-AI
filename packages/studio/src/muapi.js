@@ -601,6 +601,14 @@ async function generateImageEdit(apiKey, params) {
     const perImageBudget = Math.max(900_000, Math.floor(3_200_000 / Math.max(urls.length, 1)));
     const maxDimension = Math.max(1024, Math.min(2048, Math.round(Math.max(sizeDims?.width || 1024, sizeDims?.height || 1024) * 1.5)));
     for (const url of urls) {
+        // Uploaded references already live in TOS and Memefast accepts public
+        // image URLs in the edits form. Send URLs directly so the request stays
+        // tiny and bypasses the Vercel function body limit.
+        if (/^https?:\/\//i.test(url)) {
+            form.append('image[]', url);
+            continue;
+        }
+
         const r = await fetch(url);
         if (!r.ok) throw new Error(`Не удалось загрузить изображение: ${url}`);
         const blob = await r.blob();
@@ -613,11 +621,25 @@ async function generateImageEdit(apiKey, params) {
         form.append('image', optimizedBlob, `image.${ext}`);
     }
 
-    const response = await fetch(`${BASE_URL}/v1/images/edits`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: form,
-    });
+    const directEditUrl = 'https://memefast.top/v1/images/edits';
+    const proxyEditUrl = `${BASE_URL}/v1/images/edits`;
+    let response;
+    try {
+        response = await fetch(directEditUrl, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${apiKey}` },
+            body: form,
+        });
+    } catch (error) {
+        // Fallback only when the browser cannot reach the upstream directly
+        // (usually a CORS/network issue). The payload is small now because the
+        // form mostly carries TOS URLs instead of raw image bytes.
+        response = await fetch(proxyEditUrl, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${apiKey}` },
+            body: form,
+        });
+    }
     if (!response.ok) {
         const errText = await response.text();
         notifyAuthRequired(response.status, errText);
