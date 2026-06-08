@@ -582,33 +582,195 @@ export const lipsyncModels = [];
 export const imageLipSyncModels = [];
 export const videoLipSyncModels = [];
 
-// ── Audio (TTS) via POST /v1/audio/speech ─────────────────────────────────────
-export const audioModels = [
+// ── Audio Studio models ───────────────────────────────────────────────────────
+const VOICE_STYLES = ["neutral", "warm", "cinematic", "bright", "soft"];
+const VOCAL_GENDERS = ["male", "female", "mixed"];
+const AUDIO_QUALITY = ["draft", "standard", "high"];
+
+const audioModelsCatalog = [
   {
-    id: "gpt-4o-mini-tts",
-    name: "GPT-4o Mini TTS",
-    apiId: "gpt-4o-mini-tts",
+    id: "suno-create-music",
+    name: "Suno Create Music",
+    description: "Создание нового музыкального трека по текстовому запросу с контролем стиля, вокала и общей структуры.",
+    apiId: "suno-create-music",
+    required: ["prompt"],
     inputs: {
-      voice: { enum: ["alloy", "echo", "fable", "onyx", "nova", "shimmer", "coral", "sage", "ash"], default: "alloy" }
-    }
+      prompt: { type: "string", title: "Prompt", description: "Опишите настроение, жанр, инструменты, темп и общую идею трека." },
+      title: { type: "string", title: "Track Title", placeholder: "Neon Hearts" },
+      style: { type: "string", title: "Style / Genre", placeholder: "Cinematic synthwave with emotional female vocals" },
+      instrumental: { type: "boolean", title: "Instrumental Only", description: "Отключить вокал и оставить только инструментальную аранжировку.", default: true },
+      vocal_gender: { type: "string", title: "Vocal Gender", enum: VOCAL_GENDERS, default: "male" },
+      model: { type: "string", title: "Generation Model", enum: ["V4", "V5"], default: "V5" },
+      style_weight: { type: "float", title: "Style Weight", minValue: 0, maxValue: 1, step: 0.05, default: 0.3, description: "Насколько строго придерживаться указанного стиля." },
+      weirdness_constraint: { type: "float", title: "Creativity", minValue: 0, maxValue: 1, step: 0.05, default: 0.15, description: "Больше значения дают более смелые и необычные аранжировки." },
+      audio_weight: { type: "float", title: "Audio Weight", minValue: 0, maxValue: 1, step: 0.05, default: 0, description: "Баланс между текстовым описанием и аудио-референсом, если он есть." },
+      negative_tags: { type: "string", title: "Negative Tags", placeholder: "low quality, distortion, crowd noise" },
+    },
   },
   {
-    id: "tts-1-hd",
-    name: "TTS HD",
-    apiId: "tts-1-hd",
+    id: "suno-remix-music",
+    name: "Suno Remix Music",
+    description: "Ремикс готового трека с текстовым направлением, меняя энергетику, жанр и подачу.",
+    apiId: "suno-remix-music",
+    required: ["audio_url", "prompt"],
     inputs: {
-      voice: { enum: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], default: "alloy" }
-    }
+      audio_url: { type: "string", field: "audio", title: "Source Audio", description: "Исходный трек для ремикса." },
+      prompt: { type: "string", title: "Remix Prompt", description: "Опишите, как должен измениться трек после ремикса." },
+      remix_strength: { type: "float", title: "Remix Strength", minValue: 0, maxValue: 1, step: 0.05, default: 0.55, description: "Чем выше значение, тем сильнее отличие от исходного трека." },
+      preserve_vocals: { type: "boolean", title: "Preserve Vocals", description: "Стараться сохранить оригинальные вокальные партии.", default: true },
+      quality: { type: "string", title: "Quality", enum: AUDIO_QUALITY, default: "standard" },
+    },
   },
   {
-    id: "tts-1",
-    name: "TTS Standard",
-    apiId: "tts-1",
+    id: "suno-extend-music",
+    name: "Suno Extend Music",
+    description: "Продолжение существующего трека с контролем точки входа и желаемого настроения.",
+    apiId: "suno-extend-music",
+    required: ["audio_url"],
     inputs: {
-      voice: { enum: ["alloy", "echo", "fable", "onyx", "nova", "shimmer"], default: "alloy" }
-    }
-  }
+      audio_url: { type: "string", field: "audio", title: "Track To Extend", description: "Аудио, которое нужно продолжить." },
+      prompt: { type: "string", title: "Continuation Prompt", description: "Опишите, куда должен развиваться трек дальше." },
+      continue_at: { type: "float", title: "Continue At (s)", minValue: 0, maxValue: 120, step: 1, default: 30, description: "Секунда, с которой начинается продолжение." },
+      extension_length: { type: "int", title: "Extension Length (s)", minValue: 5, maxValue: 90, step: 1, default: 20 },
+      instrumental: { type: "boolean", title: "Keep Instrumental", default: false },
+    },
+  },
+  {
+    id: "suno-generate-sounds",
+    name: "Suno Generate Sounds",
+    description: "Генерация коротких саунд-дизайн клипов, эффектов и фоновых текстур по описанию.",
+    apiId: "suno-generate-sounds",
+    required: ["prompt"],
+    inputs: {
+      prompt: { type: "string", title: "Sound Prompt", description: "Опишите звук, текстуру или атмосферу, которую нужно создать." },
+      duration: { type: "int", title: "Duration (s)", minValue: 1, maxValue: 30, step: 1, default: 8 },
+      seamless_loop: { type: "boolean", title: "Loop Friendly", description: "Стараться сделать результат пригодным для зацикливания.", default: false },
+      intensity: { type: "string", title: "Intensity", enum: ["low", "medium", "high"], default: "medium" },
+    },
+  },
+  {
+    id: "suno-add-vocals",
+    name: "Suno Add Vocals",
+    description: "Добавление вокальной партии поверх существующей инструментальной основы.",
+    apiId: "suno-add-vocals",
+    required: ["audio_url", "prompt"],
+    inputs: {
+      audio_url: { type: "string", field: "audio", title: "Instrumental Track", description: "Инструментал, на который будет наложен вокал." },
+      prompt: { type: "string", title: "Lyrics / Vocal Prompt", description: "Текст, тема и подача для вокала." },
+      vocal_gender: { type: "string", title: "Vocal Gender", enum: VOCAL_GENDERS, default: "female" },
+      vocal_style: { type: "string", title: "Vocal Style", enum: VOICE_STYLES, default: "cinematic" },
+      harmonies: { type: "boolean", title: "Add Harmonies", default: false },
+    },
+  },
+  {
+    id: "suno-generate-mashup",
+    name: "Suno Generate Mashup",
+    description: "Объединение нескольких аудио-референсов в новый mashup-трек.",
+    apiId: "suno-generate-mashup",
+    required: ["audios_list"],
+    inputs: {
+      audios_list: { type: "array", field: "audios_list", title: "Audio References", description: "Загрузите несколько треков для mashup.", maxItems: 2, items: { type: "string" } },
+      prompt: { type: "string", title: "Mashup Direction", description: "Опишите, как нужно свести и смешать загруженные треки." },
+      preserve_tempo: { type: "boolean", title: "Preserve Tempo", default: true },
+      blend_strength: { type: "float", title: "Blend Strength", minValue: 0, maxValue: 1, step: 0.05, default: 0.5 },
+    },
+  },
+  {
+    id: "suno-add-instrumental",
+    name: "Suno Add Instrumental",
+    description: "Добавление новой инструментальной аранжировки поверх существующего материала.",
+    apiId: "suno-add-instrumental",
+    required: ["audio_url"],
+    inputs: {
+      audio_url: { type: "string", field: "audio", title: "Base Audio", description: "Основа, к которой будет добавлен инструментал." },
+      prompt: { type: "string", title: "Instrumental Prompt", description: "Опишите инструменты, настроение и характер аранжировки." },
+      instrumental_style: { type: "string", title: "Instrumental Style", enum: ["cinematic", "acoustic", "electronic", "orchestral"], default: "cinematic" },
+      layer_intensity: { type: "float", title: "Layer Intensity", minValue: 0, maxValue: 1, step: 0.05, default: 0.45 },
+    },
+  },
+  {
+    id: "suno-voice-clone",
+    name: "Suno Voice Clone",
+    description: "Клонирование голоса по одному аудио-референсу с управлением подачей и скоростью.",
+    apiId: "suno-voice-clone",
+    required: ["audio_url", "prompt"],
+    inputs: {
+      audio_url: { type: "string", field: "audio", title: "Voice Reference", description: "Пример голоса для клонирования." },
+      prompt: { type: "string", title: "Speech Text", description: "Текст, который должен быть озвучен клонированным голосом." },
+      tone: { type: "string", title: "Tone", enum: ["natural", "dramatic", "friendly", "calm"], default: "natural" },
+      speed: { type: "float", title: "Speed", minValue: 0.5, maxValue: 1.5, step: 0.05, default: 1 },
+    },
+  },
+  {
+    id: "minimax-voice-clone",
+    name: "Minimax Voice Clone",
+    description: "Голосовой клон MiniMax по аудио-референсу и текстовому запросу.",
+    apiId: "minimax-voice-clone",
+    required: ["audio_url", "prompt"],
+    inputs: {
+      audio_url: { type: "string", field: "audio", title: "Voice Sample", description: "Референс для клонирования голоса." },
+      prompt: { type: "string", title: "Speech Text", description: "Текст для генерации речи." },
+      speed: { type: "float", title: "Speed", minValue: 0.5, maxValue: 1.5, step: 0.05, default: 1 },
+      voice_style: { type: "string", title: "Voice Style", enum: VOICE_STYLES, default: "neutral" },
+    },
+  },
+  {
+    id: "minimax-speech-2.6-hd",
+    name: "Minimax Speech 2.6 HD",
+    description: "Высококачественная speech-модель MiniMax для детализированной озвучки.",
+    apiId: "minimax-speech-2.6-hd",
+    required: ["prompt"],
+    inputs: {
+      prompt: { type: "string", title: "Speech Text", description: "Текст для озвучивания." },
+      voice: { type: "string", title: "Voice", enum: ["alloy", "nova", "sage", "onyx"], default: "alloy" },
+      emotion: { type: "string", title: "Emotion", enum: ["neutral", "happy", "serious", "sad"], default: "neutral" },
+      speed: { type: "float", title: "Speed", minValue: 0.5, maxValue: 2, step: 0.05, default: 1 },
+    },
+  },
+  {
+    id: "minimax-speech-2.6-turbo",
+    name: "Minimax Speech 2.6 Turbo",
+    description: "Быстрая speech-модель MiniMax для оперативной генерации речи.",
+    apiId: "minimax-speech-2.6-turbo",
+    required: ["prompt"],
+    inputs: {
+      prompt: { type: "string", title: "Speech Text", description: "Текст для озвучивания." },
+      voice: { type: "string", title: "Voice", enum: ["alloy", "nova", "sage", "onyx"], default: "alloy" },
+      emotion: { type: "string", title: "Emotion", enum: ["neutral", "happy", "serious", "sad"], default: "neutral" },
+      speed: { type: "float", title: "Speed", minValue: 0.5, maxValue: 2, step: 0.05, default: 1 },
+    },
+  },
+  {
+    id: "mmaudio-v2-text-to-audio",
+    name: "MMAudio V2 Text To Audio",
+    description: "Генерация атмосферного аудио и sound design по текстовому описанию.",
+    apiId: "mmaudio-v2-text-to-audio",
+    required: ["prompt"],
+    inputs: {
+      prompt: { type: "string", title: "Prompt", description: "Опишите сцену, атмосферу, текстуру и характер звучания." },
+      duration: { type: "int", title: "Duration (s)", minValue: 1, maxValue: 30, step: 1, default: 10 },
+      guidance_scale: { type: "float", title: "Guidance", minValue: 1, maxValue: 10, step: 0.5, default: 5 },
+      negative_prompt: { type: "string", title: "Negative Prompt", placeholder: "harsh clipping, distortion, crowd noise" },
+    },
+  },
 ];
+
+export const studioVisibleAudioModels = [
+  "suno-create-music",
+  "suno-remix-music",
+  "suno-extend-music",
+  "suno-generate-sounds",
+  "suno-add-vocals",
+  "suno-generate-mashup",
+  "suno-add-instrumental",
+  "suno-voice-clone",
+  "minimax-voice-clone",
+  "minimax-speech-2.6-hd",
+  "minimax-speech-2.6-turbo",
+  "mmaudio-v2-text-to-audio",
+];
+
+export const audioModels = audioModelsCatalog.filter((m) => studioVisibleAudioModels.includes(m.id));
 
 // ── Getter helpers ────────────────────────────────────────────────────────────
 export const getModelById        = (id) => t2iModels.find(m => m.id === id) || i2iModels.find(m => m.id === id);
