@@ -1187,25 +1187,28 @@ export default function ImageStudio({
       setUploadedImageUrls(newUrls);
 
       if (!imageMode) {
-        const firstI2I = i2iModels[0];
-        const ars = getAspectRatiosForI2IModel(firstI2I.id);
-        const resolutions = getResolutionsForI2IModel(firstI2I.id);
-        const effects = getEffectsForI2IModel(firstI2I.id);
+        const currentT2I = t2iModels.find((m) => m.id === selectedModelId);
+        const matchedI2I =
+          (currentT2I && i2iModels.find((m) => m.apiId === currentT2I.apiId)) ||
+          i2iModels[0];
+        const ars = getAspectRatiosForI2IModel(matchedI2I.id);
+        const resolutions = getResolutionsForI2IModel(matchedI2I.id);
+        const effects = getEffectsForI2IModel(matchedI2I.id);
         setImageMode(true);
-        setSelectedModelId(firstI2I.id);
-        setSelectedModelName(firstI2I.name);
+        setSelectedModelId(matchedI2I.id);
+        setSelectedModelName(matchedI2I.name);
         setSelectedAr(ars[0] || "1:1");
         setSelectedQuality(resolutions[0] || null);
-        setSelectedQualityOpt(getImageInputDefault(firstI2I.id, "quality"));
-        setSelectedFormat(getImageInputDefault(firstI2I.id, "format"));
-        setSelectedBackground(getImageInputDefault(firstI2I.id, "background"));
-        setSelectedModeration(getImageInputDefault(firstI2I.id, "moderation"));
-        setSelectedImageSize(getImageInputDefault(firstI2I.id, "imageSize"));
-        setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(firstI2I.id) || effects[0]) : "");
-        setMaxImages(getMaxImagesForI2IModel(firstI2I.id));
+        setSelectedQualityOpt(getImageInputDefault(matchedI2I.id, "quality"));
+        setSelectedFormat(getImageInputDefault(matchedI2I.id, "format"));
+        setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
+        setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
+        setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
+        setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
+        setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
       }
     },
-    [imageMode],
+    [imageMode, selectedModelId],
   );
 
   const handleUploadClear = useCallback(() => {
