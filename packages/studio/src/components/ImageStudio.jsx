@@ -1234,16 +1234,21 @@ export default function ImageStudio({
   }, [sanitizeHistoryForStorage, writePersistentState]);
 
   const saveImageToGallery = useCallback(async (url, model, promptText) => {
-    if (!url) return;
-    const r = await fetch("/api/gallery", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      keepalive: true,
-      body: JSON.stringify({ url, type: "image", model, prompt: promptText }),
-    });
-    if (!r.ok) {
-      const err = await r.json().catch(() => ({}));
-      throw new Error(err.error || String(r.status));
+    if (!url) return { ok: false, reason: "missing-url" };
+    try {
+      const r = await fetch("/api/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({ url, type: "image", model, prompt: promptText }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        return { ok: false, reason: err.error || String(r.status) };
+      }
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, reason: error?.message || "network-error" };
     }
   }, []);
 
@@ -1377,7 +1382,10 @@ export default function ImageStudio({
                 localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(rd));
               } catch {}
 
-              await saveImageToGallery(permUrl, snap.selectedModelId, promptTrim);
+              const gallerySave = await saveImageToGallery(permUrl, snap.selectedModelId, promptTrim);
+              if (!gallerySave?.ok) {
+                console.warn("[ImageStudio] Gallery save skipped:", gallerySave?.reason);
+              }
               onGenerationComplete?.({
                 url: permUrl,
                 model: snap.selectedModelId,
@@ -1395,7 +1403,7 @@ export default function ImageStudio({
           throw new Error("Изображение не получено. Попробуйте другую модель.");
         }
 
-        await Promise.all(postProcessTasks);
+        await Promise.allSettled(postProcessTasks);
         try { localStorage.removeItem(PENDING_KEY); } catch {}
       } catch (e) {
         console.error("[ImageStudio] Generation failed:", e);
