@@ -697,7 +697,7 @@ var NodeFlow = function NodeFlow(_ref) {
       }
       if (!connectedEdges.length) return updatedNodes;
       var resultValue = newData.resultUrl || ((_newData$outputs = newData.outputs) === null || _newData$outputs === void 0 || (_newData$outputs = _newData$outputs[0]) === null || _newData$outputs === void 0 ? void 0 : _newData$outputs.value);
-      // if (!resultValue) return updatedNodes;
+      if (!resultValue) return updatedNodes;
 
       updatedNodes = updatedNodes.map(function (node) {
         var _sourceNode$data;
@@ -2545,6 +2545,10 @@ var NodeFlow = function NodeFlow(_ref) {
   }, [selectedNode, setNodes]);
   var updateModel = (0, _react.useCallback)(function (model) {
     if (!selectedNode) return;
+    if ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.data) && (selectedNode.data.selectedModel && selectedNode.data.selectedModel.id) === model.id) {
+      setDropDown(0);
+      return;
+    }
     setNodes(function (nds) {
       return nds.map(function (node) {
         if (node.id === selectedNode.id) {
