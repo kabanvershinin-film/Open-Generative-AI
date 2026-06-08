@@ -16,6 +16,20 @@ function bearerHeaders(key) {
     return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` };
 }
 
+async function readApiError(response, prefix = 'API Request Failed') {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 402 && (data.error === 'insufficient_funds' || data.required !== undefined)) {
+            return `Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`;
+        }
+        const detail = data.detail || data.error || data.message || JSON.stringify(data);
+        return `${prefix}: ${response.status} ${response.statusText} - ${String(detail).slice(0, 200)}`;
+    }
+    const errText = await response.text().catch(() => response.statusText);
+    return `${prefix}: ${response.status} ${response.statusText} - ${errText.slice(0, 200)}`;
+}
+
 // ── Unified video format (/v1/video/create → /v1/video/task/{id}) ────────────
 
 async function pollVideoTask(taskId, key, maxAttempts = 300, interval = 3000) {
@@ -323,9 +337,9 @@ export async function generateImage(apiKey, params) {
         body: JSON.stringify(payload)
     });
     if (!response.ok) {
-        const errText = await response.text();
-        notifyAuthRequired(response.status, errText);
-        throw new Error(`API Request Failed: ${response.status} ${response.statusText} - ${errText.slice(0, 200)}`);
+        const errMsg = await readApiError(response);
+        notifyAuthRequired(response.status, errMsg);
+        throw new Error(errMsg);
     }
     const data = await response.json();
     const url = extractImageUrl(data);
@@ -413,9 +427,9 @@ async function generateGeminiImage(apiKey, baseModelId, params) {
         body: JSON.stringify(body),
     });
     if (!response.ok) {
-        const errText = await response.text();
-        notifyAuthRequired(response.status, errText);
-        throw new Error(`API Request Failed: ${response.status} ${response.statusText} - ${errText.slice(0, 200)}`);
+        const errMsg = await readApiError(response);
+        notifyAuthRequired(response.status, errMsg);
+        throw new Error(errMsg);
     }
     const data = await response.json();
     const raw = extractGeminiImage(data);
@@ -622,32 +636,22 @@ async function generateImageEdit(apiKey, params) {
         form.append('image', optimizedBlob, `image.${ext}`);
     }
 
-    const directEditUrl = 'https://memefast.top/v1/images/edits';
     const proxyEditUrl = `${BASE_URL}/v1/images/edits`;
     let response;
-    try {
-        response = await fetch(directEditUrl, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${apiKey}` },
-            body: form,
-        });
-    } catch (error) {
-        // Fallback only when the browser cannot reach the upstream directly
-        // (usually a CORS/network issue). The payload is small now because the
-        // form mostly carries TOS URLs instead of raw image bytes.
-        response = await fetch(proxyEditUrl, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${apiKey}` },
-            body: form,
-        });
-    }
+    // Route edits through our proxy so the server can apply the same billing /
+    // refund logic as workflow image generations.
+    response = await fetch(proxyEditUrl, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: form,
+    });
     if (!response.ok) {
-        const errText = await response.text();
-        notifyAuthRequired(response.status, errText);
+        const errMsg = await readApiError(response);
+        notifyAuthRequired(response.status, errMsg);
         if (response.status === 413) {
             throw new Error('Выбранное изображение слишком большое для редактирования. Попробуйте JPG/PNG меньшего размера.');
         }
-        throw new Error(`API Request Failed: ${response.status} - ${errText.slice(0, 200)}`);
+        throw new Error(errMsg);
     }
     const data = await response.json();
     const url = extractImageUrl(data);
