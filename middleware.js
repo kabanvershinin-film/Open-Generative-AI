@@ -12,20 +12,16 @@ function hasAuthToken(request) {
 export function middleware(request) {
     const url = request.nextUrl;
 
-    // Proxy /api/mf/* → https://memefast.top/*
-    // Exclude /api/mf/workflow/* and /api/mf/agents/* — those are handled by local Next.js routes
-    if (url.pathname.startsWith('/api/mf/') &&
-        !url.pathname.startsWith('/api/mf/workflow') &&
-        !url.pathname.startsWith('/api/mf/agents')) {
+    // Keep auth protection for /api/mf/*, but let the local route handler proxy
+    // the request server-side instead of relying on Vercel external rewrites.
+    if (url.pathname.startsWith('/api/mf/')) {
         if (AUTH_REQUIRED && !hasAuthToken(request)) {
             return NextResponse.json(
                 { error: 'Unauthorized', message: 'Войдите в аккаунт, чтобы генерировать.' },
                 { status: 401 },
             );
         }
-        const targetPath = url.pathname.replace('/api/mf', '');
-        const targetUrl = new URL(targetPath + url.search, 'https://memefast.top');
-        return NextResponse.rewrite(targetUrl);
+        return NextResponse.next();
     }
 
     // Catch requests to /api/workflow, /api/app, and /api/v1 (legacy Muapi paths)
