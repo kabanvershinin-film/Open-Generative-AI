@@ -140,16 +140,16 @@ var PromptConcate = function PromptConcate(_ref) {
       var _data$formValues;
       if (((_data$formValues = data.formValues) === null || _data$formValues === void 0 ? void 0 : _data$formValues[k]) !== undefined) merged[k] = data.formValues[k];
     });
-    setFormValues(merged);
+    setFormValues(function (prev) {
+      return (0, _utility.stableStringify)(prev) === (0, _utility.stableStringify)(merged) ? prev : merged;
+    });
   }, [selectedModel]);
   (0, _react.useEffect)(function () {
     updateNodeInternals(id);
   }, [formValues, id]);
   (0, _react.useEffect)(function () {
     if (!data.formValues) return;
-    var incoming = JSON.stringify(data.formValues);
-    var current = JSON.stringify(formValues);
-    if (incoming === current) return;
+    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
         setFormValues(data.formValues);
@@ -159,18 +159,21 @@ var PromptConcate = function PromptConcate(_ref) {
       return clearTimeout(timer);
     };
   }, [data.formValues]);
+  var lastSentRef = (0, _react.useRef)(null);
   (0, _react.useEffect)(function () {
     if (!(data !== null && data !== void 0 && data.onDataChange)) return;
-    var currentData = {
-      formValues: data.formValues
-    };
-    var newData = {
-      formValues: formValues
-    };
-    if (JSON.stringify(currentData) !== JSON.stringify(newData)) {
-      data.onDataChange(id, newData);
+    var localSig = (0, _utility.stableStringify)(formValues);
+    var parentSig = (0, _utility.stableStringify)(data.formValues || {});
+    if (localSig === parentSig) {
+      lastSentRef.current = localSig;
+      return;
     }
-  }, [formValues]);
+    if (localSig === lastSentRef.current) return;
+    lastSentRef.current = localSig;
+    data.onDataChange(id, {
+      formValues: formValues
+    });
+  }, [formValues, data.formValues]);
   var handleDeleteNode = function handleDeleteNode() {
     if (window.confirm("Are you sure you want to delete this ".concat(id, " node?"))) {
       setNodes(function (nds) {

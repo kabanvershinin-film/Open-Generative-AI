@@ -3,7 +3,7 @@ import { Handle, Position, useReactFlow, useStore, useUpdateNodeInternals } from
 import { getRunId, getWorkflowId } from "./WorkflowStore";
 import { toast } from "react-hot-toast";
 import { IoClose } from "react-icons/io5";
-import { concatModels } from "./utility";
+import { concatModels, stableStringify } from "./utility";
 import { TbArrowMerge } from "react-icons/tb";
 import NodeOptionsMenu from "./NodeOptionsMenu";
 
@@ -103,7 +103,9 @@ const PromptConcate = ({ id, data, selected }) => {
       if (data.formValues?.[k] !== undefined) merged[k] = data.formValues[k];
     });
 
-    setFormValues(merged);
+    setFormValues((prev) =>
+      stableStringify(prev) === stableStringify(merged) ? prev : merged
+    );
   }, [selectedModel]);
 
   useEffect(() => {
@@ -112,9 +114,7 @@ const PromptConcate = ({ id, data, selected }) => {
 
   useEffect(() => {
     if (!data.formValues) return;
-    const incoming = JSON.stringify(data.formValues);
-    const current = JSON.stringify(formValues);
-    if (incoming === current) return;
+    if (stableStringify(data.formValues) === stableStringify(formValues)) return;
 
     const timer = setTimeout(() => {
       if (Object.entries(data.formValues || {}).length > 0) {
@@ -124,21 +124,22 @@ const PromptConcate = ({ id, data, selected }) => {
     return () => clearTimeout(timer);
   }, [data.formValues]);
 
+  const lastSentRef = useRef(null);
   useEffect(() => {
     if (!data?.onDataChange) return;
-    
-    const currentData = {
-      formValues: data.formValues
-    };
-    
-    const newData = {
-      formValues
-    };
-    
-    if (JSON.stringify(currentData) !== JSON.stringify(newData)) {
-      data.onDataChange(id, newData);
+
+    const localSig = stableStringify(formValues);
+    const parentSig = stableStringify(data.formValues || {});
+
+    if (localSig === parentSig) {
+      lastSentRef.current = localSig;
+      return;
     }
-  }, [formValues]);
+    if (localSig === lastSentRef.current) return;
+
+    lastSentRef.current = localSig;
+    data.onDataChange(id, { formValues });
+  }, [formValues, data.formValues]);
 
   const handleDeleteNode = () => {
     if (window.confirm(`Are you sure you want to delete this ${id} node?`)) {

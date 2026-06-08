@@ -185,7 +185,9 @@ var VideoCombiner = function VideoCombiner(_ref) {
       var _data$formValues;
       if (((_data$formValues = data.formValues) === null || _data$formValues === void 0 ? void 0 : _data$formValues[k]) !== undefined) merged[k] = data.formValues[k];
     });
-    setFormValues(merged);
+    setFormValues(function (prev) {
+      return (0, _utility.stableStringify)(prev) === (0, _utility.stableStringify)(merged) ? prev : merged;
+    });
   };
   (0, _react.useEffect)(function () {
     setLoading(1);
@@ -220,9 +222,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
   }, [formValues, id, selectedModel]);
   (0, _react.useEffect)(function () {
     if (!data.formValues) return;
-    var incoming = JSON.stringify(data.formValues);
-    var current = JSON.stringify(formValues);
-    if (incoming === current) return;
+    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
         setFormValues(data.formValues);
@@ -232,15 +232,24 @@ var VideoCombiner = function VideoCombiner(_ref) {
       return clearTimeout(timer);
     };
   }, [data.formValues]);
+  var lastSentRef = (0, _react.useRef)(null);
   (0, _react.useEffect)(function () {
-    if (data !== null && data !== void 0 && data.onDataChange) {
-      data.onDataChange(id, {
-        selectedModel: selectedModel,
-        formValues: formValues,
-        loading: loading
-      });
+    if (!(data !== null && data !== void 0 && data.onDataChange)) return;
+    var localSig = (0, _utility.stableStringify)(formValues);
+    var parentSig = (0, _utility.stableStringify)(data.formValues || {});
+    var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === (data.selectedModel === null || data.selectedModel === void 0 ? void 0 : data.selectedModel.id);
+    if (sameModel && localSig === parentSig) {
+      lastSentRef.current = localSig;
+      return;
     }
-  }, [selectedModel, formValues, loading]);
+    if (sameModel && localSig === lastSentRef.current) return;
+    lastSentRef.current = localSig;
+    data.onDataChange(id, {
+      selectedModel: selectedModel,
+      formValues: formValues,
+      loading: loading
+    });
+  }, [selectedModel, formValues, loading, data.formValues, data.selectedModel]);
   var pollNodeStatus = function pollNodeStatus(run_id) {
     var interval;
     var _check = function _check() {
@@ -307,6 +316,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
     _check();
     interval = setInterval(_check, 500);
   };
+  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var _nodeSchemas$categori2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _error$response, _t;
@@ -401,7 +411,9 @@ var VideoCombiner = function VideoCombiner(_ref) {
       }, _callee, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      return _ref1.apply(this, arguments);
+      if (inFlightRef.current) return Promise.resolve();
+      inFlightRef.current = true;
+      return _ref1.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {

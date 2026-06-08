@@ -782,7 +782,9 @@ var VideoGeneration = function VideoGeneration(_ref) {
       }, _callee3, null, [[4, 6], [3, 13, 14, 15]]);
     }));
     return function handleRunSingleNode() {
-      return _ref11.apply(this, arguments);
+      if (inFlightRef.current) return Promise.resolve();
+      inFlightRef.current = true;
+      return _ref11.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
