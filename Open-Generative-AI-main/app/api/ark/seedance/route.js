@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { BILLING_ENABLED, getBalance, signBill, verifyBillData, chargeForTask } from '../../_lib/balance';
 import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
+import { createHmac, createHash } from 'crypto';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
 // Auth: long-lived Ark API Key (Bearer). Set ARK_API_KEY in env.
@@ -21,10 +22,84 @@ import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../
 
 const ARK_BASE = 'https://ark.cn-beijing.volces.com/api/v3';
 const ARK_API_KEY = process.env.ARK_API_KEY || '';
+const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
+const TOS_BUCKET = process.env.TOS_BUCKET || '';
+const TOS_REGION = process.env.TOS_REGION || 'cn-beijing';
+const TOS_AK = process.env.TOS_ACCESS_KEY || '';
+const TOS_SK = process.env.TOS_SECRET_KEY || '';
+const TOS_ENABLED = !!(TOS_ENDPOINT && TOS_BUCKET && TOS_AK && TOS_SK);
+
+const EMPTY_SHA256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 
 function parseEndpoints(envVal, fallback) {
   const list = (envVal || '').split(',').map((s) => s.trim()).filter(Boolean);
   return list.length > 0 ? list : fallback;
+}
+
+function sha256hex(data) {
+  return createHash('sha256').update(data).digest('hex');
+}
+
+function hmac(key, data) {
+  return createHmac('sha256', key).update(data).digest();
+}
+
+function tosDateParts() {
+  const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  return { date: iso.slice(0, 8), datetime: iso };
+}
+
+function tosSigningKey(date) {
+  return hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
+}
+
+async function tosUpload(key, buffer, contentType) {
+  if (!TOS_ENABLED) return null;
+  try {
+    const { date, datetime } = tosDateParts();
+    const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+    const path = `/${key}`;
+    const payloadHash = sha256hex(buffer);
+    const canonHeaders = `content-length:${buffer.length}\ncontent-type:${contentType}\nhost:${host}\nx-tos-content-sha256:${payloadHash}\nx-tos-date:${datetime}\n`;
+    const signedHeaders = 'content-length;content-type;host;x-tos-content-sha256;x-tos-date';
+    const canonical = `PUT\n${path}\n\n${canonHeaders}\n${signedHeaders}\n${payloadHash}`;
+    const scope = `${date}/${TOS_REGION}/tos/request`;
+    const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+    const sig = createHmac('sha256', tosSigningKey(date)).update(strToSign).digest('hex');
+    const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+    const res = await fetch(`https://${host}${path}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: auth,
+        'Content-Type': contentType,
+        'Content-Length': String(buffer.length),
+        'X-Tos-Content-Sha256': payloadHash,
+        'X-Tos-Date': datetime,
+      },
+      body: buffer,
+    });
+    if (!res.ok) return null;
+    return `https://${host}${path}`;
+  } catch {
+    return null;
+  }
+}
+
+async function mirrorVideoToTOS(srcUrl) {
+  if (!srcUrl || !TOS_ENABLED) return null;
+  const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+  if (srcUrl.startsWith(`https://${tosHost}`)) return srcUrl;
+  try {
+    const r = await fetch(srcUrl);
+    if (!r.ok) return null;
+    const buf = Buffer.from(await r.arrayBuffer());
+    const ct = r.headers.get('content-type') || 'video/mp4';
+    const ext = ct.includes('webm') ? 'webm' : ct.includes('mov') ? 'mov' : ct.includes('mkv') ? 'mkv' : 'mp4';
+    const key = `videos/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    return await tosUpload(key, buf, ct) || null;
+  } catch {
+    return null;
+  }
 }
 
 // Two separate endpoint pools — Seedance 2.0 (full) and Seedance 2.0 Fast.
@@ -240,7 +315,13 @@ export async function GET(request) {
       }
     }
 
-    return NextResponse.json({ status, url, tokens, error: data.error?.message || null });
+    const permanentUrl = succeeded && url ? await mirrorVideoToTOS(url) : null;
+    return NextResponse.json({
+      status,
+      url: permanentUrl || url,
+      tokens,
+      error: data.error?.message || null,
+    });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

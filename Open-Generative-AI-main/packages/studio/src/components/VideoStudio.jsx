@@ -1014,6 +1014,50 @@ export default function VideoStudio({
     setShowCanvas(true);
   }, []);
 
+  // Mirror the final video URL into Gallery so we store a permanent TOS link
+  // whenever the backend can create one. Falls back to the original provider
+  // URL if gallery persistence fails.
+  const persistVideoUrlToGallery = useCallback(
+    async (url, model, promptText) => {
+      if (!url) return { url, persisted: false };
+
+      try {
+        const headers = { "Content-Type": "application/json" };
+        if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+        const response = await fetch("/api/gallery", {
+          method: "POST",
+          headers,
+          keepalive: true,
+          body: JSON.stringify({
+            url,
+            type: "video",
+            model: model || "",
+            prompt: promptText || "",
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}));
+          throw new Error(err.error || response.statusText || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json().catch(() => ({}));
+        const permanentUrl = data?.entry?.url;
+        if (permanentUrl) return { url: permanentUrl, persisted: true };
+        throw new Error("No permanent URL returned by gallery");
+      } catch (error) {
+        const message = "Не удалось сохранить видео в галерею; ссылка может истечь.";
+        console.warn("[VideoStudio] Gallery persistence failed:", error);
+        if (isMountedRef.current) {
+          toast.error(message, { duration: 4000 });
+        }
+        return { url, persisted: false };
+      }
+    },
+    [apiKey],
+  );
+
   // ── resume an ARK task that survived navigation ───────────────────────────
   // If the user navigated away mid-generation the polling promise kept running
   // in the background, but the React state was lost. On remount we check
@@ -1031,14 +1075,17 @@ export default function VideoStudio({
     // and all of them would fire gallery saves when the task eventually finishes).
     let cancelled = false;
 
-    const showResult = (url, genId) => {
+    const showResult = async (url, genId) => {
       if (cancelled) return;
       localStorage.removeItem(ARK_TASK_KEY);
+      const saved = await persistVideoUrlToGallery(url, stored.model, stored.prompt || "");
+      if (cancelled) return;
+
       setLastGenerationId(genId);
       setLastGenerationModel(stored.model);
       const entry = {
         id: genId,
-        url,
+        url: saved.url,
         prompt: stored.prompt || "",
         model: stored.model,
         aspect_ratio: stored.aspect_ratio,
@@ -1047,27 +1094,27 @@ export default function VideoStudio({
       };
       addToLocalHistory(entry);
       persistVideoEntryToStorage(entry);
-      showVideoInCanvas(url, stored.model);
-      const headers = { "Content-Type": "application/json" };
-      if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
-
-      fetch("/api/gallery", {
-        method: "POST",
-        headers,
-        keepalive: true,
-        body: JSON.stringify({ url, type: "video", model: stored.model, prompt: stored.prompt || "" }),
-      })
-        .then(async (r) => {
-          if (!r.ok) {
-            const err = await r.json().catch(() => ({}));
-            toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
-          }
-        })
-        .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
+      showVideoInCanvas(saved.url, stored.model);
     };
 
     // Task already finished while we were away — show result immediately.
     if (stored.status === "done" && stored.resultUrl) {
+      if (stored.gallerySaved) {
+        const entry = {
+          id: stored.genId || stored.taskId,
+          url: stored.resultUrl,
+          prompt: stored.prompt || "",
+          model: stored.model,
+          aspect_ratio: stored.aspect_ratio,
+          duration: stored.duration,
+          timestamp: new Date().toISOString(),
+        };
+        addToLocalHistory(entry);
+        persistVideoEntryToStorage(entry);
+        showVideoInCanvas(stored.resultUrl, stored.model);
+        return () => { cancelled = true; };
+      }
+
       showResult(stored.resultUrl, stored.genId || stored.taskId);
       return () => { cancelled = true; };
     }
@@ -1204,39 +1251,28 @@ export default function VideoStudio({
         if (!res?.url) throw new Error("No video URL returned by API");
 
         const genId = res.id || Date.now().toString();
+        const saved = await persistVideoUrlToGallery(res.url, selectedModel, trimmedPrompt);
+        const finalUrl = saved.url;
         if (isMountedRef.current) {
           // Normal path: component still mounted — update state and clear localStorage.
           localStorage.removeItem(ARK_TASK_KEY);
           setLastGenerationId(genId);
           setLastGenerationModel(selectedModel);
           addToLocalHistory({
-            id: genId, url: res.url, prompt: trimmedPrompt,
+            id: genId, url: finalUrl, prompt: trimmedPrompt,
             model: selectedModel, aspect_ratio: selectedAr,
             duration: selectedDuration, timestamp: new Date().toISOString(),
           });
-          showVideoInCanvas(res.url, selectedModel);
-          fetch('/api/gallery', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-            keepalive: true,
-            body: JSON.stringify({ url: res.url, type: 'video', model: selectedModel, prompt: trimmedPrompt }),
-          })
-            .then(async (r) => {
-              if (!r.ok) {
-                const err = await r.json().catch(() => ({}));
-                toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
-              }
-            })
-            .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
+          showVideoInCanvas(finalUrl, selectedModel);
           if (onGenerationComplete)
-            onGenerationComplete({ url: res.url, model: selectedModel, prompt: trimmedPrompt, type: "video" });
+            onGenerationComplete({ url: finalUrl, model: selectedModel, prompt: trimmedPrompt, type: "video" });
         } else {
           // Component unmounted while polling — write result back to localStorage so
           // the resume effect can show it when the user navigates back.
           try {
             const stored = JSON.parse(localStorage.getItem(ARK_TASK_KEY) || '{}');
             localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
-              ...stored, status: 'done', resultUrl: res.url, genId,
+              ...stored, status: 'done', resultUrl: finalUrl, genId, gallerySaved: true,
             }));
           } catch {}
         }
@@ -1320,9 +1356,11 @@ export default function VideoStudio({
         const genId = res.id || Date.now().toString();
         setLastGenerationId(null);
         setLastGenerationModel(null);
+        const saved = await persistVideoUrlToGallery(res.url, selectedModel, currentModel?.hasPrompt ? trimmedPrompt : "");
+        const finalUrl = saved.url;
         const entry = {
           id: genId,
-          url: res.url,
+          url: finalUrl,
           prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
           model: selectedModel,
           timestamp: new Date().toISOString(),
@@ -1333,10 +1371,10 @@ export default function VideoStudio({
           localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
           localStorage.removeItem(PENDING_KEY);
         } catch {}
-        showVideoInCanvas(res.url, selectedModel);
+        showVideoInCanvas(finalUrl, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
-            url: res.url,
+            url: finalUrl,
             model: selectedModel,
             prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
             type: "video",
@@ -1371,9 +1409,11 @@ export default function VideoStudio({
           setLastGenerationId(null);
           setLastGenerationModel(null);
         }
+        const saved = await persistVideoUrlToGallery(res.url, selectedModel, trimmedPrompt);
+        const finalUrl = saved.url;
         const entry = {
           id: genId,
-          url: res.url,
+          url: finalUrl,
           prompt: trimmedPrompt,
           model: selectedModel,
           aspect_ratio: selectedAr,
@@ -1386,10 +1426,10 @@ export default function VideoStudio({
           localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
           localStorage.removeItem(PENDING_KEY);
         } catch {}
-        showVideoInCanvas(res.url, selectedModel);
+        showVideoInCanvas(finalUrl, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
-            url: res.url,
+            url: finalUrl,
             model: selectedModel,
             prompt: trimmedPrompt,
             type: "video",
@@ -1430,9 +1470,11 @@ export default function VideoStudio({
           setLastGenerationId(null);
           setLastGenerationModel(null);
         }
+        const saved = await persistVideoUrlToGallery(res.url, selectedModel, trimmedPrompt);
+        const finalUrl = saved.url;
         const entry = {
           id: genId,
-          url: res.url,
+          url: finalUrl,
           prompt: trimmedPrompt,
           model: selectedModel,
           aspect_ratio: selectedAr,
@@ -1445,10 +1487,10 @@ export default function VideoStudio({
           localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
           localStorage.removeItem(PENDING_KEY);
         } catch {}
-        showVideoInCanvas(res.url, selectedModel);
+        showVideoInCanvas(finalUrl, selectedModel);
         if (onGenerationComplete)
           onGenerationComplete({
-            url: res.url,
+            url: finalUrl,
             model: selectedModel,
             prompt: trimmedPrompt,
             type: "video",

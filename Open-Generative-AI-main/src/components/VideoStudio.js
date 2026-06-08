@@ -911,6 +911,35 @@ export function VideoStudio() {
         };
     };
 
+    const persistVideoUrlToGallery = async (url, model, promptText) => {
+        if (!url) return url;
+
+        try {
+            const apiKey = localStorage.getItem('muapi_key');
+            const headers = { 'Content-Type': 'application/json' };
+            if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+            const response = await fetch('/api/gallery', {
+                method: 'POST',
+                headers,
+                keepalive: true,
+                body: JSON.stringify({ url, type: 'video', model: model || '', prompt: promptText || '' }),
+            });
+
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                throw new Error(err.error || response.statusText || `HTTP ${response.status}`);
+            }
+
+            const data = await response.json().catch(() => ({}));
+            return data?.entry?.url || url;
+        } catch (err) {
+            console.warn('[VideoStudio] Gallery persistence failed:', err);
+            alert('Не удалось сохранить видео в галерею; ссылка может истечь.');
+            return url;
+        }
+    };
+
     // --- Helper: Add to history ---
     const addToHistory = (entry) => {
         generationHistory.unshift(entry);
@@ -1166,8 +1195,9 @@ export function VideoStudio() {
                     const genId = Date.now().toString();
                     lastGenerationId = null;
                     lastGenerationModel = null;
-                    addToHistory({ id: genId, url: res.url, prompt, model: selectedModel, aspect_ratio: selectedAr, timestamp: new Date().toISOString() });
-                    showVideoInCanvas(res.url, selectedModel);
+                    const finalUrl = await persistVideoUrlToGallery(res.url, selectedModel, prompt);
+                    addToHistory({ id: genId, url: finalUrl, prompt, model: selectedModel, aspect_ratio: selectedAr, timestamp: new Date().toISOString() });
+                    showVideoInCanvas(finalUrl, selectedModel);
                 } else {
                     throw new Error('No video URL returned by Wan2GP');
                 }
@@ -1187,8 +1217,9 @@ export function VideoStudio() {
                     const genId = res.id || capturedRequestId || Date.now().toString();
                     lastGenerationId = null;
                     lastGenerationModel = null;
-                    addToHistory({ id: genId, url: res.url, prompt: model?.hasPrompt ? prompt : '', model: selectedModel, timestamp: new Date().toISOString() });
-                    showVideoInCanvas(res.url, selectedModel);
+                    const finalUrl = await persistVideoUrlToGallery(res.url, selectedModel, model?.hasPrompt ? prompt : '');
+                    addToHistory({ id: genId, url: finalUrl, prompt: model?.hasPrompt ? prompt : '', model: selectedModel, timestamp: new Date().toISOString() });
+                    showVideoInCanvas(finalUrl, selectedModel);
                 } else {
                     throw new Error('No video URL returned by API');
                 }
@@ -1229,8 +1260,9 @@ export function VideoStudio() {
                         lastGenerationId = null;
                         lastGenerationModel = null;
                     }
-                    addToHistory({ id: genId, url: res.url, prompt, model: selectedModel, aspect_ratio: selectedAr, duration: selectedDuration, timestamp: new Date().toISOString() });
-                    showVideoInCanvas(res.url, selectedModel);
+                    const finalUrl = await persistVideoUrlToGallery(res.url, selectedModel, prompt);
+                    addToHistory({ id: genId, url: finalUrl, prompt, model: selectedModel, aspect_ratio: selectedAr, duration: selectedDuration, timestamp: new Date().toISOString() });
+                    showVideoInCanvas(finalUrl, selectedModel);
                 } else {
                     throw new Error('No video URL returned by API');
                 }
@@ -1275,16 +1307,17 @@ export function VideoStudio() {
                     lastGenerationModel = null;
                 }
 
+                const finalUrl = await persistVideoUrlToGallery(res.url, selectedModel, prompt);
                 addToHistory({
                     id: genId,
-                    url: res.url,
+                    url: finalUrl,
                     prompt,
                     model: selectedModel,
                     aspect_ratio: selectedAr,
                     duration: selectedDuration,
                     timestamp: new Date().toISOString()
                 });
-                showVideoInCanvas(res.url, selectedModel);
+                showVideoInCanvas(finalUrl, selectedModel);
             } else {
                 console.error('[VideoStudio] No video URL in response:', res);
                 throw new Error('No video URL returned by API');
