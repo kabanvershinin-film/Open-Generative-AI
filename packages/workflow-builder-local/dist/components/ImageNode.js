@@ -270,11 +270,10 @@ var ImageGeneration = function ImageGeneration(_ref) {
     if (localSig === lastSentRef.current) return;
     lastSentRef.current = localSig;
     data.onDataChange(id, {
-      selectedModel: selectedModel,
       formValues: formValues,
       loading: loading
     });
-  }, [selectedModel, formValues, loading, data.formValues, data.selectedModel]);
+  }, [formValues, loading, data.formValues, data.selectedModel]);
   // Save the generated image to the Gallery (mirrors Studio and VideoNode).
   // /api/gallery mirrors to TOS and writes gallery/{userId}/entries/{id}.json.
   // The cookie sb_access_token rides along on this same-origin fetch.

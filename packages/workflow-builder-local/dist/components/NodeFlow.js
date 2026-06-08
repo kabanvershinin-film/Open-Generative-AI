@@ -2554,7 +2554,8 @@ var NodeFlow = function NodeFlow(_ref) {
         if (node.id === selectedNode.id) {
           return _objectSpread(_objectSpread({}, node), {}, {
             data: _objectSpread(_objectSpread({}, node.data), {}, {
-              selectedModel: model
+              selectedModel: model,
+              modelId: model.id
             })
           });
         }
