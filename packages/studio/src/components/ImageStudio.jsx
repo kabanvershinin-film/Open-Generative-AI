@@ -854,6 +854,21 @@ export default function ImageStudio({
       .slice(0, 50);
   }, []);
 
+  const upsertPendingResults = useCallback((requestId, entries) => {
+    if (!requestId || !Array.isArray(entries) || entries.length === 0) return;
+    try {
+      const raw = localStorage.getItem(PENDING_RESULT_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      const prevEntries =
+        data.requestId === requestId && Array.isArray(data.entries) ? data.entries : [];
+      const merged = mergeHistoryEntries(entries, prevEntries);
+      localStorage.setItem(
+        PENDING_RESULT_KEY,
+        JSON.stringify({ requestId, entries: merged }),
+      );
+    } catch {}
+  }, [mergeHistoryEntries, PENDING_RESULT_KEY]);
+
   const router = useRouter();
   const [workflowPicker, setWorkflowPicker] = useState(null); // { url, prompt } | null
   const [pickerWorkflows, setPickerWorkflows] = useState([]);
@@ -1377,7 +1392,6 @@ export default function ImageStudio({
             added++;
             const id = res.id || Math.random().toString(36).substring(7);
             const rawUrl = res.url;
-            const isStableUrl = typeof rawUrl === "string" && /^https?:\/\//i.test(rawUrl);
             const entry = {
               id,
               url: rawUrl,
@@ -1389,13 +1403,11 @@ export default function ImageStudio({
             // Show the result IMMEDIATELY (raw url / base64) — don't make the user
             // wait for the TOS upload. Display is in-memory only at this point.
             addToHistory(entry);
-            // Persist stable URLs immediately so a refresh can restore them even
-            // before TOS mirroring finishes.
-            if (isStableUrl) {
-              persistEntryToStorage(entry);
-            } else {
-              writeRecentResults([entry, ...history]);
-            }
+            // Store the immediate result in the lightweight recent cache only.
+            // Even provider http(s) URLs may be temporary, so durable storage
+            // happens only after the TOS mirroring step below.
+            writeRecentResults([entry, ...history]);
+            upsertPendingResults(snap.requestId, [entry]);
 
             // Do not mark generation as fully complete until the image is saved
             // to a durable URL and written to the gallery. This prevents a fast
@@ -1403,9 +1415,7 @@ export default function ImageStudio({
             postProcessTasks.push((async () => {
               let permUrl = rawUrl;
               try {
-                if (!isStableUrl) {
-                  permUrl = await persistImageToTOS(rawUrl);
-                }
+                permUrl = await persistImageToTOS(rawUrl);
               } catch {
                 permUrl = rawUrl;
               }
@@ -1420,13 +1430,7 @@ export default function ImageStudio({
 
               // Write to dedicated result key so the resume-poll can find the entry
               // even if the component was unmounted and the save-effect ran in between.
-              try {
-                const rd = JSON.parse(localStorage.getItem(PENDING_RESULT_KEY) || '{"entries":[]}');
-                if (!Array.isArray(rd.entries)) rd.entries = [];
-                rd.entries.push(finalEntry);
-                rd.requestId = snap.requestId;
-                localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(rd));
-              } catch {}
+              upsertPendingResults(snap.requestId, [finalEntry]);
 
               const gallerySave = await saveImageToGallery(permUrl, snap.selectedModelId, promptTrim);
               if (!gallerySave?.ok) {
@@ -1461,7 +1465,7 @@ export default function ImageStudio({
         setGenerating(false);
       }
     },
-    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, saveImageToGallery, writeRecentResults],
+    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, saveImageToGallery, upsertPendingResults, writeRecentResults],
   );
 
   const handleGenerate = () => {
@@ -1542,13 +1546,50 @@ export default function ImageStudio({
     // If the generation already completed while we were away, just restore it.
     const alreadyDone = findResults();
     if (alreadyDone.length > 0) {
-      alreadyDone.forEach(e => {
+      alreadyDone.forEach((e) => {
         setLocalHistory(prev => prev.some(p => p.id === e.id) ? prev : [e, ...prev.slice(0, 49)]);
         setCurrentImageUrl(e.url);
       });
-      try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
-      try { localStorage.removeItem(PENDING_KEY); } catch {}
-      return;
+      setActiveHistoryIdx(0);
+
+      let cancelled = false;
+      (async () => {
+        try {
+          for (const entry of alreadyDone) {
+            let permUrl = entry.url;
+            try {
+              permUrl = await persistImageToTOS(entry.url);
+            } catch {
+              permUrl = entry.url;
+            }
+            const finalEntry = { ...entry, url: permUrl };
+            if (cancelled) return;
+            setLocalHistory((prev) =>
+              prev.map((p) => (p.id === entry.id ? finalEntry : p)),
+            );
+            setCurrentImageUrl((cur) => (cur === entry.url ? permUrl : cur));
+            persistEntryToStorage(finalEntry);
+            upsertPendingResults(snap.requestId, [finalEntry]);
+            const gallerySave = await saveImageToGallery(
+              permUrl,
+              finalEntry.model,
+              finalEntry.prompt || "",
+            );
+            if (!gallerySave?.ok) {
+              console.warn("[ImageStudio] Pending gallery save skipped:", gallerySave?.reason);
+            }
+          }
+        } finally {
+          if (cancelled) return;
+          try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+          try { localStorage.removeItem(PENDING_KEY); } catch {}
+          setGenerating(false);
+        }
+      })();
+
+      return () => {
+        cancelled = true;
+      };
     }
 
     // Generation still in flight — show spinner and poll for the done signal.
@@ -1588,7 +1629,7 @@ export default function ImageStudio({
       clearInterval(intervalId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey]);
+  }, [apiKey, persistEntryToStorage, saveImageToGallery, upsertPendingResults]);
 
   const placeholderText =
     uploadedImageUrls.length > 1
