@@ -254,15 +254,20 @@ var ImageGeneration = function ImageGeneration(_ref) {
     var parentSig = (0, _utility.stableStringify)(data.formValues || {});
     var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === ((_data$selectedModel2 = data.selectedModel) === null || _data$selectedModel2 === void 0 ? void 0 : _data$selectedModel2.id);
 
+    // During a model switch the parent is already the source of truth.
+    // If we echo the stale local model back here, parent and child bounce
+    // between old/new models and the builder crashes with a render loop.
+    if (!sameModel) return;
+
     // Echo suppression: if the parent already holds exactly this state, sending
     // it back would just bounce through onDataChange ⇄ formValues forever
     // (React error #185 — the array field images_list churns its reference).
-    if (sameModel && localSig === parentSig) {
+    if (localSig === parentSig) {
       lastSentRef.current = localSig;
       return;
     }
     // Don't re-send the same payload we just sent.
-    if (sameModel && localSig === lastSentRef.current) return;
+    if (localSig === lastSentRef.current) return;
     lastSentRef.current = localSig;
     data.onDataChange(id, {
       selectedModel: selectedModel,
