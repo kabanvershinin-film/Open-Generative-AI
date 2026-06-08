@@ -52,46 +52,43 @@ var ImageGeneration = function ImageGeneration(_ref) {
     var _data$nodeSchemas;
     return (_data$nodeSchemas = data.nodeSchemas) !== null && _data$nodeSchemas !== void 0 && (_data$nodeSchemas = _data$nodeSchemas.categories) !== null && _data$nodeSchemas !== void 0 && (_data$nodeSchemas = _data$nodeSchemas.image) !== null && _data$nodeSchemas !== void 0 && _data$nodeSchemas.models ? Object.values(data.nodeSchemas.categories.image.models) : [];
   }, [data.nodeSchemas]);
-  var _useState = (0, _react.useState)(data.selectedModel || models[1] || models[0] || {}),
+  var selectedModel = data.selectedModel || models[1] || models[0] || {};
+  var _useState = (0, _react.useState)({}),
     _useState2 = _slicedToArray(_useState, 2),
-    selectedModel = _useState2[0],
-    setSelectedModel = _useState2[1];
+    connectedInputs = _useState2[0],
+    setConnectedInputs = _useState2[1];
   var _useState3 = (0, _react.useState)({}),
     _useState4 = _slicedToArray(_useState3, 2),
-    connectedInputs = _useState4[0],
-    setConnectedInputs = _useState4[1];
-  var _useState5 = (0, _react.useState)({}),
+    connectedOutputs = _useState4[0],
+    setConnectedOutputs = _useState4[1];
+  var _useState5 = (0, _react.useState)(data.formValues || {}),
     _useState6 = _slicedToArray(_useState5, 2),
-    connectedOutputs = _useState6[0],
-    setConnectedOutputs = _useState6[1];
-  var _useState7 = (0, _react.useState)(data.formValues || {}),
+    formValues = _useState6[0],
+    setFormValues = _useState6[1];
+  var _useState7 = (0, _react.useState)(0),
     _useState8 = _slicedToArray(_useState7, 2),
-    formValues = _useState8[0],
-    setFormValues = _useState8[1];
+    dropDown = _useState8[0],
+    setDropDown = _useState8[1];
   var _useState9 = (0, _react.useState)(0),
     _useState0 = _slicedToArray(_useState9, 2),
-    dropDown = _useState0[0],
-    setDropDown = _useState0[1];
-  var _useState1 = (0, _react.useState)(0),
+    loading = _useState0[0],
+    setLoading = _useState0[1];
+  var _useState1 = (0, _react.useState)(-1),
     _useState10 = _slicedToArray(_useState1, 2),
-    loading = _useState10[0],
-    setLoading = _useState10[1];
-  var _useState11 = (0, _react.useState)(-1),
+    currentHistoryIndex = _useState10[0],
+    setCurrentHistoryIndex = _useState10[1];
+  var _useState11 = (0, _react.useState)(0),
     _useState12 = _slicedToArray(_useState11, 2),
-    currentHistoryIndex = _useState12[0],
-    setCurrentHistoryIndex = _useState12[1];
-  var _useState13 = (0, _react.useState)(0),
-    _useState14 = _slicedToArray(_useState13, 2),
-    currentImageIndex = _useState14[0],
-    setCurrentImageIndex = _useState14[1];
-  var _useState15 = (0, _react.useState)({
+    currentImageIndex = _useState12[0],
+    setCurrentImageIndex = _useState12[1];
+  var _useState13 = (0, _react.useState)({
       width: 0,
       height: 0,
       size: null
     }),
-    _useState16 = _slicedToArray(_useState15, 2),
-    imageMetadata = _useState16[0],
-    setImageMetadata = _useState16[1];
+    _useState14 = _slicedToArray(_useState13, 2),
+    imageMetadata = _useState14[0],
+    setImageMetadata = _useState14[1];
   var outputHistory = data.outputHistory || [];
   var prevHistoryLengthRef = (0, _react.useRef)(outputHistory.length);
   var workflowId = (0, _WorkflowStore.getWorkflowId)();
@@ -203,9 +200,6 @@ var ImageGeneration = function ImageGeneration(_ref) {
     setLoading(0);
   }, [selectedModelId]);
   (0, _react.useEffect)(function () {
-    if ((data.selectedModel === null || data.selectedModel === void 0 ? void 0 : data.selectedModel.id) && data.selectedModel.id !== selectedModelId) {
-      setSelectedModel(data.selectedModel);
-    }
     if (data.triggerRun) {
       handleRunSingleNode();
       data.onDataChange(id, {
@@ -222,7 +216,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
       }
     }
     prevHistoryLengthRef.current = data.outputHistory ? data.outputHistory.length : 0;
-  }, [data.selectedModel, data.triggerRun, data.outputHistory, selectedModelId]);
+  }, [data.triggerRun, data.outputHistory]);
   (0, _react.useEffect)(function () {
     updateNodeInternals(id);
   }, [formValues, id]);
