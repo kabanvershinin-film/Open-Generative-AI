@@ -1233,21 +1233,18 @@ export default function ImageStudio({
     }
   }, [sanitizeHistoryForStorage, writePersistentState]);
 
-  const saveImageToGallery = useCallback((url, model, promptText) => {
+  const saveImageToGallery = useCallback(async (url, model, promptText) => {
     if (!url) return;
-    fetch("/api/gallery", {
+    const r = await fetch("/api/gallery", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       keepalive: true,
       body: JSON.stringify({ url, type: "image", model, prompt: promptText }),
-    })
-      .then(async (r) => {
-        if (!r.ok) {
-          const err = await r.json().catch(() => ({}));
-          toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
-        }
-      })
-      .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}));
+      throw new Error(err.error || String(r.status));
+    }
   }, []);
 
   // ── View state ─────────────────────────────────────
@@ -1325,12 +1322,13 @@ export default function ImageStudio({
         );
 
         let added = 0;
-        let tosCompleted = 0;
+        const postProcessTasks = [];
         results.forEach((res) => {
           if (res && res.url) {
             added++;
             const id = res.id || Math.random().toString(36).substring(7);
             const rawUrl = res.url;
+            const isStableUrl = typeof rawUrl === "string" && /^https?:\/\//i.test(rawUrl);
             const entry = {
               id,
               url: rawUrl,
@@ -1342,23 +1340,24 @@ export default function ImageStudio({
             // Show the result IMMEDIATELY (raw url / base64) — don't make the user
             // wait for the TOS upload. Display is in-memory only at this point.
             addToHistory(entry);
-            // Kick off server-side persistence immediately so a fast page refresh
-            // still finds the fresh image in /api/gallery after reload.
-            saveImageToGallery(rawUrl, snap.selectedModelId, promptTrim);
-            // Persist any non-data URL immediately so reload can restore it even
-            // before the background TOS mirroring finishes.
-            if (typeof rawUrl === "string" && !rawUrl.startsWith("data:")) {
+            // Persist stable URLs immediately so a refresh can restore them even
+            // before TOS mirroring finishes.
+            if (isStableUrl) {
               persistEntryToStorage(entry);
             }
 
-            // Mirror to TOS in the background, then swap the raw url for the
-            // permanent one, persist to localStorage and notify the parent.
-            // base64 is never written to localStorage (it would blow the quota).
-            (async () => {
+            // Do not mark generation as fully complete until the image is saved
+            // to a durable URL and written to the gallery. This prevents a fast
+            // page refresh from losing freshly generated images.
+            postProcessTasks.push((async () => {
               let permUrl = rawUrl;
               try {
-                permUrl = await persistImageToTOS(rawUrl);
-              } catch {}
+                if (!isStableUrl) {
+                  permUrl = await persistImageToTOS(rawUrl);
+                }
+              } catch {
+                permUrl = rawUrl;
+              }
               const finalEntry = { ...entry, url: permUrl };
               if (permUrl !== rawUrl) {
                 setCurrentImageUrl((cur) => (cur === rawUrl ? permUrl : cur));
@@ -1378,23 +1377,14 @@ export default function ImageStudio({
                 localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(rd));
               } catch {}
 
-              // Remove PENDING_KEY only after every TOS upload and localStorage write
-              // is done — the resume-poll watches for its removal as the "done" signal.
-              tosCompleted++;
-              if (tosCompleted >= added) {
-                try { localStorage.removeItem(PENDING_KEY); } catch {}
-              }
-
-              if (permUrl !== rawUrl) {
-                saveImageToGallery(permUrl, snap.selectedModelId, promptTrim);
-              }
+              await saveImageToGallery(permUrl, snap.selectedModelId, promptTrim);
               onGenerationComplete?.({
                 url: permUrl,
                 model: snap.selectedModelId,
                 prompt: promptTrim,
                 type: "image",
               });
-            })();
+            })());
           }
         });
 
@@ -1404,6 +1394,9 @@ export default function ImageStudio({
           try { localStorage.removeItem(PENDING_KEY); } catch {}
           throw new Error("Изображение не получено. Попробуйте другую модель.");
         }
+
+        await Promise.all(postProcessTasks);
+        try { localStorage.removeItem(PENDING_KEY); } catch {}
       } catch (e) {
         console.error("[ImageStudio] Generation failed:", e);
         setGenerateError(e.message.slice(0, 120));
