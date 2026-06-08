@@ -1,14 +1,16 @@
 // Payment backend ported from creator-club (Точка Bank acquiring + Supabase).
 //   POST /api/payments/create        — create a top-up payment, returns paymentUrl
 //   POST /api/payments/verify        — verify one order, credit balance (atomic)
+//   POST /api/payments/webhook       — provider callback / server-side finalize
 //   GET  /api/payments/poll-pending  — cron: sweep pending payments, credit paid
 //
 // Env vars (add to Vercel — same values as creator-club):
 //   SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 //   TOCHKA_TOKEN, TOCHKA_CUSTOMER_CODE, PUBLIC_BASE_URL, CRON_SECRET
+//   TOCHKA_WEBHOOK_SECRET  (optional: protect /api/payments/webhook)
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getBalance } from '../../_lib/balance';
+import { creditBalance, getBalance } from '../../_lib/balance';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hsyuvhvjrjxdpvuzivvv.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_9bCiI4pZI45ObKbC2W1xvw_bscZtpFJ';
@@ -18,6 +20,7 @@ const TOCHKA_BASE_URL = 'https://enter.tochka.com/uapi';
 const TOCHKA_CUSTOMER_CODE = process.env.TOCHKA_CUSTOMER_CODE || '305723470';
 const TOCHKA_TOKEN = process.env.TOCHKA_TOKEN?.trim();
 const CRON_SECRET = process.env.CRON_SECRET;
+const TOCHKA_WEBHOOK_SECRET = process.env.TOCHKA_WEBHOOK_SECRET?.trim();
 
 function anon() { return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { persistSession: false } }); }
 function admin() { return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } }); }
@@ -31,6 +34,117 @@ async function getUser(request) {
         if (error || !data?.user) return null;
         return data.user;
     } catch { return null; }
+}
+
+function isPaidStatus(status) {
+    return ['APPROVED', 'PAID', 'CONFIRMED'].includes((status || '').toUpperCase());
+}
+
+function isFailedStatus(status) {
+    return ['REJECTED', 'CANCELLED', 'EXPIRED', 'FAILED'].includes((status || '').toUpperCase());
+}
+
+async function fetchOperationStatus(operationId) {
+    const tochkaResp = await fetch(
+        `${TOCHKA_BASE_URL}/acquiring/v1.0/payments/${encodeURIComponent(operationId)}`,
+        { headers: { 'Authorization': `Bearer ${TOCHKA_TOKEN}`, 'CustomerCode': TOCHKA_CUSTOMER_CODE } }
+    );
+    const tochkaData = await tochkaResp.json();
+    const op = tochkaData?.Data?.Operation?.[0] || tochkaData?.Data;
+    return { status: (op?.status || '').toUpperCase(), raw: tochkaData };
+}
+
+async function finalizePayment(db, payment, meta = {}) {
+    if (!payment) return { status: 'missing' };
+    if (payment.status === 'paid') return { status: 'paid', credited: false };
+    if (!payment.operation_id) return { status: 'error', error: 'operation_id missing' };
+
+    const { status } = await fetchOperationStatus(payment.operation_id);
+    if (isPaidStatus(status)) {
+        const { data: claimed, error: claimErr } = await db
+            .from('payments')
+            .update({ status: 'paid', paid_at: new Date().toISOString() })
+            .eq('id', payment.id)
+            .neq('status', 'paid')
+            .select();
+        if (claimErr) return { status: 'error', error: claimErr.message };
+        if (!claimed || claimed.length === 0) return { status: 'paid', credited: false };
+
+        const credited = await creditBalance(payment.user_id, Number(payment.amount), 'payment', {
+            orderId: payment.id,
+            operationId: payment.operation_id,
+            ...meta,
+        });
+        if (!credited.ok) {
+            await db.from('payments')
+                .update({ status: 'pending', paid_at: null })
+                .eq('id', payment.id);
+            return { status: 'paid', credited: false };
+        }
+        return { status: 'paid', credited: true, balance: credited.balance };
+    }
+
+    if (isFailedStatus(status)) {
+        await db.from('payments').update({ status: 'failed' }).eq('id', payment.id);
+        return { status: 'failed' };
+    }
+    return { status: 'pending', tochkaStatus: status };
+}
+
+function extractLookup(payload) {
+    const direct = payload && typeof payload === 'object' ? payload : {};
+    const data = direct.Data && typeof direct.Data === 'object' ? direct.Data : {};
+    const operation = Array.isArray(data.Operation) ? (data.Operation[0] || {}) : {};
+
+    const orderId =
+        direct.orderId ||
+        direct.order_id ||
+        direct.paymentLinkId ||
+        direct.payment_link_id ||
+        data.orderId ||
+        data.order_id ||
+        data.paymentLinkId ||
+        data.payment_link_id ||
+        operation.orderId ||
+        operation.order_id ||
+        operation.paymentLinkId ||
+        operation.payment_link_id ||
+        null;
+
+    const operationId =
+        direct.operationId ||
+        direct.operation_id ||
+        data.operationId ||
+        data.operation_id ||
+        operation.operationId ||
+        operation.operation_id ||
+        null;
+
+    return {
+        orderId: orderId ? String(orderId) : null,
+        operationId: operationId ? String(operationId) : null,
+    };
+}
+
+function isWebhookAuthorized(request) {
+    if (!TOCHKA_WEBHOOK_SECRET) return true;
+    const auth = request.headers.get('authorization') || '';
+    const bearer = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+    const headerSecret = request.headers.get('x-webhook-secret') || request.headers.get('x-tochka-webhook-secret') || '';
+    const querySecret = request.nextUrl.searchParams.get('secret') || '';
+    return [bearer, headerSecret, querySecret].some((value) => value === TOCHKA_WEBHOOK_SECRET);
+}
+
+async function parseWebhookPayload(request) {
+    const raw = await request.text().catch(() => '');
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch {
+        const params = new URLSearchParams(raw);
+        const entries = Object.fromEntries(params.entries());
+        return Object.keys(entries).length ? entries : null;
+    }
 }
 
 async function createPayment(request) {
@@ -111,40 +225,50 @@ async function verifyPayment(request) {
         const { data: payment, error: selErr } = await db.from('payments').select('*').eq('id', orderId).single();
         if (selErr || !payment) return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
         if (payment.user_id !== user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-        if (payment.status === 'paid') return NextResponse.json({ status: 'paid', credited: false });
-        if (!payment.operation_id) return NextResponse.json({ error: 'operation_id missing' }, { status: 500 });
-
-        const tochkaResp = await fetch(
-            `${TOCHKA_BASE_URL}/acquiring/v1.0/payments/${encodeURIComponent(payment.operation_id)}`,
-            { headers: { 'Authorization': `Bearer ${TOCHKA_TOKEN}`, 'CustomerCode': TOCHKA_CUSTOMER_CODE } }
-        );
-        const tochkaData = await tochkaResp.json();
-        const op = tochkaData?.Data?.Operation?.[0] || tochkaData?.Data;
-        const status = (op?.status || '').toUpperCase();
-
-        if (status === 'APPROVED' || status === 'PAID' || status === 'CONFIRMED') {
-            // Atomic claim: pending → paid only if still pending (no double credit)
-            const { data: claimed, error: claimErr } = await db
-                .from('payments')
-                .update({ status: 'paid', paid_at: new Date().toISOString() })
-                .eq('id', orderId).neq('status', 'paid').select();
-            if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 });
-            if (!claimed || claimed.length === 0) return NextResponse.json({ status: 'paid', credited: false });
-
-            const { data: profile } = await db.from('profiles').select('balance').eq('id', user.id).single();
-            const newBalance = Number(profile?.balance || 0) + Number(payment.amount);
-            await db.from('profiles').update({ balance: newBalance }).eq('id', user.id);
-            return NextResponse.json({ status: 'paid', credited: true, balance: newBalance });
-        }
-        return NextResponse.json({ status: 'pending', tochkaStatus: status });
+        const result = await finalizePayment(db, payment, { source: 'verify' });
+        if (result.status === 'error') return NextResponse.json({ error: result.error }, { status: 500 });
+        return NextResponse.json(result);
     } catch (err) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
 
+async function paymentWebhook(request) {
+    if (!SUPABASE_SERVICE_ROLE_KEY) return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY missing' }, { status: 500 });
+    if (!isWebhookAuthorized(request)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const payload = await parseWebhookPayload(request);
+    if (!payload || typeof payload !== 'object') {
+        return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 });
+    }
+
+    const { orderId, operationId } = extractLookup(payload);
+    if (!orderId && !operationId) {
+        return NextResponse.json({ accepted: true, ignored: true, reason: 'No orderId/operationId in payload' });
+    }
+
+    const db = admin();
+    let query = db.from('payments').select('*').maybeSingle();
+    query = orderId ? query.eq('id', orderId) : query.eq('operation_id', operationId);
+    const { data: payment, error } = await query;
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (!payment) {
+        return NextResponse.json({ accepted: true, ignored: true, reason: 'Payment not found', orderId, operationId });
+    }
+
+    const result = await finalizePayment(db, payment, {
+        source: 'webhook',
+        webhookOrderId: orderId,
+        webhookOperationId: operationId,
+    });
+    if (result.status === 'error') return NextResponse.json({ error: result.error }, { status: 500 });
+    return NextResponse.json({ accepted: true, paymentId: payment.id, ...result });
+}
+
 async function pollPending(request) {
     const auth = request.headers.get('authorization') || '';
-    if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+    const isVercelCron = request.headers.get('x-vercel-cron') === '1';
+    if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}` && !isVercelCron) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     if (!TOCHKA_TOKEN || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -164,26 +288,8 @@ async function pollPending(request) {
     let credited = 0;
     for (const p of pending) {
         try {
-            const resp = await fetch(
-                `${TOCHKA_BASE_URL}/acquiring/v1.0/payments/${encodeURIComponent(p.operation_id)}`,
-                { headers: { 'Authorization': `Bearer ${TOCHKA_TOKEN}`, 'CustomerCode': TOCHKA_CUSTOMER_CODE } }
-            );
-            const data = await resp.json();
-            const op = data?.Data?.Operation?.[0] || data?.Data;
-            const status = (op?.status || '').toUpperCase();
-            if (status === 'APPROVED' || status === 'PAID' || status === 'CONFIRMED') {
-                const { data: claimed } = await db.from('payments')
-                    .update({ status: 'paid', paid_at: new Date().toISOString() })
-                    .eq('id', p.id).neq('status', 'paid').select();
-                if (claimed && claimed.length) {
-                    const { data: profile } = await db.from('profiles').select('balance').eq('id', p.user_id).single();
-                    const newBalance = Number(profile?.balance || 0) + Number(p.amount);
-                    await db.from('profiles').update({ balance: newBalance }).eq('id', p.user_id);
-                    credited++;
-                }
-            } else if (['REJECTED', 'CANCELLED', 'EXPIRED', 'FAILED'].includes(status)) {
-                await db.from('payments').update({ status: 'failed' }).eq('id', p.id);
-            }
+            const result = await finalizePayment(db, p, { source: 'cron' });
+            if (result.credited) credited++;
         } catch { /* skip */ }
     }
     return NextResponse.json({ checked: pending.length, credited });
@@ -194,6 +300,7 @@ export async function POST(request, { params }) {
     const a = action[0];
     if (a === 'create') return createPayment(request);
     if (a === 'verify') return verifyPayment(request);
+    if (a === 'webhook') return paymentWebhook(request);
     if (a === 'poll-pending') return pollPending(request);
     return NextResponse.json({ error: 'Unknown action' }, { status: 404 });
 }
