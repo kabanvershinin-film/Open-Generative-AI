@@ -104,7 +104,8 @@ var ImageGeneration = function ImageGeneration(_ref) {
   var edges = (0, _reactflow.useStore)(function (state) {
     return state.edges;
   });
-  var properties = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori = nodeSchemas.categories) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.image) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.models) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori[selectedModel.id]) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.input_schema) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.schemas) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.input_data) === null || _nodeSchemas$categori === void 0 ? void 0 : _nodeSchemas$categori.properties;
+  var selectedModelId = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "";
+  var properties = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori = nodeSchemas.categories) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.image) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.models) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori[selectedModelId]) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.input_schema) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.schemas) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.input_data) === null || _nodeSchemas$categori === void 0 ? void 0 : _nodeSchemas$categori.properties;
   var _useGenerationCost = (0, _useGenerationCost2.useGenerationCost)(selectedModel, formValues),
     generationCost = _useGenerationCost.generationCost,
     isRefreshingCost = _useGenerationCost.isRefreshingCost;
@@ -190,7 +191,9 @@ var ImageGeneration = function ImageGeneration(_ref) {
       var _data$formValues;
       if (((_data$formValues = data.formValues) === null || _data$formValues === void 0 ? void 0 : _data$formValues[k]) !== undefined) merged[k] = data.formValues[k];
     });
-    setFormValues(merged);
+    setFormValues(function (prev) {
+      return (0, _utility.stableStringify)(prev) === (0, _utility.stableStringify)(merged) ? prev : merged;
+    });
   };
   (0, _react.useEffect)(function () {
     setLoading(1);
@@ -198,9 +201,9 @@ var ImageGeneration = function ImageGeneration(_ref) {
       addFormValuesInTaskData(properties);
     }
     setLoading(0);
-  }, [selectedModel]);
+  }, [selectedModelId]);
   (0, _react.useEffect)(function () {
-    if (data.selectedModel) {
+    if ((data.selectedModel === null || data.selectedModel === void 0 ? void 0 : data.selectedModel.id) && data.selectedModel.id !== selectedModelId) {
       setSelectedModel(data.selectedModel);
     }
     if (data.triggerRun) {
@@ -219,7 +222,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
       }
     }
     prevHistoryLengthRef.current = data.outputHistory ? data.outputHistory.length : 0;
-  }, [data.selectedModel, data.triggerRun, data.outputHistory]);
+  }, [data.selectedModel, data.triggerRun, data.outputHistory, selectedModelId]);
   (0, _react.useEffect)(function () {
     updateNodeInternals(id);
   }, [formValues, id]);
@@ -360,8 +363,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
           });
           setCurrentHistoryIndex(newHistory.length - 1);
           setCurrentImageIndex(0);
-          // Gallery + TOS save is done server-side (single writer) to avoid
-          // clobbering the shared gallery index with a concurrent client write.
+          finalizeImage(val);
           clearInterval(interval);
         }
         if (latest.status === "failed") {
@@ -453,14 +455,15 @@ var ImageGeneration = function ImageGeneration(_ref) {
             _lt = _nd && _nd[_nd.length - 1];
             if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) {
               _o = _lt.result.outputs;
+              var _val = _o[0] && _o[0].value || "";
               data && data.onDataChange && data.onDataChange(id, {
                 outputs: _o,
-                resultUrl: _o[0] && _o[0].value || "",
+                resultUrl: _val,
                 isLoading: false,
                 errorMsg: null,
                 outputHistory: (data.outputHistory || []).concat([_lt])
               });
-              // Gallery + TOS save is done server-side (single writer).
+              finalizeImage(_val);
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,
