@@ -760,6 +760,7 @@ export default function ImageStudio({
 }) {
   const PERSIST_KEY = "mf_image_studio_persistent";
   const PERSIST_REFS_KEY = "mf_image_studio_refs";
+  const PERSIST_RECENT_RESULTS_KEY = "mf_image_studio_recent_results";
   const PENDING_KEY = "mf_image_studio_pending";
   const PENDING_RESULT_KEY = "mf_image_studio_pending_result";
 
@@ -809,6 +810,29 @@ export default function ImageStudio({
           return false;
         }
       }
+    }
+  }, []);
+
+  const writeRecentResults = useCallback((entries) => {
+    try {
+      const sanitized = sanitizeHistoryForStorage(entries).slice(0, 12);
+      localStorage.setItem(
+        PERSIST_RECENT_RESULTS_KEY,
+        JSON.stringify({ entries: sanitized, ts: Date.now() }),
+      );
+    } catch (err) {
+      console.warn("Failed to save recent ImageStudio results:", err?.message);
+    }
+  }, [sanitizeHistoryForStorage]);
+
+  const readRecentResults = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(PERSIST_RECENT_RESULTS_KEY);
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      return Array.isArray(data.entries) ? data.entries : [];
+    } catch {
+      return [];
     }
   }, []);
 
@@ -938,6 +962,7 @@ export default function ImageStudio({
     try {
       const stored = localStorage.getItem(PERSIST_KEY);
       const refsStored = localStorage.getItem(PERSIST_REFS_KEY);
+      const recentStored = readRecentResults();
       const refsData = refsStored ? JSON.parse(refsStored) : {};
       if (stored) {
         const data = JSON.parse(stored);
@@ -953,13 +978,16 @@ export default function ImageStudio({
         if (data.batchSize) setBatchSize(data.batchSize);
         if (data.localHistory) setLocalHistory(data.localHistory);
       }
+      if (recentStored.length > 0) {
+        setLocalHistory((prev) => mergeHistoryEntries(prev, recentStored));
+      }
       if (Array.isArray(refsData.uploadedImageUrls)) {
         setUploadedImageUrls(refsData.uploadedImageUrls);
       }
     } catch (err) {
       console.warn("Failed to load ImageStudio persistence:", err);
     }
-  }, []);
+  }, [mergeHistoryEntries, readRecentResults]);
 
   // ── Restore image history from server gallery ─────────────────────────────
   useEffect(() => {
@@ -1042,6 +1070,21 @@ export default function ImageStudio({
     writePersistentState,
     writeRefsState,
   ]);
+
+  // Safety net: if the UI history gets cleared unexpectedly after a successful
+  // generation, restore the most recent durable results from a dedicated cache.
+  useEffect(() => {
+    if (historyItems !== undefined) return;
+    if (generating) return;
+    if (localHistory.length > 0) return;
+    const recent = readRecentResults();
+    if (recent.length === 0) return;
+    setLocalHistory((prev) => (prev.length > 0 ? prev : mergeHistoryEntries(recent, prev)));
+    if (!currentImageUrl && recent[0]?.url) {
+      setCurrentImageUrl(recent[0].url);
+      setActiveHistoryIdx(0);
+    }
+  }, [currentImageUrl, generating, historyItems, localHistory.length, mergeHistoryEntries, readRecentResults]);
 
   const processDroppedImages = async (files) => {
     const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -1228,10 +1271,11 @@ export default function ImageStudio({
       if (prevHistory.some((e) => e.id === entry.id)) return;
       data.localHistory = sanitizeHistoryForStorage([entry, ...prevHistory]);
       writePersistentState(data);
+      writeRecentResults([entry, ...prevHistory]);
     } catch (err) {
       console.warn("persistEntryToStorage failed:", err?.message);
     }
-  }, [sanitizeHistoryForStorage, writePersistentState]);
+  }, [sanitizeHistoryForStorage, writePersistentState, writeRecentResults]);
 
   const saveImageToGallery = useCallback(async (url, model, promptText) => {
     if (!url) return { ok: false, reason: "missing-url" };
@@ -1349,6 +1393,8 @@ export default function ImageStudio({
             // before TOS mirroring finishes.
             if (isStableUrl) {
               persistEntryToStorage(entry);
+            } else {
+              writeRecentResults([entry, ...history]);
             }
 
             // Do not mark generation as fully complete until the image is saved
@@ -1415,7 +1461,7 @@ export default function ImageStudio({
         setGenerating(false);
       }
     },
-    [apiKey, addToHistory, onGenerationComplete, persistEntryToStorage, saveImageToGallery],
+    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, saveImageToGallery, writeRecentResults],
   );
 
   const handleGenerate = () => {
