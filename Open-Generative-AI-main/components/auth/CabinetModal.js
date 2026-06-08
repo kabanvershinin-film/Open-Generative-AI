@@ -55,6 +55,7 @@ export default function CabinetModal() {
     const [transactions, setTransactions] = useState([]);
     const [transactionsLoading, setTransactionsLoading] = useState(false);
     const [transactionsLoadedOnce, setTransactionsLoadedOnce] = useState(false);
+    const paymentReturnAttemptedRef = useRef(false);
     const modalRef = useRef(null);
 
     const handleClose = useCallback(() => {
@@ -90,10 +91,13 @@ export default function CabinetModal() {
         const orderId = currentUrl.searchParams.get('order');
         if (!orderId) return;
 
+        let shouldScrub = false;
         try {
             setCabinetOpen(true);
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) return;
+            paymentReturnAttemptedRef.current = true;
+            shouldScrub = true;
 
             for (let attempt = 0; attempt < 10; attempt += 1) {
                 const response = await fetch('/api/payments/verify', {
@@ -116,15 +120,23 @@ export default function CabinetModal() {
                 await new Promise((resolve) => setTimeout(resolve, 2000));
             }
         } finally {
-            currentUrl.searchParams.delete('payment');
-            currentUrl.searchParams.delete('order');
-            window.history.replaceState({}, '', currentUrl.toString());
+            if (shouldScrub && paymentReturnAttemptedRef.current) {
+                const nextUrl = new URL(window.location.href);
+                nextUrl.searchParams.delete('payment');
+                nextUrl.searchParams.delete('order');
+                window.history.replaceState({}, '', nextUrl.toString());
+            }
         }
     }, [fetchTransactions, refreshBalance, setCabinetOpen]);
 
     useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.get('payment') !== 'success') return;
+        if (!currentUrl.searchParams.get('order')) return;
+        if (!user) return;
         verifyPaymentReturn();
-    }, [verifyPaymentReturn]);
+    }, [user, verifyPaymentReturn]);
 
     useEffect(() => {
         if (!cabinetOpen) return;

@@ -1,5 +1,5 @@
 // Supabase-backed user balance: identify the user from a request and
-// atomically deduct / refund their ruble balance.
+// atomically deduct / credit / refund their ruble balance.
 //
 // Reuses the same Supabase project as creator-club (profiles.balance in RUB).
 // Required env vars (add to Vercel — same values as creator-club):
@@ -122,6 +122,35 @@ async function deduct(userId, amount, reason = 'Генерация', meta = null
         if (updErr) return { ok: false, reason: 'error', error: updErr.message };
         if (updated && updated.length) {
             logTxn(userId, -amount, reason, meta);
+            return { ok: true, balance: newBalance };
+        }
+        // Someone changed the balance between read and write — retry.
+    }
+    return { ok: false, reason: 'race' };
+}
+
+// Atomic compare-and-swap credit. Mirrors `deduct` so top-ups stay retryable
+// under concurrent balance changes.
+async function creditBalance(userId, amount, reason = 'Пополнение', meta = null) {
+    if (amount <= 0) return { ok: true, balance: null };
+    const db = admin();
+    for (let attempt = 0; attempt < 4; attempt++) {
+        const { data: profile, error: selErr } = await db
+            .from('profiles').select('balance').eq('id', userId).single();
+        if (selErr || !profile) return { ok: false, reason: 'error', error: selErr?.message };
+        const balance = Number(profile.balance || 0);
+        const newBalance = round2(balance + amount);
+
+        // CAS: only write if balance is still what we just read.
+        const { data: updated, error: updErr } = await db
+            .from('profiles')
+            .update({ balance: newBalance })
+            .eq('id', userId)
+            .eq('balance', balance)
+            .select();
+        if (updErr) return { ok: false, reason: 'error', error: updErr.message };
+        if (updated && updated.length) {
+            logTxn(userId, amount, reason, meta);
             return { ok: true, balance: newBalance };
         }
         // Someone changed the balance between read and write — retry.
@@ -285,7 +314,7 @@ async function getBalance(request) {
 }
 
 export {
-    BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund,
+    BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, creditBalance, refund,
     listTransactions, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData,
     chargeForTask, isAdminUser, getEmailsForIds,
 };
