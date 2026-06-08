@@ -3152,7 +3152,7 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex items-center justify-between cursor-pointer group"
   }, /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-gray-300 font-medium"
-  }, "Mark as Output"), /*#__PURE__*/_react["default"].createElement("div", {
+  }, "Сделать выходом"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "relative"
   }, /*#__PURE__*/_react["default"].createElement("input", {
     type: "checkbox",

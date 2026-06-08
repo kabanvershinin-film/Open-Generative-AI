@@ -2833,7 +2833,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             <div className="p-4 flex flex-col gap-3">
               {/* Make Output Toggle */}
               <label className="flex items-center justify-between cursor-pointer group">
-                <span className="text-xs text-gray-300 font-medium">Mark as Output</span>
+                <span className="text-xs text-gray-300 font-medium">Сделать выходом</span>
                 <div className="relative">
                   <input
                     type="checkbox"
