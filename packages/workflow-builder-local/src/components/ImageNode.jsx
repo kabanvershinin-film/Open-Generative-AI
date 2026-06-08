@@ -48,7 +48,8 @@ const ImageGeneration = ({ id, data, selected }) => {
   const { setNodes, setEdges } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const edges = useStore((state) => state.edges);
-  const properties = nodeSchemas?.categories?.image?.models?.[selectedModel.id]?.input_schema?.schemas?.input_data?.properties;
+  const selectedModelId = selectedModel?.id || "";
+  const properties = nodeSchemas?.categories?.image?.models?.[selectedModelId]?.input_schema?.schemas?.input_data?.properties;
   const { generationCost, isRefreshingCost } = useGenerationCost(selectedModel, formValues);
   
   useEffect(() => {
@@ -130,7 +131,9 @@ const ImageGeneration = ({ id, data, selected }) => {
       if (data.formValues?.[k] !== undefined) merged[k] = data.formValues[k];
     });
 
-    setFormValues(merged);
+    setFormValues((prev) => (
+      stableStringify(prev) === stableStringify(merged) ? prev : merged
+    ));
   };
 
   useEffect(() => {
@@ -139,10 +142,10 @@ const ImageGeneration = ({ id, data, selected }) => {
       addFormValuesInTaskData(properties);
     }
     setLoading(0);
-  }, [selectedModel]);
+  }, [selectedModelId]);
 
   useEffect(() => {
-    if (data.selectedModel) {
+    if (data.selectedModel?.id && data.selectedModel.id !== selectedModelId) {
       setSelectedModel(data.selectedModel);
     }
 
@@ -161,7 +164,7 @@ const ImageGeneration = ({ id, data, selected }) => {
       }
     }
     prevHistoryLengthRef.current = data.outputHistory ? data.outputHistory.length : 0;
-  }, [data.selectedModel, data.triggerRun, data.outputHistory]);
+  }, [data.selectedModel, data.triggerRun, data.outputHistory, selectedModelId]);
 
   useEffect(() => {
     updateNodeInternals(id);
