@@ -188,6 +188,9 @@ var formatName = function formatName(id) {
     return w.charAt(0).toUpperCase() + w.slice(1);
   }).join(' ');
 };
+var formatNodeTitle = function formatNodeTitle(id) {
+  return id.replace(/(\D+)(\d+)/, "$1 $2").replace(/^text/i, "Текст").replace(/^image/i, "Изображение").replace(/^video/i, "Видео").replace(/^audio/i, "Аудио").replace(/^api/i, "API").replace(/^character/i, "Персонаж").replace(/^concat/i, "Объединение").replace(/^vidConcat/i, "Видеообъединение");
+};
 var getModelObjStatic = function getModelObjStatic(category, modelId, nodeSchemas) {
   var _nodeSchemas$categori2;
   // Seedance Промпт is a custom node (text-passthrough under the hood) with no
@@ -2886,7 +2889,7 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex flex-col gap-4 h-full w-full"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-base font-semibold text-center text-white mt-6 tracking-tight"
-  }, "Properties"), /*#__PURE__*/_react["default"].createElement("h1", {
+  }, "Свойства"), /*#__PURE__*/_react["default"].createElement("h1", {
     className: "flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800/50 border border-white/5 rounded-xl px-3 py-2 transition-all"
   }, selectedNode.id.startsWith("text") ? /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, {
     className: "text-blue-400"
@@ -2898,9 +2901,7 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "text-yellow-400"
   }) : /*#__PURE__*/_react["default"].createElement(_ri.RiInputMethodLine, {
     className: "text-purple-400"
-  }), selectedNode.id.replace(/(\D+)(\d+)/, "$1 $2").replace(/^./, function (c) {
-    return c.toUpperCase();
-  })), /*#__PURE__*/_react["default"].createElement("div", {
+  }), formatNodeTitle(selectedNode.id)), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-4 w-full h-full overflow-y-auto px-4 custom-scrollbar-thin"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-4 w-full h-full"
@@ -2908,7 +2909,7 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex flex-col gap-1 relative w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-[10px] font-bold text-zinc-500 text-start px-1"
-  }, "Model"), /*#__PURE__*/_react["default"].createElement("div", {
+  }, "Модель"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg"
   }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data3 = selectedNode.data) === null || _selectedNode$data3 === void 0 || (_selectedNode$data3 = _selectedNode$data3.selectedModel) === null || _selectedNode$data3 === void 0 ? void 0 : _selectedNode$data3.name) || "")), selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data6 = selectedNode.data) !== null && _selectedNode$data6 !== void 0 && _selectedNode$data6.selectedModel ? function (_nodeSchemas$categori10, _selectedNode$data7, _fullSchema$schemas, _selectedNode$data8, _selectedNode$data9, _selectedNode$data0, _selectedNode$data1) {
     var nodeType = selectedNode.id.startsWith("text") ? "text" : selectedNode.id.startsWith("image") ? "image" : selectedNode.id.startsWith("video") ? "video" : selectedNode.id.startsWith("audio") ? "audio" : "utility";
@@ -2920,7 +2921,7 @@ var NodeFlow = function NodeFlow(_ref) {
       className: "w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"
     }), /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-xs text-white"
-    }, "Fetching model...")) : selectedNode.type === "apiNode" ? /*#__PURE__*/_react["default"].createElement("div", {
+    }, "Загрузка модели...")) : selectedNode.type === "apiNode" ? /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col gap-2 w-full h-full relative pt-2"
     }, /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
@@ -2932,7 +2933,7 @@ var NodeFlow = function NodeFlow(_ref) {
       className: "absolute top-0 z-10 text-[10px] font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 group disabled:cursor-not-allowed rounded-full text-white bg-blue-600 px-3 py-1 border border-blue-500/50 hover:bg-blue-500 transition-all self-end shadow-lg shadow-blue-900/20"
     }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data0 = selectedNode.data) === null || _selectedNode$data0 === void 0 ? void 0 : _selectedNode$data0.loading) === 1 ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
       className: "w-3 h-3 rounded-full border border-t-transparent group-hover:border-t-transparent border-black group-hover:border-white animate-spin"
-    }), "Generating...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, "Fetch Model")), Object.entries((selectedNode === null || selectedNode === void 0 || (_selectedNode$data1 = selectedNode.data) === null || _selectedNode$data1 === void 0 ? void 0 : _selectedNode$data1.taskData) || {}).map(function (_ref15, idx) {
+    }), "Загрузка...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, "Получить модель")), Object.entries((selectedNode === null || selectedNode === void 0 || (_selectedNode$data1 = selectedNode.data) === null || _selectedNode$data1 === void 0 ? void 0 : _selectedNode$data1.taskData) || {}).map(function (_ref15, idx) {
       var _selectedNode$data10, _selectedNode$data11, _selectedNode$data12;
       var _ref16 = _slicedToArray(_ref15, 2),
         key = _ref16[0],
@@ -3050,12 +3051,12 @@ var NodeFlow = function NodeFlow(_ref) {
       className: "text-center py-8"
     }, /*#__PURE__*/_react["default"].createElement("p", {
       className: "text-sm text-gray-400"
-    }, "No properties available"));
+    }, "Нет доступных свойств"));
   }() : /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-center py-8"
   }, /*#__PURE__*/_react["default"].createElement("p", {
     className: "text-sm text-gray-400"
-  }, "Please select a model first")))), (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" && function (_selectedNode$data16) {
+  }, "Сначала выберите модель")))), (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" && function (_selectedNode$data16) {
     var fv = (selectedNode === null || selectedNode === void 0 || (_selectedNode$data16 = selectedNode.data) === null || _selectedNode$data16 === void 0 ? void 0 : _selectedNode$data16.formValues) || {};
     var extra = Array.isArray(fv.images_list) ? fv.images_list.filter(Boolean) : [];
     var all = [].concat(_toConsumableArray(fv.image_url ? [{

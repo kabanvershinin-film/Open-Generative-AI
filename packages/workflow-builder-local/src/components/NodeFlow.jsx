@@ -149,6 +149,16 @@ const SPECIAL_MODEL_NAMES = {
 };
 
 const formatName = (id) => id.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+const formatNodeTitle = (id) => id
+  .replace(/(\D+)(\d+)/, "$1 $2")
+  .replace(/^text/i, "Текст")
+  .replace(/^image/i, "Изображение")
+  .replace(/^video/i, "Видео")
+  .replace(/^audio/i, "Аудио")
+  .replace(/^api/i, "API")
+  .replace(/^character/i, "Персонаж")
+  .replace(/^concat/i, "Объединение")
+  .replace(/^vidConcat/i, "Видеообъединение");
 
 const getModelObjStatic = (category, modelId, nodeSchemas) => {
   // Seedance Промпт is a custom node (text-passthrough under the hood) with no
@@ -2566,15 +2576,15 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             &#10005;
           </button>
           <div className="flex flex-col gap-4 h-full w-full">
-            <h3 className="text-base font-semibold text-center text-white mt-6 tracking-tight">Properties</h3>
+            <h3 className="text-base font-semibold text-center text-white mt-6 tracking-tight">Свойства</h3>
             <h1 className="flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800/50 border border-white/5 rounded-xl px-3 py-2 transition-all">
               {selectedNode.id.startsWith("text") ? <TfiText className="text-blue-400" /> : selectedNode.id.startsWith("image") ? <IoImageOutline className="text-green-400" /> : selectedNode.id.startsWith("video") ? <IoVideocamOutline className="text-orange-400" /> : selectedNode.id.startsWith("audio") ? <AiOutlineAudio className="text-yellow-400" /> : <RiInputMethodLine className="text-purple-400" />}
-              {selectedNode.id.replace(/(\D+)(\d+)/, "$1 $2").replace(/^./, (c) => c.toUpperCase())}
+              {formatNodeTitle(selectedNode.id)}
             </h1>
             <div className="flex flex-col gap-4 w-full h-full overflow-y-auto px-4 custom-scrollbar-thin">
               <div className="flex flex-col gap-4 w-full h-full">
                 <div className="flex flex-col gap-1 relative w-full">
-                  <label className="text-[10px] font-bold text-zinc-500 text-start px-1">Model</label>
+                  <label className="text-[10px] font-bold text-zinc-500 text-start px-1">Модель</label>
                   <div className="flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg">
                     {selectedNode?.data?.selectedModel?.name || ""}
                   </div>
@@ -2588,7 +2598,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                     return selectedNode?.data?.loading === 1 ? (
                       <div className="flex flex-col items-center justify-center gap-2 h-full w-full">
                         <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs text-white">Fetching model...</span>
+                        <span className="text-xs text-white">Загрузка модели...</span>
                       </div>
                     ) : selectedNode.type === "apiNode" ? (
                       <div className="flex flex-col gap-2 w-full h-full relative pt-2">
@@ -2600,9 +2610,9 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                           className="absolute top-0 z-10 text-[10px] font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 group disabled:cursor-not-allowed rounded-full text-white bg-blue-600 px-3 py-1 border border-blue-500/50 hover:bg-blue-500 transition-all self-end shadow-lg shadow-blue-900/20"
                         >
                           {selectedNode?.data?.loading === 1 ? (
-                            <><div className="w-3 h-3 rounded-full border border-t-transparent group-hover:border-t-transparent border-black group-hover:border-white animate-spin"></div>Generating...</>
+                            <><div className="w-3 h-3 rounded-full border border-t-transparent group-hover:border-t-transparent border-black group-hover:border-white animate-spin"></div>Загрузка...</>
                           ) : (
-                            <>Fetch Model</>
+                            <>Получить модель</>
                           )}
                         </button>
                         {Object.entries(selectedNode?.data?.taskData || {}).map(([key, meta], idx) => {
@@ -2722,13 +2732,13 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                       }).filter(Boolean)
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-sm text-gray-400">No properties available</p>
+                        <p className="text-sm text-gray-400">Нет доступных свойств</p>
                       </div>
                     );
                   })()
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-sm text-gray-400">Please select a model first</p>
+                    <p className="text-sm text-gray-400">Сначала выберите модель</p>
                   </div>
                 )}
               </div>

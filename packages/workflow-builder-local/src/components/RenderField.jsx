@@ -7,6 +7,36 @@ import { toast } from "react-hot-toast";
 import AudioPlayer from "./AudioPlayer";
 import { IoCloudUploadOutline } from "react-icons/io5";
 
+const UI_TRANSLATIONS = {
+  "Prompt": "Промпт",
+  "Reference Images": "Референсные изображения",
+  "Aspect Ratio": "Соотношение сторон",
+  "Resolution": "Разрешение",
+  "Routing": "Маршрутизация",
+  "Size": "Размер",
+  "Quality": "Качество",
+  "Format": "Формат",
+  "Background": "Фон",
+  "Moderation": "Модерация",
+  "default": "По умолчанию",
+  "auto": "Авто",
+  "high": "Высокое",
+  "medium": "Среднее",
+  "low": "Низкое",
+  "transparent": "Прозрачный",
+  "opaque": "Непрозрачный",
+  "Add a file or provide an URL": "Добавьте файл или укажите URL",
+  "Unsupported file type": "Неподдерживаемый тип файла",
+  "Upload failed": "Не удалось загрузить файл",
+  "Upload failed.": "Не удалось загрузить файл",
+  "Preview": "Предпросмотр",
+};
+
+const translateUi = (value) => {
+  if (typeof value !== "string") return value;
+  return UI_TRANSLATIONS[value] || value;
+};
+
 const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleChange, data, modelName }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dropDown, setDropDown] = useState(-1);
@@ -22,8 +52,8 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
   const isRequired = data.required && data.required.includes(fieldName);
   const label = (
     <label className="text-[10px] font-bold text-zinc-500 text-start px-1 mb-1">
-      {meta.title || fieldName}
-      {isRequired && <span className="text-blue-500 text-[9px] ml-1">* required</span>}
+      {translateUi(meta.title || fieldName)}
+      {isRequired && <span className="text-blue-500 text-[9px] ml-1">* обязательно</span>}
     </label>
   );
 
@@ -57,7 +87,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
         ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm"];
 
     if (!acceptedTypes.includes(file.type)) {
-      toast.error("Unsupported file type");
+      toast.error(translateUi("Unsupported file type"));
       return;
     };
 
@@ -92,7 +122,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
     })
     .catch((error) => {
       console.error("Upload failed", error);
-      toast.error("Upload failed.", error?.response?.data);
+      toast.error(translateUi("Upload failed."), error?.response?.data);
       setUploading(false);
       setUploadProgress(0);
     })
@@ -128,7 +158,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             className="flex items-center justify-between gap-1 text-xs text-center text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-1.5 bg-zinc-900/50 border border-white/10 hover:border-white/20 focus:outline-none rounded-lg transition-all"
           >
             <div className="flex items-center gap-2 truncate">
-              <span className="truncate">{value}</span>
+              <span className="truncate">{translateUi(value)}</span>
             </div>
             <FaAngleDown
               size={14}
@@ -158,7 +188,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
                 }`}
                 onClick={() => {handleChange(fieldName, option); setDropDown(-1)}}
               >
-                <span className="truncate">{option}</span>
+                <span className="truncate">{translateUi(option)}</span>
                 {formValues[fieldName] === option && (
                   <span className="ml-auto text-blue-400 font-bold">✓</span>
                 )}
@@ -181,7 +211,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             readOnly
             // onChange={(e) => handleChange(fieldName, e.target.value)} 
             className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 transition-all hover:border-white/20 w-full outline-none focus:border-blue-500/50" 
-            placeholder="Add a file or provide an URL" 
+            placeholder={translateUi("Add a file or provide an URL")} 
           />
           {/* <input 
             type="file" 
@@ -217,7 +247,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
         {formValues[fieldName] && (
           <div className="flex items-center gap-2 relative group overflow-hidden self-start w-full">
             {meta.field === 'image' ? (
-              <img src={formValues[fieldName]} alt="Preview" className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" width={0} height={0} />
+              <img src={formValues[fieldName]} alt={translateUi("Preview")} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" width={0} height={0} />
             ) : meta.field === 'video' ? (
               <video src={formValues[fieldName]} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" />
             ) : meta.field === 'audio' && (
@@ -253,7 +283,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               {meta.field === 'images_list' ? (
                 <img 
                   src={url} 
-                  alt="Preview" 
+                  alt={translateUi("Preview")} 
                   className="w-full h-full aspect-[1/1] object-cover border border-gray-500 rounded" 
                 />
               ) : ['videos_list', 'video_files'].includes(meta.field) ? (
@@ -352,7 +382,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
       <div key={fieldName} className="flex flex-col gap-1 w-full">
         <label htmlFor={fieldName} className="flex items-center gap-2 text-sm text-white font-medium relative">
           {label}
-          {isRequired && <span className="text-blue-500 text-xs">* required</span>}
+          {isRequired && <span className="text-blue-500 text-xs">* обязательно</span>}
         </label>
         <div className="flex items-center gap-2 w-full">
           <input 
@@ -405,7 +435,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           type="text"
           id={fieldName}
           value={value}
-          placeholder={meta.placeholder || ""}
+          placeholder={translateUi(meta.placeholder || "")}
           onChange={(e) => handleChange(fieldName, e.target.value)}
           className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
         />
@@ -430,7 +460,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               <span className={`h-[12px] w-[12px] rounded-full bg-white duration-200 shadow-sm ${!!formValues[fieldName] && "translate-x-[16px]"}`}></span>
             </span>
           </label>
-          <p className="text-xs text-white">{meta.description}</p>
+          <p className="text-xs text-white">{translateUi(meta.description)}</p>
         </div>
       </div>
     )
@@ -444,7 +474,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           value={value}
           readOnly
           // onChange={(e) => handleChange(fieldName, e.target.value)}
-          placeholder={meta.description || ""}
+          placeholder={translateUi(meta.description || "")}
           className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
           rows={6}
         />

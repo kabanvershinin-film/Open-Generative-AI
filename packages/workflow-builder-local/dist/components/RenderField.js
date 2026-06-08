@@ -13,6 +13,34 @@ var _fi = require("react-icons/fi");
 var _reactHotToast = require("react-hot-toast");
 var _AudioPlayer = _interopRequireDefault(require("./AudioPlayer"));
 var _io = require("react-icons/io5");
+var UI_TRANSLATIONS = {
+  "Prompt": "Промпт",
+  "Reference Images": "Референсные изображения",
+  "Aspect Ratio": "Соотношение сторон",
+  "Resolution": "Разрешение",
+  "Routing": "Маршрутизация",
+  "Size": "Размер",
+  "Quality": "Качество",
+  "Format": "Формат",
+  "Background": "Фон",
+  "Moderation": "Модерация",
+  "default": "По умолчанию",
+  "auto": "Авто",
+  "high": "Высокое",
+  "medium": "Среднее",
+  "low": "Низкое",
+  "transparent": "Прозрачный",
+  "opaque": "Непрозрачный",
+  "Add a file or provide an URL": "Добавьте файл или укажите URL",
+  "Unsupported file type": "Неподдерживаемый тип файла",
+  "Upload failed": "Не удалось загрузить файл",
+  "Upload failed.": "Не удалось загрузить файл",
+  "Preview": "Предпросмотр"
+};
+var translateUi = function translateUi(value) {
+  if (typeof value !== "string") return value;
+  return UI_TRANSLATIONS[value] || value;
+};
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
@@ -68,9 +96,9 @@ var RenderField = function RenderField(_ref) {
   var isRequired = data.required && data.required.includes(fieldName);
   var label = /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-[10px] font-bold text-zinc-500 text-start px-1 mb-1"
-  }, meta.title || fieldName, isRequired && /*#__PURE__*/_react["default"].createElement("span", {
+  }, translateUi(meta.title || fieldName), isRequired && /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-blue-500 text-[9px] ml-1"
-  }, "* required"));
+  }, "* обязательно"));
   var handleDropdownToggle = function handleDropdownToggle(value) {
     setDropDown(function (prev) {
       return prev === value ? -1 : value;
@@ -96,7 +124,7 @@ var RenderField = function RenderField(_ref) {
     }
     var acceptedTypes = isImageField ? ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"] : isVideoField ? ["video/mp4", "video/webm"] : isAudioField ? ["audio/mpeg", "audio/wav", "audio/webm", "audio/mp3"] : ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm"];
     if (!acceptedTypes.includes(file.type)) {
-      _reactHotToast.toast.error("Unsupported file type");
+      _reactHotToast.toast.error(translateUi("Unsupported file type"));
       return;
     }
     ;
@@ -132,7 +160,7 @@ var RenderField = function RenderField(_ref) {
     })["catch"](function (error) {
       var _error$response;
       console.error("Upload failed", error);
-      _reactHotToast.toast.error("Upload failed.", error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
+      _reactHotToast.toast.error(translateUi("Upload failed."), error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
       setUploading(false);
       setUploadProgress(0);
     });
@@ -166,7 +194,7 @@ var RenderField = function RenderField(_ref) {
       className: "flex items-center gap-2 truncate"
     }, /*#__PURE__*/_react["default"].createElement("span", {
       className: "truncate"
-    }, value)), /*#__PURE__*/_react["default"].createElement(_fa.FaAngleDown, {
+    }, translateUi(value))), /*#__PURE__*/_react["default"].createElement(_fa.FaAngleDown, {
       size: 14,
       className: "transition-all duration-300 ease-in-out text-zinc-400 group-hover:text-white ".concat(dropDown === idx + 1 ? "rotate-180" : "")
     })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -185,7 +213,7 @@ var RenderField = function RenderField(_ref) {
         }
       }, /*#__PURE__*/_react["default"].createElement("span", {
         className: "truncate"
-      }, option), formValues[fieldName] === option && /*#__PURE__*/_react["default"].createElement("span", {
+      }, translateUi(option)), formValues[fieldName] === option && /*#__PURE__*/_react["default"].createElement("span", {
         className: "ml-auto text-blue-400 font-bold"
       }, "\u2713"));
     }))));
@@ -204,7 +232,7 @@ var RenderField = function RenderField(_ref) {
       // onChange={(e) => handleChange(fieldName, e.target.value)} 
       ,
       className: "bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 transition-all hover:border-white/20 w-full outline-none focus:border-blue-500/50",
-      placeholder: "Add a file or provide an URL"
+      placeholder: translateUi("Add a file or provide an URL")
     })), uploading && /*#__PURE__*/_react["default"].createElement("div", {
       className: "w-full bg-gray-700/70 rounded h-1 overflow-hidden"
     }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -216,7 +244,7 @@ var RenderField = function RenderField(_ref) {
       className: "flex items-center gap-2 relative group overflow-hidden self-start w-full"
     }, meta.field === 'image' ? /*#__PURE__*/_react["default"].createElement("img", {
       src: formValues[fieldName],
-      alt: "Preview",
+      alt: translateUi("Preview"),
       className: "w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg",
       width: 0,
       height: 0
@@ -254,7 +282,7 @@ var RenderField = function RenderField(_ref) {
         className: "flex items-center gap-2 relative group overflow-hidden ".concat(['audios_list', 'audio_files'].includes(meta.field) ? 'col-span-full' : '')
       }, meta.field === 'images_list' ? /*#__PURE__*/_react["default"].createElement("img", {
         src: url,
-        alt: "Preview",
+        alt: translateUi("Preview"),
         className: "w-full h-full aspect-[1/1] object-cover border border-gray-500 rounded"
       }) : ['videos_list', 'video_files'].includes(meta.field) ? /*#__PURE__*/_react["default"].createElement("video", {
         src: url,
@@ -326,7 +354,7 @@ var RenderField = function RenderField(_ref) {
       className: "flex items-center gap-2 text-sm text-white font-medium relative"
     }, label, isRequired && /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-blue-500 text-xs"
-    }, "* required")), /*#__PURE__*/_react["default"].createElement("div", {
+    }, "* обязательно")), /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex items-center gap-2 w-full"
     }, /*#__PURE__*/_react["default"].createElement("input", {
       type: "number",
@@ -377,7 +405,7 @@ var RenderField = function RenderField(_ref) {
       type: "text",
       id: fieldName,
       value: value,
-      placeholder: meta.placeholder || "",
+      placeholder: translateUi(meta.placeholder || ""),
       onChange: function onChange(e) {
         return handleChange(fieldName, e.target.value);
       },
@@ -408,7 +436,7 @@ var RenderField = function RenderField(_ref) {
       className: "h-[12px] w-[12px] rounded-full bg-white duration-200 shadow-sm ".concat(!!formValues[fieldName] && "translate-x-[16px]")
     }))), /*#__PURE__*/_react["default"].createElement("p", {
       className: "text-xs text-white"
-    }, meta.description)));
+    }, translateUi(meta.description))));
   }
   ;
   if (meta.type === "string") {
@@ -420,7 +448,7 @@ var RenderField = function RenderField(_ref) {
       readOnly: true
       // onChange={(e) => handleChange(fieldName, e.target.value)}
       ,
-      placeholder: meta.description || "",
+      placeholder: translateUi(meta.description || ""),
       className: "bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50",
       rows: 6
     }));
