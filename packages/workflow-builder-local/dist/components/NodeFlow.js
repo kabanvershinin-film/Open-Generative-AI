@@ -2905,62 +2905,12 @@ var NodeFlow = function NodeFlow(_ref) {
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-4 w-full h-full"
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col gap-1 relative w-full",
-    onBlur: function onBlur(e) {
-      var currentTarget = e.currentTarget;
-      setTimeout(function () {
-        if (currentTarget && !currentTarget.contains(document.activeElement)) {
-          setDropDown(-1);
-        }
-      }, 100);
-    },
-    tabIndex: 0
+    className: "flex flex-col gap-1 relative w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-[10px] font-bold text-zinc-500 text-start px-1"
-  }, "Model"), /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    ref: modelDropdownTriggerRef,
-    onClick: function onClick() {
-      return setDropDown(function (prev) {
-        return prev === 3 ? 0 : 3;
-      });
-    },
-    className: "flex items-center justify-between gap-1 text-sm text-center text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-2 bg-zinc-900/50 border border-white/10 hover:border-white/20 focus:outline-none rounded-lg transition-all"
-  }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data3 = selectedNode.data) === null || _selectedNode$data3 === void 0 || (_selectedNode$data3 = _selectedNode$data3.selectedModel) === null || _selectedNode$data3 === void 0 ? void 0 : _selectedNode$data3.name) || "", /*#__PURE__*/_react["default"].createElement(_fa.FaAngleDown, {
-    size: 14,
-    className: "transition-all duration-300 ".concat(dropDown === 3 && "rotate-180")
-  })), dropDown === 3 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute left-0 ".concat(isModelDropdownUp ? "bottom-full mb-2" : "top-16", " bg-zinc-900/95 backdrop-blur-3xl z-20 border border-white/10 p-1 rounded-xl flex flex-col gap-2 shadow-2xl max-h-64 w-full animate-in fade-in zoom-in duration-200")
-  }, /*#__PURE__*/_react["default"].createElement("input", {
-    type: "search",
-    value: modelSearch,
-    onChange: function onChange(e) {
-      return setModelSearch(e.target.value);
-    },
-    placeholder: "Search models...",
-    className: "px-3 py-2 text-xs bg-black/40 border border-white/5 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition-all"
-  }), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col overflow-y-auto"
-  }, getFilteredModelsForNode(selectedNode).length > 0 ? getFilteredModelsForNode(selectedNode).map(function (model, idx) {
-    var _selectedNode$data4, _selectedNode$data5;
-    return /*#__PURE__*/_react["default"].createElement("div", {
-      key: idx,
-      className: "flex items-center gap-2 px-3 py-2 cursor-pointer rounded-lg transition-all ".concat((selectedNode === null || selectedNode === void 0 || (_selectedNode$data4 = selectedNode.data) === null || _selectedNode$data4 === void 0 || (_selectedNode$data4 = _selectedNode$data4.selectedModel) === null || _selectedNode$data4 === void 0 ? void 0 : _selectedNode$data4.id) === model.id ? "bg-blue-500/10 text-blue-400" : "text-zinc-400 hover:bg-white/5 hover:text-white"),
-      onClick: function onClick() {
-        updateModel(model);
-        setDropDown(0);
-        setModelSearch("");
-      }
-    }, /*#__PURE__*/_react["default"].createElement("h2", {
-      className: "text-sm whitespace-nowrap"
-    }, model.name), (selectedNode === null || selectedNode === void 0 || (_selectedNode$data5 = selectedNode.data) === null || _selectedNode$data5 === void 0 || (_selectedNode$data5 = _selectedNode$data5.selectedModel) === null || _selectedNode$data5 === void 0 ? void 0 : _selectedNode$data5.id) === model.id && /*#__PURE__*/_react["default"].createElement(_fa.FaCheck, {
-      size: 12,
-      className: "ml-auto"
-    }));
-  }) : /*#__PURE__*/_react["default"].createElement("p", {
-    className: "text-xs text-gray-400 text-center py-2"
-  }, "No models found")))), selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data6 = selectedNode.data) !== null && _selectedNode$data6 !== void 0 && _selectedNode$data6.selectedModel ? function (_nodeSchemas$categori10, _selectedNode$data7, _fullSchema$schemas, _selectedNode$data8, _selectedNode$data9, _selectedNode$data0, _selectedNode$data1) {
+  }, "Model"), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg"
+  }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data3 = selectedNode.data) === null || _selectedNode$data3 === void 0 || (_selectedNode$data3 = _selectedNode$data3.selectedModel) === null || _selectedNode$data3 === void 0 ? void 0 : _selectedNode$data3.name) || "")), selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data6 = selectedNode.data) !== null && _selectedNode$data6 !== void 0 && _selectedNode$data6.selectedModel ? function (_nodeSchemas$categori10, _selectedNode$data7, _fullSchema$schemas, _selectedNode$data8, _selectedNode$data9, _selectedNode$data0, _selectedNode$data1) {
     var nodeType = selectedNode.id.startsWith("text") ? "text" : selectedNode.id.startsWith("image") ? "image" : selectedNode.id.startsWith("video") ? "video" : selectedNode.id.startsWith("audio") ? "audio" : "utility";
     var fullSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori10 = nodeSchemas.categories) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10[nodeType]) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10.models[selectedNode === null || selectedNode === void 0 || (_selectedNode$data7 = selectedNode.data) === null || _selectedNode$data7 === void 0 || (_selectedNode$data7 = _selectedNode$data7.selectedModel) === null || _selectedNode$data7 === void 0 ? void 0 : _selectedNode$data7.id]) === null || _nodeSchemas$categori10 === void 0 ? void 0 : _nodeSchemas$categori10.input_schema;
     var inputSchema = (fullSchema === null || fullSchema === void 0 || (_fullSchema$schemas = fullSchema.schemas) === null || _fullSchema$schemas === void 0 ? void 0 : _fullSchema$schemas.input_data) || fullSchema || {};

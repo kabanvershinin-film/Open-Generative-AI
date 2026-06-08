@@ -2573,67 +2573,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             </h1>
             <div className="flex flex-col gap-4 w-full h-full overflow-y-auto px-4 custom-scrollbar-thin">
               <div className="flex flex-col gap-4 w-full h-full">
-                <div
-                  className="flex flex-col gap-1 relative w-full"
-                  onBlur={(e) => {
-                    const currentTarget = e.currentTarget;
-                    setTimeout(() => {
-                      if (currentTarget && !currentTarget.contains(document.activeElement)) {
-                        setDropDown(-1);
-                      }
-                    }, 100);
-                  }}
-                  tabIndex={0}
-                >
+                <div className="flex flex-col gap-1 relative w-full">
                   <label className="text-[10px] font-bold text-zinc-500 text-start px-1">Model</label>
-                  <button
-                    type="button"
-                    suppressHydrationWarning={true}
-                    ref={modelDropdownTriggerRef}
-                    onClick={() => setDropDown(prev => prev === 3 ? 0 : 3)}
-                    className="flex items-center justify-between gap-1 text-sm text-center text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-2 bg-zinc-900/50 border border-white/10 hover:border-white/20 focus:outline-none rounded-lg transition-all"
-                  >
+                  <div className="flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg">
                     {selectedNode?.data?.selectedModel?.name || ""}
-                    <FaAngleDown size={14} className={`transition-all duration-300 ${dropDown === 3 && "rotate-180"}`} />
-                  </button>
-                  {dropDown === 3 && (
-                    <div className={`absolute left-0 ${isModelDropdownUp ? "bottom-full mb-2" : "top-16"} bg-zinc-900/95 backdrop-blur-3xl z-20 border border-white/10 p-1 rounded-xl flex flex-col gap-2 shadow-2xl max-h-64 w-full animate-in fade-in zoom-in duration-200`}>
-                      <input
-                        type="search"
-                        value={modelSearch}
-                        onChange={(e) => setModelSearch(e.target.value)}
-                        placeholder="Search models..."
-                        className="px-3 py-2 text-xs bg-black/40 border border-white/5 rounded-lg text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500/50 transition-all"
-                      />
-                      <div className="flex flex-col overflow-y-auto">
-                        {getFilteredModelsForNode(selectedNode).length > 0 ? (
-                          getFilteredModelsForNode(selectedNode).map((model, idx) => (
-                            <div
-                              key={idx}
-                              className={`flex items-center gap-2 px-3 py-2 cursor-pointer rounded-lg transition-all ${selectedNode?.data?.selectedModel?.id === model.id
-                                  ? "bg-blue-500/10 text-blue-400"
-                                  : "text-zinc-400 hover:bg-white/5 hover:text-white"
-                                }`}
-                              onClick={() => {
-                                updateModel(model);
-                                setDropDown(0);
-                                setModelSearch("");
-                              }}
-                            >
-                              <h2 className="text-sm whitespace-nowrap">{model.name}</h2>
-                              {selectedNode?.data?.selectedModel?.id === model.id && (
-                                <FaCheck size={12} className="ml-auto" />
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <p className="text-xs text-gray-400 text-center py-2">
-                            No models found
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  </div>
                 </div>
                 {selectedNode?.data?.selectedModel ? (
                   (() => {
