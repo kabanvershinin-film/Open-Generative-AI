@@ -759,8 +759,58 @@ export default function ImageStudio({
   onFilesHandled,
 }) {
   const PERSIST_KEY = "mf_image_studio_persistent";
+  const PERSIST_REFS_KEY = "mf_image_studio_refs";
   const PENDING_KEY = "mf_image_studio_pending";
   const PENDING_RESULT_KEY = "mf_image_studio_pending_result";
+
+  const sanitizeHistoryForStorage = useCallback((entries) => {
+    return (Array.isArray(entries) ? entries : [])
+      .filter(Boolean)
+      .map((entry) => ({
+        id: entry.id,
+        url: typeof entry.url === "string" && !entry.url.startsWith("data:") ? entry.url : null,
+        prompt: typeof entry.prompt === "string" ? entry.prompt.slice(0, 500) : "",
+        model: entry.model || null,
+        aspect_ratio: entry.aspect_ratio || null,
+        timestamp: entry.timestamp || null,
+      }))
+      .filter((entry) => !!entry.url)
+      .slice(0, 20);
+  }, []);
+
+  const writeRefsState = useCallback((urls) => {
+    try {
+      localStorage.setItem(
+        PERSIST_REFS_KEY,
+        JSON.stringify({ uploadedImageUrls: Array.isArray(urls) ? urls : [] }),
+      );
+    } catch (err) {
+      console.warn("Failed to save ImageStudio refs:", err?.message);
+    }
+  }, []);
+
+  const writePersistentState = useCallback((state) => {
+    try {
+      localStorage.setItem(PERSIST_KEY, JSON.stringify(state));
+      return true;
+    } catch (err) {
+      try {
+        const reduced = { ...state, localHistory: (state.localHistory || []).slice(0, 8) };
+        localStorage.setItem(PERSIST_KEY, JSON.stringify(reduced));
+        return true;
+      } catch (err2) {
+        try {
+          const minimal = { ...state, localHistory: [] };
+          localStorage.removeItem(PERSIST_KEY);
+          localStorage.setItem(PERSIST_KEY, JSON.stringify(minimal));
+          return true;
+        } catch (err3) {
+          console.warn("Failed to save ImageStudio persistence:", err3?.message || err2?.message || err?.message);
+          return false;
+        }
+      }
+    }
+  }, []);
 
   const router = useRouter();
   const [workflowPicker, setWorkflowPicker] = useState(null); // { url, prompt } | null
@@ -869,6 +919,8 @@ export default function ImageStudio({
   useEffect(() => {
     try {
       const stored = localStorage.getItem(PERSIST_KEY);
+      const refsStored = localStorage.getItem(PERSIST_REFS_KEY);
+      const refsData = refsStored ? JSON.parse(refsStored) : {};
       if (stored) {
         const data = JSON.parse(stored);
         if (data.imageMode !== undefined) setImageMode(data.imageMode);
@@ -882,6 +934,9 @@ export default function ImageStudio({
         if (data.uploadedImageUrls) setUploadedImageUrls(data.uploadedImageUrls);
         if (data.batchSize) setBatchSize(data.batchSize);
         if (data.localHistory) setLocalHistory(data.localHistory);
+      }
+      if (Array.isArray(refsData.uploadedImageUrls)) {
+        setUploadedImageUrls(refsData.uploadedImageUrls);
       }
     } catch (err) {
       console.warn("Failed to load ImageStudio persistence:", err);
@@ -900,6 +955,7 @@ export default function ImageStudio({
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
+        writeRefsState(uploadedImageUrls);
         const state = {
           imageMode,
           selectedModelId,
@@ -911,11 +967,11 @@ export default function ImageStudio({
           prompt,
           uploadedImageUrls,
           batchSize,
-          localHistory,
+          localHistory: sanitizeHistoryForStorage(localHistory),
         };
-        localStorage.setItem(PERSIST_KEY, JSON.stringify(state));
+        writePersistentState(state);
       } catch (err) {
-        console.warn("Failed to save ImageStudio persistence:", err);
+        console.warn("Failed to prepare ImageStudio persistence:", err);
       }
     }, 500); // 500ms debounce
     return () => clearTimeout(timer);
@@ -931,6 +987,9 @@ export default function ImageStudio({
     uploadedImageUrls,
     batchSize,
     localHistory,
+    sanitizeHistoryForStorage,
+    writePersistentState,
+    writeRefsState,
   ]);
 
   const processDroppedImages = async (files) => {
@@ -1116,12 +1175,12 @@ export default function ImageStudio({
       const prevHistory = Array.isArray(data.localHistory) ? data.localHistory : [];
       // Avoid duplicates by id.
       if (prevHistory.some((e) => e.id === entry.id)) return;
-      data.localHistory = [entry, ...prevHistory].slice(0, 50);
-      localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
+      data.localHistory = sanitizeHistoryForStorage([entry, ...prevHistory]);
+      writePersistentState(data);
     } catch (err) {
       console.warn("persistEntryToStorage failed:", err?.message);
     }
-  }, []);
+  }, [sanitizeHistoryForStorage, writePersistentState]);
 
   // ── View state ─────────────────────────────────────
 
