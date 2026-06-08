@@ -100,6 +100,10 @@ export async function POST(request) {
         if (!src || typeof src !== 'string') {
             return NextResponse.json({ error: 'Missing image/url' }, { status: 400 });
         }
+        const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+        if (src.startsWith(`https://${tosHost}/`)) {
+            return NextResponse.json({ url: src });
+        }
 
         let buffer;
         let contentType;

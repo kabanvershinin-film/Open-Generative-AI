@@ -427,19 +427,20 @@ async function generateGeminiImage(apiKey, baseModelId, params) {
     return { ...data, url: raw };
 }
 
-// Mirror an image (base64 data URI) to TOS via the server, returning a permanent
-// public URL. The upload runs server-side because browser→TOS PUTs are CORS-blocked.
+// Mirror an image to TOS via the server, returning a permanent public URL.
+// Provider URLs from image models can be short-lived, so remote http(s) URLs
+// are mirrored too rather than being treated as already durable.
 // Falls back to the original image on any failure so generation still works.
 export async function persistImageToTOS(image) {
     try {
         if (typeof window === 'undefined' || !image) return image;
-        // Only base64 data URIs need mirroring; remote http URLs already persist.
-        if (typeof image === 'string' && !image.startsWith('data:')) return image;
+        if (typeof image !== 'string') return image;
+        const payload = image.startsWith('data:') ? { image } : { url: image };
 
         const resp = await fetch('/api/upload-file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image }),
+            body: JSON.stringify(payload),
         });
         if (!resp.ok) return image; // storage not configured / upload failed → keep original
         const { url } = await resp.json();

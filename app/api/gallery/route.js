@@ -287,17 +287,13 @@ export async function POST(request) {
         if (!url) return NextResponse.json({ error: 'url required' }, { status: 400 });
 
         const permanentUrl = await maybeUploadMediaToTOS(url, type);
-        logStep('POST mirror result', { mirrored: !!permanentUrl });
-        if (!permanentUrl) {
-            return NextResponse.json(
-                { error: 'Не удалось сохранить медиа в хранилище (зеркалирование не удалось)' },
-                { status: 502 },
-            );
-        }
+        const finalUrl = permanentUrl || url;
+        logStep('POST mirror result', { mirrored: !!permanentUrl, fallbackToSource: !permanentUrl });
 
         const entry = {
             id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            type, url: permanentUrl, model, prompt,
+            type, url: finalUrl, model, prompt,
+            mirrored_to_tos: !!permanentUrl,
             created_at: new Date().toISOString(),
         };
 
