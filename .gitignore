@@ -30,6 +30,7 @@ release/
 # Next.js
 .next/
 out/
+.vercel/
 
 # Misc
 *.pem
