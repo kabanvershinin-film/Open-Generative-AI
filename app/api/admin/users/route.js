@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isAdminEmail } from '@/lib/admin';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hsyuvhvjrjxdpvuzivvv.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_9bCiI4pZI45ObKbC2W1xvw_bscZtpFJ';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-const ADMIN_EMAILS = ['kaban.vershinin@gmail.com', 'didig.vershinin@yandex.ru'];
 
 export async function GET(request) {
     if (!SUPABASE_SERVICE_ROLE_KEY) {
@@ -21,7 +20,7 @@ export async function GET(request) {
     if (uErr || !u?.user) return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
 
     const email = (u.user.email || '').toLowerCase();
-    if (!ADMIN_EMAILS.some(e => e.toLowerCase() === email)) {
+    if (!isAdminEmail(email)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

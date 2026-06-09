@@ -3,12 +3,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
-
-const ADMIN_EMAILS = ['kaban.vershinin@gmail.com', 'didig.vershinin@yandex.ru'];
-
-function isAdminUser(user) {
-    return ADMIN_EMAILS.some(e => e.toLowerCase() === (user?.email || '').toLowerCase());
-}
+import { isAdminUser } from '@/lib/admin';
 
 async function getCnyRate() {
     try {

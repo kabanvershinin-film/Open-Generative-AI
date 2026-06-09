@@ -30,6 +30,24 @@ export function AuthProvider({ children }) {
     const [cabinetOpen, setCabinetOpen] = useState(false);
     const [needFunds, setNeedFunds] = useState(null); // { required, balance } | null
 
+    const notifyAdminAboutRegistration = useCallback(async () => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session?.access_token;
+            if (!token) return;
+
+            await fetch('/api/admin/notifications/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+        } catch {
+            // Best effort: registration itself should not fail if admin alerts fail.
+        }
+    }, []);
+
     const loadProfile = useCallback(async (u) => {
         if (!u) { setProfile(null); return; }
         const { data } = await supabase.from('profiles').select('*').eq('id', u.id).single();
@@ -39,8 +57,9 @@ export function AuthProvider({ children }) {
             const row = { id: u.id, email: u.email, full_name: u.user_metadata?.full_name || null, balance: 0 };
             await supabase.from('profiles').insert(row);
             setProfile(row);
+            await notifyAdminAboutRegistration();
         }
-    }, []);
+    }, [notifyAdminAboutRegistration]);
 
     const refreshBalance = useCallback(async () => {
         if (!user) return;
@@ -119,6 +138,7 @@ export function AuthProvider({ children }) {
             const needsConfirmation = !data.session || !data.user.email_confirmed_at;
             if (needsConfirmation) return '__CHECK_EMAIL__';
             await supabase.from('profiles').insert({ id: data.user.id, email, full_name: name, balance: 0 });
+            await notifyAdminAboutRegistration();
             setUser(data.user);
             await loadProfile(data.user);
             setLoginOpen(false);
