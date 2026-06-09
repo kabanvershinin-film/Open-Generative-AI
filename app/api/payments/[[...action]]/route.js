@@ -19,6 +19,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const TOCHKA_BASE_URL = 'https://enter.tochka.com/uapi';
 const TOCHKA_CUSTOMER_CODE = process.env.TOCHKA_CUSTOMER_CODE || '305723470';
 const TOCHKA_TOKEN = process.env.TOCHKA_TOKEN?.trim();
+const TOCHKA_TAX_SYSTEM_CODE = process.env.TOCHKA_TAX_SYSTEM_CODE || 'osn';
 const CRON_SECRET = process.env.CRON_SECRET;
 const TOCHKA_WEBHOOK_SECRET = process.env.TOCHKA_WEBHOOK_SECRET?.trim();
 
@@ -183,7 +184,16 @@ async function createPayment(request) {
 
         // 3. Tochka payment
         const origin = process.env.PUBLIC_BASE_URL || new URL(request.url).origin;
-        const response = await fetch(`${TOCHKA_BASE_URL}/acquiring/v1.0/payments`, {
+        const customerEmail = String(user.email || '').trim().toLowerCase();
+        const customerName =
+            String(
+                user.user_metadata?.full_name ||
+                user.user_metadata?.name ||
+                customerEmail ||
+                user.id
+            ).trim();
+
+        const response = await fetch(`${TOCHKA_BASE_URL}/acquiring/v1.0/payments_with_receipt`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOCHKA_TOKEN}`, 'CustomerCode': TOCHKA_CUSTOMER_CODE },
             body: JSON.stringify({
@@ -194,6 +204,22 @@ async function createPayment(request) {
                     redirectUrl: `${origin}/?payment=success&order=${encodeURIComponent(orderId)}`,
                     failRedirectUrl: `${origin}/?payment=fail&order=${encodeURIComponent(orderId)}`,
                     paymentLinkId: orderId,
+                    taxSystemCode: TOCHKA_TAX_SYSTEM_CODE,
+                    Client: {
+                        name: customerName,
+                        email: customerEmail,
+                    },
+                    Items: [
+                        {
+                            name: 'Пополнение баланса',
+                            amount: amountNum,
+                            quantity: 1,
+                            vatType: 'none',
+                            paymentMethod: 'full_payment',
+                            paymentObject: 'service',
+                            measure: 'шт.',
+                        }
+                    ],
                 }
             }),
         });
