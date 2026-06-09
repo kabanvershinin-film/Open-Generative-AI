@@ -3,6 +3,7 @@ import { useAuth } from './AuthProvider';
 import LoginModal from './LoginModal';
 import CabinetModal from './CabinetModal';
 import AdminNotificationsBell from '@/components/admin/AdminNotificationsBell';
+import SiteAnnouncementBell from '@/components/announcements/SiteAnnouncementBell';
 
 function InsufficientFundsDialog() {
     const { needFunds, setNeedFunds, setCabinetOpen, balance } = useAuth();
@@ -43,6 +44,7 @@ export default function AccountBar() {
     return (
         <>
             <div className="fixed top-3 right-3 z-[60] flex items-center gap-2">
+                <SiteAnnouncementBell />
                 {!loading && user && <AdminNotificationsBell />}
                 {!loading && (user ? (
                     <button onClick={() => setCabinetOpen(true)}
