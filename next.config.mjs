@@ -6,7 +6,9 @@ const nextConfig = {
   // shipped in the committed dist instead.
   transpilePackages: ['studio', 'ai-agent', 'design-agent'],
   experimental: {
-    serverBodySizeLimit: '50mb',
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
   },
   generateBuildId: async () => 'build-face-thumb-v57',
 };
