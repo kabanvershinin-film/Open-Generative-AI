@@ -1,6 +1,6 @@
 import axios from "axios";
 import Image from "next/image";
-import React, { useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { FaAngleDown } from "react-icons/fa6";
 import { FiUpload } from "react-icons/fi";
 import { toast } from "react-hot-toast";
@@ -15,7 +15,10 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
   const [uploading, setUploading] = useState(false);
   const [isOpeningUp, setIsOpeningUp] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
+  const [isMobileUploadUi, setIsMobileUploadUi] = useState(false);
   const containerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const isImageUrl = (url) => {
     if (typeof url !== 'string') return false;
@@ -49,6 +52,15 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     </div>
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+    const applyMatch = () => setIsMobileUploadUi(mediaQuery.matches);
+    applyMatch();
+    mediaQuery.addEventListener?.("change", applyMatch);
+    return () => mediaQuery.removeEventListener?.("change", applyMatch);
+  }, []);
+
   useLayoutEffect(() => {
     if (dropDown === idx + 1 && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
@@ -68,13 +80,17 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     } else {
       return;
     }
-    const acceptedTypes = 
-      isImageField ? ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"] : 
-      isVideoField ? ["video/mp4", "video/webm"] : 
-      isAudioField ? ["audio/mpeg", "audio/wav", "audio/webm", "audio/mp3"] :
-        ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm"];
+    const fileName = (file.name || "").toLowerCase();
+    const isAcceptedType =
+      isImageField
+        ? file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|avif|heic|heif)$/i.test(fileName)
+        : isVideoField
+          ? file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(fileName)
+          : isAudioField
+            ? file.type.startsWith("audio/") || /\.(mp3|wav|webm|m4a|ogg)$/i.test(fileName)
+            : file.type.startsWith("image/") || file.type.startsWith("video/");
 
-    if (!acceptedTypes.includes(file.type)) {
+    if (!isAcceptedType) {
       toast.error("Unsupported file type");
       return;
     };
@@ -125,6 +141,15 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     zIndex: 10,
     boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)'
   };
+
+  const fileAcceptAttr =
+    isImageField
+      ? "image/*,.heic,.heif"
+      : isVideoField
+        ? "video/*,.mov,.m4v"
+        : isAudioField
+          ? "audio/*,.m4a,.ogg"
+          : "image/*,video/*,.heic,.heif,.mov,.m4v";
 
   if (meta.enum) {
     const isManual = meta.allowManual || false;
@@ -293,6 +318,45 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
         {uploading && (
           <div className="w-full bg-gray-700/70 rounded h-1 overflow-hidden">
             <div className="bg-blue-500 h-full" style={{ width: `${uploadProgress}%` }}></div>
+          </div>
+        )}
+        {isMobileUploadUi && (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
+            >
+              Выбрать файл
+            </button>
+            {isImageField && (
+              <button
+                type="button"
+                onClick={() => cameraInputRef.current?.click()}
+                className="min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
+              >
+                Камера
+              </button>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={fileAcceptAttr}
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => handleFileUpload(fieldName, meta, e)}
+            />
+            {isImageField && (
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept={fileAcceptAttr}
+                capture="environment"
+                className="hidden"
+                disabled={uploading}
+                onChange={(e) => handleFileUpload(fieldName, meta, e)}
+              />
+            )}
           </div>
         )}
         {formValues[fieldName] && (

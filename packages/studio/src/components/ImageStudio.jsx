@@ -46,12 +46,23 @@ async function downloadImage(url, filename) {
 function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isMobileUploadUi, setIsMobileUploadUi] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState([]); // [{url, thumbnail}]
   const [uploadHistory, setUploadHistory] = useState([]); // [{id, name, url, thumbnail}]
   const [lastUploadProgress, setLastUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
   const panelRef = useRef(null);
   const triggerRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+    const applyMatch = () => setIsMobileUploadUi(mediaQuery.matches);
+    applyMatch();
+    mediaQuery.addEventListener?.("change", applyMatch);
+    return () => mediaQuery.removeEventListener?.("change", applyMatch);
+  }, []);
 
   // Close on outside click
   useEffect(() => {
@@ -405,8 +416,16 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         multiple={isMulti}
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*,.heic,.heif"
+        capture="environment"
         className="hidden"
         onChange={handleFileChange}
       />
@@ -420,7 +439,9 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
           e.stopPropagation();
           setPanelOpen((o) => !o);
         }}
-        className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden mt-1.5 bg-white/5 hover:bg-white/10 group ${
+        className={`shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden mt-1.5 bg-white/5 hover:bg-white/10 group ${
+          isMobileUploadUi ? "w-12 h-12" : "w-10 h-10"
+        } ${
           hasSelection
             ? "border-primary/60 hover:border-primary/40"
             : "border-white/10 hover:border-primary/40"
@@ -434,7 +455,11 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
         <div
           ref={panelRef}
           onClick={(e) => e.stopPropagation()}
-          className="absolute z-50 bottom-[calc(100%+8px)] left-0 bg-[#111] rounded-xl p-3 shadow-4xl border border-white/10 w-96"
+          className={`absolute z-50 bottom-[calc(100%+8px)] bg-[#111] rounded-xl p-3 shadow-4xl border border-white/10 ${
+            isMobileUploadUi
+              ? "left-1/2 -translate-x-1/2 w-[calc(100vw-2rem)] max-w-[26rem]"
+              : "left-0 w-96"
+          }`}
         >
           {/* Header */}
           <div className="flex items-center justify-between px-1 pb-3 mb-2 border-b border-white/5">
@@ -448,7 +473,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 ${isMobileUploadUi ? "flex-wrap justify-end" : ""}`}>
               {isMulti && hasSelection && (
                 <button
                   type="button"
@@ -465,7 +490,9 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
                   setPanelOpen(false);
                   fileInputRef.current?.click();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-full text-xs font-bold transition-all border border-primary/20"
+                className={`flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-all border border-primary/20 ${
+                  isMobileUploadUi ? "min-h-11 px-4 rounded-xl" : "px-3 py-1.5 rounded-full"
+                }`}
               >
                 <svg
                   width="11"
@@ -481,6 +508,30 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
                 </svg>
                 {isMulti ? "Загрузить файлы" : "Загрузить новые"}
               </button>
+              {isMobileUploadUi && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPanelOpen(false);
+                    cameraInputRef.current?.click();
+                  }}
+                  className="flex items-center gap-1.5 min-h-11 px-4 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-xl text-xs font-bold transition-all border border-purple-400/20"
+                >
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                  >
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                  Камера
+                </button>
+              )}
             </div>
           </div>
 

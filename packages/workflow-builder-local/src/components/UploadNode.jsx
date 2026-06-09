@@ -13,8 +13,20 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageMetadata, setImageMetadata] = useState({ width: 0, height: 0, size: null });
+  const [isMobileUploadUi, setIsMobileUploadUi] = useState(false);
   const videoRef = useRef(null);
   const prevFormValues = useRef(formValues);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mediaQuery = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+    const applyMatch = () => setIsMobileUploadUi(mediaQuery.matches);
+    applyMatch();
+    mediaQuery.addEventListener?.("change", applyMatch);
+    return () => mediaQuery.removeEventListener?.("change", applyMatch);
+  }, []);
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -33,19 +45,17 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
       return;
     }
 
-    let acceptedTypes = [];
-
-    if (acceptType === "image") {
-      acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
-    } else if (acceptType === "video") {
-      acceptedTypes = ["video/mp4", "video/webm"];
-    } else if (acceptType === "audio") {
-      acceptedTypes = ["audio/mpeg", "audio/wav", "audio/webm"];
-    }
+    const fileName = (file.name || "").toLowerCase();
+    const isAcceptedFile =
+      acceptType === "image"
+        ? file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|avif|heic|heif)$/i.test(fileName)
+        : acceptType === "video"
+          ? file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(fileName)
+          : file.type.startsWith("audio/") || /\.(mp3|wav|webm|m4a|ogg)$/i.test(fileName);
 
     const type = file.type.startsWith("video") ? "video_url" : file.type.startsWith("image") ? "image_url": "audio_url";
     
-    if (!acceptedTypes.includes(file.type)) {
+    if (!isAcceptedFile) {
       toast.error(`Please upload a valid ${acceptType} file`);
       return;
     };
@@ -85,6 +95,13 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     e.preventDefault();
     e.stopPropagation();
   }; 
+
+  const acceptAttr =
+    acceptType === "image"
+      ? "image/*,.heic,.heif"
+      : acceptType === "video"
+        ? "video/*,.mov,.m4v"
+        : "audio/*,.m4a,.ogg";
 
   const handleTextChange = (e) => {
     const textValue = e.target.value;
@@ -416,19 +433,68 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
                 </button>
               </div>
             ) : (
-              <label 
-                style={{ minHeight: 200 }} 
-                className="cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 hover:bg-gray-700/50 h-full"
-              >                <FiUpload size={20} />
-                <span className="text-xs capitalize">Upload {acceptType}</span>
-                <span className="text-xs text-gray-500">Hint: drag and drop file(s) here.</span>
-                <input
-                  type="file"
-                  accept={acceptType === "image" ? "image/*": acceptType === "video" ? "video/*": "audio/*"}
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-              </label>
+              isMobileUploadUi ? (
+                <div
+                  style={{ minHeight: 200 }}
+                  className="flex flex-col items-center justify-center gap-3 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Upload {acceptType}</span>
+                  <span className="text-[11px] text-gray-500 text-center">
+                    На телефоне используйте выбор файла или камеру. Перетаскивание можно не использовать.
+                  </span>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
+                    >
+                      Выбрать файл
+                    </button>
+                    {acceptType === "image" && (
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex-1 min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
+                      >
+                        Камера
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  {acceptType === "image" && (
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept={acceptAttr}
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  )}
+                </div>
+              ) : (
+                <label 
+                  style={{ minHeight: 200 }} 
+                  className="cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 hover:bg-gray-700/50 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Upload {acceptType}</span>
+                  <span className="text-xs text-gray-500">Hint: drag and drop file(s) here.</span>
+                  <input
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+              )
             )}
           </div>
         )}
