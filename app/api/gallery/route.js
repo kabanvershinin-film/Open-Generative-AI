@@ -287,6 +287,10 @@ export async function POST(request) {
         if (!url) return NextResponse.json({ error: 'url required' }, { status: 400 });
 
         const permanentUrl = await maybeUploadMediaToTOS(url, type);
+        if (type === 'video' && !permanentUrl) {
+            logStep('POST abort: video not mirrored', { model });
+            return NextResponse.json({ error: 'Не удалось сохранить видео в постоянное хранилище' }, { status: 502 });
+        }
         const finalUrl = permanentUrl || url;
         logStep('POST mirror result', { mirrored: !!permanentUrl, fallbackToSource: !permanentUrl });
 

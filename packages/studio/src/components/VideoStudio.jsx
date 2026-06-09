@@ -997,6 +997,61 @@ export default function VideoStudio({
     } catch {}
   }, []);
 
+  const replaceVideoEntryUrl = useCallback((entryId, nextUrl) => {
+    if (!entryId || !nextUrl) return;
+    setLocalHistory((prev) =>
+      prev.map((item) => (item.id === entryId ? { ...item, url: nextUrl } : item)),
+    );
+    try {
+      const raw = localStorage.getItem(PERSIST_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      const prev = Array.isArray(data.localHistory) ? data.localHistory : [];
+      data.localHistory = prev.map((item) =>
+        item.id === entryId ? { ...item, url: nextUrl } : item,
+      );
+      localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
+    } catch {}
+    try {
+      const raw = localStorage.getItem(PENDING_RESULT_KEY);
+      const data = raw ? JSON.parse(raw) : null;
+      if (data?.entry?.id === entryId) {
+        data.entry.url = nextUrl;
+        localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(data));
+      }
+    } catch {}
+  }, []);
+
+  const persistVideoToGallery = useCallback(async (entry) => {
+    if (!entry?.url) return null;
+    try {
+      const r = await fetch("/api/gallery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        keepalive: true,
+        body: JSON.stringify({
+          url: entry.url,
+          type: "video",
+          model: entry.model,
+          prompt: entry.prompt || "",
+        }),
+      });
+      const payload = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        toast.error("Не удалось сохранить в галерею: " + (payload.error || r.status), { duration: 4000 });
+        return null;
+      }
+      const permanentUrl = payload?.entry?.url;
+      if (permanentUrl && permanentUrl !== entry.url) {
+        replaceVideoEntryUrl(entry.id, permanentUrl);
+        setCanvasUrl((prev) => (prev === entry.url ? permanentUrl : prev));
+      }
+      return payload?.entry || null;
+    } catch (e) {
+      toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 });
+      return null;
+    }
+  }, [apiKey, replaceVideoEntryUrl]);
+
   // ── add to local history ──────────────────────────────────────────────────
   const addToLocalHistory = useCallback((entry) => {
     setLocalHistory((prev) => [entry, ...prev].slice(0, 30));
@@ -1032,25 +1087,15 @@ export default function VideoStudio({
       localStorage.removeItem(ARK_TASK_KEY);
       setLastGenerationId(genId);
       setLastGenerationModel(stored.model);
-      addToLocalHistory({
+      const entry = {
         id: genId, url, prompt: stored.prompt || "",
         model: stored.model, aspect_ratio: stored.aspect_ratio,
         duration: stored.duration, timestamp: new Date().toISOString(),
-      });
+      };
+      addToLocalHistory(entry);
+      persistVideoEntryToStorage(entry);
       showVideoInCanvas(url, stored.model);
-      fetch("/api/gallery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-        body: JSON.stringify({ url, type: "video", model: stored.model, prompt: stored.prompt || "" }),
-      })
-        .then(async (r) => {
-          if (!r.ok) {
-            const err = await r.json().catch(() => ({}));
-            toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
-          }
-        })
-        .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
+      persistVideoToGallery(entry);
     };
 
     // Task already finished while we were away — show result immediately.
@@ -1196,25 +1241,15 @@ export default function VideoStudio({
           localStorage.removeItem(ARK_TASK_KEY);
           setLastGenerationId(genId);
           setLastGenerationModel(selectedModel);
-          addToLocalHistory({
+          const entry = {
             id: genId, url: res.url, prompt: trimmedPrompt,
             model: selectedModel, aspect_ratio: selectedAr,
             duration: selectedDuration, timestamp: new Date().toISOString(),
-          });
+          };
+          addToLocalHistory(entry);
+          persistVideoEntryToStorage(entry);
           showVideoInCanvas(res.url, selectedModel);
-          fetch('/api/gallery', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-            keepalive: true,
-            body: JSON.stringify({ url: res.url, type: 'video', model: selectedModel, prompt: trimmedPrompt }),
-          })
-            .then(async (r) => {
-              if (!r.ok) {
-                const err = await r.json().catch(() => ({}));
-                toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), { duration: 4000 });
-              }
-            })
-            .catch((e) => toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), { duration: 4000 }));
+          persistVideoToGallery(entry);
           if (onGenerationComplete)
             onGenerationComplete({ url: res.url, model: selectedModel, prompt: trimmedPrompt, type: "video" });
         } else {
@@ -1316,6 +1351,7 @@ export default function VideoStudio({
         };
         addToLocalHistory(entry);
         persistVideoEntryToStorage(entry);
+        persistVideoToGallery(entry);
         try {
           localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
           localStorage.removeItem(PENDING_KEY);
@@ -1369,6 +1405,7 @@ export default function VideoStudio({
         };
         addToLocalHistory(entry);
         persistVideoEntryToStorage(entry);
+        persistVideoToGallery(entry);
         try {
           localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
           localStorage.removeItem(PENDING_KEY);
@@ -1474,6 +1511,7 @@ export default function VideoStudio({
     getCurrentResolutions,
     addToLocalHistory,
     persistVideoEntryToStorage,
+    persistVideoToGallery,
     showVideoInCanvas,
     onGenerationComplete,
   ]);
