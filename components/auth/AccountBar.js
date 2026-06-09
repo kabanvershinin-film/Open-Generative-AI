@@ -2,7 +2,6 @@
 import { useAuth } from './AuthProvider';
 import LoginModal from './LoginModal';
 import CabinetModal from './CabinetModal';
-import AdminNotificationsBell from '@/components/admin/AdminNotificationsBell';
 import SiteAnnouncementBell from '@/components/announcements/SiteAnnouncementBell';
 
 function InsufficientFundsDialog() {
@@ -45,7 +44,6 @@ export default function AccountBar() {
         <>
             <div className="fixed top-3 right-3 z-[60] flex items-center gap-2">
                 <SiteAnnouncementBell />
-                {!loading && user && <AdminNotificationsBell />}
                 {!loading && (user ? (
                     <button onClick={() => setCabinetOpen(true)}
                             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900/90 border border-white/10 text-white text-sm hover:border-purple-500 transition-colors backdrop-blur">
