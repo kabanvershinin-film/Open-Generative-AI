@@ -21,7 +21,6 @@ import ApiKeyModal from './ApiKeyModal';
 const TABS = [
   { id: 'image',   label: 'Студия фото' },
   { id: 'video',   label: 'Студия видео' },
-  { id: 'audio',   label: 'Студия аудио' },
   { id: 'workflows', label: 'Процессы' },
   { id: 'gallery', label: 'Галерея' },
 ];
@@ -89,7 +88,8 @@ export default function StandaloneShell() {
     if (first === 'agents')       { setActiveTab('agents');       return; }
     if (first === 'design-agent') { setActiveTab('design-agent'); return; }
     if (first === 'apps')         { setActiveTab('apps');         return; }
-    if (TABS.find(t => t.id === first)) { setActiveTab(first); }
+    if (TABS.find(t => t.id === first)) { setActiveTab(first); return; }
+    setActiveTab('image');
   }, [slug]);
 
   const handleTabChange = (tabId) => {
@@ -316,7 +316,6 @@ export default function StandaloneShell() {
           <ImageStudio apiKey={apiKey} droppedFiles={activeTab === 'image' ? droppedFiles : null} onFilesHandled={handleFilesHandled} onGeneratingChange={setIsGenerating} />
         </div>
         {activeTab === 'video'   && <VideoStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
-        {activeTab === 'audio'   && <AudioStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
         {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
         {activeTab === 'gallery' && <GalleryStudio apiKey={apiKey} />}
 
