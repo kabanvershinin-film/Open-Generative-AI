@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { priceRub } from '../../_lib/pricing';
+import { getUserForGallery } from '../../_lib/balance';
+import { buildUserMediaKey } from '../../_lib/tosPaths';
 
 const MUAPI_BASE = 'https://api.muapi.ai';
 
@@ -15,15 +17,14 @@ function hmac(key, data) { return createHmac('sha256', key).update(data).digest(
 
 // Build a TOS POST-policy form upload (S3-style). The existing frontend does a
 // multipart POST of { ...fields, file } to `url`, then builds the public URL.
-// All uploads go into the ref/ folder.
-function tosPostPolicy(filename) {
+function tosPostPolicy(filename, userId = null) {
     const now = new Date();
     const iso = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
     const date = iso.slice(0, 8);
     const datetime = iso;
     const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
     const ext = (filename.split('.').pop() || 'bin').toLowerCase();
-    const key = `ref/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const key = buildUserMediaKey(userId, 'ref', ext);
 
     const credential = `${TOS_AK}/${date}/${TOS_REGION}/tos/request`;
     const expiration = new Date(now.getTime() + 3600 * 1000).toISOString();
@@ -85,7 +86,8 @@ export async function GET(request, { params }) {
     if (effectivePath === 'get_file_upload_url' && TOS_ENABLED) {
         const { searchParams } = new URL(request.url);
         const filename = searchParams.get('filename') || 'upload.bin';
-        return NextResponse.json(tosPostPolicy(filename));
+        const user = await getUserForGallery(request);
+        return NextResponse.json(tosPostPolicy(filename, user?.id || null));
     }
 
     const { search } = new URL(request.url);

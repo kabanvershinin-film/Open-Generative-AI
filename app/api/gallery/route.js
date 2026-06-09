@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { getUser } from '../_lib/balance';
+import { buildUserMediaKey } from '../_lib/tosPaths';
 
 // Allow time to download the generated video from the CDN and re-upload to TOS.
 // Videos cross two regions (ARK CDN in China → Vercel → TOS in China), so 60s was
@@ -127,7 +128,7 @@ async function tosList(prefix) {
 }
 
 // Mirror media to TOS. Returns permanent URL on success, null on failure.
-async function maybeUploadMediaToTOS(srcUrl, kind) {
+async function maybeUploadMediaToTOS(srcUrl, kind, userId = null) {
     if (!srcUrl) return null;
     const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
     if (srcUrl.startsWith(`https://${tosHost}`)) return srcUrl;
@@ -140,7 +141,7 @@ async function maybeUploadMediaToTOS(srcUrl, kind) {
         if (kind === 'video') { folder = 'videos'; ext = ct.includes('webm') ? 'webm' : ct.includes('mov') ? 'mov' : 'mp4'; }
         else if (kind === 'audio') { folder = 'audio'; ext = ct.includes('wav') ? 'wav' : ct.includes('ogg') ? 'ogg' : 'mp3'; }
         else { ext = (ct.split('/')[1] || 'png').split('+')[0]; }
-        const tosKey = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const tosKey = buildUserMediaKey(userId, folder, ext);
         const uploaded = await tosUpload(tosKey, buf, ct);
         if (!uploaded) logStep('mirror upload failed', { kind, tosKey });
         return uploaded;
@@ -286,7 +287,7 @@ export async function POST(request) {
         logStep('POST body', { type, model, hasUrl: !!url, promptLen: (prompt || '').length });
         if (!url) return NextResponse.json({ error: 'url required' }, { status: 400 });
 
-        const permanentUrl = await maybeUploadMediaToTOS(url, type);
+        const permanentUrl = await maybeUploadMediaToTOS(url, type, user.id);
         if (type === 'video' && !permanentUrl) {
             logStep('POST abort: video not mirrored', { model });
             return NextResponse.json({ error: 'Не удалось сохранить видео в постоянное хранилище' }, { status: 502 });

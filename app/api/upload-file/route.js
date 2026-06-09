@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
+import { getUserForGallery } from '../_lib/balance';
+import { buildUserMediaKey } from '../_lib/tosPaths';
 
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
 const TOS_BUCKET   = process.env.TOS_BUCKET   || '';
@@ -95,6 +97,7 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Storage not configured' }, { status: 503 });
     }
     try {
+        const user = await getUserForGallery(request);
         const body = await request.json();
         const src = body.image || body.url;
         if (!src || typeof src !== 'string') {
@@ -122,7 +125,7 @@ export async function POST(request) {
         const folder = contentType.startsWith('video/') ? 'videos'
                      : contentType.startsWith('audio/') ? 'audio'
                      : 'images';
-        const key = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const key = buildUserMediaKey(user?.id || null, folder, ext);
         const publicUrl = await tosUpload(key, buffer, contentType);
         if (!publicUrl) return NextResponse.json({ error: 'Upload failed' }, { status: 502 });
         return NextResponse.json({ url: publicUrl });
@@ -137,6 +140,7 @@ export async function GET(request) {
     if (!TOS_ENABLED) {
         return NextResponse.json({ error: 'Storage not configured' }, { status: 503 });
     }
+    const user = await getUserForGallery(request);
     const { searchParams } = new URL(request.url);
     const filename = searchParams.get('filename') || 'upload';
     const contentType = searchParams.get('type') || 'application/octet-stream';
@@ -145,7 +149,7 @@ export async function GET(request) {
     const folder = contentType.startsWith('video/') ? 'videos'
                  : contentType.startsWith('audio/') ? 'audio'
                  : 'images';
-    const key = `${folder}/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const key = buildUserMediaKey(user?.id || null, folder, ext);
 
     const putUrl = presignedPutUrl(key, contentType);
     const publicUrl = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/${key}`;

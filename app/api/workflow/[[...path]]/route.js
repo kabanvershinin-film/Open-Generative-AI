@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
 import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund, isAdminUser, getEmailsForIds } from '../../_lib/balance';
+import { buildLegacyWorkflowStorageKey, buildUserMediaKey, buildWorkflowStorageKey } from '../../_lib/tosPaths';
 
 export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generations
 
@@ -77,14 +78,14 @@ async function resolveImageUrl(url) {
 }
 
 // Upload base64 data URL → TOS public URL (falls back to original if TOS unavailable)
-async function maybeUploadToTOS(dataUrl) {
+async function maybeUploadToTOS(dataUrl, userId = null) {
     if (!dataUrl || !dataUrl.startsWith('data:') || !TOS_ENABLED) return dataUrl;
     const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/s);
     if (!m) return dataUrl;
     const contentType = m[1];
     const ext = contentType.split('/')[1]?.split('+')[0] || 'bin';
     const buffer = Buffer.from(m[2], 'base64');
-    const tosKey = `images/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+    const tosKey = buildUserMediaKey(userId, 'images', ext);
     return (await tosUpload(tosKey, buffer, contentType)) || dataUrl;
 }
 
@@ -161,8 +162,8 @@ async function saveToGallery(userId, outputs, model, prompt) {
             // case a code path saves before mirroring (the calls below are no-ops
             // when the URL already points at TOS).
             let url = out.value;
-            if (out.type === 'video_url') url = await maybeUploadVideoToTOS(url);
-            else if (out.type === 'image_url') url = await maybeUploadImageToTOS(url);
+            if (out.type === 'video_url') url = await maybeUploadVideoToTOS(url, userId);
+            else if (out.type === 'image_url') url = await maybeUploadImageToTOS(url, userId);
             if (!url) continue;
             const id = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
             const entry = {
@@ -183,7 +184,7 @@ async function saveToGallery(userId, outputs, model, prompt) {
 
 // Download video from CDN URL and re-upload to TOS videos/ folder.
 // Keeps a permanent copy — CDN URLs from ARK/Memefast expire.
-async function maybeUploadVideoToTOS(videoUrl) {
+async function maybeUploadVideoToTOS(videoUrl, userId = null) {
     if (!videoUrl || !TOS_ENABLED) return videoUrl;
     const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
     if (videoUrl.startsWith(`https://${tosHost}`)) return videoUrl; // already in TOS
@@ -193,7 +194,7 @@ async function maybeUploadVideoToTOS(videoUrl) {
         const buf = Buffer.from(await r.arrayBuffer());
         const ct = r.headers.get('content-type') || 'video/mp4';
         const ext = ct.includes('webm') ? 'webm' : ct.includes('mov') ? 'mov' : 'mp4';
-        const tosKey = `videos/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const tosKey = buildUserMediaKey(userId, 'videos', ext);
         return (await tosUpload(tosKey, buf, ct)) || videoUrl;
     } catch { return videoUrl; }
 }
@@ -202,9 +203,9 @@ async function maybeUploadVideoToTOS(videoUrl) {
 // base64 data URLs (gemini/chat-image models) AND remote provider URLs
 // (gpt-image / dall-e / flux via response_format:'url'), whose hosted links
 // expire after a day or two and would otherwise leave broken gallery thumbnails.
-async function maybeUploadImageToTOS(imageUrl) {
+async function maybeUploadImageToTOS(imageUrl, userId = null) {
     if (!imageUrl || !TOS_ENABLED) return imageUrl;
-    if (imageUrl.startsWith('data:')) return maybeUploadToTOS(imageUrl);
+    if (imageUrl.startsWith('data:')) return maybeUploadToTOS(imageUrl, userId);
     const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
     if (imageUrl.startsWith(`https://${tosHost}`)) return imageUrl; // already in TOS
     try {
@@ -213,7 +214,7 @@ async function maybeUploadImageToTOS(imageUrl) {
         const buf = Buffer.from(await r.arrayBuffer());
         const ct = r.headers.get('content-type') || 'image/png';
         const ext = (ct.split('/')[1] || 'png').split('+')[0];
-        const tosKey = `images/${Date.now()}_${Math.random().toString(36).slice(2, 7)}.${ext}`;
+        const tosKey = buildUserMediaKey(userId, 'images', ext);
         return (await tosUpload(tosKey, buf, ct)) || imageUrl;
     } catch { return imageUrl; }
 }
@@ -222,7 +223,7 @@ async function maybeUploadImageToTOS(imageUrl) {
 async function tosSaveWorkflow(id, data) {
     if (!TOS_ENABLED) return;
     const buf = Buffer.from(JSON.stringify(data));
-    await tosUpload(`workflows/${id}.json`, buf, 'application/json').catch(() => {});
+    await tosUpload(buildWorkflowStorageKey(data?.owner_id || null, id), buf, 'application/json').catch(() => {});
     // Update workflow index (carry owner_id so the list can be scoped per user;
     // only set it when known so we never null out an existing owner).
     await tosUpdateIndex(id, {
@@ -289,15 +290,36 @@ async function tosRemoveFromCommunity(id) {
     await tosUpload('workflows/community.json', buf, 'application/json').catch(() => {});
 }
 
-// Load workflow from TOS (public read, no auth needed)
-async function tosLoadWorkflow(id) {
-    if (!TOS_ENABLED) return null;
+async function tosFetchJson(key) {
+    if (!TOS_ENABLED || !key) return null;
     try {
-        const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/workflows/${id}.json`;
+        const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/${key}`;
         const r = await fetch(url);
         if (!r.ok) return null;
         return await r.json();
     } catch { return null; }
+}
+
+// Load workflow from TOS. Prefer the current user's folder, then the indexed
+// owner folder, then fall back to the legacy flat path.
+async function tosLoadWorkflow(id, options = {}) {
+    if (!TOS_ENABLED) return null;
+    const preferredUserId = options.userId || null;
+    const indexedOwnerId = options.ownerId || (await tosLoadIndex()).find((w) => w?.id === id)?.owner_id || null;
+    const keys = [
+        buildWorkflowStorageKey(preferredUserId, id),
+        indexedOwnerId ? buildWorkflowStorageKey(indexedOwnerId, id) : null,
+        buildLegacyWorkflowStorageKey(id),
+    ].filter(Boolean);
+
+    const seen = new Set();
+    for (const key of keys) {
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const wf = await tosFetchJson(key);
+        if (wf) return wf;
+    }
+    return null;
 }
 
 // Persist run result to TOS — allows any serverless instance to read it (cross-instance polling)
@@ -332,12 +354,12 @@ const MEMEFAST = 'https://memefast.top';
 const ARK_API_KEY = process.env.ARK_API_KEY || '';
 const ARK_BASE    = 'https://ark.cn-beijing.volces.com';
 
-async function generateVideoARK(model, params) {
+async function generateVideoARK(model, params, userId = null) {
     // ARK needs public HTTP URLs — it cannot accept base64 data URLs.
     const resolvePublic = async (u) => {
         if (!u || typeof u !== 'string') return undefined;
         if (!u.startsWith('data:')) return u;
-        const uploaded = await maybeUploadToTOS(u);
+        const uploaded = await maybeUploadToTOS(u, userId);
         return (uploaded && !uploaded.startsWith('data:')) ? uploaded : undefined;
     };
     const imageUrl = await resolvePublic(params.image_url);
@@ -399,7 +421,7 @@ async function generateVideoARK(model, params) {
             if (!arkUrl) throw new Error('ARK succeeded but no video URL');
             // ARK CDN (volces.com) has CORS restrictions — re-upload to TOS immediately
             // so the browser can play it. Falls back to ARK URL if TOS is unavailable.
-            const finalUrl = await maybeUploadVideoToTOS(arkUrl);
+            const finalUrl = await maybeUploadVideoToTOS(arkUrl, userId);
             // Carry ARK's real token usage so the run handler can charge by actuals.
             const tokens = Number(p.usage?.total_tokens || p.content?.usage?.total_tokens || 0);
             return [{ type: 'video_url', value: finalUrl, tokens }];
@@ -745,12 +767,12 @@ async function generateText(apiKey, model, params) {
     return [{ type: 'text', value: data.choices?.[0]?.message?.content || '' }];
 }
 
-async function generateVideo(apiKey, model, params) {
+async function generateVideo(apiKey, model, params, userId = null) {
     const apiModel = MODEL_ID_MAP[model] || model;
 
     // Seedance 2.0 models go through ARK (Volcano Engine) directly, not Memefast
     if (/doubao-seedance-2-0/i.test(apiModel)) {
-        return generateVideoARK(apiModel, params);
+        return generateVideoARK(apiModel, params, userId);
     }
 
     // Resolve TOS/private URLs to base64 so Memefast can access the image
@@ -955,7 +977,7 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         else if (model === 'audio-passthrough') outputs = [{ type: 'audio_url', value: params.audio_url || '' }];
         else if (model === 'text-passthrough') outputs = [{ type: 'text', value: params.prompt || '' }];
         // Generation
-        else if (VIDEO_MODELS.has(model)) outputs = await generateVideo(apiKey, model, params);
+        else if (VIDEO_MODELS.has(model)) outputs = await generateVideo(apiKey, model, params, userId);
         else if (TEXT_MODELS.has(model)) outputs = await generateText(apiKey, model, params);
         else if (AUDIO_MODELS.has(model)) outputs = await generateAudio(apiKey, model, params);
         else if (model in FAL_IMAGE_MODEL_MAP) outputs = await generateFalImage(apiKey, model, params);
@@ -978,13 +1000,13 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         if (!opts.skipMirror) {
             for (const out of outputs) {
                 if (out.type === 'image_url' && out.value) {
-                    const uploaded = await maybeUploadImageToTOS(out.value);
+                    const uploaded = await maybeUploadImageToTOS(out.value, userId);
                     if (uploaded && uploaded !== out.value) out.value = uploaded;
                 }
             }
             for (const out of outputs) {
                 if (out.type === 'video_url' && out.value) {
-                    const uploaded = await maybeUploadVideoToTOS(out.value);
+                    const uploaded = await maybeUploadVideoToTOS(out.value, userId);
                     if (uploaded && uploaded !== out.value) out.value = uploaded;
                 }
             }
@@ -1337,7 +1359,7 @@ export async function GET(request, { params }) {
         const id = path[1];
         const user = await getUserForGallery(request);
         let wf = store.get(id);
-        if (!wf) { wf = await tosLoadWorkflow(id); if (wf) store.set(id, wf); }
+        if (!wf) { wf = await tosLoadWorkflow(id, { userId: user?.id || null }); if (wf) store.set(id, wf); }
         wf = wf || {};
 
         // Privacy gate: never expose another user's nodes. Return an EMPTY workflow
@@ -1475,7 +1497,8 @@ export async function GET(request, { params }) {
     if (!id) return NextResponse.json([]);
     let wf = store.get(id);
     if (!wf) {
-        wf = await tosLoadWorkflow(id);
+        const user = await getUserForGallery(request);
+        wf = await tosLoadWorkflow(id, { userId: user?.id || null });
         if (wf) store.set(id, wf);
     }
     return NextResponse.json(wf || emptyWorkflow(id));
@@ -1496,7 +1519,7 @@ export async function POST(request, { params }) {
     if (path[0] === 'create' || path.length === 0) {
         const owner = await getUserForGallery(request);
         const id = body.workflow_id || genId();
-        const existing = store.get(id) || (await tosLoadWorkflow(id)) || null;
+        const existing = store.get(id) || (await tosLoadWorkflow(id, { userId: owner?.id || null })) || null;
         // Don't let one user overwrite another user's workflow.
         if (existing?.owner_id && owner?.id && existing.owner_id !== owner.id) {
             return NextResponse.json({ error: 'forbidden' }, { status: 403 });
@@ -1527,7 +1550,7 @@ export async function POST(request, { params }) {
         const billingUser = BILLING_ENABLED ? galleryUser : null;
 
         let wf = store.get(wfId);
-        if (!wf) { wf = await tosLoadWorkflow(wfId); if (wf) store.set(wfId, wf); }
+        if (!wf) { wf = await tosLoadWorkflow(wfId, { userId: galleryUser?.id || null }); if (wf) store.set(wfId, wf); }
         if (!wf) return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
 
         const nodes = wf.nodes || [];
@@ -1731,8 +1754,9 @@ export async function POST(request, { params }) {
     const publishIdx = path.indexOf('publish');
     if (publishIdx > 0) {
         const wfId = path[publishIdx - 1];
+        const user = await getUserForGallery(request);
         let wf = store.get(wfId);
-        if (!wf) { wf = await tosLoadWorkflow(wfId); if (wf) store.set(wfId, wf); }
+        if (!wf) { wf = await tosLoadWorkflow(wfId, { userId: user?.id || null }); if (wf) store.set(wfId, wf); }
         if (!wf) return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
         // Builder sends { publish: true }, our UI sends { is_published: true }
         const published = body.publish !== undefined ? !!body.publish : (body.is_published !== false);
@@ -1768,7 +1792,7 @@ export async function POST(request, { params }) {
     if (path[1] === 'community-remove') {
         const wfId = path[0];
         const user = await getUserForGallery(request);
-        const wf = store.get(wfId) || (await tosLoadWorkflow(wfId)) || null;
+        const wf = store.get(wfId) || (await tosLoadWorkflow(wfId, { userId: user?.id || null })) || null;
         const isOwner = !!(wf?.owner_id && user?.id && wf.owner_id === user.id);
         if (!isOwner && !isAdminUser(user)) {
             return NextResponse.json({ error: 'forbidden' }, { status: 403 });
@@ -1796,7 +1820,7 @@ export async function POST(request, { params }) {
 
     const id = path[0];
     const owner = await getUserForGallery(request);
-    const existing = store.get(id) || (await tosLoadWorkflow(id)) || emptyWorkflow(id);
+    const existing = store.get(id) || (await tosLoadWorkflow(id, { userId: owner?.id || null })) || emptyWorkflow(id);
     if (existing.owner_id && owner?.id && existing.owner_id !== owner.id) {
         return NextResponse.json({ error: 'forbidden' }, { status: 403 });
     }
