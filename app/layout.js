@@ -11,7 +11,7 @@ export const metadata = {
   title: 'Open Generative AI — Free AI Image & Video Studio',
   description: 'Generate AI images and videos using 200+ models — Flux, Midjourney, Kling, Veo, Seedance and more.',
   links: [
-    { rel: 'preload', href: 'https://open-generative-ai.tos-cn-beijing.volces.com/gallery/02178111753742700000000000000000000ffffac1485021a8cd2.mp4', as: 'video', type: 'video/mp4', crossOrigin: 'anonymous' },
+    { rel: 'preload', href: 'https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4', as: 'video', type: 'video/mp4', crossOrigin: 'anonymous' },
   ],
 };
 

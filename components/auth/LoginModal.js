@@ -93,9 +93,9 @@ export default function LoginModal() {
                 preload="auto"
                 crossOrigin="anonymous"
                 className="absolute inset-0 w-full h-full object-cover"
-                poster="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/02178111753742700000000000000000000ffffac1485021a8cd2.mp4"
+                poster="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4"
             >
-                <source src="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
+                <source src="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
             </video>
             {/* Darker overlay for readability */}
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
