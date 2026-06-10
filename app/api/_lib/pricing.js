@@ -9,7 +9,7 @@
 //   PLATFORM_MARKUP  — platform margin, default 1.15 (+15%)
 
 let CNY_TO_RUB = Number(process.env.CNY_TO_RUB || 10.55); // live CBR rate, see ensureCnyRate()
-const PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.15);
+const PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.3);
 
 // Refresh CNY→RUB from the Central Bank of Russia (same source as creator-club),
 // cached in-memory for 1h. Updates the module-level CNY_TO_RUB used by every
