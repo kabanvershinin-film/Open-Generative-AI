@@ -83,16 +83,11 @@ export default function LoginModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
-             onClick={close}>
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f] to-[#0b0a10] shadow-[0_30px_90px_rgba(124,58,237,0.30)] animate-in zoom-in-95 fade-in duration-200"
-                 onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f] to-[#0b0a10] shadow-[0_30px_90px_rgba(124,58,237,0.30)] animate-in zoom-in-95 fade-in duration-200">
                 {/* glow */}
                 <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
-
-                <button onClick={close}
-                        className="absolute top-4 right-4 z-10 text-white/40 hover:text-white transition-colors text-lg leading-none">✕</button>
 
                 <div className="relative px-7 pt-9 pb-8">
                     {/* Brand */}
