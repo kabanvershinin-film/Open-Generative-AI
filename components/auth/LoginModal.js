@@ -91,9 +91,9 @@ export default function LoginModal() {
                 loop
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover"
-                poster="https://31p5glwzd1.ucarecd.net/64e80b27-3f7d-47b8-b919-f2b874949ffc/02178111720138000000000000000000000ffffac148502158dd7.mp4"
+                poster="https://31p5glwzd1.ucarecd.net/d2b8136c-403c-42b2-adf8-193a323f7226/02178111753742700000000000000000000ffffac1485021a8cd2.mp4"
             >
-                <source src="https://31p5glwzd1.ucarecd.net/64e80b27-3f7d-47b8-b919-f2b874949ffc/02178111720138000000000000000000000ffffac148502158dd7.mp4" type="video/mp4" />
+                <source src="https://31p5glwzd1.ucarecd.net/d2b8136c-403c-42b2-adf8-193a323f7226/02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
             </video>
             {/* Overlay for readability */}
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
