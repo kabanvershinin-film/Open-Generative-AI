@@ -208,7 +208,10 @@ export function AuthProvider({ children }) {
     const loginWithYandex = async () => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: YANDEX_PROVIDER,
-            options: { redirectTo: `${window.location.origin}/` },
+            options: { 
+                redirectTo: `${window.location.origin}/`,
+                skipBrowserRedirect: false,
+            },
         });
         return error ? mapAuthError(error) : null;
     };
