@@ -91,7 +91,9 @@ export default function LoginModal() {
                 loop
                 playsInline
                 preload="auto"
+                crossOrigin="anonymous"
                 className="absolute inset-0 w-full h-full object-cover"
+                poster="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/02178111753742700000000000000000000ffffac1485021a8cd2.mp4"
             >
                 <source src="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
             </video>
