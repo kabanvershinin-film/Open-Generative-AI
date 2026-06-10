@@ -103,6 +103,7 @@ export default function CabinetModal() {
     }, [user, verifyReturn]);
 
     if (!cabinetOpen) return null;
+    const contact = profile?.email || user?.email || profile?.phone || user?.phone || 'Контакт не указан';
 
     const topup = async () => {
         const value = Number(amount);
@@ -136,7 +137,7 @@ export default function CabinetModal() {
                     <button onClick={() => setCabinetOpen(false)} className="text-white/40 hover:text-white">✕</button>
                 </div>
 
-                <div className="text-sm text-white/50">{profile?.email}</div>
+                <div className="text-sm text-white/50">{contact}</div>
 
                 <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
                     <div className="text-xs text-white/50">Ваш баланс</div>
@@ -162,7 +163,7 @@ export default function CabinetModal() {
                            placeholder="Сумма, ₽" />
                     <button onClick={topup} disabled={busy}
                             className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors">
-                        {busy ? '...' : 'Пополнить через Точку'}
+                        {busy ? '...' : 'Пополнить'}
                     </button>
                     <div className="text-xs text-white/30 text-center">Карта или СБП · от 100 ₽</div>
                 </div>
