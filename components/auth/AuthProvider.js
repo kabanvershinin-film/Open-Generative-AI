@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabaseClient';
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 const YANDEX_PROVIDER = process.env.NEXT_PUBLIC_SUPABASE_YANDEX_PROVIDER || 'custom:yandex';
-const YANDEX_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_YANDEX_AUTH === 'true';
+const YANDEX_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_YANDEX_AUTH !== 'false';
 
 function normalizePhone(value) {
     const raw = String(value || '').trim();
