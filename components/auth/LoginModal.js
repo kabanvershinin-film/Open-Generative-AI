@@ -48,7 +48,7 @@ export default function LoginModal() {
 
     const isRegister = mode === 'register';
     const isPhone = method === 'phone';
-    const inputCls = 'w-full px-4 py-3 rounded-xl bg-white/[0.04] border border-white/10 text-white text-sm outline-none transition-colors placeholder:text-white/30 focus:border-purple-500/70 focus:bg-white/[0.06]';
+    const inputCls = 'w-full px-4 py-3 rounded-xl bg-white/[0.08] border border-purple-300/25 text-white text-sm outline-none transition-colors placeholder:text-white/45 focus:border-purple-400 focus:bg-white/[0.12] shadow-sm shadow-purple-500/10';
     const switchMethod = (nextMethod) => {
         setMethod(nextMethod);
         setOtp('');
@@ -95,10 +95,10 @@ export default function LoginModal() {
             >
                 <source src="https://31p5glwzd1.ucarecd.net/d2b8136c-403c-42b2-adf8-193a323f7226/02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
             </video>
-            {/* Overlay for readability */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            {/* Darker overlay for readability */}
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" />
             
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f]/95 to-[#0b0a10]/95 shadow-[0_30px_90px_rgba(124,58,237,0.30)] animate-in zoom-in-95 fade-in duration-200">
+            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-purple-400/30 bg-gradient-to-b from-[#120f1c] to-[#0a090f] shadow-[0_30px_100px_rgba(124,58,237,0.45)] animate-in zoom-in-95 fade-in duration-200">
                 {/* glow */}
                 <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
@@ -201,13 +201,13 @@ export default function LoginModal() {
                     )}
 
                     <div className="flex items-center gap-3 my-5">
-                        <div className="h-px flex-1 bg-white/10" />
-                        <span className="text-[11px] text-white/30 uppercase tracking-wider">быстрый вход</span>
-                        <div className="h-px flex-1 bg-white/10" />
+                        <div className="h-px flex-1 bg-purple-400/20" />
+                        <span className="text-[11px] text-purple-200/70 uppercase tracking-wider">быстрый вход</span>
+                        <div className="h-px flex-1 bg-purple-400/20" />
                     </div>
 
                     <button type="button" onClick={() => startOAuth(loginWithGoogle)} disabled={busy}
-                            className="w-full py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors">
+                            className="w-full py-3 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-purple-300/25 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm shadow-purple-500/10">
                         <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
                             <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 1 1 7.9-21.1l5.7-5.7A20 20 0 1 0 24 44c11 0 19.6-8 19.6-20 0-1.3-.1-2.3-.4-3.5z"/>
                             <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3.1 0 5.9 1.2 7.9 3.1l5.7-5.7A20 20 0 0 0 6.3 14.7z"/>
@@ -222,7 +222,7 @@ export default function LoginModal() {
                             type="button"
                             onClick={() => startOAuth(loginWithYandex)}
                             disabled={busy}
-                            className="w-full mt-3 py-3 rounded-xl bg-[#FC3F1D] hover:bg-[#ff5333] border border-[#FC3F1D] text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                            className="w-full mt-3 py-3 rounded-xl bg-[#FC3F1D] hover:bg-[#ff5333] border border-[#FF6B5B] text-white text-sm font-medium flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#FC3F1D]/25"
                         >
                             <span className="text-base font-black leading-none">Я</span>
                             Войти через Яндекс ID
