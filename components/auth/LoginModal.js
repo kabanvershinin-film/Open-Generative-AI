@@ -83,8 +83,22 @@ export default function LoginModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f] to-[#0b0a10] shadow-[0_30px_90px_rgba(124,58,237,0.30)] animate-in zoom-in-95 fade-in duration-200">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            {/* Video background */}
+            <video
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="absolute inset-0 w-full h-full object-cover"
+                poster="https://31p5glwzd1.ucarecd.net/64e80b27-3f7d-47b8-b919-f2b874949ffc/02178111720138000000000000000000000ffffac148502158dd7.mp4"
+            >
+                <source src="https://31p5glwzd1.ucarecd.net/64e80b27-3f7d-47b8-b919-f2b874949ffc/02178111720138000000000000000000000ffffac148502158dd7.mp4" type="video/mp4" />
+            </video>
+            {/* Overlay for readability */}
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            
+            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-b from-[#16121f]/95 to-[#0b0a10]/95 shadow-[0_30px_90px_rgba(124,58,237,0.30)] animate-in zoom-in-95 fade-in duration-200">
                 {/* glow */}
                 <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
