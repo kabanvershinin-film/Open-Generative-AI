@@ -10,6 +10,35 @@ import { supabase } from '@/lib/supabaseClient';
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
+const YANDEX_PROVIDER = process.env.NEXT_PUBLIC_SUPABASE_YANDEX_PROVIDER || 'custom:yandex';
+const YANDEX_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_YANDEX_AUTH === 'true';
+
+function normalizePhone(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+
+    const digits = raw.replace(/[^\d+]/g, '');
+    if (digits.startsWith('+')) {
+        const normalized = `+${digits.slice(1).replace(/\D/g, '')}`;
+        return /^\+\d{10,15}$/.test(normalized) ? normalized : null;
+    }
+
+    const onlyDigits = digits.replace(/\D/g, '');
+    if (/^8\d{10}$/.test(onlyDigits)) return `+7${onlyDigits.slice(1)}`;
+    if (/^7\d{10}$/.test(onlyDigits)) return `+${onlyDigits}`;
+    return /^\d{10,15}$/.test(onlyDigits) ? `+${onlyDigits}` : null;
+}
+
+function mapAuthError(error) {
+    const message = error?.message || error || 'Не удалось выполнить вход';
+    if (/Invalid login credentials/i.test(message)) return 'Неверный email или пароль';
+    if (/Email not confirmed/i.test(message)) return 'Подтвердите email перед входом';
+    if (/For security purposes, you can only request this after/i.test(message)) return 'Код уже отправлен. Подождите немного и попробуйте снова';
+    if (/Token has expired or is invalid/i.test(message)) return 'Код недействителен или истёк';
+    if (/Unsupported provider/i.test(message)) return 'Провайдер входа не настроен в Supabase';
+    if (/Error sending phone/i.test(message)) return 'Не удалось отправить SMS-код. Проверьте настройки SMS в Supabase';
+    return message;
+}
 
 function setTokenEverywhere(token) {
     if (token) {
@@ -48,18 +77,42 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
+    const buildProfileSeed = useCallback((u) => ({
+        id: u.id,
+        email: u.email || null,
+        phone: u.phone || u.user_metadata?.phone || null,
+        full_name: u.user_metadata?.full_name || u.user_metadata?.name || null,
+        balance: 0,
+    }), []);
+
     const loadProfile = useCallback(async (u) => {
         if (!u) { setProfile(null); return; }
+        const seed = buildProfileSeed(u);
         const { data } = await supabase.from('profiles').select('*').eq('id', u.id).single();
-        if (data) setProfile(data);
-        else {
-            // First login — create the profile row
-            const row = { id: u.id, email: u.email, full_name: u.user_metadata?.full_name || null, balance: 0 };
-            await supabase.from('profiles').insert(row);
-            setProfile(row);
-            await notifyAdminAboutRegistration();
+        if (data) {
+            const patch = {};
+            if (!data.email && seed.email) patch.email = seed.email;
+            if (!data.phone && seed.phone) patch.phone = seed.phone;
+            if (!data.full_name && seed.full_name) patch.full_name = seed.full_name;
+            if (Object.keys(patch).length > 0) {
+                const { data: updated } = await supabase
+                    .from('profiles')
+                    .update(patch)
+                    .eq('id', u.id)
+                    .select('*')
+                    .single();
+                setProfile(updated || { ...data, ...patch });
+                return;
+            }
+            setProfile(data);
+            return;
         }
-    }, [notifyAdminAboutRegistration]);
+
+        // First login — create the profile row even if the user only has a phone.
+        await supabase.from('profiles').insert(seed);
+        setProfile(seed);
+        await notifyAdminAboutRegistration();
+    }, [buildProfileSeed, notifyAdminAboutRegistration]);
 
     const refreshBalance = useCallback(async () => {
         if (!user) return;
@@ -121,7 +174,7 @@ export function AuthProvider({ children }) {
 
     const login = async (email, password) => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) return error.message;
+        if (error) return mapAuthError(error);
         setUser(data.user);
         await loadProfile(data.user);
         setLoginOpen(false);
@@ -133,12 +186,10 @@ export function AuthProvider({ children }) {
             email, password,
             options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/?confirmed=1` },
         });
-        if (error) return error.message;
+        if (error) return mapAuthError(error);
         if (data.user) {
             const needsConfirmation = !data.session || !data.user.email_confirmed_at;
             if (needsConfirmation) return '__CHECK_EMAIL__';
-            await supabase.from('profiles').insert({ id: data.user.id, email, full_name: name, balance: 0 });
-            await notifyAdminAboutRegistration();
             setUser(data.user);
             await loadProfile(data.user);
             setLoginOpen(false);
@@ -147,7 +198,48 @@ export function AuthProvider({ children }) {
     };
 
     const loginWithGoogle = async () => {
-        await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/` } });
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: `${window.location.origin}/` },
+        });
+        return error ? mapAuthError(error) : null;
+    };
+
+    const loginWithYandex = async () => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: YANDEX_PROVIDER,
+            options: { redirectTo: `${window.location.origin}/` },
+        });
+        return error ? mapAuthError(error) : null;
+    };
+
+    const sendPhoneOtp = async (phone) => {
+        const normalizedPhone = normalizePhone(phone);
+        if (!normalizedPhone) return { error: 'Укажите телефон в формате +7XXXXXXXXXX' };
+
+        const { error } = await supabase.auth.signInWithOtp({ phone: normalizedPhone });
+        if (error) return { error: mapAuthError(error) };
+        return { phone: normalizedPhone, error: null };
+    };
+
+    const verifyPhoneOtp = async (phone, token) => {
+        const normalizedPhone = normalizePhone(phone);
+        if (!normalizedPhone) return 'Укажите телефон в формате +7XXXXXXXXXX';
+        if (!String(token || '').trim()) return 'Введите код из SMS';
+
+        const { data, error } = await supabase.auth.verifyOtp({
+            phone: normalizedPhone,
+            token: String(token).trim(),
+            type: 'sms',
+        });
+        if (error) return mapAuthError(error);
+
+        const nextUser = data?.user || data?.session?.user || null;
+        setTokenEverywhere(data?.session?.access_token || null);
+        setUser(nextUser);
+        await loadProfile(nextUser);
+        setLoginOpen(false);
+        return null;
     };
 
     const logout = async () => {
@@ -160,10 +252,11 @@ export function AuthProvider({ children }) {
     const value = {
         user, profile, loading,
         balance: Number(profile?.balance || 0),
-        login, register, loginWithGoogle, logout, refreshBalance,
+        login, register, loginWithGoogle, loginWithYandex, sendPhoneOtp, verifyPhoneOtp, logout, refreshBalance,
         loginOpen, setLoginOpen,
         cabinetOpen, setCabinetOpen,
         needFunds, setNeedFunds,
+        yandexAuthEnabled: YANDEX_AUTH_ENABLED,
     };
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
