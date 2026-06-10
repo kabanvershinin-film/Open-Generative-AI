@@ -90,6 +90,7 @@ export default function LoginModal() {
                 muted
                 loop
                 playsInline
+                preload="auto"
                 className="absolute inset-0 w-full h-full object-cover"
             >
                 <source src="https://31p5glwzd1.ucarecd.net/d2b8136c-403c-42b2-adf8-193a323f7226/021781117537427000000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
