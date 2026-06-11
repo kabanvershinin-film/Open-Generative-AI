@@ -1962,6 +1962,8 @@ export async function POST(request, { params }) {
         return NextResponse.json({ success: true });
     }
 
+
+
     if (path[1] === 'thumbnail') {
         const wfId = path[0];
         const user = await getUserForGallery(request);
