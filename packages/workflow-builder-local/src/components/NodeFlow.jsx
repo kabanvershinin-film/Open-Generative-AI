@@ -2835,67 +2835,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           </div>
         </div>
       </div>
-      {nodes.length === 0 && !isPresetsDismissed && interactionMode && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-          <div className="pointer-events-auto flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300 transform scale-90 md:scale-100 overflow-y-auto custom-scrollbar max-w-[90%] max-h-[80%] p-10">
-            <div className="flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md px-6 py-3 rounded-lg border border-white/10 shadow-xl">
-              <h2 className="text-xl font-semibold text-white tracking-tight">Select a Workflow</h2>
-              <p className="text-xs text-gray-400 font-medium uppercase tracking-widest">or start from scratch</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {presets.map((preset) => (
-                <button
-                  type="button"
-                  suppressHydrationWarning={true}
-                  key={preset.id}
-                  onClick={() => loadPreset(preset)}
-                  className="group relative flex flex-col bg-[#151618] aspect-[4/3] border border-gray-700 hover:border-gray-500 rounded-lg shadow-xl hover:shadow-2xl hover:scale-105 cursor-pointer transition-all duration-200 overflow-hidden text-left"
-                >
-                  <div className="z-10 p-2 bg-[#242629] border-b border-gray-700 flex items-center px-3 justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${preset.id === "empty-workflow" ? "bg-gray-400" : "bg-blue-500"}`}></div>
-                      <span className="text-[10px] font-bold text-gray-300 uppercase tracking-wider">{preset.id === "empty-workflow" ? "NEW" : "PRESET"}</span>
-                    </div>
-                    <div className="flex gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-600"></div>
-                    </div>
-                  </div>
-                  <div className="z-0 p-4 flex flex-col gap-3 h-full">
-                    <div className="flex items-center justify-center gap-2 z-10 w-full h-full">
-                      <div className="text-white group-hover:text-blue-400 transition-colors">
-                        {iconMap[preset.icon] || <RiInputMethodLine size={16} />}
-                      </div>
-                      <h3 className="text-sm font-medium text-white leading-tight group-hover:text-blue-400 transition-colors">
-                        {preset.title}
-                      </h3>
-                    </div>
-                    {preset.image && (
-                      <div className="absolute inset-0 z-0 w-full h-full rounded overflow-hidden border border-gray-800">
-                        <img src={preset.image} alt="" className="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute inset-0 z-10 w-full h-full bg-black/60"></div>
-                      </div>
-                    )}
-                    {preset.description && (
-                      <p className="z-10 text-[11px] text-gray-300 leading-relaxed border-t border-gray-500 pt-2 mt-auto">
-                        {preset.description}
-                      </p>
-                    )}
-                  </div>
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              suppressHydrationWarning={true}
-              onClick={() => setIsPresetsDismissed(true)}
-              className="mt-4 px-5 py-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-xs text-gray-300 font-medium transition-colors border border-gray-700 hover:border-gray-500"
-            >
-              Dismiss & Enter Empty Canvas
-            </button>
-          </div>
-        </div>
-      )}
+
       {/* Assistant chat widget (bottom-right robot button) removed per request. */}
       {isCategoryPopupOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
