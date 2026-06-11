@@ -10,8 +10,8 @@ function NeonPixelBackground() {
 
     const ctx = canvas.getContext('2d');
     let W, H, cols, rows, cells = [];
-    const PIXEL = 4;
-    const GAP = 1;
+    const PIXEL = 12;
+    const GAP = 4;
     const STEP = PIXEL + GAP;
 
     function resize() {
