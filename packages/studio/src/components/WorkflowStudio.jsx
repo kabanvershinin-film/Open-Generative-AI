@@ -656,7 +656,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
         {/* Immersive Sub-header / Floating Toggle */}
         {isHeaderVisible ? (
           <div className="flex-shrink-0 h-14 border-b border-purple-500/10 flex items-center justify-between px-6 bg-black/20 z-30">
-            <div className="flex items-center gap-8 h-full">
+            <div className="flex items-center gap-4 h-full">
               <button
                 onClick={() => router.push("/studio/workflows")}
                 className="flex items-center gap-2 text-xs font-bold text-white/50 hover:text-white transition-colors"
@@ -667,9 +667,6 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 </svg>
                 Мои процессы
               </button>
-            </div>
-
-            <div className="flex items-center gap-3">
               {selectedWorkflow.is_owner !== false && (
                 <button
                   onClick={() => setShowShareModal(true)}
@@ -682,9 +679,9 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                   Поделиться
                 </button>
               )}
-              <span className="text-[11px] font-black text-[#d946ef] uppercase tracking-widest">
-                {selectedWorkflow.name}
-              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => onToggleHeader?.(false)}
                 className="p-1.5 bg-white/5 hover:bg-white/10 rounded-md transition-colors text-white/40 hover:text-white"
