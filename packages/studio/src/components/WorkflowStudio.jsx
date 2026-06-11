@@ -655,7 +655,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
       <div className="h-full flex flex-col bg-[#0a0714] text-white">
         {/* Immersive Sub-header / Floating Toggle */}
         {isHeaderVisible ? (
-          <div className="flex-shrink-0 h-14 border-b border-white/5 flex items-center justify-between px-6 bg-black/40 z-30">
+          <div className="flex-shrink-0 h-14 border-b border-purple-500/10 flex items-center justify-between px-6 bg-black/20 z-30">
             <div className="flex items-center gap-8 h-full">
               <button
                 onClick={() => router.push("/studio/workflows")}
@@ -665,7 +665,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 12H5M12 19l-7-7 7-7" />
                 </svg>
-                All Workflows
+                Мои процессы
               </button>
             </div>
 
@@ -699,7 +699,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
           </div>
         ) : (
           /* Floating Immersive Mode Controller */
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 px-4 py-2 bg-black/60 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl animate-fade-in-down">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 px-4 py-2 bg-black/30 backdrop-blur-xl border border-purple-500/20 rounded-full shadow-2xl animate-fade-in-down">
             <button
                onClick={() => router.push("/studio/workflows")}
                className="p-1.5 text-white/40 hover:text-white transition-colors"
@@ -723,7 +723,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
         )}
 
         <div className="flex-1 overflow-hidden">
-          <div className="flex-1 relative h-full bg-[#050505]">
+          <div className="flex-1 relative h-full bg-[#0a0714]">
             {nodeSchemas && workflowDef ? (
               <WorkflowUI
                 workflowId={selectedWorkflow?.id}
