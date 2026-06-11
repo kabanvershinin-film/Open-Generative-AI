@@ -468,11 +468,29 @@ export default function VideoStudio({
     try {
       const stored = localStorage.getItem(PERSIST_KEY);
       if (stored) {
-        const data = JSON.parse(stored);
+        let data = JSON.parse(stored);
+        
+        // Fix old invalid selectedModel
+        if (data.selectedModel === "seedance-2.0-fast") {
+          data.selectedModel = "seedance-2.0-fast-t2v";
+          data.selectedModelName = "Seedance 2.0 Fast";
+        }
+        
         if (data.imageMode !== undefined) setImageMode(data.imageMode);
         if (data.v2vMode !== undefined) setV2vMode(data.v2vMode);
-        if (data.selectedModel) setSelectedModel(data.selectedModel);
-        if (data.selectedModelName) setSelectedModelName(data.selectedModelName);
+        
+        // Validate selectedModel exists in current models
+        const currentModels = data.v2vMode ? v2vModels : (data.imageMode ? i2vModels : t2vModels);
+        const validModel = data.selectedModel && currentModels.find(m => m.id === data.selectedModel);
+        if (validModel) {
+          setSelectedModel(data.selectedModel);
+          setSelectedModelName(data.selectedModelName || validModel.name);
+        } else {
+          // Reset to default model if stored one is invalid
+          setSelectedModel(defaultModel.id);
+          setSelectedModelName(defaultModel.name);
+        }
+        
         if (data.selectedAr) setSelectedAr(data.selectedAr);
         if (data.selectedDuration) setSelectedDuration(data.selectedDuration);
         if (data.selectedResolution) setSelectedResolution(data.selectedResolution);
@@ -497,7 +515,7 @@ export default function VideoStudio({
     } finally {
       hasRestored.current = true;
     }
-  }, [applyControlsForModel, defaultModel.id]);
+  }, [applyControlsForModel, defaultModel.id, imageMode]);
 
   // ── Adjust height on load ────────────────────────────────────────────────
   useEffect(() => {
