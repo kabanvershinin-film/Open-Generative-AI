@@ -474,21 +474,18 @@ export default function VideoStudio({
     try {
         const stored = localStorage.getItem(PERSIST_KEY);
         if (stored) {
-          const data = JSON.parse(stored);
+          let data = JSON.parse(stored);
+          
+          // Fix old invalid selectedModel
+          if (data.selectedModel === "seedance-2.0-fast") {
+            data.selectedModel = "seedance-2.0-fast-t2v";
+            data.selectedModelName = "Seedance 2.0 Fast";
+          }
+          
           if (data.imageMode !== undefined) setImageMode(data.imageMode);
           if (data.v2vMode !== undefined) setV2vMode(data.v2vMode);
-          
-          // Validate selectedModel exists in current models
-          const currentModels = getCurrentModels();
-          const validModel = data.selectedModel && currentModels.find(m => m.id === data.selectedModel);
-          if (validModel) {
-            setSelectedModel(data.selectedModel);
-            setSelectedModelName(data.selectedModelName || validModel.name);
-          } else {
-            // Reset to default model if stored one is invalid
-            setSelectedModel(defaultModel.id);
-            setSelectedModelName(defaultModel.name);
-          }
+          if (data.selectedModel) setSelectedModel(data.selectedModel);
+          if (data.selectedModelName) setSelectedModelName(data.selectedModelName);
           if (data.selectedAr) setSelectedAr(data.selectedAr);
           if (data.selectedDuration) setSelectedDuration(data.selectedDuration);
           if (data.selectedResolution) setSelectedResolution(data.selectedResolution);
@@ -503,7 +500,7 @@ export default function VideoStudio({
 
           // Update control visibility based on restored model/mode
           applyControlsForModel(
-            selectedModel,
+            data.selectedModel || defaultModel.id,
             !!data.imageMode,
             !!data.v2vMode
           );
