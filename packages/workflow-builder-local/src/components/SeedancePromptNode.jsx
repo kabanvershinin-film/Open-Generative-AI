@@ -206,9 +206,20 @@ const SeedancePromptNode = ({ id, data }) => {
                 >
                   {t.url ? (
                     t.kind === "video" ? (
-                      <video src={t.url} className="w-6 h-6 rounded object-cover flex-shrink-0" muted />
+                      <video 
+                        src={t.url} 
+                        className="w-6 h-6 rounded object-cover flex-shrink-0" 
+                        muted 
+                        preload="none"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
                     ) : (
-                      <img src={t.url} alt={t.label} className="w-6 h-6 rounded object-cover flex-shrink-0" />
+                      <img 
+                        src={t.url} 
+                        alt={t.label} 
+                        className="w-6 h-6 rounded object-cover flex-shrink-0" 
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
                     )
                   ) : (
                     <span className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0">
