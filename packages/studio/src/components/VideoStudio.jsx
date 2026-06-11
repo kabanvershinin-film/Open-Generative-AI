@@ -1678,7 +1678,9 @@ export default function VideoStudio({
   useEffect(() => {
     let isMounted = true;
     const calculateCost = async () => {
+      console.log("[calculateCost] Starting...", { selectedModel, isSeedanceArk, selectedDuration, selectedResolution });
       if (!isSeedanceArk) {
+        console.log("[calculateCost] Not Seedance Ark, clearing cost");
         setEstimatedCost(null);
         return;
       }
@@ -1695,26 +1697,34 @@ export default function VideoStudio({
 
         const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
         const hasVideoInput = refFiles.some(f => f.kind === "video");
+        const requestBody = {
+          category: "video",
+          model: pricingModelId,
+          params: {
+            duration: selectedDuration || 5,
+            resolution: selectedResolution || "720p",
+            video_url: hasVideoInput ? "exists" : undefined
+          }
+        };
+        console.log("[calculateCost] Request body:", requestBody);
 
         const response = await fetch("/api/calculate-price", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({
-            category: "video",
-            model: pricingModelId,
-            params: {
-              duration: selectedDuration || 5,
-              resolution: selectedResolution || "720p",
-              video_url: hasVideoInput ? "exists" : undefined
-            }
-          })
+          body: JSON.stringify(requestBody)
         });
+
+        console.log("[calculateCost] Response status:", response.status);
 
         if (response.ok && isMounted) {
           const data = await response.json();
+          console.log("[calculateCost] Response data:", data);
           setEstimatedCost(data.cost);
+        } else {
+          console.log("[calculateCost] Response not OK, clearing cost");
+          setEstimatedCost(null);
         }
       } catch (err) {
         console.error("Failed to calculate cost:", err);

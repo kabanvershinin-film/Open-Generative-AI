@@ -5,6 +5,7 @@ export async function POST(request) {
     try {
         const body = await request.json();
         const { category, model, params = {} } = body;
+        console.log('[calculate-price] Received request:', { category, model, params });
 
         await ensureCnyRate();
         const PLATFORM_MARKUP = await loadPlatformMarkup();
