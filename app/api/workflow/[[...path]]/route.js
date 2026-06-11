@@ -18,8 +18,8 @@ function supabaseAdmin() {
 
 // Проверка доступа к воркфлоу: owner или есть в workflow_shares
 async function hasAccess(userId, workflowId) {
-    if (!SHARE_ENABLED) return true; // Если деление отключено, все доступно (как раньше)
-    if (!userId || !workflowId) return false;
+    if (!SHARE_ENABLED) return { hasAccess: true, isOwner: true, role: 'owner' }; // Если деление отключено, все доступно (как раньше)
+    if (!userId || !workflowId) return { hasAccess: false, isOwner: false, role: null };
     
     // Сначала проверяем, является ли пользователь владельцем
     const index = await tosLoadIndex();
