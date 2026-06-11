@@ -484,8 +484,19 @@ export default function VideoStudio({
           
           if (data.imageMode !== undefined) setImageMode(data.imageMode);
           if (data.v2vMode !== undefined) setV2vMode(data.v2vMode);
-          if (data.selectedModel) setSelectedModel(data.selectedModel);
-          if (data.selectedModelName) setSelectedModelName(data.selectedModelName);
+          
+          // Validate selectedModel exists in current models
+          const currentModels = data.v2vMode ? v2vModels : (data.imageMode ? i2vModels : t2vModels);
+          const validModel = data.selectedModel && currentModels.find(m => m.id === data.selectedModel);
+          if (validModel) {
+            setSelectedModel(data.selectedModel);
+            setSelectedModelName(data.selectedModelName || validModel.name);
+          } else {
+            // Reset to default model if stored one is invalid
+            setSelectedModel(defaultModel.id);
+            setSelectedModelName(defaultModel.name);
+          }
+          
           if (data.selectedAr) setSelectedAr(data.selectedAr);
           if (data.selectedDuration) setSelectedDuration(data.selectedDuration);
           if (data.selectedResolution) setSelectedResolution(data.selectedResolution);
@@ -510,7 +521,7 @@ export default function VideoStudio({
     } finally {
       hasRestored.current = true;
     }
-  }, [applyControlsForModel, defaultModel.id]);
+  }, [applyControlsForModel, defaultModel.id, imageMode]);
 
   // ── Adjust height on load ────────────────────────────────────────────────
   useEffect(() => {
