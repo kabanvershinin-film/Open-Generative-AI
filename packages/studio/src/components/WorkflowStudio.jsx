@@ -667,21 +667,30 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 </svg>
                 Мои процессы
               </button>
-              {selectedWorkflow.is_owner !== false && (
-                <button
-                  onClick={() => setShowShareModal(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-[#d946ef]/10 hover:bg-[#d946ef]/20 border border-[#d946ef]/30 rounded-md text-[10px] font-black text-[#d946ef] uppercase tracking-widest transition-colors"
-                  type="button"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zM18 20a3 3 0 100-6 3 3 0 000 6zM8.59 13.51l6.83 3.98M8.59 6.51l6.83 3.98" />
-                  </svg>
-                  Поделиться
-                </button>
-              )}
             </div>
 
             <div className="flex items-center gap-3">
+              {selectedWorkflow.is_owner !== false && (
+                <>
+                  <button
+                    onClick={() => handlePublishWorkflow(selectedWorkflow, !selectedWorkflow.is_published)}
+                    className="flex items-center gap-2 px-4 py-1.5 border border-purple-500/30 bg-purple-600 text-white text-sm rounded-full hover:bg-fuchsia-500 hover:border-fuchsia-500/30 transition-all shadow-lg shadow-purple-900/20"
+                    type="button"
+                  >
+                    {selectedWorkflow.is_published ? "Снять с публикации" : "Публикация"}
+                  </button>
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-[#d946ef]/10 hover:bg-[#d946ef]/20 border border-[#d946ef]/30 rounded-md text-[10px] font-black text-[#d946ef] uppercase tracking-widest transition-colors"
+                    type="button"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zM18 20a3 3 0 100-6 3 3 0 000 6zM8.59 13.51l6.83 3.98M8.59 6.51l6.83 3.98" />
+                    </svg>
+                    Поделиться
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => onToggleHeader?.(false)}
                 className="p-1.5 bg-white/5 hover:bg-white/10 rounded-md transition-colors text-white/40 hover:text-white"
