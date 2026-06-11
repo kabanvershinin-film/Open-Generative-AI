@@ -1402,38 +1402,21 @@ export async function GET(request, { params }) {
     const { path = [] } = await params;
 
     if (path[0] === 'list') {
-        // Workflows are private: only owner and shared users see them. Guests get nothing.
+        // Workflows are private: only the owner sees them. Guests get nothing.
         const user = await getUserForGallery(request);
         if (!user?.id) return NextResponse.json([]);
-        
-        const index = await tosLoadIndex();
-        
-        // Фильтруем воркфлоу: свои + те, где есть доступ
-        let filtered = [];
-        if (SHARE_ENABLED) {
-            // Получаем все workflow_id, к которым есть доступ
-            const { data: sharedWfIds } = await supabaseAdmin()
-                .from('workflow_shares')
-                .select('workflow_id')
-                .eq('user_id', user.id);
-            
-            const sharedIds = (sharedWfIds || []).map(s => s.workflow_id);
-            filtered = index.filter(e => e && (e.owner_id === user.id || sharedIds.includes(e.id)));
-        } else {
-            filtered = index.filter(e => e && e.owner_id === user.id);
-        }
-        
+        const index = (await tosLoadIndex()).filter(e => e && e.owner_id === user.id);
         // Merge: in-memory store has the freshest name (written synchronously on
         // every save). The TOS index can be stale if tosUpdateIndex lost a race or
         // the serverless instance restarted between the save and the index write.
-        const merged = filtered.map(entry => {
+        const merged = index.map(entry => {
             const mem = store.get(entry.id);
+            if (!mem) return entry;
             return {
                 ...entry,
                 name: mem.name || entry.name,
                 thumbnail: mem.thumbnail || entry.thumbnail,
                 updated_at: mem.updated_at || entry.updated_at,
-                is_owner: entry.owner_id === user.id,
             };
         });
         return NextResponse.json(merged);
