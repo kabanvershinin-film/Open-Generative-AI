@@ -299,6 +299,10 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
   const [isRunning, setIsRunning] = useState(false);
   const [runResult, setRunResult] = useState(null);
   const [showResults, setShowResults] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareEmail, setShareEmail] = useState("");
+  const [workflowShares, setWorkflowShares] = useState([]);
+  const [loadingShares, setLoadingShares] = useState(false);
   const isNavigatingRef = useRef(false);
 
   // Handlers defined early so they can be used in effects
@@ -318,6 +322,13 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
     },
     [router],
   );
+
+  // Load shares when opening a workflow
+  useEffect(() => {
+    if (selectedWorkflow?.id && showShareModal) {
+      loadShares(selectedWorkflow.id);
+    }
+  }, [selectedWorkflow?.id, showShareModal]);
 
   // Dedicated data fetching effect for the active workflow
   useEffect(() => {
@@ -432,6 +443,65 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
     } catch (err) {
       console.error('Moderate failed:', err);
       alert('Не удалось снять с публикации');
+    }
+  };
+
+  const loadShares = async (wfId) => {
+    if (!wfId) return;
+    setLoadingShares(true);
+    try {
+      const r = await fetch(`/api/workflow/${wfId}/shares`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setWorkflowShares(data);
+      }
+    } catch (err) {
+      console.error('Failed to load shares:', err);
+    } finally {
+      setLoadingShares(false);
+    }
+  };
+
+  const handleShare = async (e) => {
+    e.preventDefault();
+    if (!shareEmail.trim() || !selectedWorkflow?.id) return;
+    try {
+      const r = await fetch(`/api/workflow/${selectedWorkflow.id}/share`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ email: shareEmail.trim(), role: 'editor' }),
+      });
+      if (r.ok) {
+        setShareEmail("");
+        await loadShares(selectedWorkflow.id);
+      } else {
+        alert('Ошибка при поделиться');
+      }
+    } catch (err) {
+      console.error('Share failed:', err);
+      alert('Ошибка при поделиться');
+    }
+  };
+
+  const handleRemoveShare = async (userId) => {
+    if (!selectedWorkflow?.id || !userId) return;
+    if (!window.confirm('Удалить доступ пользователю?')) return;
+    try {
+      const r = await fetch(`/api/workflow/${selectedWorkflow.id}/unshare`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ userId }),
+      });
+      if (r.ok) {
+        await loadShares(selectedWorkflow.id);
+      } else {
+        alert('Ошибка при удалении доступа');
+      }
+    } catch (err) {
+      console.error('Unshare failed:', err);
+      alert('Ошибка при удалении доступа');
     }
   };
 
@@ -580,6 +650,18 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
             </div>
 
             <div className="flex items-center gap-3">
+              {selectedWorkflow.is_owner !== false && (
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-[#22d3ee]/10 hover:bg-[#22d3ee]/20 border border-[#22d3ee]/30 rounded-md text-[10px] font-black text-[#22d3ee] uppercase tracking-widest transition-colors"
+                  type="button"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zM18 20a3 3 0 100-6 3 3 0 000 6zM8.59 13.51l6.83 3.98M8.59 6.51l6.83 3.98" />
+                  </svg>
+                  Поделиться
+                </button>
+              )}
               <span className="text-[11px] font-black text-[#22d3ee] uppercase tracking-widest">
                 {selectedWorkflow.name}
               </span>
@@ -684,6 +766,70 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 {runResult && !runResult.error && (!runResult.outputs || runResult.outputs.length === 0) && (
                   <div className="text-center py-8 text-white/30 text-sm">No outputs returned</div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Share Modal */}
+        {showShareModal && (
+          <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-8">
+            <div className="w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                <span className="text-sm font-black text-white uppercase tracking-widest">Поделиться воркфлоу</span>
+                <button
+                  onClick={() => setShowShareModal(false)}
+                  className="text-white/40 hover:text-white transition-colors"
+                  type="button"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <form onSubmit={handleShare} className="flex gap-2">
+                  <input
+                    type="email"
+                    value={shareEmail}
+                    onChange={(e) => setShareEmail(e.target.value)}
+                    placeholder="Email пользователя для приглашения"
+                    className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#22d3ee]/50"
+                  />
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-[#22d3ee]/20 hover:bg-[#22d3ee]/30 border border-[#22d3ee]/40 rounded-lg text-sm font-black text-[#22d3ee] uppercase tracking-widest transition-colors"
+                  >
+                    Пригласить
+                  </button>
+                </form>
+
+                <div className="border-t border-white/5 pt-4">
+                  <h3 className="text-xs font-black text-white/40 uppercase tracking-widest mb-3">Доступные пользователи</h3>
+                  {loadingShares ? (
+                    <div className="text-center py-4 text-white/30 text-sm">Загрузка...</div>
+                  ) : workflowShares.length === 0 ? (
+                    <div className="text-center py-4 text-white/30 text-sm">Нет пользователей с доступом</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {workflowShares.map((share) => (
+                        <div key={share.id} className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
+                          <div>
+                            <div className="text-sm text-white">{share.email || share.user_id}</div>
+                            <div className="text-xs text-white/40">{share.role}</div>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveShare(share.user_id)}
+                            className="text-red-400 hover:text-red-300 text-xs font-bold transition-colors"
+                            type="button"
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

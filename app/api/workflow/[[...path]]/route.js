@@ -3,6 +3,50 @@ import { createHmac, createHash } from 'crypto';
 import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
 import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund, isAdminUser, getEmailsForIds } from '../../_lib/balance';
 import { buildLegacyWorkflowStorageKey, buildUserMediaKey, buildWorkflowStorageKey } from '../../_lib/tosPaths';
+import { createClient } from '@supabase/supabase-js';
+
+// Supabase client for workflow shares
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const SHARE_ENABLED = !!(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
+
+let _supabaseAdmin = null;
+function supabaseAdmin() {
+    if (!_supabaseAdmin) _supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+    return _supabaseAdmin;
+}
+
+// Проверка доступа к воркфлоу: owner или есть в workflow_shares
+async function hasAccess(userId, workflowId) {
+    if (!SHARE_ENABLED) return true; // Если деление отключено, все доступно (как раньше)
+    if (!userId || !workflowId) return false;
+    
+    // Сначала проверяем, является ли пользователь владельцем
+    const index = await tosLoadIndex();
+    const wf = index.find(w => w.id === workflowId);
+    if (wf && wf.owner_id === userId) return { hasAccess: true, isOwner: true, role: 'owner' };
+    
+    // Если не владелец, проверяем таблицу workflow_shares
+    const { data } = await supabaseAdmin()
+        .from('workflow_shares')
+        .select('role')
+        .eq('workflow_id', workflowId)
+        .eq('user_id', userId)
+        .single();
+    
+    if (data) return { hasAccess: true, isOwner: false, role: data.role };
+    return { hasAccess: false, isOwner: false, role: null };
+}
+
+// Получение списка пользователей с доступом к воркфлоу
+async function getWorkflowShares(workflowId) {
+    if (!SHARE_ENABLED) return [];
+    const { data } = await supabaseAdmin()
+        .from('workflow_shares')
+        .select('id, user_id, role, created_at')
+        .eq('workflow_id', workflowId);
+    return data || [];
+}
 
 export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generations
 
@@ -1317,21 +1361,38 @@ export async function GET(request, { params }) {
     const { path = [] } = await params;
 
     if (path[0] === 'list') {
-        // Workflows are private: only the owner sees them. Guests get nothing.
+        // Workflows are private: only owner and shared users see them. Guests get nothing.
         const user = await getUserForGallery(request);
         if (!user?.id) return NextResponse.json([]);
-        const index = (await tosLoadIndex()).filter(e => e && e.owner_id === user.id);
+        
+        const index = await tosLoadIndex();
+        
+        // Фильтруем воркфлоу: свои + те, где есть доступ
+        let filtered = [];
+        if (SHARE_ENABLED) {
+            // Получаем все workflow_id, к которым есть доступ
+            const { data: sharedWfIds } = await supabaseAdmin()
+                .from('workflow_shares')
+                .select('workflow_id')
+                .eq('user_id', user.id);
+            
+            const sharedIds = (sharedWfIds || []).map(s => s.workflow_id);
+            filtered = index.filter(e => e && (e.owner_id === user.id || sharedIds.includes(e.id)));
+        } else {
+            filtered = index.filter(e => e && e.owner_id === user.id);
+        }
+        
         // Merge: in-memory store has the freshest name (written synchronously on
         // every save). The TOS index can be stale if tosUpdateIndex lost a race or
         // the serverless instance restarted between the save and the index write.
-        const merged = index.map(entry => {
+        const merged = filtered.map(entry => {
             const mem = store.get(entry.id);
-            if (!mem) return entry;
             return {
                 ...entry,
                 name: mem.name || entry.name,
                 thumbnail: mem.thumbnail || entry.thumbnail,
                 updated_at: mem.updated_at || entry.updated_at,
+                is_owner: entry.owner_id === user.id,
             };
         });
         return NextResponse.json(merged);
@@ -1362,18 +1423,17 @@ export async function GET(request, { params }) {
         if (!wf) { wf = await tosLoadWorkflow(id, { userId: user?.id || null }); if (wf) store.set(id, wf); }
         wf = wf || {};
 
-        // Privacy gate: never expose another user's nodes. Return an EMPTY workflow
-        // (so the builder opens blank instead of erroring) when the caller isn't the
-        // owner. Legacy workflows with no owner are claimed by the first logged-in
-        // user who opens them (so the real owner re-gains them after this change).
+        // Privacy gate: проверка доступа
         const ownerId = wf.owner_id || null;
         const emptyDef = {
             workflow_id: id, id, name: 'Workflow', data: { nodes: [] }, edges: [],
             is_owner: false, is_published: false, is_template: false,
             show_temp_button: false, run_id: null, category: 'General',
         };
+        
+        const access = await hasAccess(user?.id, id);
         if (ownerId) {
-            if (!user || user.id !== ownerId) return NextResponse.json(emptyDef);
+            if (!access.hasAccess) return NextResponse.json(emptyDef);
         } else if (wf.nodes || wf.edges) {
             if (!user?.id) return NextResponse.json(emptyDef);
             wf = { ...wf, owner_id: user.id };
@@ -1472,6 +1532,28 @@ export async function GET(request, { params }) {
         }
     }
 
+    // Получить список пользователей с доступом: /api/workflow/{id}/shares
+    if (path[1] === 'shares') {
+        const wfId = path[0];
+        const user = await getUserForGallery(request);
+        if (!user?.id) return NextResponse.json([]);
+        
+        const access = await hasAccess(user.id, wfId);
+        if (!access.hasAccess) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        
+        const shares = await getWorkflowShares(wfId);
+        const userIds = shares.map(s => s.user_id);
+        const emails = await getEmailsForIds(userIds);
+        
+        // Добавляем email к каждому share
+        const sharesWithEmails = shares.map(s => ({
+            ...s,
+            email: emails[s.user_id] || null
+        }));
+        
+        return NextResponse.json(sharesWithEmails);
+    }
+
     if (path[0] === 'proxy-download') {
         const { searchParams } = new URL(request.url);
         const fileUrl = searchParams.get('url');
@@ -1520,8 +1602,9 @@ export async function POST(request, { params }) {
         const owner = await getUserForGallery(request);
         const id = body.workflow_id || genId();
         const existing = store.get(id) || (await tosLoadWorkflow(id, { userId: owner?.id || null })) || null;
-        // Don't let one user overwrite another user's workflow.
-        if (existing?.owner_id && owner?.id && existing.owner_id !== owner.id) {
+        // Don't let one user overwrite another user's workflow without access.
+        const access = await hasAccess(owner?.id, id);
+        if (existing?.owner_id && owner?.id && !access.hasAccess) {
             return NextResponse.json({ error: 'forbidden' }, { status: 403 });
         }
         const wf = {
@@ -1552,6 +1635,10 @@ export async function POST(request, { params }) {
         let wf = store.get(wfId);
         if (!wf) { wf = await tosLoadWorkflow(wfId, { userId: galleryUser?.id || null }); if (wf) store.set(wfId, wf); }
         if (!wf) return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
+        
+        // Проверка доступа
+        const access = await hasAccess(galleryUser?.id, wfId);
+        if (!access.hasAccess) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
 
         const nodes = wf.nodes || [];
         const edges = wf.edges || [];
@@ -1676,6 +1763,7 @@ export async function POST(request, { params }) {
     }
 
     if (path[1] === 'node' && path[3] === 'run') {
+        const wfId = path[0];
         const nodeId = path[2];
         const runId = body.run_id || genId();
         const cookieKey2 = request.headers.get('cookie')?.match(/muapi_key=([^;]+)/)?.[1] || '';
@@ -1693,6 +1781,11 @@ export async function POST(request, { params }) {
         let billedUser = null;
         const galleryUser = await getUserForGallery(request);
         const galleryUserId = galleryUser?.id || null;
+        
+        // Проверка доступа
+        const access = await hasAccess(galleryUserId, wfId);
+        if (!access.hasAccess) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        
         // Non-Seedance: pre-charge the estimate before running (as before).
         if (BILLING_ENABLED && galleryUser && cost > 0 && !seed2) {
             const charged = await deduct(galleryUser.id, cost, model, { model });
@@ -1812,9 +1905,65 @@ export async function POST(request, { params }) {
         let wf = store.get(wfId);
         if (!wf) { wf = await tosLoadWorkflow(wfId, { userId: user?.id || null }); if (wf) store.set(wfId, wf); }
         if (!wf) return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
+        const access = await hasAccess(user?.id, wfId);
+        if (!access.hasAccess) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
         const updated = { ...wf, thumbnail: body.thumbnail, updated_at: new Date().toISOString() };
         store.set(wfId, updated);
         tosSaveWorkflow(wfId, updated).catch(() => {});
+        return NextResponse.json({ success: true });
+    }
+
+    // Поделиться воркфлоу: /api/workflow/{id}/share
+    if (path[1] === 'share') {
+        const wfId = path[0];
+        const user = await getUserForGallery(request);
+        if (!user?.id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+        
+        const access = await hasAccess(user.id, wfId);
+        if (!access.isOwner) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        
+        const { email, role = 'editor' } = body;
+        if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
+        
+        // Найдем пользователя по email в Supabase
+        const { data: profile, error: profileError } = await supabaseAdmin()
+            .from('profiles')
+            .select('id')
+            .eq('email', email)
+            .single();
+        
+        if (profileError || !profile?.id) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        
+        // Добавляем доступ
+        const { error } = await supabaseAdmin()
+            .from('workflow_shares')
+            .upsert({ workflow_id: wfId, user_id: profile.id, role });
+        
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        
+        return NextResponse.json({ success: true, userId: profile.id });
+    }
+
+    // Удалить доступ: /api/workflow/{id}/unshare
+    if (path[1] === 'unshare') {
+        const wfId = path[0];
+        const user = await getUserForGallery(request);
+        if (!user?.id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+        
+        const access = await hasAccess(user.id, wfId);
+        if (!access.isOwner) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        
+        const { userId } = body;
+        if (!userId) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+        
+        const { error } = await supabaseAdmin()
+            .from('workflow_shares')
+            .delete()
+            .eq('workflow_id', wfId)
+            .eq('user_id', userId);
+        
+        if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+        
         return NextResponse.json({ success: true });
     }
     if (['template', 'update-category'].includes(path[1])) {
