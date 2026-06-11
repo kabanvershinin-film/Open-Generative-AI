@@ -177,8 +177,6 @@ export async function POST(request) {
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-      // Task rejected at submit → refund the pre-charge immediately.
-      if (BILLING_ENABLED && cost > 0) await refundBalanceRpc(request, cost, 'seedance_submit_failed');
       return NextResponse.json(
         { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
         { status: r.status },
