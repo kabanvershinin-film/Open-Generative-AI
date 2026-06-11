@@ -465,25 +465,27 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
   };
 
   const handleShare = async (e) => {
-    e.preventDefault();
-    if (!shareEmail.trim() || !selectedWorkflow?.id) return;
-    try {
-      const r = await fetch(`/api/workflow/${selectedWorkflow.id}/share`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ email: shareEmail.trim(), role: 'editor' }),
-      });
-      if (r.ok) {
-        setShareEmail("");
-        await loadShares(selectedWorkflow.id);
-      } else {
-        alert('Ошибка при поделиться');
-      }
-    } catch (err) {
-      console.error('Share failed:', err);
-      alert('Ошибка при поделиться');
-    }
-  };
+        e.preventDefault();
+        if (!shareEmail.trim() || !selectedWorkflow?.id) return;
+        try {
+            const r = await fetch(`/api/workflow/${selectedWorkflow.id}/share`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+                body: JSON.stringify({ email: shareEmail.trim(), role: 'editor' }),
+            });
+            if (r.ok) {
+                setShareEmail("");
+                await loadShares(selectedWorkflow.id);
+                alert(`Пользователь ${shareEmail.trim()} добавлен! Отправь ему ссылку на воркфлоу: ${window.location.href}`);
+            } else {
+                const error = await r.text();
+                alert(`Ошибка при поделиться: ${error}`);
+            }
+        } catch (err) {
+            console.error('Share failed:', err);
+            alert('Ошибка при поделиться');
+        }
+    };
 
   const handleRemoveShare = async (userId) => {
     if (!selectedWorkflow?.id || !userId) return;
