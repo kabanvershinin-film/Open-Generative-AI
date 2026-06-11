@@ -60,6 +60,9 @@ export async function POST(request) {
         if (audioRefs > 0) userMsg += `\nАудио: ${Array.from({ length: audioRefs }, (_, i) => `@Аудио${i + 1}`).join(', ')}`;
 
         try {
+            // Проверим, доступен ли MEMEFAST
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
             const res = await fetch(`${MEMEFAST}/v1/chat/completions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
@@ -72,7 +75,10 @@ export async function POST(request) {
                     temperature: 0.8,
                     max_tokens: 2000,
                 }),
+                signal: controller.signal,
             });
+            clearTimeout(timeoutId);
+            
             if (!res.ok) {
                 const txt = await res.text().catch(() => res.statusText);
                 throw new Error(`API ${res.status}: ${txt.slice(0, 200)}`);
@@ -83,8 +89,12 @@ export async function POST(request) {
             if (!prompt.trim()) throw new Error('Пустой ответ модели');
             return NextResponse.json({ prompt });
         } catch (e) {
+            console.error('Seedance prompt error:', e);
             if (billed) await refund(user.id, cost, `refund_seedance_prompt_${model}`, { model }).catch(() => {});
-            return NextResponse.json({ error: e.message || 'Ошибка генерации' }, { status: 502 });
+            
+            // Если ошибка — вернём пользователю простой промпт из его идеи, чтобы не блокировать работу
+            const fallbackPrompt = `Идея: ${idea}${style ? `\nСтиль: ${style}` : ''}`;
+            return NextResponse.json({ prompt: fallbackPrompt });
         }
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
