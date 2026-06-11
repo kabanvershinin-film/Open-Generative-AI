@@ -472,31 +472,41 @@ export default function VideoStudio({
   // ── Persistence: Load ────────────────────────────────────────────────────
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(PERSIST_KEY);
-      if (stored) {
-        const data = JSON.parse(stored);
-        if (data.imageMode !== undefined) setImageMode(data.imageMode);
-        if (data.v2vMode !== undefined) setV2vMode(data.v2vMode);
-        if (data.selectedModel) setSelectedModel(data.selectedModel);
-        if (data.selectedModelName) setSelectedModelName(data.selectedModelName);
-        if (data.selectedAr) setSelectedAr(data.selectedAr);
-        if (data.selectedDuration) setSelectedDuration(data.selectedDuration);
-        if (data.selectedResolution) setSelectedResolution(data.selectedResolution);
-        if (data.selectedQuality) setSelectedQuality(data.selectedQuality);
-        if (data.selectedMode) setSelectedMode(data.selectedMode);
-        if (data.selectedEffect) setSelectedEffect(data.selectedEffect);
-        if (data.uploadedImageUrl) setUploadedImageUrl(data.uploadedImageUrl);
-        if (data.uploadedVideoUrl) setUploadedVideoUrl(data.uploadedVideoUrl);
-        if (data.uploadedVideoName) setUploadedVideoName(data.uploadedVideoName);
-        if (data.prompt) setPrompt(data.prompt);
-        if (data.localHistory) setLocalHistory(data.localHistory);
+        const stored = localStorage.getItem(PERSIST_KEY);
+        if (stored) {
+          const data = JSON.parse(stored);
+          if (data.imageMode !== undefined) setImageMode(data.imageMode);
+          if (data.v2vMode !== undefined) setV2vMode(data.v2vMode);
+          
+          // Validate selectedModel exists in current models
+          const currentModels = getCurrentModels();
+          const validModel = data.selectedModel && currentModels.find(m => m.id === data.selectedModel);
+          if (validModel) {
+            setSelectedModel(data.selectedModel);
+            setSelectedModelName(data.selectedModelName || validModel.name);
+          } else {
+            // Reset to default model if stored one is invalid
+            setSelectedModel(defaultModel.id);
+            setSelectedModelName(defaultModel.name);
+          }
+          if (data.selectedAr) setSelectedAr(data.selectedAr);
+          if (data.selectedDuration) setSelectedDuration(data.selectedDuration);
+          if (data.selectedResolution) setSelectedResolution(data.selectedResolution);
+          if (data.selectedQuality) setSelectedQuality(data.selectedQuality);
+          if (data.selectedMode) setSelectedMode(data.selectedMode);
+          if (data.selectedEffect) setSelectedEffect(data.selectedEffect);
+          if (data.uploadedImageUrl) setUploadedImageUrl(data.uploadedImageUrl);
+          if (data.uploadedVideoUrl) setUploadedVideoUrl(data.uploadedVideoUrl);
+          if (data.uploadedVideoName) setUploadedVideoName(data.uploadedVideoName);
+          if (data.prompt) setPrompt(data.prompt);
+          if (data.localHistory) setLocalHistory(data.localHistory);
 
-        // Update control visibility based on restored model/mode
-        applyControlsForModel(
-          data.selectedModel || defaultModel.id,
-          !!data.imageMode,
-          !!data.v2vMode
-        );
+          // Update control visibility based on restored model/mode
+          applyControlsForModel(
+            selectedModel,
+            !!data.imageMode,
+            !!data.v2vMode
+          );
       }
     } catch (err) {
       console.warn("Failed to load VideoStudio persistence:", err);
@@ -1689,10 +1699,10 @@ export default function VideoStudio({
       try {
         // Map the selected model to the pricing model ID
         const modelMap = {
-          "seedance-v2.0-t2v": "doubao-seedance-2-0-260128",
-          "seedance-v2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
-          "seedance-v2.0-i2v": "doubao-seedance-2-0-260128",
-          "seedance-v2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
+          "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
+          "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
+          "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
+          "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
         };
 
         const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
