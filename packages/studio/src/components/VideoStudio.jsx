@@ -788,16 +788,18 @@ export default function VideoStudio({
   const handleRefFilesChange = async (e) => {
     const files = Array.from(e.target.files || []);
     if (refFileInputRef.current) refFileInputRef.current.value = "";
-    for (const file of files) {
+
+    // Upload all files in parallel
+    const uploadPromises = files.map(async (file) => {
       const kind = refKindOf(file);
       if (!kind) {
         alert(`Файл ${file.name}: поддерживаются только изображения, видео и аудио.`);
-        continue;
+        return;
       }
       const limitMb = kind === "image" ? 10 : 100;
       if (file.size > limitMb * 1024 * 1024) {
         alert(`Файл ${file.name} превышает лимит ${limitMb} МБ.`);
-        continue;
+        return;
       }
       const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       let uploadAborted = false;
@@ -860,7 +862,9 @@ export default function VideoStudio({
         setRefFiles((prev) => prev.filter((f) => f.id !== id));
         alert(`Не удалось загрузить ${file.name}: ${err.message}`);
       }
-    }
+    });
+
+    await Promise.all(uploadPromises);
   };
 
   const removeRefFile = (id) => setRefFiles((prev) => prev.filter((f) => f.id !== id));
