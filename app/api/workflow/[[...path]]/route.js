@@ -1806,7 +1806,18 @@ export async function POST(request, { params }) {
         return NextResponse.json({ success: true });
     }
 
-    if (['template', 'update-category', 'thumbnail'].includes(path[1])) {
+    if (path[1] === 'thumbnail') {
+        const wfId = path[0];
+        const user = await getUserForGallery(request);
+        let wf = store.get(wfId);
+        if (!wf) { wf = await tosLoadWorkflow(wfId, { userId: user?.id || null }); if (wf) store.set(wfId, wf); }
+        if (!wf) return NextResponse.json({ error: 'Workflow not found' }, { status: 404 });
+        const updated = { ...wf, thumbnail: body.thumbnail, updated_at: new Date().toISOString() };
+        store.set(wfId, updated);
+        tosSaveWorkflow(wfId, updated).catch(() => {});
+        return NextResponse.json({ success: true });
+    }
+    if (['template', 'update-category'].includes(path[1])) {
         return NextResponse.json({ success: true });
     }
 
