@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { priceRub, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP } from '../_lib/pricing';
+import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../_lib/pricing';
 
 export async function POST(request) {
     try {
@@ -7,8 +7,9 @@ export async function POST(request) {
         const { category, model, params = {} } = body;
 
         await ensureCnyRate();
+        const PLATFORM_MARKUP = await loadPlatformMarkup();
         // Don't multiply by 2 for generate_audio in the estimate, since real usage is usually lower
-        const cost = priceRub(category, model, { ...params, generate_audio: false });
+        const cost = await priceRub(category, model, { ...params, generate_audio: false });
 
         console.log('[calculate-price]', { category, model, params, cost, CNY_TO_RUB, PLATFORM_MARKUP });
 

@@ -149,7 +149,7 @@ export async function POST(request) {
     // A reference VIDEO (not an image first frame) switches to the cheaper rate.
     const hasVideoInput = !!(video_url || (Array.isArray(video_urls) && video_urls.filter(Boolean).length));
     await ensureCnyRate(); // live CBR rate for the estimate gate
-    const cost = priceRub('video', billingModelId, { duration: effDur, resolution: effRes, video_url, generate_audio });
+    const cost = await priceRub('video', billingModelId, { duration: effDur, resolution: effRes, video_url, generate_audio });
     let bill = '';
     if (BILLING_ENABLED && cost > 0) {
       const balance = await getBalance(request);
@@ -227,7 +227,7 @@ export async function GET(request) {
       if (billData) {
         await ensureCnyRate(); // live CBR rate so the charge follows the real ¥→₽
         const rate = Number(billData.r || 0);
-        const actual = (tokens > 0 && rate > 0) ? rubFromTokens(tokens, rate) : Number(billData.c || 0);
+        const actual = (tokens > 0 && rate > 0) ? await rubFromTokens(tokens, rate) : Number(billData.c || 0);
         if (actual > 0) {
           const fastM = String(billData.m || '').includes('fast');
           const reason = `Seedance 2.0${fastM ? ' Fast' : ''} ${billData.res || ''} ${billData.d || ''}s`.replace(/\s+/g, ' ').trim();

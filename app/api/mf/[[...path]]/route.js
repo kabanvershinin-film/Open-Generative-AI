@@ -56,7 +56,7 @@ async function maybeChargeImageRequest(request, pathParts) {
 
     const payload = await getBillingPayload(request.clone(), pathParts);
     const model = payload?.model;
-    const cost = model ? priceRub('image', model, payload?.params || {}) : 0;
+    const cost = model ? await priceRub('image', model, payload?.params || {}) : 0;
     if (!(cost > 0)) return { ok: true, billed: false };
 
     await ensureCnyRate();

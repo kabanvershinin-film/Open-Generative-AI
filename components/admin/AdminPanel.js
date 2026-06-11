@@ -30,6 +30,8 @@ export default function AdminPanel() {
     const [sortKey, setSortKey] = useState('created_at');
     const [sortDir, setSortDir] = useState('desc');
     const [cnyRate, setCnyRate] = useState(null);
+    const [platformMarkup, setPlatformMarkup] = useState('1.15');
+    const [savingMarkup, setSavingMarkup] = useState(false);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [targetUser, setTargetUser] = useState(null);
@@ -56,12 +58,56 @@ export default function AdminPanel() {
         }
     }, []);
 
+    const loadConfig = useCallback(async () => {
+        try {
+            const { data: sess } = await supabase.auth.getSession();
+            const token = sess.session?.access_token;
+            if (!token) return;
+            const res = await fetch('/api/admin/config', { headers: { Authorization: `Bearer ${token}` } });
+            const payload = await res.json();
+            if (res.ok && payload.config?.platform_markup) {
+                setPlatformMarkup(payload.config.platform_markup);
+            }
+        } catch (e) {
+            console.error('Failed to load config:', e);
+        }
+    }, []);
+
+    const saveMarkup = useCallback(async () => {
+        const num = parseFloat(platformMarkup);
+        if (isNaN(num) || num <= 0) {
+            toast.error('Введите корректное число больше 0');
+            return;
+        }
+        setSavingMarkup(true);
+        try {
+            const { data: sess } = await supabase.auth.getSession();
+            const token = sess.session?.access_token;
+            if (!token) throw new Error('Нет активной сессии');
+            const res = await fetch('/api/admin/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ key: 'platform_markup', value: num.toString() }),
+            });
+            if (!res.ok) throw new Error('Ошибка сохранения');
+            toast.success('Наценка обновлена');
+        } catch (e) {
+            toast.error(e.message);
+        } finally {
+            setSavingMarkup(false);
+        }
+    }, [platformMarkup]);
+
     useEffect(() => {
         if (admin) {
             loadUsers();
             getCnyRate().then(setCnyRate);
+            loadConfig();
         }
-    }, [admin, loadUsers]);
+    }, [admin, loadUsers, loadConfig]);
 
     const filtered = useMemo(() => {
         const q = search.trim().toLowerCase();
@@ -147,24 +193,51 @@ export default function AdminPanel() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {[
-                        { label: 'Пользователи', value: authUsersCount ?? '—', sub: 'Зарегистрировано' },
-                        { label: 'Суммарный баланс', value: `₽${stats.total.toFixed(2)}`, sub: 'По всем аккаунтам' },
-                        { label: 'Средний баланс', value: `₽${stats.avg.toFixed(2)}`, sub: 'На пользователя' },
-                        {
-                            label: 'Курс юаня',
-                            value: cnyRate ? `${cnyRate.real.toFixed(2)} ₽/¥` : '—',
-                            sub: cnyRate ? `+15% → ${cnyRate.withMarkup.toFixed(2)} ₽/¥` : 'ЦБ РФ',
-                        },
-                    ].map(c => (
-                        <div key={c.label} className="bg-neutral-900 border border-white/10 rounded-xl p-4">
-                            <div className="text-xs text-white/40 mb-1">{c.label}</div>
-                            <div className="text-xl font-bold text-white">{c.value}</div>
-                            <div className="text-xs text-white/30 mt-1">{c.sub}</div>
-                        </div>
-                    ))}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+                { label: 'Пользователи', value: authUsersCount ?? '—', sub: 'Зарегистрировано' },
+                { label: 'Суммарный баланс', value: `₽${stats.total.toFixed(2)}`, sub: 'По всем аккаунтам' },
+                { label: 'Средний баланс', value: `₽${stats.avg.toFixed(2)}`, sub: 'На пользователя' },
+                {
+                    label: 'Курс юаня',
+                    value: cnyRate ? `${cnyRate.real.toFixed(2)} ₽/¥` : '—',
+                    sub: cnyRate ? `+${((parseFloat(platformMarkup) - 1) * 100).toFixed(0)}% → ${(cnyRate.real * parseFloat(platformMarkup)).toFixed(2)} ₽/¥` : 'ЦБ РФ',
+                },
+            ].map(c => (
+                <div key={c.label} className="bg-neutral-900 border border-white/10 rounded-xl p-4">
+                    <div className="text-xs text-white/40 mb-1">{c.label}</div>
+                    <div className="text-xl font-bold text-white">{c.value}</div>
+                    <div className="text-xs text-white/30 mt-1">{c.sub}</div>
                 </div>
+            ))}
+        </div>
+
+        {/* Platform Markup */}
+        <div className="bg-neutral-900 border border-white/10 rounded-xl p-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+                <div className="flex-1">
+                    <div className="text-xs text-white/40 mb-1">Наценка платформы</div>
+                    <div className="text-white">Текущее значение: <span className="font-bold">{platformMarkup}</span></div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <input
+                        type="number"
+                        step="0.01"
+                        value={platformMarkup}
+                        onChange={(e) => setPlatformMarkup(e.target.value)}
+                        className="px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white outline-none focus:border-purple-500 w-32"
+                        placeholder="1.15"
+                    />
+                    <button
+                        onClick={saveMarkup}
+                        disabled={savingMarkup}
+                        className="px-4 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        {savingMarkup ? 'Сохранение...' : 'Сохранить'}
+                    </button>
+                </div>
+            </div>
+        </div>
 
                 {/* Users table */}
                 <div className="bg-neutral-900 border border-white/10 rounded-xl overflow-hidden">

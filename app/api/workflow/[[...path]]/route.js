@@ -1030,8 +1030,8 @@ function modelCategory(model) {
 }
 
 // Cost of a node run in rubles (0 for passthroughs / unknown free models).
-function costForNode(model, params) {
-    return priceRub(modelCategory(model), model, params);
+async function costForNode(model, params) {
+    return await priceRub(modelCategory(model), model, params);
 }
 
 // Seedance 2.0 nodes are billed POST-generation by ARK's real token usage (like
@@ -1043,13 +1043,13 @@ function isSeedance2Node(model) {
 
 // Exact ruble cost from the tokens generateVideoARK attached to the output.
 // Falls back to `estimate` when usage is missing.
-function seedanceActualCost(model, params, outputs, estimate) {
+async function seedanceActualCost(model, params, outputs, estimate) {
     const tokens = Number(outputs?.[0]?.tokens || 0);
     if (!(tokens > 0)) return estimate;
     const res = params?.resolution || '720p';
     const hasVideoInput = !!(params?.video_url);
     const rate = seedance2RateCny(model, res, hasVideoInput);
-    const actual = rubFromTokens(tokens, rate);
+    const actual = await rubFromTokens(tokens, rate);
     return actual > 0 ? actual : estimate;
 }
 
@@ -1767,7 +1767,7 @@ export async function POST(request, { params }) {
             // Saved nodes use node.model (not node.data.selectedModel.id)
             const model = node.model || '';
             if (model) {
-                const cost = costForNode(model, params);
+                const cost = await costForNode(model, params);
                 const seed2 = isSeedance2Node(model);
                 let billed = false;
                 // Non-Seedance: pre-charge the estimate before running (as before).
@@ -1804,7 +1804,7 @@ export async function POST(request, { params }) {
                 }
                 // Seedance 2.0: charge the real cost once, on success (failure = free).
                 if (billingUser && seed2 && nr?.status === 'completed') {
-                    const actual = seedanceActualCost(model, params, outs, cost);
+                    const actual = await seedanceActualCost(model, params, outs, cost);
                     if (actual > 0) {
                         await deduct(billingUser.id, actual, model, { model, tokens: Number(outs?.[0]?.tokens || 0) }).catch(() => {});
                     }
@@ -1839,7 +1839,7 @@ export async function POST(request, { params }) {
         // even when billing is disabled (BILLING_ENABLED = false).
         // Billing: deduct from balance only when billing is fully configured and
         // the model has a non-zero cost.
-        const cost = costForNode(model, params);
+        const cost = await costForNode(model, params);
         const seed2 = isSeedance2Node(model);
         let billedUser = null;
         const galleryUser = await getUserForGallery(request);
@@ -1898,7 +1898,7 @@ export async function POST(request, { params }) {
         let charged = cost;
         if (BILLING_ENABLED && galleryUser && seed2 && result.status === 'completed') {
             const outs = result.nodes?.[nodeId]?.[0]?.result?.outputs || [];
-            charged = seedanceActualCost(model, params, outs, cost);
+            charged = await seedanceActualCost(model, params, outs, cost);
             if (charged > 0) {
                 await deduct(galleryUser.id, charged, model, { model, tokens: Number(outs?.[0]?.tokens || 0) }).catch(() => {});
             }
