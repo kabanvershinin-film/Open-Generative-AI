@@ -672,11 +672,13 @@ export default function VideoStudio({
 
   // ── textarea auto-resize ──────────────────────────────────────────────────
   const handlePromptInput = (e) => {
-    setPrompt(e.target.value);
     const el = e.target;
+    const savedScrollTop = el.scrollTop;
+    setPrompt(e.target.value);
     el.style.height = "auto";
     const maxH = window.innerWidth < 768 ? 150 : 250;
     el.style.height = Math.min(el.scrollHeight, maxH) + "px";
+    el.scrollTop = savedScrollTop;
   };
 
   // ── image upload ─────────────────────────────────────────────────────────
@@ -840,12 +842,15 @@ export default function VideoStudio({
   // Insert the @reference token into the prompt at the caret (or append).
   const insertRefToken = (token) => {
     const el = textareaRef.current;
+    const savedScrollTop = el?.scrollTop ?? 0;
     setPrompt((prev) => {
       if (!el) return (prev ? prev + " " : "") + token + " ";
       const start = el.selectionStart ?? prev.length;
       const end = el.selectionEnd ?? prev.length;
       const next = prev.slice(0, start) + token + " " + prev.slice(end);
       requestAnimationFrame(() => {
+        // Restore scroll position first, then set selection
+        el.scrollTop = savedScrollTop;
         el.focus();
         const pos = start + token.length + 1;
         el.setSelectionRange(pos, pos);

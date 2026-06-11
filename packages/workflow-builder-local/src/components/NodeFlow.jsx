@@ -287,6 +287,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   const [isRestoring, setIsRestoring] = useState(!initialState);
   const [totalWorkflowCost, setTotalWorkflowCost] = useState(0);
   const [publishModal, setPublishModal] = useState(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const total = nodes.reduce((sum, node) => {
@@ -295,6 +297,15 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     }, 0);
     setTotalWorkflowCost(total.toFixed(3));
   }, [nodes]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Sync global store with initial data if provided
   useEffect(() => {
@@ -2564,13 +2575,24 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </ReactFlow>
       </div>
       {selectedNode && !["concatNode"].includes(selectedNode.type) && (
-        <div className="absolute right-2 top-16 z-50 w-80 h-full max-h-[90%] bg-[#09090b]/80 backdrop-blur-xl border border-white/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl">
+        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#09090b]/80 backdrop-blur-xl border border-white/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl`}>
+          {isMobile && (
+            <button
+              type="button"
+              suppressHydrationWarning={true}
+              className="absolute top-2 left-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200 z-10"
+              onClick={() => setIsPanelOpen(false)}
+            >
+              &larr;
+            </button>
+          )}
           <button
             type="button"
             suppressHydrationWarning={true}
             className="absolute top-2 right-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200"
             onClick={() => {
               setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
+              setIsPanelOpen(false);
             }}
           >
             &#10005;
