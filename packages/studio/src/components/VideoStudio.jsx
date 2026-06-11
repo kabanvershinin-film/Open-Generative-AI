@@ -800,9 +800,24 @@ export default function VideoStudio({
         continue;
       }
       const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      let uploadAborted = false;
+      let xhr = null;
+
       setRefFiles((prev) => [
         ...prev,
-        { id, url: null, kind, name: file.name, uploading: true, progress: 0 },
+        { 
+          id, 
+          url: null, 
+          kind, 
+          name: file.name, 
+          uploading: true, 
+          progress: 0,
+          cancel: () => {
+            uploadAborted = true;
+            if (xhr) xhr.abort();
+            setRefFiles((prev) => prev.filter((f) => f.id !== id));
+          }
+        },
       ]);
       try {
         // Get a presigned PUT URL from the server, then PUT the file directly
@@ -810,26 +825,37 @@ export default function VideoStudio({
         const presignRes = await fetch(
           `/api/upload-file?filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type || 'application/octet-stream')}`,
         );
+        if (uploadAborted) return;
         if (!presignRes.ok) throw new Error('Не удалось получить URL загрузки');
         const { putUrl, publicUrl } = await presignRes.json();
 
         await new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
+          if (uploadAborted) return reject(new Error('aborted'));
+          xhr = new XMLHttpRequest();
           xhr.open('PUT', putUrl);
           xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
           xhr.upload.onprogress = (e) => {
+            if (uploadAborted) return;
             if (e.lengthComputable) {
               const pct = Math.round((e.loaded / e.total) * 100);
               setRefFiles((prev) => prev.map((f) => (f.id === id ? { ...f, progress: pct } : f)));
             }
           };
-          xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`TOS PUT ${xhr.status}`)));
-          xhr.onerror = () => reject(new Error('Ошибка сети при загрузке'));
+          xhr.onload = () => {
+            if (uploadAborted) return;
+            xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(new Error(`TOS PUT ${xhr.status}`));
+          };
+          xhr.onerror = () => {
+            if (uploadAborted) return;
+            reject(new Error('Ошибка сети при загрузке'));
+          };
           xhr.send(file);
         });
 
+        if (uploadAborted) return;
         setRefFiles((prev) => prev.map((f) => (f.id === id ? { ...f, url: publicUrl, uploading: false, progress: 100 } : f)));
       } catch (err) {
+        if (err.message === 'aborted') return;
         console.error("[VideoStudio] Reference upload failed:", err);
         setRefFiles((prev) => prev.filter((f) => f.id !== id));
         alert(`Не удалось загрузить ${file.name}: ${err.message}`);
@@ -1829,7 +1855,19 @@ export default function VideoStudio({
                         </span>
                       )}
                       <span className="whitespace-nowrap">{f.uploading ? `${f.progress}%` : label}</span>
-                      {!f.uploading && (
+                      {f.uploading ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); f.cancel?.(); }}
+                          className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                          title="Отменить загрузку"
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </button>
+                      ) : (
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeRefFile(f.id); }}
