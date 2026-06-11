@@ -2308,12 +2308,12 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           <div className="text-white text-xl font-bold">Loading...</div>
         </div>
       )}
-      <div className="flex items-center justify-center absolute top-0 z-20 bg-[#151618] w-full py-3 border-b border-gray-800">
+      <div className="flex items-center justify-center absolute top-0 z-20 bg-black/40 backdrop-blur-xl w-full py-3 border-b border-purple-500/20">
         <div className="flex items-center justify-between w-full max-w-[95%] sm:max-w-[90%] lg:max-w-[80%] overflow-x-auto">
           <div className="flex items-center gap-2 w-[35%]">
             <Link
               href="/studio/workflows"
-              className="text-white"
+              className="text-white hover:text-purple-300 transition-colors"
             >
               <FaAngleLeft />
             </Link>
@@ -2322,7 +2322,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               suppressHydrationWarning={true}
               onClick={() => setDropDown(prev => prev === 2 ? 0 : 2)}
               disabled={!interactionMode}
-              className="flex items-center gap-2 text-base outline-none text-[#adacaa] hover:text-white cursor-pointer bg-transparent max-w-[90%]"
+              className="flex items-center gap-2 text-base outline-none text-white/70 hover:text-white cursor-pointer bg-transparent max-w-[90%] transition-colors"
             >
               <span className="truncate block w-full">{workflowName ? workflowName : "Untitled"}</span> <FaRegEdit size={14} />
             </button>
@@ -2345,13 +2345,13 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                   type="button"
                   suppressHydrationWarning={true}
                   onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                  className="flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full hover:bg-black hover:text-white transition-colors"
+                  className="flex items-center gap-2 px-4 py-1.5 border border-purple-500/30 bg-purple-600 text-white text-sm rounded-full hover:bg-fuchsia-500 hover:border-fuchsia-500/30 transition-all shadow-lg shadow-purple-900/20"
                 >
                   <FaToolbox size={14} /> Settings <FaAngleDown size={12} className={`transition-transform duration-300 ${isSettingsOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 {isSettingsOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[#1b1e23] border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden">
+                  <div className="absolute right-0 mt-2 w-48 bg-[#0f0c18] border border-purple-500/20 rounded-lg shadow-xl z-50 overflow-hidden">
                     <button
                       type="button"
                       suppressHydrationWarning={true}
@@ -2360,10 +2360,10 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                         handleTemplatePublish();
                         setIsSettingsOpen(false);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-[#2c3037] hover:text-white transition-colors border-b border-gray-700/50 disabled:opacity-50"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-purple-900/30 transition-colors border-b border-purple-500/10 disabled:opacity-50"
                     >
                       {isRunning === 4 ? (
-                        <div className="w-4 h-4 border-2 border-t-transparent border-gray-300 rounded-full animate-spin"></div>
+                        <div className="w-4 h-4 border-2 border-t-transparent border-purple-300 rounded-full animate-spin"></div>
                       ) : (
                         <LuLayoutTemplate size={16} />
                       )}
@@ -2376,7 +2376,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                         setIsCategoryPopupOpen(true);
                         setIsSettingsOpen(false);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-[#2c3037] hover:text-white transition-colors"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-purple-900/30 transition-colors"
                     >
                       <RiInputMethodLine size={16} />
                       <span>Category</span>
@@ -2410,11 +2410,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                       setPublishModal({ name: workflowName, thumbnail: candidates[0] || '', candidates });
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white"
+                  className="flex items-center gap-2 px-4 py-1.5 border border-purple-500/30 bg-purple-600 text-white text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-fuchsia-500 hover:border-fuchsia-500/30 transition-all shadow-lg shadow-purple-900/20"
                 >
                   {isRunning === 2 ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-t-transparent border-black group-hover:border-white group-hover:border-t-transparent rounded-full animate-spin"></div> Publishing...
+                      <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div> Publishing...
                     </>
                   ) : (
                     <>
@@ -2429,11 +2429,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 suppressHydrationWarning={true}
                 disabled={interactionMode}
                 onClick={handleDuplicateWorkflow}
-                className="flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white"
+                className="flex items-center gap-2 px-4 py-1.5 border border-purple-500/30 bg-purple-600 text-white text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-fuchsia-500 hover:border-fuchsia-500/30 transition-all shadow-lg shadow-purple-900/20"
               >
                 {isRunning === 3 ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-t-transparent border-black group-hover:border-white group-hover:border-t-transparent rounded-full animate-spin"></div> Duplicating...
+                    <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin"></div> Duplicating...
                   </>
                 ) : (
                   <>
@@ -2445,12 +2445,12 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           </div>
         </div>
       </div>
-      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#151618] p-1 rounded-full border border-gray-700 shadow-xl ${isRestoring && "hidden"}`}>
+      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#0f0c18] backdrop-blur-xl p-1 rounded-full border border-purple-500/20 shadow-xl ${isRestoring && "hidden"}`}>
         <button
           type="button"
           suppressHydrationWarning={true}
           onClick={() => toast.error("This workflow can't be edited.")}
-          className={`p-3 rounded-full bg-white hover:bg-[#1b1e23] cursor-pointer outline-none text-black active:bg-gray-600 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed ${interactionMode && "hidden"}`}
+          className={`p-3 rounded-full bg-purple-600 hover:bg-fuchsia-500 cursor-pointer outline-none text-white active:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-900/20 ${interactionMode && "hidden"}`}
         >
           <MdLockOutline size={18} />
         </button>
@@ -2471,7 +2471,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             suppressHydrationWarning={true}
             disabled={!interactionMode}
             onClick={() => setDropDown((prev) => prev === 1 ? 0 : 1)}
-            className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${dropDown === 1 ? "bg-white text-black" : "text-gray-300 active:bg-gray-600 hover:text-white hover:bg-[#1b1e23]"}`}
+            className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-white/70 active:bg-purple-700 hover:text-white hover:bg-purple-600/20"}`}
           >
             <FaPlus size={18} />
           </button>
@@ -2486,7 +2486,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={zoomIn}
-          className="p-3 rounded-full hover:bg-[#1b1e23] cursor-pointer outline-none text-gray-300 active:bg-gray-600 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600/20 cursor-pointer outline-none text-white/70 active:bg-purple-700 hover:text-white transition"
         >
           <FiZoomIn size={18} />
         </button>
@@ -2494,7 +2494,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={zoomOut}
-          className="p-3 rounded-full hover:bg-[#1b1e23] cursor-pointer outline-none text-gray-300 active:bg-gray-600 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600/20 cursor-pointer outline-none text-white/70 active:bg-purple-700 hover:text-white transition"
         >
           <FiZoomOut size={18} />
         </button>
@@ -2502,7 +2502,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={() => fitView({ padding: 0.4, duration: 500, minZoom: 0.2 })}
-          className="p-3 rounded-full hover:bg-[#1b1e23] cursor-pointer outline-none text-gray-300 active:bg-blue-600 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600/20 cursor-pointer outline-none text-white/70 active:bg-purple-700 hover:text-white transition"
         >
           <MdOutlineZoomOutMap size={18} />
         </button>
@@ -2510,7 +2510,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={() => setIsDragging(!isDragging)}
-          className={`p-3 rounded-full cursor-pointer outline-none active:bg-gray-600 transition ${!isDragging ? "bg-white text-black" : "text-gray-300 hover:bg-[#1b1e23] hover:text-white"}`}
+          className={`p-3 rounded-full cursor-pointer outline-none active:bg-purple-700 transition ${!isDragging ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-white/70 hover:bg-purple-600/20 hover:text-white"}`}
         >
           <LuMousePointer2 size={18} />
         </button>
@@ -2575,7 +2575,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </ReactFlow>
       </div>
       {selectedNode && !["concatNode"].includes(selectedNode.type) && (
-        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#09090b]/80 backdrop-blur-xl border border-white/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl`}>
+        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#0f0c18]/80 backdrop-blur-xl border border-purple-500/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-purple-900/20`}>
           {isMobile && (
             <button
               type="button"
