@@ -467,64 +467,6 @@ export default function VideoStudio({
   const [estimatedCost, setEstimatedCost] = useState(null);
   const [isLoadingCost, setIsLoadingCost] = useState(false);
 
-  // ── Calculate estimated cost when parameters change ──────────────────────
-  useEffect(() => {
-    let isMounted = true;
-    const calculateCost = async () => {
-      if (!isSeedanceArk) {
-        setEstimatedCost(null);
-        return;
-      }
-
-      setIsLoadingCost(true);
-      try {
-        // Map the selected model to the pricing model ID
-        const modelMap = {
-          "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
-          "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
-          "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
-          "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
-        };
-
-        const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
-        const hasVideoInput = refFiles.some(f => f.kind === "video");
-
-        const response = await fetch("/api/calculate-price", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            category: "video",
-            model: pricingModelId,
-            params: {
-              duration: selectedDuration || 5,
-              resolution: selectedResolution || "720p",
-              video_url: hasVideoInput ? "exists" : undefined
-            }
-          })
-        });
-
-        if (response.ok && isMounted) {
-          const data = await response.json();
-          setEstimatedCost(data.cost);
-        }
-      } catch (err) {
-        console.error("Failed to calculate cost:", err);
-        if (isMounted) {
-          setEstimatedCost(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingCost(false);
-        }
-      }
-    };
-
-    calculateCost();
-    return () => { isMounted = false; };
-  }, [selectedModel, selectedDuration, selectedResolution, isSeedanceArk, refFiles]);
-
   // ── Persistence: Load ────────────────────────────────────────────────────
   useEffect(() => {
     try {
@@ -1700,6 +1642,64 @@ export default function VideoStudio({
   const isExtendMode = currentModelObj?.requiresRequestId;
   // Seedance 2.0 (Ark) supports multimodal references — show the dedicated uploader.
   const isSeedanceArk = currentModelObj?.provider === "ark";
+
+  // ── Calculate estimated cost when parameters change ──────────────────────
+  useEffect(() => {
+    let isMounted = true;
+    const calculateCost = async () => {
+      if (!isSeedanceArk) {
+        setEstimatedCost(null);
+        return;
+      }
+
+      setIsLoadingCost(true);
+      try {
+        // Map the selected model to the pricing model ID
+        const modelMap = {
+          "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
+          "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
+          "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
+          "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
+        };
+
+        const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
+        const hasVideoInput = refFiles.some(f => f.kind === "video");
+
+        const response = await fetch("/api/calculate-price", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            category: "video",
+            model: pricingModelId,
+            params: {
+              duration: selectedDuration || 5,
+              resolution: selectedResolution || "720p",
+              video_url: hasVideoInput ? "exists" : undefined
+            }
+          })
+        });
+
+        if (response.ok && isMounted) {
+          const data = await response.json();
+          setEstimatedCost(data.cost);
+        }
+      } catch (err) {
+        console.error("Failed to calculate cost:", err);
+        if (isMounted) {
+          setEstimatedCost(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingCost(false);
+        }
+      }
+    };
+
+    calculateCost();
+    return () => { isMounted = false; };
+  }, [selectedModel, selectedDuration, selectedResolution, isSeedanceArk, refFiles]);
 
   const promptPlaceholder = isSeedanceArk
     ? "Используйте @, чтобы ссылаться на загруженные файлы. Напр.: возьми движение из @видео1, создай видео с персонажами из @фото2 и @фото3."
