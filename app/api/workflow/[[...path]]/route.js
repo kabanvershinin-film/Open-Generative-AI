@@ -53,6 +53,47 @@ export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generat
 const store = global._mf_workflows ?? (global._mf_workflows = new Map());
 const runStore = global._mf_runs ?? (global._mf_runs = new Map());
 
+// Create workflow_shares table if it doesn't exist
+async function createWorkflowSharesTable() {
+  if (!SHARE_ENABLED) return;
+  try {
+    // Check if table exists
+    const { error } = await supabaseAdmin()
+      .from('workflow_shares')
+      .select('id')
+      .limit(1);
+    
+    if (error && (error.message.includes('does not exist') || error.code === '42P01')) {
+      console.log('Creating workflow_shares table...');
+      
+      // Create table using raw query (Supabase SDK doesn't support CREATE TABLE directly, so we use RPC or raw SQL if available)
+      // For now, we'll just log the SQL query that user should run
+      console.log(`Please run this SQL in Supabase SQL Editor:
+create table if not exists workflow_shares (
+  id uuid default gen_random_uuid() primary key,
+  workflow_id text not null,
+  user_id uuid not null references profiles(id) on delete cascade,
+  role text not null default 'editor',
+  created_at timestamp with time zone default timezone('utc'::text, now()),
+  unique(workflow_id, user_id)
+);
+
+create index if not exists idx_workflow_shares_workflow_id on workflow_shares(workflow_id);
+create index if not exists idx_workflow_shares_user_id on workflow_shares(user_id);
+
+alter table workflow_shares enable row level security;`);
+    }
+  } catch (err) {
+    console.log('Error checking/creating workflow_shares table:', err);
+  }
+}
+
+// Run table creation once
+if (!global._workflow_shares_table_init) {
+  global._workflow_shares_table_init = true;
+  createWorkflowSharesTable();
+}
+
 // ── TOS (Volcano Engine Object Storage) ──────────────────────────────────────
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
 const TOS_BUCKET   = process.env.TOS_BUCKET   || '';
