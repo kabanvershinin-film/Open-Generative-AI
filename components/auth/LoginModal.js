@@ -92,7 +92,7 @@ export default function LoginModal() {
             {/* Darker overlay for readability */}
             <div className="absolute inset-0 bg-black/30" />
             
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-purple-400/30 bg-gradient-to-b from-[#120f1c] to-[#0a090f] shadow-[0_30px_100px_rgba(124,58,237,0.45)] animate-in zoom-in-95 fade-in duration-200 ml-60">
+            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-purple-400/30 bg-gradient-to-b from-[#120f1c] to-[#0a090f] shadow-[0_30px_100px_rgba(124,58,237,0.45)] animate-in zoom-in-95 fade-in duration-200 ml-130">
                 {/* glow */}
                 <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
