@@ -84,7 +84,7 @@ export default function LoginModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-end p-4 pr-16">
+        <div className="fixed inset-0 z-[70] flex items-center justify-end p-4 pr-24">
             {/* Neon Pixel Background */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#0a090f] via-[#120f1c] to-[#0a090f]">
                 <NeonPixelBackground />
