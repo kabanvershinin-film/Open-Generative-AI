@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthProvider';
+import NeonPixelBackground from './NeonPixelBackground';
 
 export default function LoginModal() {
     const {
@@ -84,21 +85,12 @@ export default function LoginModal() {
 
     return (
         <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            {/* Video background */}
-            <video
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                crossOrigin="anonymous"
-                className="absolute inset-0 w-full h-full object-cover"
-                poster="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4"
-            >
-                <source src="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
-            </video>
+            {/* Neon Pixel Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-[#0a090f] via-[#120f1c] to-[#0a090f]">
+                <NeonPixelBackground />
+            </div>
             {/* Darker overlay for readability */}
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
             
             <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-purple-400/30 bg-gradient-to-b from-[#120f1c] to-[#0a090f] shadow-[0_30px_100px_rgba(124,58,237,0.45)] animate-in zoom-in-95 fade-in duration-200">
                 {/* glow */}
