@@ -162,7 +162,7 @@ function round2(n) { return Math.round(n * 100) / 100; }
 // generate_audio=true doubles tokens (audio = same compute as video)
 const SEEDANCE2_RATES = {
     standard: { sd: { noVideo: 46, withVideo: 28 }, hd: { noVideo: 51, withVideo: 31 } },
-    fast:     { sd: { noVideo: 37, withVideo: 22 }, hd: { noVideo: 0,  withVideo: 0  } },
+    fast:     { sd: { noVideo: 37, withVideo: 22 }, hd: { noVideo: 41, withVideo: 25 } },
 };
 const SEEDANCE2_DIMS = { '480p': [864, 496], '720p': [1280, 720], '1080p': [1920, 1080] };
 
