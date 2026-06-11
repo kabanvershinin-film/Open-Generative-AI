@@ -137,11 +137,28 @@ export default function CabinetModal() {
                     <button onClick={() => setCabinetOpen(false)} className="text-white/40 hover:text-white">✕</button>
                 </div>
 
-                <div className="text-sm text-white/50">{contact}</div>
+                {/* Contact (Email/Phone) */}
+                <div className="mt-1">
+                    <div className="text-xs text-white/30 mb-1">Ваша почта:</div>
+                    <div className="flex items-center gap-2">
+                        <code className="text-[11px] text-white/60 bg-black/40 border border-white/10 px-2 py-1 rounded-lg flex-1 select-all font-mono">
+                            {contact}
+                        </code>
+                        <button
+                            onClick={() => {
+                                navigator.clipboard.writeText(contact);
+                                toast.success('Почта скопирована!');
+                            }}
+                            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                        >
+                            Копировать
+                        </button>
+                    </div>
+                </div>
                 
                 {/* User ID */}
                 {user?.id && (
-                    <div className="mt-1">
+                    <div className="mt-4">
                         <div className="text-xs text-white/30 mb-1">Ваш ID:</div>
                         <div className="flex items-center gap-2">
                             <code className="text-[11px] text-white/60 bg-black/40 border border-white/10 px-2 py-1 rounded-lg flex-1 select-all font-mono">
