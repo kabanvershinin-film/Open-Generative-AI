@@ -1,17 +1,22 @@
 import React, { useEffect, useRef } from 'react';
 
-const PixelBackground = () => {
+const PixelBackground = ({ className, text = 'OPEN\nGENERATIVE\nAI' }) => {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
     const ctx = canvas.getContext('2d');
     let animationId;
     let targetPixels = [];
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
       // Обновляем целевые позиции пикселей (текст) при ресайзе
       updateTargetPixels();
     };
@@ -25,24 +30,31 @@ const PixelBackground = () => {
       tempCanvas.height = canvas.height;
       const tempCtx = tempCanvas.getContext('2d');
       
-      const fontSize = Math.max(80, Math.min(canvas.width / 10, 120));
+      const fontSize = Math.max(32, Math.min(canvas.width / 8, 72));
       tempCtx.font = `900 ${fontSize}px Inter, sans-serif`;
       tempCtx.textAlign = 'center';
+      tempCtx.textBaseline = 'middle';
       tempCtx.fillStyle = '#ffffff';
-      tempCtx.fillText('OPEN', canvas.width / 2, canvas.height / 2 - fontSize);
-      tempCtx.fillText('GENERATIVE', canvas.width / 2, canvas.height / 2);
-      tempCtx.fillText('AI', canvas.width / 2, canvas.height / 2 + fontSize);
+      
+      const lines = text.split('\n');
+      const lineHeight = fontSize * 1.3;
+      const totalTextHeight = lines.length * lineHeight;
+      const startY = canvas.height / 2 - totalTextHeight / 2;
+      
+      lines.forEach((line, index) => {
+        tempCtx.fillText(line, canvas.width / 2, startY + index * lineHeight);
+      });
       
       // Считываем пиксели текста
       const imageData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-      const pixelSize = 6;
+      const pixelSize = 5;
       
       for (let y = 0; y < tempCanvas.height; y += pixelSize * 2) {
         for (let x = 0; x < tempCanvas.width; x += pixelSize * 2) {
           const index = (y * tempCanvas.width + x) * 4;
           const alpha = imageData.data[index + 3];
           
-          if (alpha > 128) {
+          if (alpha > 100) {
             targetPixels.push({ x, y });
           }
         }
@@ -50,20 +62,22 @@ const PixelBackground = () => {
     };
 
     resize();
-    window.addEventListener('resize', resize);
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(container);
 
-    const pixelSize = 6;
+    const pixelSize = 5;
     const colors = [
       '#d946ef', // fuchsia
       '#a855f7', // purple
       '#7c3aed', // darker purple
       '#f0abfc', // light pink-purple
       '#c084fc', // light purple
+      '#e879f9', // bright fuchsia
     ];
 
     // Создаем пиксели
     const pixels = [];
-    const totalPixels = targetPixels.length + 1000; // Текст + случайные
+    const totalPixels = targetPixels.length + 600; // Текст + случайные
     
     for (let i = 0; i < totalPixels; i++) {
       const hasTarget = i < targetPixels.length;
@@ -86,8 +100,8 @@ const PixelBackground = () => {
       });
     }
 
-    const draw = (time) => {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
+    const draw = () => {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.3)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       pixels.forEach(p => {
@@ -104,16 +118,16 @@ const PixelBackground = () => {
           // Притягиваем к целевой позиции
           const dx = p.targetX - p.x;
           const dy = p.targetY - p.y;
-          p.vx += dx * 0.02;
-          p.vy += dy * 0.02;
+          p.vx += dx * 0.015;
+          p.vy += dy * 0.015;
           // Демпинг
-          p.vx *= 0.92;
-          p.vy *= 0.92;
+          p.vx *= 0.95;
+          p.vy *= 0.95;
         } else {
           // Случайное движение для остальных пикселей
-          p.phase += 0.02;
-          p.vx = Math.sin(p.phase) * 0.3;
-          p.vy = Math.cos(p.phase * 0.7) * 0.3;
+          p.phase += 0.015;
+          p.vx = Math.sin(p.phase) * 0.25;
+          p.vy = Math.cos(p.phase * 0.8) * 0.25;
         }
 
         p.x += p.vx;
@@ -133,24 +147,25 @@ const PixelBackground = () => {
     draw();
 
     return () => {
-      window.removeEventListener('resize', resize);
+      resizeObserver.disconnect();
       cancelAnimationFrame(animationId);
     };
-  }, []);
+  }, [text]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        pointerEvents: 'none',
-        zIndex: 0,
-      }}
-    />
+    <div ref={containerRef} className={className} style={{ position: 'relative' }}>
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none',
+        }}
+      />
+    </div>
   );
 };
 
