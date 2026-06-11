@@ -320,6 +320,8 @@ export default function VideoStudio({
 
   // ── history ──
   const [localHistory, setLocalHistory] = useState([]);
+  const [remoteHistory, setRemoteHistory] = useState([]);
+  const [isLoadingRemoteHistory, setIsLoadingRemoteHistory] = useState(false);
   const [activeHistoryIdx, setActiveHistoryIdx] = useState(0);
 
   // ── dropdown ──
@@ -344,7 +346,7 @@ export default function VideoStudio({
   const hasRestored = useRef(false);
 
   // ── derived data ──
-  const history = historyItems ?? localHistory;
+  const history = historyItems ?? (remoteHistory.length > 0 ? remoteHistory : localHistory);
 
   const getCurrentModels = useCallback(() => {
     if (v2vMode) return v2vModels;
@@ -560,6 +562,29 @@ export default function VideoStudio({
     prompt,
     localHistory,
   ]);
+
+  // ── Fetch remote history from /api/gallery ────────────────────────────────
+  const fetchRemoteHistory = useCallback(async () => {
+    if (!apiKey) return;
+    setIsLoadingRemoteHistory(true);
+    try {
+      const response = await fetch("/api/gallery?type=video", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setRemoteHistory(data.entries || []);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch remote history:", err);
+    } finally {
+      setIsLoadingRemoteHistory(false);
+    }
+  }, [apiKey]);
+
+  useEffect(() => {
+    fetchRemoteHistory();
+  }, [fetchRemoteHistory]);
 
   // ── Derived UI values ────────────────────────────────────────────────────
 
@@ -1178,7 +1203,9 @@ export default function VideoStudio({
       addToLocalHistory(entry);
       persistVideoEntryToStorage(entry);
       showVideoInCanvas(url, stored.model);
-      persistVideoToGallery(entry);
+      persistVideoToGallery(entry).then(() => {
+        fetchRemoteHistory(); // Refresh remote history after saving to gallery
+      });
     };
 
     // Task already finished while we were away — show result immediately.
@@ -1434,7 +1461,9 @@ export default function VideoStudio({
         };
         addToLocalHistory(entry);
         persistVideoEntryToStorage(entry);
-        persistVideoToGallery(entry);
+        persistVideoToGallery(entry).then(() => {
+          fetchRemoteHistory(); // Refresh remote history after saving to gallery
+        });
         try {
           localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
           localStorage.removeItem(PENDING_KEY);
@@ -1488,7 +1517,9 @@ export default function VideoStudio({
         };
         addToLocalHistory(entry);
         persistVideoEntryToStorage(entry);
-        persistVideoToGallery(entry);
+        persistVideoToGallery(entry).then(() => {
+          fetchRemoteHistory(); // Refresh remote history after saving to gallery
+        });
         try {
           localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
           localStorage.removeItem(PENDING_KEY);
@@ -1728,7 +1759,7 @@ export default function VideoStudio({
     >
       {/* ── CENTRAL GALLERY AREA ── */}
       <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
-        {(generating || history.length > 0) ? (
+        {(generating || history.length > 0 || isLoadingRemoteHistory) ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {/* Generating card — appears first while a video is being created */}
             {generating && (
@@ -1765,6 +1796,15 @@ export default function VideoStudio({
                     <span className="text-[10px] text-white/30 animate-pulse">● обработка</span>
                   </div>
                 </div>
+              </div>
+            )}
+            {isLoadingRemoteHistory && !generating && (
+              <div className="relative rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl flex flex-col items-center justify-center aspect-video">
+                <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
+                  <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+                <span className="text-[11px] font-semibold text-primary/80 tracking-widest uppercase mt-2">Загрузка истории…</span>
               </div>
             )}
             {history.map((entry, idx) => {
