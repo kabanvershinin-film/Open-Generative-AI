@@ -40,18 +40,6 @@ function NeonPixelBackground() {
       }
     }
 
-    function isInsideModal(x, y) {
-      // Modal is on the right side
-      const modalWidth = 448; // max-w-md
-      const modalPadding = 96; // pr-24 is 6rem, ~96px
-      const modalXStart = W - (modalWidth + modalPadding) * window.devicePixelRatio;
-      const modalXEnd = W - modalPadding * window.devicePixelRatio;
-      const modalYStart = H * 0.2;
-      const modalYEnd = H * 0.8;
-
-      return x > modalXStart && x < modalXEnd && y > modalYStart && y < modalYEnd;
-    }
-
     function density(x, y, t) {
       const nx = x / W;
       const ny = y / H;
@@ -69,20 +57,13 @@ function NeonPixelBackground() {
       ctx.clearRect(0, 0, W, H);
       for (let i = 0; i < cells.length; i++) {
         const c = cells[i];
-        
-        if (isInsideModal(c.x, c.y)) {
-          c.alpha = Math.max(0, c.alpha - 0.2);
-        } else {
-          const d = density(c.x, c.y, t);
-          if (d > c.threshold) {
-            c.alpha = Math.min(1, c.alpha + 0.18);
-          } else {
-            c.alpha = Math.max(0, c.alpha - 0.14);
-          }
-        }
-        
-        if (c.alpha <= 0) continue;
         const d = density(c.x, c.y, t);
+        if (d > c.threshold) {
+          c.alpha = Math.min(1, c.alpha + 0.18);
+        } else {
+          c.alpha = Math.max(0, c.alpha - 0.14);
+        }
+        if (c.alpha <= 0) continue;
         ctx.globalAlpha = c.alpha * (0.35 + d * 0.65);
         ctx.fillStyle = c.purple ? '#a855f7' : '#d946ef';
         ctx.fillRect(c.x, c.y, PIXEL, PIXEL);
