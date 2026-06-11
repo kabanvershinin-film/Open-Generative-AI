@@ -1402,21 +1402,60 @@ export async function GET(request, { params }) {
     const { path = [] } = await params;
 
     if (path[0] === 'list') {
-        // Workflows are private: only the owner sees them. Guests get nothing.
         const user = await getUserForGallery(request);
+        console.log('List workflows called for user:', user?.id);
         if (!user?.id) return NextResponse.json([]);
-        const index = (await tosLoadIndex()).filter(e => e && e.owner_id === user.id);
-        // Merge: in-memory store has the freshest name (written synchronously on
-        // every save). The TOS index can be stale if tosUpdateIndex lost a race or
-        // the serverless instance restarted between the save and the index write.
-        const merged = index.map(entry => {
+        
+        let allIndex = [];
+        try {
+            allIndex = await tosLoadIndex();
+            console.log('All workflows from index:', allIndex.map(i => ({ id: i.id, owner_id: i.owner_id })));
+        } catch (err) {
+            console.error('Failed to load index:', err);
+        }
+        
+        let ownerWorkflows = allIndex.filter(e => e && e.owner_id === user.id);
+        console.log('Owner workflows:', ownerWorkflows.map(i => i.id));
+        
+        let sharedWorkflows = [];
+        if (SHARE_ENABLED) {
+            try {
+                const { data: sharedWfs, error: shareErr } = await supabaseAdmin()
+                    .from('workflow_shares')
+                    .select('workflow_id')
+                    .eq('user_id', user.id);
+                if (shareErr) {
+                    console.error('Failed to load shares:', shareErr);
+                } else if (sharedWfs && sharedWfs.length > 0) {
+                    console.log('Found shared workflow ids:', sharedWfs.map(s => s.workflow_id));
+                    const sharedIds = sharedWfs.map(s => s.workflow_id);
+                    sharedWorkflows = allIndex.filter(e => e && sharedIds.includes(e.id));
+                    console.log('Found shared workflows:', sharedWorkflows.map(i => i.id));
+                }
+            } catch (err) {
+                console.error('Error loading shares:', err);
+            }
+        }
+        
+        // Combine and deduplicate
+        const combinedMap = new Map();
+        [...ownerWorkflows, ...sharedWorkflows].forEach(wf => {
+            if (!combinedMap.has(wf.id)) {
+                combinedMap.set(wf.id, wf);
+            }
+        });
+        const finalIndex = Array.from(combinedMap.values());
+        console.log('Final index:', finalIndex.map(i => ({ id: i.id, is_owner: i.owner_id === user.id })));
+        
+        // Merge with in-memory store
+        const merged = finalIndex.map(entry => {
             const mem = store.get(entry.id);
-            if (!mem) return entry;
             return {
                 ...entry,
-                name: mem.name || entry.name,
-                thumbnail: mem.thumbnail || entry.thumbnail,
-                updated_at: mem.updated_at || entry.updated_at,
+                name: mem?.name || entry.name,
+                thumbnail: mem?.thumbnail || entry.thumbnail,
+                updated_at: mem?.updated_at || entry.updated_at,
+                is_owner: entry.owner_id === user.id,
             };
         });
         return NextResponse.json(merged);

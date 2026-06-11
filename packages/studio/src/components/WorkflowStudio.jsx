@@ -217,6 +217,13 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
         </div>
       )}
 
+      {/* Shared with you badge */}
+      {activeTab === 'my-workflows' && workflow.is_owner === false && (
+        <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full">
+          <span className="text-[9px] font-black text-amber-200 uppercase tracking-widest">Вам прислали процесс</span>
+        </div>
+      )}
+
       {/* Community nodes count */}
       {activeTab === 'published' && workflow.nodes_count > 0 && (
         <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full">
