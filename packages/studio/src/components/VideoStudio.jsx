@@ -1687,6 +1687,7 @@ export default function VideoStudio({
   // ── Calculate estimated cost when parameters change ──────────────────────
   useEffect(() => {
     let isMounted = true;
+    const abortController = new AbortController();
     const calculateCost = async () => {
       console.log("[calculateCost] Starting...", { selectedModel, isSeedanceArk, selectedDuration, selectedResolution });
       if (!isSeedanceArk) {
@@ -1723,7 +1724,8 @@ export default function VideoStudio({
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(requestBody),
+          signal: abortController.signal
         });
 
         console.log("[calculateCost] Response status:", response.status);
@@ -1737,6 +1739,10 @@ export default function VideoStudio({
           setEstimatedCost(null);
         }
       } catch (err) {
+        if (err.name === "AbortError") {
+          console.log("[calculateCost] Request was aborted");
+          return;
+        }
         console.error("Failed to calculate cost:", err);
         if (isMounted) {
           setEstimatedCost(null);
@@ -1749,7 +1755,10 @@ export default function VideoStudio({
     };
 
     calculateCost();
-    return () => { isMounted = false; };
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
   }, [selectedModel, selectedDuration, selectedResolution, isSeedanceArk, refFiles]);
 
   const promptPlaceholder = isSeedanceArk
