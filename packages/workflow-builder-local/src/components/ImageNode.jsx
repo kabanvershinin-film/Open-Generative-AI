@@ -252,6 +252,7 @@ const ImageGeneration = ({ id, data, selected }) => {
     if (val.includes(".volces.com")) {
       data.handleSaveWorkFlow?.();
       saveImageToGallery(val);
+      updateWorkflowThumbnail(val);
       return;
     }
     const payload = val.startsWith("data:") ? { image: val } : { url: val };
@@ -269,6 +270,7 @@ const ImageGeneration = ({ id, data, selected }) => {
         data.onDataChange?.(id, { outputs: tosOut, resultUrl: tosUrl, outputHistory: tosHistory });
         data.handleSaveWorkFlow?.();
         saveImageToGallery(tosUrl);
+        updateWorkflowThumbnail(tosUrl);
       })
       .catch(() => { saveImageToGallery(val); });
   };

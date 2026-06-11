@@ -1,4 +1,5 @@
 import { downloadFile, videoModels, stableStringify } from "./utility";
+import { getWorkflowId } from "./WorkflowStore";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { BsArrowUpCircleFill } from "react-icons/bs";
 import { IoTimeOutline, IoVideocamOutline, IoTrashOutline, IoPlay, IoPause, IoVolumeHigh, IoVolumeMute } from "react-icons/io5";
@@ -59,6 +60,28 @@ const VideoGeneration = ({ id, data, selected }) => {
   const edges = useStore((state) => state.edges);
   const properties = nodeSchemas?.categories?.video?.models?.[selectedModel.id]?.input_schema?.schemas?.input_data?.properties;
   const { generationCost, isRefreshingCost } = useGenerationCost(selectedModel, formValues);
+  
+  const updateWorkflowThumbnail = async (thumbnail) => {
+    const workflow_id = getWorkflowId();
+    if (!workflow_id) {
+      toast.error("Workflow id not found");
+      return;
+    }
+
+    if (!thumbnail) {
+      toast.error("Thumbnail URL is required");
+      return;
+    }
+    try { 
+      const response = await axios.post(`/api/workflow/${workflow_id}/thumbnail`, { 
+        thumbnail 
+      });
+      if (response.data.success) toast.success("Cover image updated successfully");
+    } catch(error) {
+      toast.error(error.response?.data?.detail || "Failed to save thumbnail");
+      console.error(error);
+    };
+  };
   
   useEffect(() => {
     if (data.cost !== generationCost) {
@@ -385,6 +408,7 @@ const VideoGeneration = ({ id, data, selected }) => {
     });
     setCurrentHistoryIndex(newHistory.length - 1);
     setCurrentVideoIndex(0);
+    updateWorkflowThumbnail(finishedUrl);
 
     // Сохраняем в Галерею (как Студия) — /api/gallery сам зеркалирует в TOS и
     // добавляет запись в gallery/{userId}/entries.json. Браузерный ARK-путь
@@ -513,7 +537,7 @@ const VideoGeneration = ({ id, data, selected }) => {
         cost: generationCost,
         node_id: "AI Video"
       });
-      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
+      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; const videoUrl = (_o[0] && _o[0].value) || ""; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: videoUrl, isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); updateWorkflowThumbnail(videoUrl); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
     } catch(error) {
       data.onDataChange(id, { isLoading: false });
       toast.error(error.response?.data?.detail || "Error running node");
