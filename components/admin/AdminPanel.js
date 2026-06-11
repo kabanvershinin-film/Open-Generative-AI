@@ -37,6 +37,11 @@ export default function AdminPanel() {
     const [targetUser, setTargetUser] = useState(null);
     const [amount, setAmount] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    
+    const [transactionsOpen, setTransactionsOpen] = useState(false);
+    const [transactionsUser, setTransactionsUser] = useState(null);
+    const [transactions, setTransactions] = useState([]);
+    const [transactionsLoading, setTransactionsLoading] = useState(false);
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
@@ -100,6 +105,33 @@ export default function AdminPanel() {
             setSavingMarkup(false);
         }
     }, [platformMarkup]);
+
+    const loadTransactions = useCallback(async (userId) => {
+        setTransactionsLoading(true);
+        try {
+            const { data: sess } = await supabase.auth.getSession();
+            const token = sess.session?.access_token;
+            if (!token) throw new Error('Нет активной сессии');
+            const res = await fetch(`/api/admin/transactions?userId=${encodeURIComponent(userId)}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const payload = await res.json();
+            if (!res.ok) throw new Error(payload?.error || `Ошибка ${res.status}`);
+            setTransactions(payload.transactions ?? []);
+        } catch (e) {
+            toast.error(e.message);
+            setTransactions([]);
+        } finally {
+            setTransactionsLoading(false);
+        }
+    }, []);
+
+    const openTransactions = (u) => {
+        setTransactionsUser(u);
+        setTransactions([]);
+        setTransactionsOpen(true);
+        loadTransactions(u.id);
+    };
 
     useEffect(() => {
         if (admin) {
@@ -300,7 +332,11 @@ export default function AdminPanel() {
                                         <td className="px-4 py-3 text-xs text-white/40 hidden md:table-cell">
                                             {new Date(u.created_at).toLocaleDateString('ru-RU')}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 text-right flex gap-2 justify-end">
+                                            <button
+                                                onClick={() => openTransactions(u)}
+                                                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium transition-colors"
+                                            >История</button>
                                             <button
                                                 onClick={() => openDialog(u)}
                                                 className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors"
@@ -352,6 +388,51 @@ export default function AdminPanel() {
                                 className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
                             >{submitting ? '...' : 'Начислить'}</button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Transactions dialog */}
+            {transactionsOpen && (
+                <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                     onClick={() => setTransactionsOpen(false)}>
+                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-6 w-full max-w-2xl max-h-[80vh] flex flex-col"
+                         onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-base font-semibold text-white">История операций</h3>
+                            <button onClick={() => setTransactionsOpen(false)} className="text-white/40 hover:text-white">✕</button>
+                        </div>
+                        {transactionsUser && (
+                            <div className="text-sm text-white/50 mb-4">
+                                {transactionsUser.full_name || '—'} · {transactionsUser.email}
+                            </div>
+                        )}
+                        {transactionsLoading ? (
+                            <div className="py-16 text-center text-white/30 text-sm">Загрузка…</div>
+                        ) : transactions.length === 0 ? (
+                            <div className="py-16 text-center text-white/30 text-sm">Нет транзакций</div>
+                        ) : (
+                            <div className="flex-1 overflow-y-auto space-y-2">
+                                {transactions.map(tx => (
+                                    <div key={tx.id} className="p-3 rounded-xl bg-black/30 border border-white/5">
+                                        <div className="flex items-center justify-between">
+                                            <div className="text-xs text-white/40">
+                                                {new Date(tx.created_at).toLocaleString('ru-RU')}
+                                            </div>
+                                            <div className={`text-sm font-bold ${Number(tx.amount) > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                                {Number(tx.amount) > 0 ? '+' : ''}{Number(tx.amount).toFixed(2)}₽
+                                            </div>
+                                        </div>
+                                        <div className="text-white text-sm mt-1">{tx.reason || '—'}</div>
+                                        {tx.meta && Object.keys(tx.meta).length > 0 && (
+                                            <div className="text-xs text-white/30 mt-1">
+                                                {JSON.stringify(tx.meta)}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
