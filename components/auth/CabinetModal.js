@@ -138,6 +138,27 @@ export default function CabinetModal() {
                 </div>
 
                 <div className="text-sm text-white/50">{contact}</div>
+                
+                {/* User ID */}
+                {user?.id && (
+                    <div className="mt-1">
+                        <div className="text-xs text-white/30 mb-1">Ваш ID:</div>
+                        <div className="flex items-center gap-2">
+                            <code className="text-[11px] text-white/60 bg-black/40 border border-white/10 px-2 py-1 rounded-lg flex-1 select-all font-mono">
+                                {user.id}
+                            </code>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(user.id);
+                                    toast.success('ID скопирован!');
+                                }}
+                                className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                            >
+                                Копировать
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
                     <div className="text-xs text-white/50">Ваш баланс</div>

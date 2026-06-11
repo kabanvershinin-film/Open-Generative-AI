@@ -1985,26 +1985,44 @@ export async function POST(request, { params }) {
         const access = await hasAccess(user.id, wfId);
         if (!access.isOwner) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
         
-        const { email, role = 'editor' } = body;
-        if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 });
+        const { email, userId, role = 'editor' } = body;
+        let targetUserId = userId;
         
-        // Найдем пользователя по email в Supabase
-        const { data: profile, error: profileError } = await supabaseAdmin()
-            .from('profiles')
-            .select('id')
-            .eq('email', email)
-            .single();
+        if (!email && !targetUserId) {
+            return NextResponse.json({ error: 'Email or User ID required' }, { status: 400 });
+        }
         
-        if (profileError || !profile?.id) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        // Если передали email, ищем пользователя по email
+        if (email && !targetUserId) {
+            const { data: profile, error: profileError } = await supabaseAdmin()
+                .from('profiles')
+                .select('id')
+                .eq('email', email)
+                .single();
+            
+            if (profileError || !profile?.id) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            targetUserId = profile.id;
+        }
+        
+        // Проверим, что пользователь существует (если передали ID)
+        if (targetUserId && !email) {
+            const { data: profile, error: profileError } = await supabaseAdmin()
+                .from('profiles')
+                .select('id')
+                .eq('id', targetUserId)
+                .single();
+            
+            if (profileError || !profile?.id) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
         
         // Добавляем доступ
         const { error } = await supabaseAdmin()
             .from('workflow_shares')
-            .upsert({ workflow_id: wfId, user_id: profile.id, role });
+            .upsert({ workflow_id: wfId, user_id: targetUserId, role });
         
         if (error) return NextResponse.json({ error: error.message }, { status: 500 });
         
-        return NextResponse.json({ success: true, userId: profile.id });
+        return NextResponse.json({ success: true, userId: targetUserId });
     }
 
     // Удалить доступ: /api/workflow/{id}/unshare

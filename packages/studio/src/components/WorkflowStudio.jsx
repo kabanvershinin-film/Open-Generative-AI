@@ -307,7 +307,9 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
   const [runResult, setRunResult] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [shareInputType, setShareInputType] = useState("email"); // "email" or "id"
   const [shareEmail, setShareEmail] = useState("");
+  const [shareUserId, setShareUserId] = useState("");
   const [workflowShares, setWorkflowShares] = useState([]);
   const [loadingShares, setLoadingShares] = useState(false);
   const isNavigatingRef = useRef(false);
@@ -473,17 +475,26 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
 
   const handleShare = async (e) => {
         e.preventDefault();
-        if (!shareEmail.trim() || !selectedWorkflow?.id) return;
+        if (!selectedWorkflow?.id) return;
+        
+        const value = shareInputType === "email" ? shareEmail.trim() : shareUserId.trim();
+        if (!value) return;
+        
         try {
+            const body = shareInputType === "email" 
+                ? { email: value, role: 'editor' } 
+                : { userId: value, role: 'editor' };
+                
             const r = await fetch(`/api/workflow/${selectedWorkflow.id}/share`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-                body: JSON.stringify({ email: shareEmail.trim(), role: 'editor' }),
+                body: JSON.stringify(body),
             });
             if (r.ok) {
                 setShareEmail("");
+                setShareUserId("");
                 await loadShares(selectedWorkflow.id);
-                alert(`Пользователь ${shareEmail.trim()} добавлен! Отправь ему ссылку на воркфлоу: ${window.location.href}`);
+                alert(`Пользователь добавлен! Отправь ему ссылку на воркфлоу: ${window.location.href}`);
             } else {
                 const error = await r.text();
                 alert(`Ошибка при поделиться: ${error}`);
@@ -797,14 +808,50 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 </button>
               </div>
               <div className="p-6 space-y-4">
+                {/* Tabs */}
+                <div className="flex gap-2 border border-white/10 rounded-lg overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShareInputType("email")}
+                    className={`flex-1 py-2 text-xs font-semibold transition-colors ${
+                      shareInputType === "email"
+                        ? "bg-[#22d3ee]/20 text-[#22d3ee]"
+                        : "text-white/50 hover:text-white/70"
+                    }`}
+                  >
+                    По почте
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShareInputType("id")}
+                    className={`flex-1 py-2 text-xs font-semibold transition-colors ${
+                      shareInputType === "id"
+                        ? "bg-[#22d3ee]/20 text-[#22d3ee]"
+                        : "text-white/50 hover:text-white/70"
+                    }`}
+                  >
+                    По ID
+                  </button>
+                </div>
+
                 <form onSubmit={handleShare} className="flex gap-2">
-                  <input
-                    type="email"
-                    value={shareEmail}
-                    onChange={(e) => setShareEmail(e.target.value)}
-                    placeholder="Email пользователя для приглашения"
-                    className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#22d3ee]/50"
-                  />
+                  {shareInputType === "email" ? (
+                    <input
+                      type="email"
+                      value={shareEmail}
+                      onChange={(e) => setShareEmail(e.target.value)}
+                      placeholder="Email пользователя"
+                      className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#22d3ee]/50"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={shareUserId}
+                      onChange={(e) => setShareUserId(e.target.value)}
+                      placeholder="User ID пользователя"
+                      className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#22d3ee]/50 font-mono"
+                    />
+                  )}
                   <button
                     type="submit"
                     className="px-4 py-2 bg-[#22d3ee]/20 hover:bg-[#22d3ee]/30 border border-[#22d3ee]/40 rounded-lg text-sm font-black text-[#22d3ee] uppercase tracking-widest transition-colors"
