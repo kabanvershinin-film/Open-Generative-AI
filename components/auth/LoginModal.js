@@ -90,7 +90,7 @@ export default function LoginModal() {
                 <NeonPixelBackground />
             </div>
             {/* Darker overlay for readability */}
-            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
             
             <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-purple-400/30 bg-gradient-to-b from-[#120f1c] to-[#0a090f] shadow-[0_30px_100px_rgba(124,58,237,0.45)] animate-in zoom-in-95 fade-in duration-200">
                 {/* glow */}
