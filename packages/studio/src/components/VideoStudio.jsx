@@ -785,6 +785,46 @@ export default function VideoStudio({
     return `@${word}${index}`;
   };
 
+  // Compress image before upload to reduce file size and speed up upload
+  const compressImage = async (file) => {
+    if (!file.type.startsWith('image/')) return file;
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const maxWidth = 1920;
+          const maxHeight = 1920;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' }));
+            },
+            'image/jpeg',
+            0.85 // Quality 85% - good balance between size and quality
+          );
+        };
+      };
+    });
+  };
+
   const handleRefFilesChange = async (e) => {
     const files = Array.from(e.target.files || []);
     if (refFileInputRef.current) refFileInputRef.current.value = "";
@@ -801,6 +841,10 @@ export default function VideoStudio({
         alert(`Файл ${file.name} превышает лимит ${limitMb} МБ.`);
         return;
       }
+      
+      // Compress image to speed up upload
+      const processedFile = kind === "image" ? await compressImage(file) : file;
+      
       const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       let uploadAborted = false;
       let xhr = null;
@@ -825,7 +869,7 @@ export default function VideoStudio({
         // Get a presigned PUT URL from the server, then PUT the file directly
         // from the browser to TOS — no Vercel body size limit applies.
         const presignRes = await fetch(
-          `/api/upload-file?filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type || 'application/octet-stream')}`,
+          `/api/upload-file?filename=${encodeURIComponent(processedFile.name)}&type=${encodeURIComponent(processedFile.type || 'application/octet-stream')}`,
         );
         if (uploadAborted) return;
         if (!presignRes.ok) throw new Error('Не удалось получить URL загрузки');
@@ -835,7 +879,7 @@ export default function VideoStudio({
           if (uploadAborted) return reject(new Error('aborted'));
           xhr = new XMLHttpRequest();
           xhr.open('PUT', putUrl);
-          xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+          xhr.setRequestHeader('Content-Type', processedFile.type || 'application/octet-stream');
           xhr.upload.onprogress = (e) => {
             if (uploadAborted) return;
             if (e.lengthComputable) {
@@ -851,7 +895,7 @@ export default function VideoStudio({
             if (uploadAborted) return;
             reject(new Error('Ошибка сети при загрузке'));
           };
-          xhr.send(file);
+          xhr.send(processedFile);
         });
 
         if (uploadAborted) return;
