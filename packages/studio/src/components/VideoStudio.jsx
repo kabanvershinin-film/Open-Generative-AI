@@ -463,6 +463,68 @@ export default function VideoStudio({
     [],
   );
 
+  // ── State for cost display ───────────────────────────────────────────────
+  const [estimatedCost, setEstimatedCost] = useState(null);
+  const [isLoadingCost, setIsLoadingCost] = useState(false);
+
+  // ── Calculate estimated cost when parameters change ──────────────────────
+  useEffect(() => {
+    let isMounted = true;
+    const calculateCost = async () => {
+      if (!isSeedanceArk) {
+        setEstimatedCost(null);
+        return;
+      }
+
+      setIsLoadingCost(true);
+      try {
+        // Map the selected model to the pricing model ID
+        const modelMap = {
+          "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
+          "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
+          "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
+          "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
+        };
+
+        const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
+        const hasVideoInput = refFiles.some(f => f.kind === "video");
+
+        const response = await fetch("/api/calculate-price", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            category: "video",
+            model: pricingModelId,
+            params: {
+              duration: selectedDuration || 5,
+              resolution: selectedResolution || "720p",
+              video_url: hasVideoInput ? "exists" : undefined
+            }
+          })
+        });
+
+        if (response.ok && isMounted) {
+          const data = await response.json();
+          setEstimatedCost(data.cost);
+        }
+      } catch (err) {
+        console.error("Failed to calculate cost:", err);
+        if (isMounted) {
+          setEstimatedCost(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingCost(false);
+        }
+      }
+    };
+
+    calculateCost();
+    return () => { isMounted = false; };
+  }, [selectedModel, selectedDuration, selectedResolution, isSeedanceArk, refFiles]);
+
   // ── Persistence: Load ────────────────────────────────────────────────────
   useEffect(() => {
     try {
@@ -2552,28 +2614,43 @@ export default function VideoStudio({
               </button>
             )}
 
-            {/* Generate button */}
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={generating}
-              className="bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {generating ? (
-                <>
-                  <span className="animate-spin inline-block text-black">
-                    ◌
-                  </span>{" "}
-                  Создание...
-                </>
-              ) : generateError ? (
-                `Error: ${generateError}`
-              ) : (
-                <>
-                  <span>Создать</span>
-                </>
+            <div className="flex items-center gap-3">
+              {/* Cost estimate */}
+              {isSeedanceArk && (
+                <div className="flex items-center gap-2 text-sm">
+                  {isLoadingCost ? (
+                    <span className="text-white/40 animate-pulse">Расчет стоимости...</span>
+                  ) : estimatedCost != null && estimatedCost > 0 ? (
+                    <span className="text-[#22d3ee] font-medium">
+                      ≈ {estimatedCost.toFixed(2)} ₽
+                    </span>
+                  ) : null}
+                </div>
               )}
-            </button>
+
+              {/* Generate button */}
+              <button
+                type="button"
+                onClick={handleGenerate}
+                disabled={generating}
+                className="bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {generating ? (
+                  <>
+                    <span className="animate-spin inline-block text-black">
+                      ◌
+                    </span>{" "}
+                    Создание...
+                  </>
+                ) : generateError ? (
+                  `Error: ${generateError}`
+                ) : (
+                  <>
+                    <span>Создать</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
