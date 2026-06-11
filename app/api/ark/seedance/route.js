@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { BILLING_ENABLED, getBalance, signBill, verifyBillData, chargeForTask } from '../../_lib/balance';
+import { BILLING_ENABLED, getBalance, signBill, verifyBillData, chargeForTask, refundBalanceRpc } from '../../_lib/balance';
 import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
