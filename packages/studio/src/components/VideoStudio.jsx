@@ -1697,8 +1697,12 @@ export default function VideoStudio({
     let isMounted = true;
     const abortController = new AbortController();
     const calculateCost = async () => {
-      console.log("[calculateCost] Starting...", { selectedModel, isSeedanceArk, selectedDuration, selectedResolution });
-      if (!isSeedanceArk) {
+      // Вычисляем isSeedanceArk внутри useEffect, чтобы не зависеть от него
+      const currentModel = getCurrentModel();
+      const isArk = currentModel?.provider === "ark";
+      
+      console.log("[calculateCost] Starting...", { selectedModel, isArk, selectedDuration, selectedResolution });
+      if (!isArk) {
         console.log("[calculateCost] Not Seedance Ark, clearing cost");
         setEstimatedCost(null);
         return;
@@ -1767,7 +1771,7 @@ export default function VideoStudio({
       isMounted = false;
       abortController.abort();
     };
-  }, [selectedModel, selectedDuration, selectedResolution, isSeedanceArk, refFiles]);
+  }, [selectedModel, selectedDuration, selectedResolution, refFiles, imageMode, v2vMode, getCurrentModel]);
 
   const promptPlaceholder = isSeedanceArk
     ? "Используйте @, чтобы ссылаться на загруженные файлы. Напр.: возьми движение из @видео1, создай видео с персонажами из @фото2 и @фото3."
