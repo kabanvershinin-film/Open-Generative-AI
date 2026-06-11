@@ -1687,10 +1687,10 @@ export default function VideoStudio({
       try {
         // Map the selected model to the pricing model ID
         const modelMap = {
-          "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
-          "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
-          "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
-          "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
+          "seedance-v2.0-t2v": "doubao-seedance-2-0-260128",
+          "seedance-v2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
+          "seedance-v2.0-i2v": "doubao-seedance-2-0-260128",
+          "seedance-v2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
         };
 
         const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
