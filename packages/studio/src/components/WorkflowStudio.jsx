@@ -212,8 +212,8 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
 
       {/* Published badge on my-workflows */}
       {activeTab === 'my-workflows' && workflow.is_published && (
-        <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-[#22d3ee]/20 border border-[#22d3ee]/40 rounded-full">
-          <span className="text-[9px] font-black text-[#22d3ee] uppercase tracking-widest">Опубликовано</span>
+        <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full">
+          <span className="text-[9px] font-black text-purple-300 uppercase tracking-widest">Опубликовано</span>
         </div>
       )}
 
@@ -252,10 +252,10 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
       )}
 
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <div className="text-[10px] font-bold text-[#22d3ee] uppercase tracking-wider mb-1 opacity-80">
+        <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1 opacity-80">
           {workflow.category || "Общее"}
         </div>
-        <h3 className="text-sm font-bold text-white truncate group-hover:text-[#22d3ee] transition-colors">
+        <h3 className="text-sm font-bold text-white truncate group-hover:text-purple-300 transition-colors">
           {workflow.name || "Без названия"}
         </h3>
         {activeTab === 'published' && workflow.can_moderate && (

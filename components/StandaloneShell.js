@@ -227,8 +227,8 @@ export default function StandaloneShell() {
   }, []);
 
   if (!hasMounted) return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center">
-      <div className="animate-spin text-[#22d3ee] text-3xl">◌</div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0a0714] to-[#050308]">
+      <div className="animate-spin text-[#d946ef] text-3xl">◌</div>
     </div>
   );
 
@@ -238,7 +238,7 @@ export default function StandaloneShell() {
 
   return (
     <div 
-      className="h-screen bg-[#030303] flex flex-col overflow-hidden text-white relative"
+      className="h-screen flex flex-col overflow-hidden text-white relative"
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
@@ -246,9 +246,9 @@ export default function StandaloneShell() {
     >
       {/* Drag Overlay */}
       {isDragging && (
-        <div className="fixed inset-0 z-[100] bg-[#22d3ee]/10 backdrop-blur-md border-4 border-dashed border-[#22d3ee]/50 flex items-center justify-center pointer-events-none transition-all duration-300">
-          <div className="bg-[#0a0a0a] p-8 rounded-3xl border border-white/10 shadow-2xl flex flex-col items-center gap-4 scale-110 animate-pulse">
-            <div className="w-20 h-20 bg-[#22d3ee] rounded-2xl flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] bg-[#d946ef]/10 backdrop-blur-md border-4 border-dashed border-[#d946ef]/50 flex items-center justify-center pointer-events-none transition-all duration-300">
+          <div className="bg-[#0f0c18] p-8 rounded-3xl border border-purple-500/20 shadow-2xl flex flex-col items-center gap-4 scale-110 animate-pulse">
+            <div className="w-20 h-20 bg-gradient-to-r from-[#a855f7] to-[#d946ef] rounded-2xl flex items-center justify-center">
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
               </svg>
@@ -263,21 +263,21 @@ export default function StandaloneShell() {
 
       {/* Header */}
       {isHeaderVisible && (
-        <header className="flex-shrink-0 h-14 border-b border-white/[0.03] flex items-center justify-between px-6 bg-black/20 backdrop-blur-md z-40 gap-4">
+        <header className="flex-shrink-0 h-14 border-b border-purple-500/10 flex items-center justify-between px-6 bg-black/15 backdrop-blur-xl z-40 gap-4">
           {/* Left: Logo */}
           <div className="flex-shrink-0 flex items-center gap-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-lg flex items-center justify-center shadow-lg shadow-purple-500/20">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
               </svg>
             </div>
-            <span className="text-sm font-bold tracking-tight hidden sm:block">OpenGenerativeAI</span>
+            <span className="text-sm font-bold tracking-tight hidden sm:block text-white/90">OpenGenerativeAI</span>
           </div>
 
           {/* Center: Navigation Container with fade edges */}
           <div className="flex-1 min-w-0 mx-4 sm:mx-6 relative overflow-hidden h-full flex items-center justify-start lg:justify-center">
             {/* Fade Left Overlay */}
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#030303] to-transparent pointer-events-none z-10 block lg:hidden" />
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#0a0714] to-transparent pointer-events-none z-10 block lg:hidden" />
             
             <nav className="flex items-center gap-4 overflow-x-auto scrollbar-none w-full lg:w-auto h-full px-4 lg:px-0">
               {TABS.map((tab) => (
@@ -286,20 +286,20 @@ export default function StandaloneShell() {
                   onClick={() => handleTabChange(tab.id)}
                   className={`relative text-[13px] font-medium transition-all duration-300 whitespace-nowrap px-1 flex-shrink-0 flex items-center h-full ${
                     activeTab === tab.id
-                      ? 'text-[#22d3ee]'
-                      : 'text-white/50 hover:text-white'
+                      ? 'text-[#d946ef]'
+                      : 'text-white/50 hover:text-white/90'
                   }`}
                 >
                   <span className="relative z-10">{tab.label}</span>
                   {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#22d3ee] to-[#a855f7] rounded-full shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#a855f7] to-[#d946ef] rounded-full shadow-[0_0_12px_rgba(217,70,239,0.5)]" />
                   )}
                 </button>
               ))}
             </nav>
             
             {/* Fade Right Overlay */}
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#030303] to-transparent pointer-events-none z-10 block lg:hidden" />
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#0a0714] to-transparent pointer-events-none z-10 block lg:hidden" />
           </div>
 
           {/* Right: Actions */}
@@ -322,11 +322,11 @@ export default function StandaloneShell() {
         {/* Generation indicator overlay - visible across all tabs */}
         {isGenerating && (
           <div className="fixed bottom-6 right-6 z-[110] animate-fade-in pointer-events-none">
-            <div className="bg-[#0a0a0a]/95 border border-[#22d3ee]/30 rounded-xl p-4 shadow-2xl flex flex-col items-center gap-3 min-w-[240px] backdrop-blur-sm">
+            <div className="bg-[#0f0c18]/95 border border-purple-500/25 rounded-xl p-4 shadow-2xl flex flex-col items-center gap-3 min-w-[240px] backdrop-blur-xl">
               <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#22d3ee] to-[#a855f7] p-1 animate-spin">
-                  <div className="w-full h-full rounded-full bg-[#0a0a0a] flex items-center justify-center">
-                    <span className="text-xl text-[#22d3ee]">◌</span>
+                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#a855f7] to-[#d946ef] p-1 animate-spin shadow-lg shadow-purple-500/20">
+                  <div className="w-full h-full rounded-full bg-[#0f0c18] flex items-center justify-center">
+                    <span className="text-xl text-[#d946ef]">◌</span>
                   </div>
                 </div>
                 <div className="text-center">
@@ -336,7 +336,7 @@ export default function StandaloneShell() {
               </div>
               <div className="w-full space-y-1">
                 <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-[#22d3ee] to-[#a855f7] animate-pulse" style={{ width: "100%" }} />
+                  <div className="h-full bg-gradient-to-r from-[#a855f7] to-[#d946ef] animate-pulse" style={{ width: "100%" }} />
                 </div>
               </div>
               <p className="text-[10px] text-white/30 text-center leading-tight">
@@ -350,14 +350,14 @@ export default function StandaloneShell() {
       {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in-up">
-          <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 w-full max-w-sm shadow-2xl">
+          <div className="bg-[#0f0c18] border border-purple-500/20 rounded-xl p-8 w-full max-w-sm shadow-2xl">
             <h2 className="text-white font-bold text-lg mb-2">Настройки</h2>
             <p className="text-white/40 text-[13px] mb-8">
               Управление параметрами студии и аутентификацией.
             </p>
             
             <div className="space-y-4 mb-8">
-              <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
+              <div className="bg-white/5 border border-purple-500/10 rounded-md p-4">
                 <label className="block text-xs font-bold text-white/30 mb-2">
                    Активный API-ключ
                 </label>
@@ -370,13 +370,13 @@ export default function StandaloneShell() {
             <div className="flex gap-3">
               <button
                 onClick={handleKeyChange}
-                className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"
+                className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all border border-red-500/10"
               >
                 Сменить ключ
               </button>
               <button
                 onClick={() => setShowSettings(false)}
-                className="flex-1 h-10 rounded-md bg-white/5 text-white/80 hover:bg-white/10 text-xs font-semibold transition-all border border-white/5"
+                className="flex-1 h-10 rounded-md bg-white/5 text-white/80 hover:bg-white/10 text-xs font-semibold transition-all border border-white/10"
               >
                 Закрыть
               </button>

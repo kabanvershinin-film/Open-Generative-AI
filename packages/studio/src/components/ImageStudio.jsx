@@ -1878,9 +1878,8 @@ export default function ImageStudio({
               </div>
             </div>
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-4 text-center px-4">
-              <span className="text-white/40 font-medium">НАЧНИТЕ СОЗДАВАТЬ С</span>
-              <br />
-              <span className="text-white">СТУДИИ ИЗОБРАЖЕНИЙ</span>
+              <span className="text-purple-300/50 font-medium text-2xl sm:text-3xl md:text-4xl">НАЧНИТЕ СОЗДАВАТЬ В</span><br />
+              <span className="text-purple-300">СТУДИИ ИЗОБРАЖЕНИЙ</span>
             </h1>
             <p className="text-white/40 text-sm md:text-base font-medium tracking-wide text-center max-w-lg leading-relaxed">
               Опишите сцену, персонажа, настроение или стиль — и наблюдайте как это оживает
