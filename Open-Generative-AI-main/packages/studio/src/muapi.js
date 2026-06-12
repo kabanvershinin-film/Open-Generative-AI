@@ -907,7 +907,6 @@ export async function updateWorkflowName(apiKey, id, name) {
     if (!r.ok) return {};
     return await r.json();
 }
-export async function deleteWorkflow(apiKey, id) {
 export async function updateWorkflowThumbnail(apiKey, id, thumbnail) {
     const r = await fetch(`/api/workflow/${id}/thumbnail`, {
         method: 'POST',

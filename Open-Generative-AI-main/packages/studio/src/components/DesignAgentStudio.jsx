@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { CreativeCanvas } from 'design-agent';
 
 import { getUserBalance } from '../muapi';
 
@@ -30,15 +29,11 @@ export default function DesignAgentStudio({ apiKey, isHeaderVisible, onToggleHea
   }, [apiKey]);
 
   return (
-    <div className="h-full w-full bg-black overflow-hidden design-agent-studio">
-      <CreativeCanvas 
-        user={userData}
-        isAuthorized={!!userData}
-        creditConversionRate={200}
-        theme="dark"
-        onToggleHeader={onToggleHeader}
-        isHeaderVisible={isHeaderVisible}
-      />
+    <div className="h-full w-full bg-black overflow-hidden flex items-center justify-center text-white/50">
+      <div className="text-center">
+        <h2 className="text-xl font-bold mb-2">Design Agent Studio</h2>
+        <p className="text-sm">Coming soon!</p>
+      </div>
     </div>
   );
 }

@@ -258,157 +258,159 @@ export default function StandaloneShell() {
     return <ApiKeyModal onSave={handleKeySave} />;
   }
 
-return (<>
-    <Toaster />
-    <div
-      className="h-screen bg-[#030303] flex flex-col overflow-hidden text-white relative"
-      onDragOver={handleDragOver}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Drag Overlay */}
-      {isDragging && (
-        <div className="fixed inset-0 z-[100] bg-[#22d3ee]/10 backdrop-blur-md border-4 border-dashed border-[#22d3ee]/50 flex items-center justify-center pointer-events-none transition-all duration-300">
-          <div className="bg-[#0a0a0a] p-8 rounded-3xl border border-white/10 shadow-2xl flex flex-col items-center gap-4 scale-110 animate-pulse">
-            <div className="w-20 h-20 bg-[#22d3ee] rounded-2xl flex items-center justify-center">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-              </svg>
+  return (
+    <>
+      <Toaster />
+      <div
+        className="h-screen bg-[#030303] flex flex-col overflow-hidden text-white relative"
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {/* Drag Overlay */}
+        {isDragging && (
+          <div className="fixed inset-0 z-[100] bg-[#22d3ee]/10 backdrop-blur-md border-4 border-dashed border-[#22d3ee]/50 flex items-center justify-center pointer-events-none transition-all duration-300">
+            <div className="bg-[#0a0a0a] p-8 rounded-3xl border border-white/10 shadow-2xl flex flex-col items-center gap-4 scale-110 animate-pulse">
+              <div className="w-20 h-20 bg-[#22d3ee] rounded-2xl flex items-center justify-center">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-xl font-bold text-white">Перетащите файлы сюда</span>
+                <span className="text-sm text-white/40">Изображения, видео или аудио</span>
+              </div>
             </div>
-            <div className="flex flex-col items-center">
-              <span className="text-xl font-bold text-white">Перетащите файлы сюда</span>
-              <span className="text-sm text-white/40">Изображения, видео или аудио</span>
+          </div>
+        )}
+
+        {/* Header */}
+        {isHeaderVisible && (
+          <header className="flex-shrink-0 h-14 border-b border-white/[0.03] flex items-center justify-between px-6 bg-black/20 backdrop-blur-md z-40 gap-4">
+            {/* Left: Logo */}
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+              </div>
+              <span className="text-sm font-bold tracking-tight hidden sm:block">OpenGenerativeAI</span>
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Header */}
-      {isHeaderVisible && (
-        <header className="flex-shrink-0 h-14 border-b border-white/[0.03] flex items-center justify-between px-6 bg-black/20 backdrop-blur-md z-40 gap-4">
-          {/* Left: Logo */}
-          <div className="flex-shrink-0 flex items-center gap-2">
-            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-              </svg>
+            {/* Center: Navigation Container with fade edges */}
+            <div className="flex-1 min-w-0 mx-4 sm:mx-6 relative overflow-hidden h-full flex items-center justify-start lg:justify-center">
+              {/* Fade Left Overlay */}
+              <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#030303] to-transparent pointer-events-none z-10 block lg:hidden" />
+              
+              <nav className="flex items-center gap-4 overflow-x-auto scrollbar-none w-full lg:w-auto h-full px-4 lg:px-0">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleTabChange(tab.id)}
+                    className={`relative text-[13px] font-medium transition-all duration-300 whitespace-nowrap px-1 flex-shrink-0 flex items-center h-full ${
+                      activeTab === tab.id
+                        ? 'text-[#22d3ee]'
+                        : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    <span className="relative z-10">{tab.label}</span>
+                    {activeTab === tab.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#22d3ee] to-[#a855f7] rounded-full shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
+                    )}
+                  </button>
+                ))}
+              </nav>
+              
+              {/* Fade Right Overlay */}
+              <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#030303] to-transparent pointer-events-none z-10 block lg:hidden" />
             </div>
-            <span className="text-sm font-bold tracking-tight hidden sm:block">OpenGenerativeAI</span>
+
+            {/* Right: Actions */}
+            <div className="flex-shrink-0 flex items-center gap-4">
+              <button onClick={() => fileInputRef.current?.click()} className="text-white/50 hover:text-white text-sm">Загрузить превью</button>
+              <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handlePreviewUpload} />
+            </div>
+          </header>
+        )}
+
+        {/* Studio Content */}
+        <div className="flex-1 min-h-0 relative overflow-hidden">
+          {/* ImageStudio stays mounted always (hidden when inactive) so an in-progress
+              generation keeps running when the user switches tabs. */}
+          <div className={`absolute inset-0 ${activeTab === 'image' ? '' : 'hidden'}`}>
+            <ImageStudio apiKey={apiKey} droppedFiles={activeTab === 'image' ? droppedFiles : null} onFilesHandled={handleFilesHandled} onGeneratingChange={setIsGenerating} />
           </div>
+          {activeTab === 'video' && <VideoStudio apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
+          {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
+          {activeTab === 'gallery' && <GalleryStudio apiKey={apiKey} />}
 
-          {/* Center: Navigation Container with fade edges */}
-          <div className="flex-1 min-w-0 mx-4 sm:mx-6 relative overflow-hidden h-full flex items-center justify-start lg:justify-center">
-            {/* Fade Left Overlay */}
-            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-[#030303] to-transparent pointer-events-none z-10 block lg:hidden" />
-            
-            <nav className="flex items-center gap-4 overflow-x-auto scrollbar-none w-full lg:w-auto h-full px-4 lg:px-0">
-              {TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => handleTabChange(tab.id)}
-                  className={`relative text-[13px] font-medium transition-all duration-300 whitespace-nowrap px-1 flex-shrink-0 flex items-center h-full ${
-                    activeTab === tab.id
-                      ? 'text-[#22d3ee]'
-                      : 'text-white/50 hover:text-white'
-                  }`}
-                >
-                  <span className="relative z-10">{tab.label}</span>
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-[#22d3ee] to-[#a855f7] rounded-full shadow-[0_0_8px_rgba(34,211,238,0.5)]" />
-                  )}
-                </button>
-              ))}
-            </nav>
-            
-            {/* Fade Right Overlay */}
-            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-[#030303] to-transparent pointer-events-none z-10 block lg:hidden" />
-          </div>
-
-          {/* Right: Actions */}
-          <div className="flex-shrink-0 flex items-center gap-4">
-               <button onClick={() => fileInputRef.current?.click()} className="text-white/50 hover:text-white text-sm">Загрузить превью</button>
-               <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handlePreviewUpload} />
-          </div>
-        </header>
-      )}
-
-      {/* Studio Content */}
-      <div className="flex-1 min-h-0 relative overflow-hidden">
-        {/* ImageStudio stays mounted always (hidden when inactive) so an in-progress
-            generation keeps running when the user switches tabs. */}
-        <div className={`absolute inset-0 ${activeTab === 'image' ? '' : 'hidden'}`}>
-          <ImageStudio apiKey={apiKey} droppedFiles={activeTab === 'image' ? droppedFiles : null} onFilesHandled={handleFilesHandled} onGeneratingChange={setIsGenerating} />
-        </div>
-        {activeTab === 'video'   && <VideoStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
-        {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
-        {activeTab === 'gallery' && <GalleryStudio apiKey={apiKey} />}
-
-        {/* Generation indicator overlay - visible across all tabs */}
-        {isGenerating && (
-          <div className="fixed bottom-6 right-6 z-[110] animate-fade-in pointer-events-none">
-            <div className="bg-[#0a0a0a]/95 border border-[#22d3ee]/30 rounded-xl p-4 shadow-2xl flex flex-col items-center gap-3 min-w-[240px] backdrop-blur-sm">
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#22d3ee] to-[#a855f7] p-1 animate-spin">
-                  <div className="w-full h-full rounded-full bg-[#0a0a0a] flex items-center justify-center">
-                    <span className="text-xl text-[#22d3ee]">◌</span>
+          {/* Generation indicator overlay - visible across all tabs */}
+          {isGenerating && (
+            <div className="fixed bottom-6 right-6 z-[110] animate-fade-in pointer-events-none">
+              <div className="bg-[#0a0a0a]/95 border border-[#22d3ee]/30 rounded-xl p-4 shadow-2xl flex flex-col items-center gap-3 min-w-[240px] backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#22d3ee] to-[#a855f7] p-1 animate-spin">
+                    <div className="w-full h-full rounded-full bg-[#0a0a0a] flex items-center justify-center">
+                      <span className="text-xl text-[#22d3ee]">◌</span>
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <h4 className="text-sm font-bold text-white">Генерирую...</h4>
+                    <p className="text-xs text-white/40">Подождите</p>
                   </div>
                 </div>
-                <div className="text-center">
-                  <h4 className="text-sm font-bold text-white">Генерирую...</h4>
-                  <p className="text-xs text-white/40">Подождите</p>
+                <div className="w-full space-y-1">
+                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-[#22d3ee] to-[#a855f7] animate-pulse" style={{ width: "100%" }} />
+                  </div>
                 </div>
+                <p className="text-[10px] text-white/30 text-center leading-tight">
+                  может занять до минуты
+                </p>
               </div>
-              <div className="w-full space-y-1">
-                <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-[#22d3ee] to-[#a855f7] animate-pulse" style={{ width: "100%" }} />
-                </div>
-              </div>
-              <p className="text-[10px] text-white/30 text-center leading-tight">
-                может занять до минуты
+            </div>
+          )}
+        </div>
+
+        {/* Settings Modal */}
+        {showSettings && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in-up">
+            <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 w-full max-w-sm shadow-2xl">
+              <h2 className="text-white font-bold text-lg mb-2">Настройки</h2>
+              <p className="text-white/40 text-[13px] mb-8">
+                Управление параметрами студии и аутентификацией.
               </p>
+              
+              <div className="space-y-4 mb-8">
+                <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
+                  <label className="block text-xs font-bold text-white/30 mb-2">
+                     Активный API-ключ
+                  </label>
+                  <div className="text-[13px] font-mono text-white/80">
+                    {apiKey.slice(0, 8)}••••••••••••••••
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleKeyChange}
+                  className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"
+                >
+                  Сменить ключ
+                </button>
+                <button
+                  onClick={() => setShowSettings(false)}
+                  className="flex-1 h-10 rounded-md bg-white/5 text-white/80 hover:bg-white/10 text-xs font-semibold transition-all border border-white/5"
+                >
+                  Закрыть
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
-
-      {/* Settings Modal */}
-      {showSettings && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in-up">
-          <div className="bg-[#0a0a0a] border border-white/10 rounded-xl p-8 w-full max-w-sm shadow-2xl">
-            <h2 className="text-white font-bold text-lg mb-2">Настройки</h2>
-            <p className="text-white/40 text-[13px] mb-8">
-              Управление параметрами студии и аутентификацией.
-            </p>
-            
-            <div className="space-y-4 mb-8">
-              <div className="bg-white/5 border border-white/[0.03] rounded-md p-4">
-                <label className="block text-xs font-bold text-white/30 mb-2">
-                   Активный API-ключ
-                </label>
-                <div className="text-[13px] font-mono text-white/80">
-                  {apiKey.slice(0, 8)}••••••••••••••••
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleKeyChange}
-                className="flex-1 h-10 rounded-md bg-red-500/10 text-red-400 hover:bg-red-500/20 text-xs font-semibold transition-all"
-              >
-                Сменить ключ
-              </button>
-              <button
-                onClick={() => setShowSettings(false)}
-                className="flex-1 h-10 rounded-md bg-white/5 text-white/80 hover:bg-white/10 text-xs font-semibold transition-all border border-white/5"
-              >
-                Закрыть
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </>
   );
 }
