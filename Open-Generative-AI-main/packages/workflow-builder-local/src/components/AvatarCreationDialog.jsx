@@ -2,14 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import {
-  FaTimes,
-  FaSpinner,
-  FaUpload,
-  FaCheck,
-  FaCopy,
-  FaUserCircle
-} from 'react-icons/fa';
 
 const AVATAR_LIBRARY_KEY = 'avatar_library_v1';
 
@@ -37,7 +29,6 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
   const [statusText, setStatusText] = useState('');
   const [uploadId, setUploadId] = useState(null);
   const [uploadUrls, setUploadUrls] = useState([]);
-  const [trainingStatus, setTrainingStatus] = useState(null);
   const [rolePic, setRolePic] = useState(null);
   const fileRef = useRef(null);
   const cancelPollRef = useRef(false);
@@ -53,7 +44,6 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     setStatusText('');
     setUploadId(null);
     setUploadUrls([]);
-    setTrainingStatus(null);
     setRolePic(null);
   };
 
@@ -173,7 +163,6 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
         });
         const infoJson = await infoResp.json();
         if (infoJson.State === 2) { // Ready
-          setTrainingStatus('ready');
           setRolePic(infoJson.RolePic);
           setStep('done');
           setBusy(false);
@@ -224,17 +213,22 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <div
-        className="bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-4"
+        className="bg-[#0c0d0f] border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-4 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FaUserCircle className="h-5 w-5 text-purple-400" />
+            <div className="w-10 h-10 rounded-full bg-purple-600/20 flex items-center justify-center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-purple-400">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
             <h3 className="text-lg font-semibold text-white">Создание цифрового аватара</h3>
           </div>
           <button
@@ -242,7 +236,10 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
             disabled={busy}
             className="text-white/40 hover:text-white disabled:opacity-40"
           >
-            <FaTimes className="h-5 w-5" />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
           </button>
         </div>
 
@@ -254,7 +251,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
             return (
               <div
                 key={s}
-                className={`h-1 flex-1 rounded-full ${active ? 'bg-purple-500' : 'bg-white/10'}`}
+                className={`h-1 flex-1 rounded-full ${active ? 'bg-purple-600' : 'bg-white/10'}`}
               />
             );
           })}
@@ -264,24 +261,26 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
         {step === 'name' && (
           <>
             <p className="text-xs text-white/60 leading-relaxed">
-              Создайте цифровой аватар с помощью видео. Загрузите 5-10 минутное видео с вашим лицом (анфас, хорошее освещение).
+              Создайте цифровой аватар с помощью видео. Загрузите 5–10 минутное видео с вашим лицом (анфас, хорошее освещение).
             </p>
-            <div>
-              <label className="block text-xs text-white/50 mb-1">Имя аватара</label>
+            <div className="flex flex-col gap-1">
+              <label className="text-[11px] text-white/40">Имя аватара</label>
               <input
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Например: Мой аватар"
-                className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500"
+                className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-white text-sm placeholder-white/30 outline-none focus:border-purple-500/50"
               />
             </div>
-            <button
-              onClick={() => setStep('video')}
-              disabled={!displayName.trim()}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all"
-            >
-              Далее
-            </button>
+            <div className="flex gap-2 mt-1">
+              <button
+                onClick={() => setStep('video')}
+                disabled={!displayName.trim()}
+                className="flex-1 h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-40 text-white font-medium text-sm transition-all"
+              >
+                Далее
+              </button>
+            </div>
           </>
         )}
 
@@ -292,7 +291,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
               <button
                 onClick={() => setStep('name')}
                 disabled={busy}
-                className="py-2 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm font-medium transition-colors"
+                className="h-10 px-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm font-medium transition-colors"
               >
                 Назад
               </button>
@@ -306,24 +305,34 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
             />
             <div
               onClick={() => fileRef.current?.click()}
-              className="w-full aspect-video bg-white/5 border border-dashed border-white/20 hover:border-purple-500 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden transition-colors"
+              className="w-full aspect-video bg-white/5 border border-dashed border-white/20 hover:border-purple-500/50 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden transition-colors"
             >
               {videoPreview ? (
                 <video src={videoPreview} controls className="w-full h-full object-cover" />
               ) : (
                 <div className="text-center text-white/40">
-                  <FaUpload className="h-6 w-6 mx-auto mb-1" />
-                  <span className="text-xs">Нажми чтобы выбрать видео</span>
+                  <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span className="text-xs">Нажми, чтобы выбрать видео</span>
                 </div>
               )}
             </div>
             <button
               onClick={startUpload}
               disabled={!video}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+              className="w-full h-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-40 text-white font-medium text-sm transition-all flex items-center justify-center gap-2"
             >
-              {busy ? <FaSpinner className="h-4 w-4 animate-spin" /> : null}
-              {busy ? statusText : 'Создать аватар'}
+              {busy ? (
+                <>
+                  <span className="animate-spin inline-block">◌</span>
+                  {statusText}
+                </>
+              ) : (
+                'Создать аватар'
+              )}
             </button>
           </>
         )}
@@ -331,7 +340,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
         {/* Step 3: Uploading or Training */}
         {(step === 'uploading' || step === 'training') && (
           <div className="py-6 text-center space-y-3">
-            <FaSpinner className="h-10 w-10 animate-spin text-purple-400 mx-auto" />
+            <span className="animate-spin inline-block text-purple-400 text-5xl">◌</span>
             <p className="text-sm text-white">{statusText}</p>
           </div>
         )}
@@ -339,26 +348,31 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
         {/* Step 4: Done */}
         {step === 'done' && (
           <div className="py-4 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
-              <FaCheck className="h-6 w-6 text-green-400" />
+            <div className="w-12 h-12 rounded-full bg-emerald-600/20 flex items-center justify-center mx-auto">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </div>
             <p className="text-sm font-medium text-white">Аватар «{displayName}» создан!</p>
             {rolePic && (
-              <img src={rolePic} alt="Аватар" className="w-24 h-24 rounded-xl object-cover mx-auto border border-white/10" />
+              <img src={rolePic} alt="Аватар" className="w-20 h-20 rounded-xl object-cover mx-auto border border-white/10" />
             )}
             <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
               <span className="text-xs font-mono text-purple-400 truncate flex-1">{confName}</span>
               <button
-                onClick={() => { navigator.clipboard.writeText(confName); toast.success('Скопировано'); }}
+                onClick={() => { navigator.clipboard.writeText(confName); toast.success('Скопировано!'); }}
                 className="text-white/60 hover:text-purple-400"
               >
-                <FaCopy className="h-3.5 w-3.5" />
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
               </button>
             </div>
-            <p className="text-xs text-white/50">Теперь можно использовать этот аватар в Seedance 2.0.</p>
+            <p className="text-xs text-white/60">Теперь можно использовать этот аватар в Seedance 2.0.</p>
             <button
               onClick={handleClose}
-              className="w-full py-2.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 font-medium rounded-xl transition-colors"
+              className="w-full h-10 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 font-medium text-sm transition-all"
             >
               Готово
             </button>
