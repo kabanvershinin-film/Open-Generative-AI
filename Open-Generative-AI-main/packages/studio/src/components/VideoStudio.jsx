@@ -2581,7 +2581,7 @@ export default function VideoStudio({
         open={avatarCreateOpen}
         onClose={() => setAvatarCreateOpen(false)}
         onCreated={(confName, displayName, rolePic) => {
-          setFaceAsset({ uri: confName, name: displayName, thumbnail: rolePic || null });
+          setFaceAsset({ uri: rolePic, name: displayName, thumbnail: rolePic || null });
           insertRefToken("@" + String(displayName || "аватар").trim().replace(/\s+/g, "_"));
         }}
       />

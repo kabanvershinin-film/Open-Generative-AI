@@ -113,8 +113,8 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
     onClose?.();
   };
 
-  const pickAvatar = (confName, name) => {
-    onSelect?.(confName, name);
+  const pickAvatar = (avatar) => {
+    onSelect?.(avatar.rolePic, avatar.name);
     onClose?.();
   };
 
@@ -199,7 +199,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                     key={avatar.id}
                     face={avatar}
                     isAvatar={true}
-                    onSelect={(a) => pickAvatar(a.id, a.name)}
+                    onSelect={(a) => pickAvatar(a)}
                     onDelete={deleteAvatar}
                   />
                 ))}
