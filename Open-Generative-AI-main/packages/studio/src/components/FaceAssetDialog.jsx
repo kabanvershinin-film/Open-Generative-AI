@@ -187,7 +187,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto flex flex-col gap-3 px-5 flex-1">
+        <div className="overflow-y-auto flex flex-col gap-3 px-5 flex-1 min-h-0">
           {/* AVATAR LIBRARY */}
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-wider text-purple-300 font-semibold">Мои цифровые аватары</span>
@@ -348,13 +348,13 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
         </div>
 
         {/* Sticky footer with buttons */}
-        <div className="shrink-0 px-5 pt-2 pb-4 border-t border-white/5 bg-[#0c0d0f]">
-          <div className="flex gap-1.5">
+        <div className="shrink-0 px-5 pt-3 pb-4 border-t border-white/10 bg-[#0a0b0d]">
+          <div className="flex gap-2">
             {onRegisterNew && (
               <button
                 type="button"
                 onClick={() => { onClose?.(); onRegisterNew(); }}
-                className="flex-1 h-9 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-xs font-medium transition-all"
+                className="flex-1 h-11 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-[11px] font-semibold transition-all"
               >
                 + Зарегистрировать новое лицо
               </button>
@@ -363,7 +363,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
               <button
                 type="button"
                 onClick={() => { onClose?.(); onCreateAvatar(); }}
-                className="flex-1 h-9 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-xs font-medium transition-all"
+                className="flex-1 h-11 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-[11px] font-semibold transition-all"
               >
                 + Создать цифровой аватар
               </button>
