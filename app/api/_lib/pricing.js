@@ -277,4 +277,4 @@ async function priceRub(category, model, params = {}) {
     return imagePriceRub(real);
 }
 
-export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP };
+export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP, loadPlatformMarkup };
