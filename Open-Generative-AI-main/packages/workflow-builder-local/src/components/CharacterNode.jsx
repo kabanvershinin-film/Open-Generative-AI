@@ -7,6 +7,7 @@ import { FiUpload, FiLink } from "react-icons/fi";
 import { IoPersonCircleOutline, IoTrashOutline } from "react-icons/io5";
 import { stableStringify } from "./utility";
 import FaceRegistrationDialog from "./FaceRegistrationDialog";
+import AvatarCreationDialog from "./AvatarCreationDialog";
 
 // Shared with Video Studio's FaceAssetDialog — the same saved-faces library.
 const LIBRARY_KEY = "face_library_v1";
@@ -39,6 +40,22 @@ const CharacterNode = ({ id, data, selected }) => {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [faceRegOpen, setFaceRegOpen] = useState(false);
+  const [avatarCreateOpen, setAvatarCreateOpen] = useState(false);
+  const AVATAR_LIBRARY_KEY = 'avatar_library_v1';
+
+  function loadAvatarLibrary() {
+    try {
+      return JSON.parse(localStorage.getItem(AVATAR_LIBRARY_KEY) || '[]');
+    } catch {
+      return [];
+    }
+  }
+
+  function saveAvatarLibrary(items) {
+    try {
+      localStorage.setItem(AVATAR_LIBRARY_KEY, JSON.stringify(items));
+    } catch {}
+  }
   const prevSig = useRef("");
 
   // Called when a face is registered as a Seedance trusted asset (asset://…).
@@ -59,6 +76,29 @@ const CharacterNode = ({ id, data, selected }) => {
     };
     setLibrary((prev) => {
       const next = [item, ...prev.filter((f) => f.assetUri !== uri)];
+      saveLibrary(next);
+      return next;
+    });
+  };
+
+  // Called when an avatar is created
+  const onAvatarCreated = (confName, regName, rolePic) => {
+    if (!confName) return;
+    setAssetUri(confName);
+    setTab("uri");
+    if (rolePic) setPhotoUrl(rolePic);
+    const finalName = (regName || name || "").trim();
+    if (finalName && !name) setName(finalName);
+    const item = {
+      id: Date.now().toString(),
+      name: finalName || confName.replace(/^avatar_/, "").slice(0, 16),
+      assetUri: confName,
+      thumbnail: rolePic || null,
+      isAvatar: true,
+      addedAt: Date.now(),
+    };
+    setLibrary((prev) => {
+      const next = [item, ...prev.filter((f) => f.assetUri !== confName)];
       saveLibrary(next);
       return next;
     });
@@ -242,6 +282,15 @@ const CharacterNode = ({ id, data, selected }) => {
         >
           ✨ Зарегистрировать лицо
         </button>
+        {/* Create a digital avatar */}
+        <button
+          type="button"
+          onClick={() => setAvatarCreateOpen(true)}
+          className="h-9 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-600/20"
+          title="Создание цифрового аватара для Seedance 2.0"
+        >
+          🎭 Создать цифрового аватара
+        </button>
 
         {/* Tab content */}
         {tab === "photo" ? (
@@ -325,6 +374,9 @@ const CharacterNode = ({ id, data, selected }) => {
                     )}
                   </button>
                   <span className="text-[8px] text-zinc-500 truncate w-12 text-center">{face.name}</span>
+                  {face.isAvatar && (
+                    <span className="text-[7px] px-1 py-0.5 rounded bg-purple-600/30 text-purple-300">аватар</span>
+                  )}
                   <button
                     type="button"
                     onClick={() => deleteFromLibrary(face.id)}
@@ -338,6 +390,17 @@ const CharacterNode = ({ id, data, selected }) => {
           </div>
         )}
       </div>
+
+      {/* Face registration modal — portaled to body so reactflow's canvas
+          transforms don't break the fixed-position overlay. */}
+      {avatarCreateOpen && typeof document !== "undefined" && createPortal(
+        <AvatarCreationDialog
+          open={avatarCreateOpen}
+          onClose={() => setAvatarCreateOpen(false)}
+          onCreated={onAvatarCreated}
+        />,
+        document.body
+      )}
 
       {/* Output handle (purple = character/face reference) */}
       <Handle

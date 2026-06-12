@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 const LIBRARY_KEY = "face_library_v1";
+const AVATAR_LIBRARY_KEY = "avatar_library_v1";
 
 function loadLibrary() {
   try {
@@ -18,7 +19,15 @@ function saveLibrary(items) {
   } catch {}
 }
 
-function FaceThumb({ face, onSelect, onDelete }) {
+function loadAvatarLibrary() {
+  try {
+    return JSON.parse(localStorage.getItem(AVATAR_LIBRARY_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function FaceThumb({ face, onSelect, onDelete, isAvatar }) {
   return (
     <div className="relative group flex flex-col items-center gap-1">
       <button
@@ -27,8 +36,8 @@ function FaceThumb({ face, onSelect, onDelete }) {
         className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/60 transition-all flex items-center justify-center"
         title={face.name}
       >
-        {face.thumbnail ? (
-          <img src={face.thumbnail} alt={face.name} className="w-full h-full object-cover" />
+        {face.thumbnail || face.rolePic ? (
+          <img src={face.thumbnail || face.rolePic} alt={face.name} className="w-full h-full object-cover" />
         ) : (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-purple-300">
             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -37,6 +46,9 @@ function FaceThumb({ face, onSelect, onDelete }) {
         )}
       </button>
       <span className="text-[9px] text-white/50 truncate w-14 text-center">{face.name}</span>
+      {isAvatar && (
+        <span className="text-[7px] px-1 py-0.5 rounded bg-purple-600/30 text-purple-300">Аватар</span>
+      )}
       <button
         type="button"
         onClick={() => onDelete(face.id)}
@@ -49,8 +61,9 @@ function FaceThumb({ face, onSelect, onDelete }) {
   );
 }
 
-export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew }) {
+export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew, onCreateAvatar }) {
   const [library, setLibrary] = useState([]);
+  const [avatarLibrary, setAvatarLibrary] = useState([]);
   const [arkAssets, setArkAssets] = useState([]);
   const [arkLoading, setArkLoading] = useState(false);
   const [arkOpen, setArkOpen] = useState(false);
@@ -63,9 +76,12 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
 
   const toUri = (id) => (String(id).startsWith("asset://") ? String(id) : `asset://${String(id).trim()}`);
 
-  // load library from localStorage when dialog opens
+  // load libraries from localStorage when dialog opens
   useEffect(() => {
-    if (open) setLibrary(loadLibrary());
+    if (open) {
+      setLibrary(loadLibrary());
+      setAvatarLibrary(loadAvatarLibrary());
+    }
   }, [open]);
 
   const loadArkAssets = useCallback(async () => {
@@ -96,10 +112,23 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
     onClose?.();
   };
 
+  const pickAvatar = (confName, name) => {
+    onSelect?.(confName, name);
+    onClose?.();
+  };
+
   const deleteFace = (id) => {
     const next = library.filter((f) => f.id !== id);
     saveLibrary(next);
     setLibrary(next);
+  };
+
+  const deleteAvatar = (id) => {
+    const next = avatarLibrary.filter((a) => a.id !== id);
+    try {
+      localStorage.setItem(AVATAR_LIBRARY_KEY, JSON.stringify(next));
+    } catch {}
+    setAvatarLibrary(next);
   };
 
   const addToLibrary = (assetUri, name, thumbnail) => {
@@ -147,7 +176,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
       >
         {/* header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
-          <h3 className="text-sm font-bold text-white">Библиотека лиц</h3>
+          <h3 className="text-sm font-bold text-white">Библиотека лиц и аватаров</h3>
           <button type="button" onClick={onClose} className="text-white/40 hover:text-white transition-colors" title="Закрыть">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
               <line x1="18" y1="6" x2="6" y2="18" />
@@ -157,6 +186,26 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
         </div>
 
         <div className="overflow-y-auto flex flex-col gap-4 px-5 pb-5">
+          {/* AVATAR LIBRARY */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[11px] uppercase tracking-wider text-purple-300 font-semibold">Мои цифровые аватары</span>
+            {avatarLibrary.length === 0 ? (
+              <div className="text-xs text-white/30 py-2">Библиотека аватаров пуста.</div>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                {avatarLibrary.map((avatar) => (
+                  <FaceThumb
+                    key={avatar.id}
+                    face={avatar}
+                    isAvatar={true}
+                    onSelect={(a) => pickAvatar(a.id, a.name)}
+                    onDelete={deleteAvatar}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* LOCAL LIBRARY */}
           <div className="flex flex-col gap-2">
             <span className="text-[11px] uppercase tracking-wider text-white/40 font-semibold">Мои лица</span>
@@ -293,15 +342,26 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
           </div>
 
           {/* register new */}
-          {onRegisterNew && (
-            <button
-              type="button"
-              onClick={() => { onClose?.(); onRegisterNew(); }}
-              className="h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-xs font-medium transition-all"
-            >
-              + Зарегистрировать новое лицо
-            </button>
-          )}
+          <div className="flex gap-2">
+            {onRegisterNew && (
+              <button
+                type="button"
+                onClick={() => { onClose?.(); onRegisterNew(); }}
+                className="flex-1 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-xs font-medium transition-all"
+              >
+                + Зарегистрировать новое лицо
+              </button>
+            )}
+            {onCreateAvatar && (
+              <button
+                type="button"
+                onClick={() => { onClose?.(); onCreateAvatar(); }}
+                className="flex-1 h-10 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-xs font-medium transition-all"
+              >
+                + Создать цифровой аватар
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
