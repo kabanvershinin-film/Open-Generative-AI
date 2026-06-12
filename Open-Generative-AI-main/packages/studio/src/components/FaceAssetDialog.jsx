@@ -61,7 +61,7 @@ function FaceThumb({ face, onSelect, onDelete, isAvatar }) {
   );
 }
 
-// Компонент библиотеки лиц и цифровых аватаров для Seedance 2.0
+// FaceAssetDialog.jsx - компонент библиотеки лиц и цифровых аватаров для Seedance 2.0
 export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew, onCreateAvatar }) {
   const [library, setLibrary] = useState([]);
   const [avatarLibrary, setAvatarLibrary] = useState([]);

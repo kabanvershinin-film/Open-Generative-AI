@@ -39,7 +39,7 @@ const CharacterNode = ({ id, data, selected }) => {
   const [library, setLibrary] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  // ── Логика для регистрации лиц и создания цифровых аватаров для Seedance ──
+  // CharacterNode.jsx: логика для регистрации лиц и создания цифровых аватаров для Seedance
   const [faceRegOpen, setFaceRegOpen] = useState(false);
   const [avatarCreateOpen, setAvatarCreateOpen] = useState(false);
   const AVATAR_LIBRARY_KEY = 'avatar_library_v1';

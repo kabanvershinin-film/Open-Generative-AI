@@ -19,7 +19,7 @@ import {
 } from "../models.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
-import AvatarCreationDialog from "./AvatarCreationDialog.jsx";
+import AvatarCreationDialog from "./AvatarCreationDialog.jsx"; // Компонент создания цифровых аватаров (Vercel deploy trigger 2)
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 
