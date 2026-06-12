@@ -186,7 +186,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
           </button>
         </div>
 
-        <div className="overflow-y-auto flex flex-col gap-3 px-5 pb-5">
+        <div className="overflow-y-auto flex flex-col gap-3 px-5 pb-4">
           {/* AVATAR LIBRARY */}
           <div className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-wider text-purple-300 font-semibold">Мои цифровые аватары</span>
@@ -283,7 +283,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
               type="button"
               onClick={selectManual}
               disabled={!manualId.trim()}
-              className="h-10 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-8 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {saveToLib ? "Сохранить и выбрать" : "Выбрать"}
             </button>
@@ -304,9 +304,9 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
             {arkOpen && (
               <div className="mt-2 flex flex-col gap-1.5 max-h-[20vh] overflow-y-auto">
                 {arkLoading ? (
-                  <div className="text-xs text-white/40 py-3 text-center">Загрузка…</div>
+                  <div className="text-xs text-white/40 py-1 text-center">Загрузка…</div>
                 ) : arkAssets.length === 0 ? (
-                  <div className="text-xs text-white/40 py-3 text-center">Список пуст.</div>
+                  <div className="text-xs text-white/40 py-1 text-center">Список пуст.</div>
                 ) : (
                   arkAssets.map((a) => (
                     <div
@@ -343,7 +343,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
           </div>
 
           {/* register new */}
-          <div className="flex gap-1.5">
+          <div className="flex gap-1.5 pt-1">
             {onRegisterNew && (
               <button
                 type="button"
