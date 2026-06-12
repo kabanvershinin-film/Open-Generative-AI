@@ -1696,79 +1696,82 @@ export default function VideoStudio({
   useEffect(() => {
     let isMounted = true;
     const abortController = new AbortController();
-    const calculateCost = async () => {
-      // Вычисляем isSeedanceArk внутри useEffect, чтобы не зависеть от него
-      const currentModel = getCurrentModel();
-      const isArk = currentModel?.provider === "ark";
-      
-      console.log("[calculateCost] Starting...", { selectedModel, isArk, selectedDuration, selectedResolution });
-      if (!isArk) {
-        console.log("[calculateCost] Not Seedance Ark, clearing cost");
-        setEstimatedCost(null);
-        return;
-      }
-
-      setIsLoadingCost(true);
-      try {
-        // Map the selected model to the pricing model ID
-        const modelMap = {
-          "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
-          "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
-          "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
-          "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
-        };
-
-        const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
-        const hasVideoInput = refFiles.some(f => f.kind === "video");
-        const requestBody = {
-          category: "video",
-          model: pricingModelId,
-          params: {
-            duration: selectedDuration || 5,
-            resolution: selectedResolution || "720p",
-            video_url: hasVideoInput ? "exists" : undefined
-          }
-        };
-        console.log("[calculateCost] Request body:", requestBody);
-
-        const response = await fetch("/api/calculate-price", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(requestBody),
-          signal: abortController.signal
-        });
-
-        console.log("[calculateCost] Response status:", response.status);
-
-        if (response.ok && isMounted) {
-          const data = await response.json();
-          console.log("[calculateCost] Response data:", data);
-          setEstimatedCost(data.cost);
-        } else {
-          console.log("[calculateCost] Response not OK, clearing cost");
+    const timeoutId = setTimeout(async () => {
+      const calculateCost = async () => {
+        // Вычисляем isSeedanceArk внутри useEffect, чтобы не зависеть от него
+        const currentModel = getCurrentModel();
+        const isArk = currentModel?.provider === "ark";
+        
+        console.log("[calculateCost] Starting...", { selectedModel, isArk, selectedDuration, selectedResolution });
+        if (!isArk) {
+          console.log("[calculateCost] Not Seedance Ark, clearing cost");
           setEstimatedCost(null);
-        }
-      } catch (err) {
-        if (err.name === "AbortError") {
-          console.log("[calculateCost] Request was aborted");
           return;
         }
-        console.error("Failed to calculate cost:", err);
-        if (isMounted) {
-          setEstimatedCost(null);
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoadingCost(false);
-        }
-      }
-    };
 
-    calculateCost();
+        setIsLoadingCost(true);
+        try {
+          // Map the selected model to the pricing model ID
+          const modelMap = {
+            "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
+            "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
+            "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
+            "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
+          };
+
+          const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
+          const hasVideoInput = refFiles.some(f => f.kind === "video");
+          const requestBody = {
+            category: "video",
+            model: pricingModelId,
+            params: {
+              duration: selectedDuration || 5,
+              resolution: selectedResolution || "720p",
+              video_url: hasVideoInput ? "exists" : undefined
+            }
+          };
+          console.log("[calculateCost] Request body:", requestBody);
+
+          const response = await fetch("/api/calculate-price", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody),
+            signal: abortController.signal
+          });
+
+          console.log("[calculateCost] Response status:", response.status);
+
+          if (response.ok && isMounted) {
+            const data = await response.json();
+            console.log("[calculateCost] Response data:", data);
+            setEstimatedCost(data.cost);
+          } else {
+            console.log("[calculateCost] Response not OK, clearing cost");
+            setEstimatedCost(null);
+          }
+        } catch (err) {
+          if (err.name === "AbortError") {
+            console.log("[calculateCost] Request was aborted");
+            return;
+          }
+          console.error("Failed to calculate cost:", err);
+          if (isMounted) {
+            setEstimatedCost(null);
+          }
+        } finally {
+          if (isMounted) {
+            setIsLoadingCost(false);
+          }
+        }
+      };
+      calculateCost();
+    }, 300); // 300ms debounce
+    
     return () => {
       isMounted = false;
+      clearTimeout(timeoutId);
       abortController.abort();
     };
   }, [selectedModel, selectedDuration, selectedResolution, refFiles, imageMode, v2vMode, getCurrentModel]);
