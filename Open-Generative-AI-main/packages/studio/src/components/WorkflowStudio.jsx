@@ -183,6 +183,15 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
           {showOptions && (
             <div className="absolute top-10 right-0 w-32 bg-[#111] border border-white/10 rounded-lg shadow-2xl py-1 animate-in fade-in zoom-in duration-200">
               <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full px-4 py-2 text-left text-[11px] font-bold text-white/70 hover:text-[#22d3ee] hover:bg-white/5 transition-colors flex items-center gap-2"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+                Загрузить превью
+              </button>
+              <button
                 onClick={() => onRename(workflow)}
                 className="w-full px-4 py-2 text-left text-[11px] font-bold text-white/70 hover:text-[#22d3ee] hover:bg-white/5 transition-colors flex items-center gap-2"
               >
@@ -203,6 +212,19 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
               </button>
             </div>
           )}
+          <input 
+            type="file" 
+            accept="image/*" 
+            ref={fileInputRef} 
+            className="hidden" 
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                onUploadPreview(workflow, file);
+              }
+              e.target.value = '';
+            }}
+          />
         </div>
       )}
 
@@ -258,11 +280,11 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
 }
 
 export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggleHeader }) {
-  const params = useParams();
-  const router = useRouter();
-  const slug = params?.slug || [];
-  const idFromParams = params?.id;     // exists on /workflow/[id]/[tab] route
-  const tabFromParams = params?.tab;   // exists on /workflow/[id]/[tab] route
+    const params = useParams();
+    const router = useRouter();
+    const slug = params?.slug || [];
+    const idFromParams = params?.id;     // exists on /workflow/[id]/[tab] route
+    const tabFromParams = params?.tab;   // exists on /workflow/[id]/[tab] route
   
   // Robustly extract ID and Tab from either route structure
   const getWorkflowInfo = useCallback(() => {
@@ -296,6 +318,52 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
   const [runResult, setRunResult] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const isNavigatingRef = useRef(false);
+
+  const handleUploadPreview = useCallback(async (workflow, file) => {
+    try {
+      // Read file as data URL
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const dataUrl = e.target.result;
+        // Upload to /api/upload-file
+        const uploadRes = await fetch('/api/upload-file', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({ image: dataUrl })
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.url) {
+          // Update workflow's thumbnail
+          await fetch(`/api/workflow/${workflow.id}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({ thumbnail: uploadData.url })
+          });
+          // Refresh the workflows list
+          const newWorkflows = await (async () => {
+            if (activeMainTab === 'templates') {
+              return await getTemplateWorkflows(apiKey);
+            } else if (activeMainTab === 'my-workflows') {
+              return await getUserWorkflows(apiKey);
+            } else if (activeMainTab === 'published') {
+              return await getPublishedWorkflows(apiKey);
+            }
+            return [];
+          })();
+          setWorkflows(newWorkflows);
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading preview:', error);
+    }
+  }, [apiKey, activeMainTab]);
 
   // Handlers defined early so they can be used in effects
   const handleSelectWorkflow = useCallback(
@@ -766,6 +834,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 onDelete={handleDeleteWorkflow}
                 onPublish={handlePublishWorkflow}
                 onModerate={handleModerate}
+                onUploadPreview={handleUploadPreview}
               />
             ))}
             {!loading && workflows.length === 0 && (
