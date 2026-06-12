@@ -1620,6 +1620,16 @@ export async function POST(request, { params }) {
         if (!outputNodes.length) outputNodes = nodes.filter(n => n.model && !PASSTHROUGH_MODELS.has(n.model));
         const outputs = outputNodes.flatMap(n => nodeOutputs[n.id] || []);
 
+        // Auto-update workflow thumbnail with first generated image/video
+        const firstImageOutput = outputs.find(o => o.type === 'image_url' && o.value);
+        const firstVideoOutput = outputs.find(o => o.type === 'video_url' && o.value);
+        if (firstImageOutput?.value || firstVideoOutput?.value) {
+            wf.thumbnail = firstImageOutput?.value || firstVideoOutput?.value;
+            wf.updated_at = new Date().toISOString();
+            store.set(wfId, wf);
+            await tosSaveWorkflow(wfId, wf).catch(() => {});
+        }
+
         const runResult = { status: 'completed', nodes: runNodes, outputs };
         runStore.set(runId, runResult);
         await tosSaveRun(runId, runResult).catch(() => {});
