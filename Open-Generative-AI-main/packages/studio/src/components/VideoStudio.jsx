@@ -302,7 +302,7 @@ export default function VideoStudio({
   // Each: { id, url, kind: 'image'|'video'|'audio', name, uploading, progress }
   const [refFiles, setRefFiles] = useState([]);
 
-  // ── Registered face/character for Seedance (asset://… + display name) ──
+  // ── Registered face/character and digital avatars for Seedance 2.0 ──
   const [faceRegOpen, setFaceRegOpen] = useState(false);   // register a new face
   const [facePickOpen, setFacePickOpen] = useState(false); // pick an existing asset
   const [avatarCreateOpen, setAvatarCreateOpen] = useState(false); // create a new avatar
