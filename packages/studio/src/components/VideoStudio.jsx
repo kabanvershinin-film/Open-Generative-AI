@@ -2797,10 +2797,9 @@ export default function VideoStudio({
       <AvatarCreationDialog
         open={avatarCreateOpen}
         onClose={() => setAvatarCreateOpen(false)}
-        onCreated={(confName, displayName, rolePic) => {
-          // Save the avatar to local state/refs
-          setFaceAsset({ uri: rolePic, name: displayName });
-          insertRefToken("@" + String(displayName || "аватар").trim().replace(/\s+/g, "_"));
+        onCreated={(avatar) => {
+          setFaceAsset({ uri: avatar.assetUri, name: avatar.name, thumbnail: avatar.thumbnail || null });
+          insertRefToken("@" + String(avatar.name || "аватар").trim().replace(/\s+/g, "_"));
         }}
       />
     </div>

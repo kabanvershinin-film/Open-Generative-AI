@@ -30,15 +30,13 @@ function saveAvatarLibrary(items) {
 export default function AvatarCreationDialog({ open, onClose, onCreated }) {
   const [step, setStep] = useState('name'); // 'name' | 'video' | 'uploading' | 'training' | 'done'
   const [displayName, setDisplayName] = useState('');
-  const [confName, setConfName] = useState('');
   const [video, setVideo] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [statusText, setStatusText] = useState('');
-  const [uploadId, setUploadId] = useState(null);
-  const [uploadUrls, setUploadUrls] = useState([]);
-  const [trainingStatus, setTrainingStatus] = useState(null);
-  const [rolePic, setRolePic] = useState(null);
+  const [resourceId, setResourceId] = useState('');
+  const [assetUri, setAssetUri] = useState('');
+  const [previewImage, setPreviewImage] = useState(null);
   const fileRef = useRef(null);
   const cancelPollRef = useRef(false);
 
@@ -46,15 +44,123 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     cancelPollRef.current = true;
     setStep('name');
     setDisplayName('');
-    setConfName('');
     setVideo(null);
     setVideoPreview(null);
     setBusy(false);
     setStatusText('');
-    setUploadId(null);
-    setUploadUrls([]);
-    setTrainingStatus(null);
-    setRolePic(null);
+    setResourceId('');
+    setAssetUri('');
+    setPreviewImage(null);
+  };
+
+  const uploadVideoToStorage = async (file) => {
+    const metaResp = await fetch(
+      `/api/upload-file?filename=${encodeURIComponent(file.name || 'avatar.mp4')}&type=${encodeURIComponent(file.type || 'video/mp4')}`,
+    );
+    const metaJson = await metaResp.json().catch(() => ({}));
+    if (!metaResp.ok || !metaJson.putUrl || !metaJson.publicUrl) {
+      throw new Error(metaJson.error || 'Не удалось получить ссылку загрузки видео');
+    }
+
+    const putResp = await fetch(metaJson.putUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'video/mp4' },
+      body: file,
+    });
+    if (!putResp.ok) {
+      throw new Error('Не удалось загрузить видео в хранилище');
+    }
+
+    return metaJson.publicUrl;
+  };
+
+  const waitForVid = async (videoUrl) => {
+    const submitResp = await fetch('/api/digital-avatar/url-to-vid', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ videoUrl }),
+    });
+    const submitJson = await submitResp.json().catch(() => ({}));
+    if (!submitResp.ok || !submitJson.taskId) {
+      throw new Error(submitJson.error || 'Не удалось отправить видео на обработку');
+    }
+
+    for (let i = 0; i < 60; i++) {
+      if (cancelPollRef.current) return null;
+      setStatusText(`Подготовка видео для аватара… ${i + 1}/60`);
+      await new Promise((r) => setTimeout(r, 5000));
+
+      const statusResp = await fetch('/api/digital-avatar/url-to-vid-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId: submitJson.taskId }),
+      });
+      const statusJson = await statusResp.json().catch(() => ({}));
+      if (!statusResp.ok) {
+        throw new Error(statusJson.error || 'Не удалось проверить статус видео');
+      }
+      if (statusJson.done && statusJson.vid) {
+        return statusJson.vid;
+      }
+      if (statusJson.status === 'failed') {
+        throw new Error('Преобразование видео в vid завершилось с ошибкой');
+      }
+    }
+
+    throw new Error('Слишком долго ждём видео cloud id (vid)');
+  };
+
+  const pollTrainingStatus = async (taskId) => {
+    for (let i = 0; i < 120; i++) {
+      if (cancelPollRef.current) return;
+      await new Promise((r) => setTimeout(r, 5000));
+
+      const infoResp = await fetch('/api/digital-avatar/digime-training-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId }),
+      });
+      const infoJson = await infoResp.json().catch(() => ({}));
+      if (!infoResp.ok) {
+        throw new Error(infoJson.error || 'Не удалось проверить статус обучения');
+      }
+
+      if (infoJson.state === 2 && infoJson.assetUri) {
+        const newAvatar = {
+          id: infoJson.resourceId,
+          name: displayName.trim(),
+          assetUri: infoJson.assetUri,
+          thumbnail: infoJson.frontendPic || null,
+          rolePic: infoJson.frontendPic || null,
+          addedAt: Date.now(),
+        };
+
+        const library = loadAvatarLibrary();
+        const nextLibrary = [
+          newAvatar,
+          ...library.filter((item) => item.id !== newAvatar.id && item.assetUri !== newAvatar.assetUri),
+        ];
+        saveAvatarLibrary(nextLibrary);
+
+        setResourceId(infoJson.resourceId || '');
+        setAssetUri(infoJson.assetUri || '');
+        setPreviewImage(infoJson.frontendPic || null);
+        setStep('done');
+        setBusy(false);
+        onCreated?.(newAvatar);
+        toast.success('Аватар создан!');
+        return;
+      }
+
+      if (infoJson.state === 3 || infoJson.status === 'failed') {
+        throw new Error('Обучение аватара завершилось с ошибкой');
+      }
+
+      const progress = Number(infoJson.progress || 0);
+      setStatusText(`Обучение аватара… ${progress > 0 ? `${progress}%` : `${i + 1}/120`}`);
+    }
+
+    throw new Error('Обучение слишком долгое, попробуйте позже');
   };
 
   const startUpload = async () => {
@@ -62,145 +168,38 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
       toast.error('Введите имя и выберите видео');
       return;
     }
-    const generatedConfName = `avatar_${Date.now()}`;
-    setConfName(generatedConfName);
+
     cancelPollRef.current = false;
     setBusy(true);
     setStep('uploading');
-    setStatusText('Инициализация загрузки…');
+    setStatusText('Загрузка видео…');
+
     try {
-      // Step 1: Init part upload
-      const initResp = await fetch('/api/digital-avatar/init-part-upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          confName: generatedConfName,
-          roleShowName: displayName.trim(),
-          type: 1,
-          fileSuffix: 'mp4'
-        }),
-      });
-      const initJson = await initResp.json();
-      if (!initResp.ok) throw new Error(initJson.error || 'Ошибка инициализации');
+      const publicVideoUrl = await uploadVideoToStorage(video);
+      if (cancelPollRef.current) return;
 
-      setUploadId(initJson.UploadId);
-      setUploadUrls(initJson.UploadUrls || []);
-      setStatusText('Загрузка видео по частям…');
+      const vid = await waitForVid(publicVideoUrl);
+      if (!vid) return;
 
-      // Step 2: Split video into chunks and upload (10MB each)
-      const chunkSize = 10 * 1024 * 1024; // 10MB
-      const file = video;
-      const totalChunks = Math.ceil(file.size / chunkSize);
+      setStep('training');
+      setStatusText('Запуск обучения аватара…');
 
-      for (let i = 0; i < totalChunks; i++) {
-        if (cancelPollRef.current) return;
-        const start = i * chunkSize;
-        const end = Math.min(start + chunkSize, file.size);
-        const chunk = file.slice(start, end);
-        
-        // Convert chunk to base64
-        const base64Chunk = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const base64 = (reader.result || '').split(',')[1];
-            resolve(base64);
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(chunk);
-        });
-
-        // Upload chunk
-        const partResp = await fetch('/api/digital-avatar/video-part-upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            uploadUrl: initJson.UploadUrls[i],
-            partData: base64Chunk,
-            partNumber: i + 1
-          }),
-        });
-        const partJson = await partResp.json();
-        if (!partResp.ok) throw new Error(partJson.error || 'Ошибка загрузки части');
-        
-        setStatusText(`Загружено ${i + 1} из ${totalChunks} частей…`);
-      }
-
-      // Step 3: Complete upload
-      setStatusText('Завершение загрузки…');
-      const completeResp = await fetch('/api/digital-avatar/video-complete-upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uploadId: initJson.UploadId,
-          confName: generatedConfName
-        }),
-      });
-      const completeJson = await completeResp.json();
-      if (!completeResp.ok) throw new Error(completeJson.error || 'Ошибка завершения загрузки');
-
-      // Step 4: Start training
-      setStatusText('Начало обучения…');
       const trainResp = await fetch('/api/digital-avatar/init-train-digime', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          confName: generatedConfName,
-          callbackUrl: `${window.location.origin}/api/digital-avatar/callback`
-        }),
+        body: JSON.stringify({ vid }),
       });
-      const trainJson = await trainResp.json();
-      if (!trainResp.ok) throw new Error(trainJson.error || 'Ошибка начала обучения');
+      const trainJson = await trainResp.json().catch(() => ({}));
+      if (!trainResp.ok || !trainJson.taskId) {
+        throw new Error(trainJson.error || 'Не удалось запустить обучение аватара');
+      }
 
-      // Step 5: Poll training status
-      setStep('training');
-      await pollTrainingStatus(generatedConfName);
+      await pollTrainingStatus(trainJson.taskId);
     } catch (e) {
       toast.error(e.message || 'Ошибка');
       setBusy(false);
-      setStep('name');
+      setStep(video ? 'video' : 'name');
     }
-  };
-
-  const pollTrainingStatus = async (confName) => {
-    for (let i = 0; i < 120; i++) { // Max 10 minutes (5 seconds per poll)
-      if (cancelPollRef.current) return;
-      await new Promise(r => setTimeout(r, 5000));
-      try {
-        const infoResp = await fetch('/api/digital-avatar/digime-training-info', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ confName }),
-        });
-        const infoJson = await infoResp.json();
-        if (infoJson.State === 2) { // Ready
-          setTrainingStatus('ready');
-          setRolePic(infoJson.RolePic);
-          setStep('done');
-          setBusy(false);
-          
-          // Save to library
-          const newAvatar = {
-            id: confName,
-            name: displayName.trim(),
-            rolePic: infoJson.RolePic,
-            prePic: infoJson.PrePic,
-            addedAt: Date.now()
-          };
-          const library = loadAvatarLibrary();
-          saveAvatarLibrary([newAvatar, ...library]);
-          
-          onCreated?.(confName, displayName.trim(), infoJson.RolePic);
-          toast.success('Аватар создан!');
-          return;
-        }
-        if (infoJson.State === 3) { // Failed
-          throw new Error('Обучение не удалось');
-        }
-        setStatusText(`Обучение… ${Math.min(i * 5, 600)} сек`);
-      } catch {}
-    }
-    toast.error('Обучение слишком долгое, попробуйте позже.');
-    setStep('name');
   };
 
   const onPickVideo = (file) => {
@@ -343,13 +342,13 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
               <FaCheck className="h-6 w-6 text-green-400" />
             </div>
             <p className="text-sm font-medium text-white">Аватар «{displayName}» создан!</p>
-            {rolePic && (
-              <img src={rolePic} alt="Аватар" className="w-24 h-24 rounded-xl object-cover mx-auto border border-white/10" />
+            {previewImage && (
+              <img src={previewImage} alt="Аватар" className="w-24 h-24 rounded-xl object-cover mx-auto border border-white/10" />
             )}
             <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-              <span className="text-xs font-mono text-purple-400 truncate flex-1">{confName}</span>
+              <span className="text-xs font-mono text-purple-400 truncate flex-1">{assetUri || resourceId}</span>
               <button
-                onClick={() => { navigator.clipboard.writeText(confName); toast.success('Скопировано'); }}
+                onClick={() => { navigator.clipboard.writeText(assetUri || resourceId); toast.success('Скопировано'); }}
                 className="text-white/60 hover:text-purple-400"
               >
                 <FaCopy className="h-3.5 w-3.5" />

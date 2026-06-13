@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 
-const HOST = 'open.volcengineapi.com';
-const SERVICE = 'ark';
-const REGION = 'cn-beijing';
+const DEFAULT_HOST = 'open.volcengineapi.com';
+const DEFAULT_SERVICE = 'ark';
+const DEFAULT_REGION = 'cn-beijing';
 const ALGORITHM = 'HMAC-SHA256';
 
 function hmac(key, data) {
@@ -32,7 +32,17 @@ function getDateTimeStamp() {
   );
 }
 
-export async function callVolcOpenAPI({ accessKeyId, secretAccessKey, action, version, body }) {
+export async function callVolcServiceAPI({
+  accessKeyId,
+  secretAccessKey,
+  action,
+  version,
+  body,
+  host = DEFAULT_HOST,
+  service = DEFAULT_SERVICE,
+  region = DEFAULT_REGION,
+  path = '/',
+}) {
   if (!accessKeyId || !secretAccessKey) {
     throw new Error('VOLC_ACCESS_KEY / VOLC_SECRET_KEY не заданы в env');
   }
@@ -55,20 +65,20 @@ export async function callVolcOpenAPI({ accessKeyId, secretAccessKey, action, ve
   const signedHeaders = 'content-type;host;x-content-sha256;x-date';
   const canonicalHeaders =
     `content-type:${contentType}\n` +
-    `host:${HOST}\n` +
+    `host:${host}\n` +
     `x-content-sha256:${payloadHash}\n` +
     `x-date:${xDate}\n`;
 
   const canonicalRequest = [
     method,
-    '/',
+    path,
     query,
     canonicalHeaders,
     signedHeaders,
     payloadHash,
   ].join('\n');
 
-  const credentialScope = `${shortDate}/${REGION}/${SERVICE}/request`;
+  const credentialScope = `${shortDate}/${region}/${service}/request`;
   const stringToSign = [
     ALGORITHM,
     xDate,
@@ -77,8 +87,8 @@ export async function callVolcOpenAPI({ accessKeyId, secretAccessKey, action, ve
   ].join('\n');
 
   const kDate = hmac(secretAccessKey, shortDate);
-  const kRegion = hmac(kDate, REGION);
-  const kService = hmac(kRegion, SERVICE);
+  const kRegion = hmac(kDate, region);
+  const kService = hmac(kRegion, service);
   const kSigning = hmac(kService, 'request');
   const signature = hmacHex(kSigning, stringToSign);
 
@@ -86,7 +96,7 @@ export async function callVolcOpenAPI({ accessKeyId, secretAccessKey, action, ve
     `${ALGORITHM} Credential=${accessKeyId}/${credentialScope}, ` +
     `SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-  const url = `https://${HOST}/?${query}`;
+  const url = `https://${host}${path}?${query}`;
   const resp = await fetch(url, {
     method,
     headers: {
@@ -111,4 +121,17 @@ export async function callVolcOpenAPI({ accessKeyId, secretAccessKey, action, ve
     );
   }
   return json?.Result ?? json;
+}
+
+export async function callVolcOpenAPI({ accessKeyId, secretAccessKey, action, version, body }) {
+  return callVolcServiceAPI({
+    accessKeyId,
+    secretAccessKey,
+    action,
+    version,
+    body,
+    host: DEFAULT_HOST,
+    service: DEFAULT_SERVICE,
+    region: DEFAULT_REGION,
+  });
 }

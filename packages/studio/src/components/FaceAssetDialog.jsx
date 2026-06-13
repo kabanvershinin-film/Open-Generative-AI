@@ -114,7 +114,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
   };
 
   const pickAvatar = (avatar) => {
-    onSelect?.(avatar.rolePic, avatar.name);
+    onSelect?.(avatar.assetUri || `asset://${avatar.id}`, avatar.name);
     onClose?.();
   };
 
