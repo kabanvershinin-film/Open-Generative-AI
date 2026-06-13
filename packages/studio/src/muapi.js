@@ -754,6 +754,10 @@ export async function generateVideo(apiKey, params) {
         return generateSeedanceArk(modelInfo, params);
     }
 
+    if (platform === 'elspy') {
+        return submitElspyVideo(modelInfo, params);
+    }
+
     if (platform === 'kling') {
         const payload = {
             model_name: modelId,
@@ -794,6 +798,68 @@ export async function generateVideo(apiKey, params) {
     return submitUnifiedVideo(apiKey, payload, params.onRequestId);
 }
 
+// ── ElSpy AI (Omni Flash) ────────────────────────────────────────────────────
+
+async function pollElspyTask(taskId, maxAttempts = 300, interval = 5000) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    await new Promise(r => setTimeout(r, interval));
+    try {
+      const response = await fetch(`/api/elspy/status?taskId=${encodeURIComponent(taskId)}`);
+      if (!response.ok) continue;
+      const data = await response.json();
+      if (data.is_final) {
+        if (data.state === 'success') {
+          return { url: data.result_url, id: taskId };
+        } else if (data.state === 'failed') {
+          throw new Error(`ElSpy: генерация не удалась: ${data.error || 'Unknown error'}`);
+        }
+      }
+    } catch (e) {
+        console.error('ElSpy poll error:', e);
+    }
+  }
+  throw new Error('ElSpy: превышено время ожидания генерации.');
+}
+
+async function submitElspyVideo(modelInfo, params) {
+  const body = {
+    model: modelInfo.apiId,
+    prompt: params.prompt || '',
+    params: {
+      aspect_ratio: params.aspect_ratio,
+      duration: params.duration,
+      enhance_prompt: params.enhance_prompt,
+      enable_upsample: params.enable_upsample
+    }
+  };
+  
+  if (params.image_url) {
+    body.params.images = [params.image_url];
+  }
+  
+  const submit = await fetch('/api/elspy/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  
+  if (!submit.ok) {
+    const errorData = await submit.json().catch(() => ({}));
+    throw new Error(errorData.error || `ElSpy: ${submit.status}`);
+  }
+  
+  const submitData = await submit.json();
+  const taskId = submitData.id;
+  
+  if (!taskId) {
+    throw new Error('ElSpy: задача не создана (нет id).');
+  }
+  
+  params.onRequestId?.(taskId);
+  
+  return pollElspyTask(taskId);
+}
+
 export async function generateI2V(apiKey, params) {
     const modelInfo = getI2VModelById(params.model);
     const modelId = modelInfo?.apiId || params.model;
@@ -802,6 +868,10 @@ export async function generateI2V(apiKey, params) {
 
     if (modelInfo?.provider === 'ark') {
         return generateSeedanceArk(modelInfo, params);
+    }
+
+    if (platform === 'elspy') {
+        return submitElspyVideo(modelInfo, params);
     }
 
     if (platform === 'kling') {

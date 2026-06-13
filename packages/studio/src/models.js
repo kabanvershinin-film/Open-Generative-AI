@@ -340,16 +340,31 @@ const _t2vModelsAll = [
     }
   },
   {
-    id: "hunyuan-fast-text-to-video",
-    name: "Hunyuan Fast T2V",
-    apiId: "hunyuan-fast-text-to-video",
-    platform: "unified",
-    inputs: {
-      prompt: { type: "string", title: "Prompt" },
-      aspect_ratio: { enum: ["16:9", "9:16", "1:1"], default: "16:9", title: "Aspect Ratio", type: "string" }
-    }
-  },
-  // ── WAN 2.1 (legacy, keep for backwards compat) ──
+      id: "hunyuan-fast-text-to-video",
+      name: "Hunyuan Fast T2V",
+      apiId: "hunyuan-fast-text-to-video",
+      platform: "unified",
+      inputs: {
+        prompt: { type: "string", title: "Prompt" },
+        aspect_ratio: { enum: ["16:9", "9:16", "1:1"], default: "16:9", title: "Aspect Ratio", type: "string" }
+      }
+    },
+    // ── Omni Flash (ElSpy AI) ──
+    {
+      id: "omni-flash-t2v",
+      name: "Omni Flash",
+      apiId: "omni-flash",
+      platform: "elspy",
+      acceptsImage: true,
+      inputs: {
+        prompt: { type: "string", title: "Prompt" },
+        aspect_ratio: { enum: ["16:9", "9:16"], default: "16:9", title: "Aspect Ratio", type: "string" },
+        duration: { enum: [6, 8, 10], default: 6, title: "Duration (s)", type: "int" },
+        enhance_prompt: { type: "boolean", default: true, title: "Enhance Prompt" },
+        enable_upsample: { type: "boolean", default: false, title: "Video Upsample" }
+      }
+    },
+    // ── WAN 2.1 (legacy, keep for backwards compat) ──
   {
     id: "wan2.1-t2v-14b",
     name: "WAN 2.1 T2V",
@@ -363,7 +378,7 @@ const _t2vModelsAll = [
 ];
 
 // Video Studio is limited to Seedance 2.0 / 2.0 Fast only — keep just those.
-export const t2vModels = _t2vModelsAll.filter((m) => m.id.startsWith("seedance-2.0-"));
+export const t2vModels = _t2vModelsAll.filter((m) => m.id.startsWith("seedance-2.0-") || m.id.startsWith("omni-flash-"));
 
 // ── Image-to-video ────────────────────────────────────────────────────────────
 const _i2vModelsAll = [
@@ -557,22 +572,38 @@ const _i2vModelsAll = [
   },
   // ── Wan i2v (unified) ──
   {
-    id: "wan2.1-i2v-14b",
-    name: "WAN 2.1 (фото→видео)",
-    apiId: "wan2.1-i2v-14b",
-    platform: "unified",
-    imageField: "image_url",
-    inputs: {
-      prompt: { type: "string", title: "Prompt" },
-      aspect_ratio: {
-        enum: ["16:9", "9:16", "1:1"],
-        default: "16:9", title: "Aspect Ratio", type: "string"
+      id: "wan2.1-i2v-14b",
+      name: "WAN 2.1 (фото→видео)",
+      apiId: "wan2.1-i2v-14b",
+      platform: "unified",
+      imageField: "image_url",
+      inputs: {
+        prompt: { type: "string", title: "Prompt" },
+        aspect_ratio: {
+          enum: ["16:9", "9:16", "1:1"],
+          default: "16:9", title: "Aspect Ratio", type: "string"
+        }
+      }
+    },
+    // ── Omni Flash I2V (ElSpy AI) ──
+    {
+      id: "omni-flash-i2v",
+      name: "Omni Flash (фото→видео)",
+      apiId: "omni-flash",
+      platform: "elspy",
+      imageField: "images",
+      acceptsImage: true,
+      inputs: {
+        prompt: { type: "string", title: "Prompt" },
+        aspect_ratio: { enum: ["16:9", "9:16"], default: "16:9", title: "Aspect Ratio", type: "string" },
+        duration: { enum: [6, 8, 10], default: 6, title: "Duration (s)", type: "int" },
+        enhance_prompt: { type: "boolean", default: true, title: "Enhance Prompt" },
+        enable_upsample: { type: "boolean", default: false, title: "Video Upsample" }
       }
     }
-  }
 ];
 
-export const i2vModels = _i2vModelsAll.filter((m) => m.id.startsWith("seedance-2.0-"));
+export const i2vModels = _i2vModelsAll.filter((m) => m.id.startsWith("seedance-2.0-") || m.id.startsWith("omni-flash-"));
 
 // ── Video-to-video ────────────────────────────────────────────────────────────
 export const v2vModels = [];
