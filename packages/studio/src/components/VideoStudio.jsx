@@ -1086,7 +1086,6 @@ export default function VideoStudio({
         if (!isMC) {
           // Single-input v2v (watermark remover etc.) — drop any image
           setUploadedImageUrl(null);
-          setUploadedImagePreview(null);
         }
         setSelectedModel(m.id);
         setSelectedModelName(m.name);
