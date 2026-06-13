@@ -29,7 +29,7 @@ function saveAvatarLibrary(items) {
 
 export default function AvatarCreationDialog({ open, onClose, onCreated }) {
   const [step, setStep] = useState('name'); // 'name' | 'choice' | 'media' | 'uploading' | 'training' | 'done'
-  const [mode, setMode] = useState<'video' | 'photo'>('video'); // 'video' or 'photo'
+  const [mode, setMode] = useState('video'); // 'video' or 'photo'
   const [displayName, setDisplayName] = useState('');
   const [video, setVideo] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
