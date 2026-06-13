@@ -356,6 +356,8 @@ const _t2vModelsAll = [
       apiId: "omni-flash",
       platform: "elspy",
       acceptsImage: true,
+      disabled: true,
+      comingSoon: true,
       inputs: {
         prompt: { type: "string", title: "Prompt" },
         aspect_ratio: { enum: ["16:9", "9:16"], default: "16:9", title: "Aspect Ratio", type: "string" },
@@ -372,6 +374,8 @@ const _t2vModelsAll = [
       platform: "elspy",
       acceptsImage: true,
       acceptsVideo: true,
+      disabled: true,
+      comingSoon: true,
       inputs: {
         prompt: { type: "string", title: "Prompt" },
         character_orientation: { enum: ["video", "image"], default: "video", title: "Character Orientation", type: "string" },
@@ -608,6 +612,8 @@ const _i2vModelsAll = [
       platform: "elspy",
       imageField: "images",
       acceptsImage: true,
+      disabled: true,
+      comingSoon: true,
       inputs: {
         prompt: { type: "string", title: "Prompt" },
         aspect_ratio: { enum: ["16:9", "9:16"], default: "16:9", title: "Aspect Ratio", type: "string" },
@@ -632,6 +638,8 @@ export const v2vModels = [
     promptRequired: true,
     acceptsImage: true,
     acceptsVideo: true,
+    disabled: true,
+    comingSoon: true,
     inputs: {
       prompt: { type: "string", title: "Prompt" },
       character_orientation: { enum: ["video", "image"], default: "video", title: "Character Orientation", type: "string" },

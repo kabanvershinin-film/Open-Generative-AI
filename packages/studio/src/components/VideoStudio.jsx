@@ -132,8 +132,9 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose }) {
   const renderItem = (m, isV2V = false) => (
     <div
       key={m.id}
-      className={`flex items-center justify-between p-3.5 hover:bg-white/5 rounded-2xl cursor-pointer transition-all border border-transparent hover:border-white/5 ${selectedModel === m.id ? "bg-white/5 border-white/5" : ""}`}
+      className={`flex items-center justify-between p-3.5 ${!m.disabled ? "hover:bg-white/5 cursor-pointer" : "opacity-50 cursor-not-allowed"} rounded-2xl transition-all border border-transparent ${!m.disabled && "hover:border-white/5"} ${selectedModel === m.id && !m.disabled ? "bg-white/5 border-white/5" : ""}`}
       onClick={(e) => {
+        if (m.disabled) return;
         e.stopPropagation();
         onSelect(m, isV2V);
         onClose();
@@ -141,22 +142,25 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose }) {
     >
       <div className="flex items-center gap-3.5">
         <div
-          className={`w-10 h-10 ${getIconColor(m, isV2V)} border border-white/5 rounded-xl flex items-center justify-center font-black text-sm shadow-inner uppercase`}
+          className={`w-10 h-10 ${m.disabled ? "bg-gray-500/10 text-gray-400" : getIconColor(m, isV2V)} border border-white/5 rounded-xl flex items-center justify-center font-black text-sm shadow-inner uppercase`}
         >
           {m.name.charAt(0)}
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-bold text-white tracking-tight">
+          <span className={`text-xs font-bold ${m.disabled ? "text-gray-400" : "text-white"} tracking-tight`}>
             {m.name}
           </span>
-          {isV2V && (
+          {m.comingSoon && (
+            <span className="text-[9px] text-gray-500">Скоро</span>
+          )}
+          {isV2V && !m.comingSoon && (
             <span className="text-[9px] text-orange-400/70">
               {m.imageField ? "Загрузите видео и изображение" : "Загрузите видео"}
             </span>
           )}
         </div>
       </div>
-      {selectedModel === m.id && <CheckSvg />}
+      {selectedModel === m.id && !m.disabled && <CheckSvg />}
     </div>
   );
 
