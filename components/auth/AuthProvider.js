@@ -12,6 +12,8 @@ const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 const YANDEX_PROVIDER = process.env.NEXT_PUBLIC_SUPABASE_YANDEX_PROVIDER || 'custom:yandex';
 const YANDEX_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_YANDEX_AUTH !== 'false';
+const VK_PROVIDER = process.env.NEXT_PUBLIC_SUPABASE_VK_PROVIDER || 'vk';
+const VK_AUTH_ENABLED = process.env.NEXT_PUBLIC_ENABLE_VK_AUTH !== 'false';
 
 function normalizePhone(value) {
     const raw = String(value || '').trim();
@@ -216,6 +218,17 @@ export function AuthProvider({ children }) {
         return error ? mapAuthError(error) : null;
     };
 
+    const loginWithVK = async () => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: VK_PROVIDER,
+            options: { 
+                redirectTo: `${window.location.origin}/`,
+                skipBrowserRedirect: false,
+            },
+        });
+        return error ? mapAuthError(error) : null;
+    };
+
     const sendPhoneOtp = async (phone) => {
         const normalizedPhone = normalizePhone(phone);
         if (!normalizedPhone) return { error: 'Укажите телефон в формате +7XXXXXXXXXX' };
@@ -255,11 +268,12 @@ export function AuthProvider({ children }) {
     const value = {
         user, profile, loading,
         balance: Number(profile?.balance || 0),
-        login, register, loginWithGoogle, loginWithYandex, sendPhoneOtp, verifyPhoneOtp, logout, refreshBalance,
+        login, register, loginWithGoogle, loginWithYandex, loginWithVK, sendPhoneOtp, verifyPhoneOtp, logout, refreshBalance,
         loginOpen, setLoginOpen,
         cabinetOpen, setCabinetOpen,
         needFunds, setNeedFunds,
         yandexAuthEnabled: YANDEX_AUTH_ENABLED,
+        vkAuthEnabled: VK_AUTH_ENABLED,
     };
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
