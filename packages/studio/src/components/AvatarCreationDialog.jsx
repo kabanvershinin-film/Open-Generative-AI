@@ -267,82 +267,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     setStep('uploading');
 
     try {
-      if (mode === 'seedance_ark') {
-        setStatusText('Загрузка фото…');
-        const publicImageUrl = await uploadImageToStorage(photo);
-        if (cancelPollRef.current) return;
-
-        setStep('processing');
-        setStatusText('Создание ARK-ассета…');
-
-        // Try to create asset without groupId first (for virtual characters)
-        let assetId = null;
-        try {
-          const createResp = await fetch('/api/face/create-asset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: publicImageUrl, assetType: 'Image', name: displayName.trim() }),
-          });
-          const createJson = await createResp.json().catch(() => ({}));
-          if (createResp.ok && createJson.assetId) {
-            assetId = createJson.assetId;
-          } else {
-            throw new Error(createJson.error || 'Не удалось создать ARK-ассет');
-          }
-        } catch (err) {
-          // If groupId is required, show error
-          throw new Error('Для виртуальных персонажей пока нужно сначала зарегистрировать реального человека, но можно попробовать загрузить как референсное изображение');
-        }
-
-        // Poll asset status
-        for (let i = 0; i < 60; i++) {
-          if (cancelPollRef.current) return;
-          await new Promise((r) => setTimeout(r, 3000));
-          setStatusText(`Проверка статуса ассета… ${i + 1}/60`);
-
-          const getResp = await fetch('/api/face/get-asset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assetId }),
-          });
-          const getJson = await getResp.json().catch(() => ({}));
-          if (!getResp.ok) continue;
-
-          if (getJson.status === 'Active') {
-            const newUri = `asset://${assetId}`;
-            const newAvatar = {
-              id: assetId,
-              name: displayName.trim(),
-              assetUri: newUri,
-              thumbnail: photoPreview,
-              rolePic: photoPreview,
-              addedAt: Date.now(),
-            };
-
-            const library = loadAvatarLibrary();
-            const nextLibrary = [
-              newAvatar,
-              ...library.filter((item) => item.id !== newAvatar.id && item.assetUri !== newAvatar.assetUri),
-            ];
-            saveAvatarLibrary(nextLibrary);
-
-            setResourceId(assetId);
-            setAssetUri(newUri);
-            setPreviewImage(photoPreview);
-            setStep('done');
-            setBusy(false);
-            onCreated?.(newAvatar);
-            toast.success('ARK-ассет для Seedance создан!');
-            return;
-          }
-
-          if (getJson.status === 'Failed') {
-            throw new Error('ARK-ассет не прошел проверку');
-          }
-        }
-
-        throw new Error('Создание ARK-ассета слишком долгое');
-      } else if (mode === 'video') {
+      if (mode === 'video') {
         setStatusText('Загрузка видео…');
         const publicVideoUrl = await uploadVideoToStorage(video);
         if (cancelPollRef.current) return;
@@ -479,7 +404,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
           </>
         )}
 
-        {/* Step 2: Choice (Video or Photo or Seedance ARK) */}
+        {/* Step 2: Choice (Video or Photo) */}
         {step === 'choice' && (
           <>
             <div className="flex gap-2">
@@ -491,30 +416,21 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
                 Назад
               </button>
             </div>
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => { setMode('seedance_ark'); setStep('media'); }}
-                className={`p-4 rounded-xl border transition-all ${mode === 'seedance_ark' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                onClick={() => { setMode('video'); setStep('media'); }}
+                className={`p-4 rounded-xl border transition-all ${mode === 'video' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
               >
-                <div className="text-white font-medium text-sm mb-1">Виртуальный персонаж для Seedance</div>
-                <div className="text-white/50 text-xs">Создаёт ARK-ассет, который работает в face_asset</div>
+                <div className="text-white font-medium text-sm mb-1">Из видео</div>
+                <div className="text-white/50 text-xs">Более точный (Visual API)</div>
               </button>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => { setMode('video'); setStep('media'); }}
-                  className={`p-4 rounded-xl border transition-all ${mode === 'video' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                >
-                  <div className="text-white font-medium text-sm mb-1">Из видео</div>
-                  <div className="text-white/50 text-xs">Более точный (Visual API)</div>
-                </button>
-                <button
-                  onClick={() => { setMode('photo'); setStep('media'); }}
-                  className={`p-4 rounded-xl border transition-all ${mode === 'photo' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-                >
-                  <div className="text-white font-medium text-sm mb-1">Из фото</div>
-                  <div className="text-white/50 text-xs">Быстрый (Visual API)</div>
-                </button>
-              </div>
+              <button
+                onClick={() => { setMode('photo'); setStep('media'); }}
+                className={`p-4 rounded-xl border transition-all ${mode === 'photo' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+              >
+                <div className="text-white font-medium text-sm mb-1">Из фото</div>
+                <div className="text-white/50 text-xs">Быстрый (Visual API)</div>
+              </button>
             </div>
           </>
         )}
