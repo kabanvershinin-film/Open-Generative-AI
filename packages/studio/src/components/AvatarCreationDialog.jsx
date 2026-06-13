@@ -28,10 +28,13 @@ function saveAvatarLibrary(items) {
 }
 
 export default function AvatarCreationDialog({ open, onClose, onCreated }) {
-  const [step, setStep] = useState('name'); // 'name' | 'video' | 'uploading' | 'training' | 'done'
+  const [step, setStep] = useState('name'); // 'name' | 'choice' | 'media' | 'uploading' | 'training' | 'done'
+  const [mode, setMode] = useState<'video' | 'photo'>('video'); // 'video' or 'photo'
   const [displayName, setDisplayName] = useState('');
   const [video, setVideo] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
   const [busy, setBusy] = useState(false);
   const [statusText, setStatusText] = useState('');
   const [resourceId, setResourceId] = useState('');
@@ -44,8 +47,11 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     cancelPollRef.current = true;
     setStep('name');
     setDisplayName('');
+    setMode('video');
     setVideo(null);
     setVideoPreview(null);
+    setPhoto(null);
+    setPhotoPreview(null);
     setBusy(false);
     setStatusText('');
     setResourceId('');
@@ -69,6 +75,27 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     });
     if (!putResp.ok) {
       throw new Error('Не удалось загрузить видео в хранилище');
+    }
+
+    return metaJson.publicUrl;
+  };
+
+  const uploadImageToStorage = async (file) => {
+    const metaResp = await fetch(
+      `/api/upload-file?filename=${encodeURIComponent(file.name || 'avatar.png')}&type=${encodeURIComponent(file.type || 'image/png')}`,
+    );
+    const metaJson = await metaResp.json().catch(() => ({}));
+    if (!metaResp.ok || !metaJson.putUrl || !metaJson.publicUrl) {
+      throw new Error(metaJson.error || 'Не удалось получить ссылку загрузки фото');
+    }
+
+    const putResp = await fetch(metaJson.putUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type || 'image/png' },
+      body: file,
+    });
+    if (!putResp.ok) {
+      throw new Error('Не удалось загрузить фото в хранилище');
     }
 
     return metaJson.publicUrl;
@@ -163,42 +190,112 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     throw new Error('Обучение слишком долгое, попробуйте позже');
   };
 
+  const pollPhotoStatus = async (taskId) => {
+    for (let i = 0; i < 60; i++) {
+      if (cancelPollRef.current) return;
+      await new Promise((r) => setTimeout(r, 3000));
+
+      const statusResp = await fetch('/api/digital-avatar/photo-to-avatar-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ taskId }),
+      });
+      const statusJson = await statusResp.json().catch(() => ({}));
+      if (!statusResp.ok) {
+        throw new Error(statusJson.error || 'Не удалось проверить статус создания аватара');
+      }
+
+      if (statusJson.done && statusJson.resourceId) {
+        const newAvatar = {
+          id: statusJson.resourceId,
+          name: displayName.trim(),
+          assetUri: statusJson.assetUri,
+          thumbnail: statusJson.frontendPic || photoPreview,
+          rolePic: statusJson.frontendPic || photoPreview,
+          addedAt: Date.now(),
+        };
+
+        const library = loadAvatarLibrary();
+        const nextLibrary = [
+          newAvatar,
+          ...library.filter((item) => item.id !== newAvatar.id && item.assetUri !== newAvatar.assetUri),
+        ];
+        saveAvatarLibrary(nextLibrary);
+
+        setResourceId(statusJson.resourceId || '');
+        setAssetUri(statusJson.assetUri || '');
+        setPreviewImage(statusJson.frontendPic || photoPreview);
+        setStep('done');
+        setBusy(false);
+        onCreated?.(newAvatar);
+        toast.success('Аватар создан!');
+        return;
+      }
+
+      if (statusJson.status === 'failed') {
+        throw new Error('Создание аватара из фото завершилось с ошибкой');
+      }
+
+      setStatusText(`Создаём аватар из фото… ${i + 1}/60`);
+    }
+
+    throw new Error('Создание аватара слишком долгое, попробуйте позже');
+  };
+
   const startUpload = async () => {
-    if (!displayName.trim() || !video) {
-      toast.error('Введите имя и выберите видео');
+    if (!displayName.trim() || (!video && !photo)) {
+      toast.error('Введите имя и выберите медиа');
       return;
     }
 
     cancelPollRef.current = false;
     setBusy(true);
     setStep('uploading');
-    setStatusText('Загрузка видео…');
 
     try {
-      const publicVideoUrl = await uploadVideoToStorage(video);
-      if (cancelPollRef.current) return;
+      if (mode === 'video') {
+        setStatusText('Загрузка видео…');
+        const publicVideoUrl = await uploadVideoToStorage(video!);
+        if (cancelPollRef.current) return;
 
-      const vid = await waitForVid(publicVideoUrl);
-      if (!vid) return;
+        const vid = await waitForVid(publicVideoUrl);
+        if (!vid) return;
 
-      setStep('training');
-      setStatusText('Запуск обучения аватара…');
+        setStep('training');
+        setStatusText('Запуск обучения аватара…');
 
-      const trainResp = await fetch('/api/digital-avatar/init-train-digime', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ vid }),
-      });
-      const trainJson = await trainResp.json().catch(() => ({}));
-      if (!trainResp.ok || !trainJson.taskId) {
-        throw new Error(trainJson.error || 'Не удалось запустить обучение аватара');
+        const trainResp = await fetch('/api/digital-avatar/init-train-digime', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vid }),
+        });
+        const trainJson = await trainResp.json().catch(() => ({}));
+        if (!trainResp.ok || !trainJson.taskId) {
+          throw new Error(trainJson.error || 'Не удалось запустить обучение аватара');
+        }
+
+        await pollTrainingStatus(trainJson.taskId);
+      } else {
+        setStatusText('Загрузка фото…');
+        const publicImageUrl = await uploadImageToStorage(photo!);
+        if (cancelPollRef.current) return;
+
+        const submitResp = await fetch('/api/digital-avatar/photo-to-avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: publicImageUrl }),
+        });
+        const submitJson = await submitResp.json().catch(() => ({}));
+        if (!submitResp.ok || !submitJson.taskId) {
+          throw new Error(submitJson.error || 'Не удалось отправить фото на обработку');
+        }
+
+        await pollPhotoStatus(submitJson.taskId);
       }
-
-      await pollTrainingStatus(trainJson.taskId);
     } catch (e) {
       toast.error(e.message || 'Ошибка');
       setBusy(false);
-      setStep(video ? 'video' : 'name');
+      setStep('media');
     }
   };
 
@@ -209,6 +306,15 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     }
     setVideo(file);
     setVideoPreview(URL.createObjectURL(file));
+  };
+
+  const onPickPhoto = (file) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Нужно фото');
+      return;
+    }
+    setPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
   };
 
   const handleClose = useCallback(() => {
@@ -247,8 +353,8 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
 
         {/* Progress bar */}
         <div className="flex items-center gap-1.5">
-          {['name', 'video', 'training', 'done'].map((s) => {
-            const order = ['name', 'video', 'uploading', 'training', 'done'];
+          {['name', 'media', 'training', 'done'].map((s) => {
+            const order = ['name', 'choice', 'media', 'uploading', 'training', 'done'];
             const active = order.indexOf(step) >= order.indexOf(s);
             return (
               <div
@@ -263,7 +369,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
         {step === 'name' && (
           <>
             <p className="text-xs text-white/60 leading-relaxed">
-              Создайте цифровой аватар с помощью видео. Загрузите 5-10 минутное видео с вашим лицом (анфас, хорошее освещение).
+              Создайте цифровой аватар с помощью видео (более точный) или фото (быстрый вариант).
             </p>
             <div>
               <label className="block text-xs text-white/50 mb-1">Имя аватара</label>
@@ -275,7 +381,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
               />
             </div>
             <button
-              onClick={() => setStep('video')}
+              onClick={() => setStep('choice')}
               disabled={!displayName.trim()}
               className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all"
             >
@@ -284,8 +390,8 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
           </>
         )}
 
-        {/* Step 2: Video */}
-        {step === 'video' && (
+        {/* Step 2: Choice (Video or Photo) */}
+        {step === 'choice' && (
           <>
             <div className="flex gap-2">
               <button
@@ -296,29 +402,78 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
                 Назад
               </button>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => { setMode('video'); setStep('media'); }}
+                className={`p-4 rounded-xl border transition-all ${mode === 'video' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+              >
+                <div className="text-white font-medium text-sm mb-1">Из видео</div>
+                <div className="text-white/50 text-xs">Более точный</div>
+              </button>
+              <button
+                onClick={() => { setMode('photo'); setStep('media'); }}
+                className={`p-4 rounded-xl border transition-all ${mode === 'photo' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+              >
+                <div className="text-white font-medium text-sm mb-1">Из фото</div>
+                <div className="text-white/50 text-xs">Быстрый вариант</div>
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Step 3: Media (Video or Photo) */}
+        {step === 'media' && (
+          <>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setStep('choice')}
+                disabled={busy}
+                className="py-2 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 text-sm font-medium transition-colors"
+              >
+                Назад
+              </button>
+            </div>
             <input
               ref={fileRef}
               type="file"
-              accept="video/*"
+              accept={mode === 'video' ? 'video/*' : 'image/*'}
               className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickVideo(f); e.target.value = ''; }}
+              onChange={(e) => { 
+                const f = e.target.files?.[0]; 
+                if (f) {
+                  if (mode === 'video') onPickVideo(f);
+                  else onPickPhoto(f);
+                } 
+                e.target.value = ''; 
+              }}
             />
             <div
               onClick={() => fileRef.current?.click()}
               className="w-full aspect-video bg-white/5 border border-dashed border-white/20 hover:border-purple-500 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden transition-colors"
             >
-              {videoPreview ? (
-                <video src={videoPreview} controls className="w-full h-full object-cover" />
+              {mode === 'video' ? (
+                videoPreview ? (
+                  <video src={videoPreview} controls className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-center text-white/40">
+                    <FaUpload className="h-6 w-6 mx-auto mb-1" />
+                    <span className="text-xs">Нажми чтобы выбрать видео</span>
+                  </div>
+                )
               ) : (
-                <div className="text-center text-white/40">
-                  <FaUpload className="h-6 w-6 mx-auto mb-1" />
-                  <span className="text-xs">Нажми чтобы выбрать видео</span>
-                </div>
+                photoPreview ? (
+                  <img src={photoPreview} alt="Предпросмотр" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-center text-white/40">
+                    <FaUpload className="h-6 w-6 mx-auto mb-1" />
+                    <span className="text-xs">Нажми чтобы выбрать фото</span>
+                  </div>
+                )
               )}
             </div>
             <button
               onClick={startUpload}
-              disabled={!video}
+              disabled={mode === 'video' ? !video : !photo}
               className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all flex items-center justify-center gap-2"
             >
               {busy ? <FaSpinner className="h-4 w-4 animate-spin" /> : null}
