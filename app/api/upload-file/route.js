@@ -10,6 +10,8 @@ const TOS_AK       = process.env.TOS_ACCESS_KEY || '';
 const TOS_SK       = process.env.TOS_SECRET_KEY || '';
 const TOS_ENABLED  = !!(TOS_ENDPOINT && TOS_BUCKET && TOS_AK && TOS_SK);
 
+console.log('[upload-file] TOS_ENABLED:', TOS_ENABLED, 'TOS_ENDPOINT:', !!TOS_ENDPOINT, 'TOS_BUCKET:', !!TOS_BUCKET);
+
 function sha256hex(data) { return createHash('sha256').update(data).digest('hex'); }
 function hmac(key, data)  { return createHmac('sha256', key).update(data).digest(); }
 
@@ -17,7 +19,7 @@ function hmac(key, data)  { return createHmac('sha256', key).update(data).digest
 // The browser can PUT the file directly to TOS without going through Vercel.
 function presignedPutUrl(key, contentType, expiresSeconds = 3600) {
     const now = new Date();
-    const iso = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    const iso = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/g, '');
     const date = iso.slice(0, 8);
     const datetime = iso;
     const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
@@ -56,7 +58,7 @@ async function tosUpload(key, buffer, contentType) {
     if (!TOS_ENABLED) return null;
     try {
         const now = new Date();
-        const iso = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+        const iso = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/g, '');
         const date = iso.slice(0, 8);
         const datetime = iso;
         const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
@@ -73,6 +75,8 @@ async function tosUpload(key, buffer, contentType) {
         const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
         const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
 
+        console.log('[tosUpload] Uploading to:', `https://${host}${path}`, 'content-length:', buffer.length);
+
         const res = await fetch(`https://${host}${path}`, {
             method: 'PUT',
             headers: {
@@ -84,9 +88,18 @@ async function tosUpload(key, buffer, contentType) {
             },
             body: buffer,
         });
-        if (!res.ok) { console.error('TOS upload failed:', res.status, await res.text().catch(() => '')); return null; }
-        return `https://${host}${path}`;
-    } catch (e) { console.error('TOS upload error:', e.message); return null; }
+        if (!res.ok) { 
+            const errText = await res.text().catch(() => '');
+            console.error('TOS upload failed:', res.status, errText); 
+            return null; 
+        }
+        const publicUrl = `https://${host}${path}`;
+        console.log('[tosUpload] Upload successful, publicUrl:', publicUrl);
+        return publicUrl;
+    } catch (e) { 
+        console.error('TOS upload error:', e); 
+        return null; 
+    }
 }
 
 // POST /api/upload-file  { image: "data:image/png;base64,..." }  or  { url: "https://..." }
@@ -94,10 +107,13 @@ async function tosUpload(key, buffer, contentType) {
 // Used to mirror generated images (e.g. base64 from Gemini) into TOS, bypassing browser CORS.
 export async function POST(request) {
     if (!TOS_ENABLED) {
+        console.error('[upload-file] TOS not configured');
         return NextResponse.json({ error: 'Storage not configured' }, { status: 503 });
     }
     try {
         const user = await getUserForGallery(request);
+        console.log('[upload-file] user:', user?.id || 'anonymous');
+        
         const body = await request.json();
         const src = body.image || body.url;
         if (!src || typeof src !== 'string') {
@@ -114,11 +130,13 @@ export async function POST(request) {
         if (m) {
             contentType = m[1];
             buffer = Buffer.from(m[2], 'base64');
+            console.log('[upload-file] Received base64 image, contentType:', contentType, 'size:', buffer.length);
         } else {
             const r = await fetch(src);
             if (!r.ok) return NextResponse.json({ error: 'Fetch failed' }, { status: 502 });
             contentType = r.headers.get('content-type') || 'image/png';
             buffer = Buffer.from(await r.arrayBuffer());
+            console.log('[upload-file] Fetched URL, contentType:', contentType, 'size:', buffer.length);
         }
 
         const ext = (contentType.split('/')[1] || 'png').split('+')[0];
@@ -126,10 +144,12 @@ export async function POST(request) {
                      : contentType.startsWith('audio/') ? 'audio'
                      : 'images';
         const key = buildUserMediaKey(user?.id || null, folder, ext);
+        console.log('[upload-file] key:', key);
         const publicUrl = await tosUpload(key, buffer, contentType);
         if (!publicUrl) return NextResponse.json({ error: 'Upload failed' }, { status: 502 });
         return NextResponse.json({ url: publicUrl });
     } catch (e) {
+        console.error('[upload-file] POST error:', e);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
