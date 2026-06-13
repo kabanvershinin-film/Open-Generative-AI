@@ -16,6 +16,8 @@ import {
   getEffectsForI2VModel,
   getDefaultEffectForI2VModel,
   getModesForModel,
+  getCharacterOrientationForModel,
+  getKeepOriginalSoundForModel,
 } from "../models.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
@@ -270,6 +272,8 @@ export default function VideoStudio({
   );
   const [selectedMode, setSelectedMode] = useState("");
   const [selectedEffect, setSelectedEffect] = useState("");
+  const [selectedCharacterOrientation, setSelectedCharacterOrientation] = useState("");
+  const [selectedKeepOriginalSound, setSelectedKeepOriginalSound] = useState("");
 
   // ── upload progress ──
   const [imageProgress, setImageProgress] = useState(0);
@@ -282,6 +286,8 @@ export default function VideoStudio({
   const [showQuality, setShowQuality] = useState(false);
   const [showMode, setShowMode] = useState(false);
   const [showEffect, setShowEffect] = useState(false);
+  const [showCharacterOrientation, setShowCharacterOrientation] = useState(false);
+  const [showKeepOriginalSound, setShowKeepOriginalSound] = useState(false);
 
   // ── uploads ──
   const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
@@ -325,7 +331,7 @@ export default function VideoStudio({
   const [activeHistoryIdx, setActiveHistoryIdx] = useState(0);
 
   // ── dropdown ──
-  const [openDropdown, setOpenDropdown] = useState(null); // 'model'|'ar'|'duration'|'resolution'|'quality'|'mode'|null
+  const [openDropdown, setOpenDropdown] = useState(null); // 'model'|'ar'|'duration'|'resolution'|'quality'|'mode'|'character_orientation'|'keep_original_sound'|null
 
   // ── prompt ──
   const [prompt, setPrompt] = useState("");
@@ -461,6 +467,23 @@ export default function VideoStudio({
         setSelectedEffect("");
         setShowEffect(false);
       }
+
+      // Check for character_orientation and keep_original_sound in model inputs
+      if (model?.inputs?.character_orientation?.enum?.length > 0) {
+        setSelectedCharacterOrientation(model.inputs.character_orientation.default || model.inputs.character_orientation.enum[0]);
+        setShowCharacterOrientation(true);
+      } else {
+        setSelectedCharacterOrientation("");
+        setShowCharacterOrientation(false);
+      }
+
+      if (model?.inputs?.keep_original_sound?.enum?.length > 0) {
+        setSelectedKeepOriginalSound(model.inputs.keep_original_sound.default || model.inputs.keep_original_sound.enum[0]);
+        setShowKeepOriginalSound(true);
+      } else {
+        setSelectedKeepOriginalSound("");
+        setShowKeepOriginalSound(false);
+      }
     },
     [],
   );
@@ -503,6 +526,8 @@ export default function VideoStudio({
           if (data.selectedQuality) setSelectedQuality(data.selectedQuality);
           if (data.selectedMode) setSelectedMode(data.selectedMode);
           if (data.selectedEffect) setSelectedEffect(data.selectedEffect);
+          if (data.selectedCharacterOrientation) setSelectedCharacterOrientation(data.selectedCharacterOrientation);
+          if (data.selectedKeepOriginalSound) setSelectedKeepOriginalSound(data.selectedKeepOriginalSound);
           if (data.uploadedImageUrl) setUploadedImageUrl(data.uploadedImageUrl);
           if (data.uploadedVideoUrl) setUploadedVideoUrl(data.uploadedVideoUrl);
           if (data.uploadedVideoName) setUploadedVideoName(data.uploadedVideoName);
@@ -551,6 +576,8 @@ export default function VideoStudio({
           selectedQuality,
           selectedMode,
           selectedEffect,
+          selectedCharacterOrientation,
+          selectedKeepOriginalSound,
           uploadedImageUrl,
           uploadedVideoUrl,
           uploadedVideoName,
@@ -1567,6 +1594,8 @@ export default function VideoStudio({
         if (resolutions.length > 0) params.resolution = selectedResolution;
         if (selectedQuality) params.quality = selectedQuality;
         if (selectedMode) params.mode = selectedMode;
+        if (selectedCharacterOrientation) params.character_orientation = selectedCharacterOrientation;
+        if (selectedKeepOriginalSound) params.keep_original_sound = selectedKeepOriginalSound;
         const t2vModelObj = t2vModels.find((m) => m.id === selectedModel);
         if (t2vModelObj?.acceptsImage && uploadedImageUrl) params.image_url = uploadedImageUrl;
         if (t2vModelObj?.acceptsVideo && uploadedVideoUrl) params.video_url = uploadedVideoUrl;

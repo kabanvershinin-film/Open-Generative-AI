@@ -621,7 +621,25 @@ const _i2vModelsAll = [
 export const i2vModels = _i2vModelsAll.filter((m) => m.id.startsWith("seedance-2.0-") || m.id.startsWith("omni-flash-"));
 
 // ── Video-to-video ────────────────────────────────────────────────────────────
-export const v2vModels = [];
+export const v2vModels = [
+  {
+    id: "kling-motion-control-v3",
+    name: "Kling-Motion Control V3",
+    apiId: "kling-motion-control-v3",
+    platform: "elspy",
+    imageField: "image_url",
+    hasPrompt: true,
+    promptRequired: true,
+    acceptsImage: true,
+    acceptsVideo: true,
+    inputs: {
+      prompt: { type: "string", title: "Prompt" },
+      character_orientation: { enum: ["video", "image"], default: "video", title: "Character Orientation", type: "string" },
+      keep_original_sound: { enum: ["yes", "no"], default: "no", title: "Keep Original Sound", type: "string" },
+      mode: { enum: ["std", "pro"], default: "std", title: "Generation Mode", type: "string" }
+    }
+  }
+];
 
 // ── LipSync ───────────────────────────────────────────────────────────────────
 export const lipsyncModels = [];
@@ -920,6 +938,16 @@ export const getDefaultEffectForI2VModel = (id) => null;
 export const getModesForModel            = (id) => {
   const m = [...t2vModels, ...i2vModels].find(x => x.id === id);
   return m?.inputs?.mode?.enum || [];
+};
+
+export const getCharacterOrientationForModel = (id) => {
+  const m = [...t2vModels, ...i2vModels].find(x => x.id === id);
+  return m?.inputs?.character_orientation?.enum || [];
+};
+
+export const getKeepOriginalSoundForModel = (id) => {
+  const m = [...t2vModels, ...i2vModels].find(x => x.id === id);
+  return m?.inputs?.keep_original_sound?.enum || [];
 };
 
 // ── LipSync helpers ───────────────────────────────────────────────────────────

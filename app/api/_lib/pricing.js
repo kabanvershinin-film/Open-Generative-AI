@@ -182,8 +182,8 @@ async function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, 
     const [w, h] = SEEDANCE2_DIMS[resolution] || SEEDANCE2_DIMS['720p'];
     const inputSec = hasVideoInput ? (inputVideoSec || 0) : 0;
     const outputSec = durationSec || 5;
-    const base = Math.round(((inputSec + outputSec) * w * h * 24) / 1024);
-    const tokens = generateAudio !== false ? base * 2 : base;
+    const base = Math.round(((inputSec + outputSec) * w * h * 24 / 1024);
+    const tokens = base; // Не умножаем на 2 за аудио
     return round2((tokens / 1_000_000) * rate * CNY_TO_RUB * markup);
 }
 
