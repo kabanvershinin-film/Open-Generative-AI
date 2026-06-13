@@ -60,45 +60,47 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
   };
 
   const uploadVideoToStorage = async (file) => {
-    const metaResp = await fetch(
-      `/api/upload-file?filename=${encodeURIComponent(file.name || 'avatar.mp4')}&type=${encodeURIComponent(file.type || 'video/mp4')}`,
-    );
-    const metaJson = await metaResp.json().catch(() => ({}));
-    if (!metaResp.ok || !metaJson.putUrl || !metaJson.publicUrl) {
-      throw new Error(metaJson.error || 'Не удалось получить ссылку загрузки видео');
-    }
-
-    const putResp = await fetch(metaJson.putUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || 'video/mp4' },
-      body: file,
+    const reader = new FileReader();
+    const base64Promise = new Promise((resolve, reject) => {
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
     });
-    if (!putResp.ok) {
-      throw new Error('Не удалось загрузить видео в хранилище');
+    reader.readAsDataURL(file);
+    const base64Data = await base64Promise;
+
+    const uploadResp = await fetch('/api/upload-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64Data }),
+    });
+    const uploadJson = await uploadResp.json().catch(() => ({}));
+    if (!uploadResp.ok || !uploadJson.url) {
+      throw new Error(uploadJson.error || 'Не удалось загрузить видео в хранилище');
     }
 
-    return metaJson.publicUrl;
+    return uploadJson.url;
   };
 
   const uploadImageToStorage = async (file) => {
-    const metaResp = await fetch(
-      `/api/upload-file?filename=${encodeURIComponent(file.name || 'avatar.png')}&type=${encodeURIComponent(file.type || 'image/png')}`,
-    );
-    const metaJson = await metaResp.json().catch(() => ({}));
-    if (!metaResp.ok || !metaJson.putUrl || !metaJson.publicUrl) {
-      throw new Error(metaJson.error || 'Не удалось получить ссылку загрузки фото');
-    }
-
-    const putResp = await fetch(metaJson.putUrl, {
-      method: 'PUT',
-      headers: { 'Content-Type': file.type || 'image/png' },
-      body: file,
+    const reader = new FileReader();
+    const base64Promise = new Promise((resolve, reject) => {
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
     });
-    if (!putResp.ok) {
-      throw new Error('Не удалось загрузить фото в хранилище');
+    reader.readAsDataURL(file);
+    const base64Data = await base64Promise;
+
+    const uploadResp = await fetch('/api/upload-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64Data }),
+    });
+    const uploadJson = await uploadResp.json().catch(() => ({}));
+    if (!uploadResp.ok || !uploadJson.url) {
+      throw new Error(uploadJson.error || 'Не удалось загрузить фото в хранилище');
     }
 
-    return metaJson.publicUrl;
+    return uploadJson.url;
   };
 
   const waitForVid = async (videoUrl) => {
