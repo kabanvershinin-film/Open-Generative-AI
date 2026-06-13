@@ -1725,7 +1725,8 @@ export default function VideoStudio({
             params: {
               duration: selectedDuration || 5,
               resolution: selectedResolution || "720p",
-              video_url: hasVideoInput ? "exists" : undefined
+              video_url: hasVideoInput ? "exists" : undefined,
+              generate_audio: true
             }
           };
           console.log("[calculateCost] Request body:", requestBody);

@@ -9,8 +9,7 @@ export async function POST(request) {
 
         await ensureCnyRate();
         const PLATFORM_MARKUP = await loadPlatformMarkup();
-        // Don't multiply by 2 for generate_audio in the estimate, since real usage is usually lower
-        const cost = await priceRub(category, model, { ...params, generate_audio: false });
+        const cost = await priceRub(category, model, params);
 
         console.log('[calculate-price]', { category, model, params, cost, CNY_TO_RUB, PLATFORM_MARKUP });
 
