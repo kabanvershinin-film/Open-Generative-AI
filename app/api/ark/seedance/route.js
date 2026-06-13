@@ -96,9 +96,7 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
   });
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
   audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u }, role: 'reference_audio' }));
-  // Registered face/character asset (asset://…) — always a reference image so the
-  // generated video keeps the same face.
-  if (face_asset) content.push({ type: 'image_url', image_url: { url: face_asset }, role: 'reference_image' });
+  // NOTE: face_asset is added as a separate top-level field to the payload, not in content!
   return content;
 }
 
@@ -169,6 +167,7 @@ export async function POST(request) {
     if (resolution) payload.resolution = effRes; // only when the caller set it
     if (ratio) payload.ratio = ratio;
     if (duration != null && duration !== '') payload.duration = effDur;
+    if (face_asset) payload.face_asset = face_asset;
 
     const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {
       method: 'POST',
