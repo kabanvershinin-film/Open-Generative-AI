@@ -45,9 +45,13 @@ export async function POST(request) {
       ...VISUAL_API_CONFIG,
     });
 
+    console.log('[photo-to-avatar-status] Volcengine result:', JSON.stringify(result, null, 2));
+
     const data = result?.data || result || {};
     const status = data?.status || null;
     const resourceId = extractResourceId(result);
+
+    console.log('[photo-to-avatar-status] resourceId:', resourceId);
 
     return NextResponse.json({
       taskId,
