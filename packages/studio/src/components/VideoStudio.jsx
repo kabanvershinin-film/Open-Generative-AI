@@ -1719,8 +1719,11 @@ export default function VideoStudio({
               "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
             };
             pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
+          } else if (selectedModel === "kling-motion-control-v3") {
+            // Kling-Motion Control: используем 'kling-motion-control' как pricing model id (если есть, иначе 'kling-motion-control-v3'
+            pricingModelId = "kling-motion-control";
           } else {
-            // ElSpy: используем 'omni-flash' как pricing model id
+            // Omni Flash и другие модели
             pricingModelId = "omni-flash";
           }
 

@@ -826,16 +826,25 @@ async function submitElspyVideo(modelInfo, params) {
   const body = {
     model: modelInfo.apiId,
     prompt: params.prompt || '',
-    params: {
-      aspect_ratio: params.aspect_ratio,
-      duration: params.duration,
-      enhance_prompt: params.enhance_prompt,
-      enable_upsample: params.enable_upsample
-    }
+    params: {}
   };
   
-  if (params.image_url) {
-    body.params.images = [params.image_url];
+  if (modelInfo.apiId === 'kling-motion-control-v3') {
+    // Kling-Motion Control V3 специфические параметры
+    if (params.image_url) body.params.image_url = params.image_url;
+    if (params.video_url) body.params.video_url = params.video_url;
+    body.params.character_orientation = params.character_orientation;
+    body.params.keep_original_sound = params.keep_original_sound;
+    body.params.mode = params.mode;
+  } else {
+    // Omni Flash и другие модели
+    body.params.aspect_ratio = params.aspect_ratio;
+    body.params.duration = params.duration;
+    body.params.enhance_prompt = params.enhance_prompt;
+    body.params.enable_upsample = params.enable_upsample;
+    if (params.image_url) {
+      body.params.images = [params.image_url];
+    }
   }
   
   const submit = await fetch('/api/elspy/generate', {

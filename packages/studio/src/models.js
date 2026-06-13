@@ -364,6 +364,21 @@ const _t2vModelsAll = [
         enable_upsample: { type: "boolean", default: false, title: "Video Upsample" }
       }
     },
+    // ── Kling-Motion Control V3 (ElSpy AI) ──
+    {
+      id: "kling-motion-control-v3",
+      name: "Kling-Motion Control V3",
+      apiId: "kling-motion-control-v3",
+      platform: "elspy",
+      acceptsImage: true,
+      acceptsVideo: true,
+      inputs: {
+        prompt: { type: "string", title: "Prompt" },
+        character_orientation: { enum: ["video", "image"], default: "video", title: "Character Orientation", type: "string" },
+        keep_original_sound: { enum: ["yes", "no"], default: "no", title: "Keep Original Audio", type: "string" },
+        mode: { enum: ["std", "pro"], default: "std", title: "Generation Mode", type: "string" }
+      }
+    },
     // ── WAN 2.1 (legacy, keep for backwards compat) ──
   {
     id: "wan2.1-t2v-14b",
@@ -378,7 +393,7 @@ const _t2vModelsAll = [
 ];
 
 // Video Studio is limited to Seedance 2.0 / 2.0 Fast only — keep just those.
-export const t2vModels = _t2vModelsAll.filter((m) => m.id.startsWith("seedance-2.0-") || m.id.startsWith("omni-flash-"));
+export const t2vModels = _t2vModelsAll.filter((m) => m.id.startsWith("seedance-2.0-") || m.id.startsWith("omni-flash-") || m.id.startsWith("kling-motion-control-"));
 
 // ── Image-to-video ────────────────────────────────────────────────────────────
 const _i2vModelsAll = [
