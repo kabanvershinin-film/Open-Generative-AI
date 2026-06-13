@@ -123,6 +123,8 @@ export async function POST(request) {
       face_asset,
     } = body;
 
+    console.log('[ARK Seedance POST] face_asset:', face_asset);
+
     const content = buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset });
     if (content.length === 0) {
       return NextResponse.json({ error: 'Empty content' }, { status: 400 });
@@ -169,12 +171,15 @@ export async function POST(request) {
     if (duration != null && duration !== '') payload.duration = effDur;
     if (face_asset) payload.face_asset = face_asset;
 
+    console.log('[ARK Seedance POST] sending payload to Ark:', JSON.stringify(payload, null, 2));
+
     const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${ARK_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const data = await r.json().catch(() => ({}));
+    console.log('[ARK Seedance POST] Ark response:', JSON.stringify(data, null, 2));
     if (!r.ok) {
       return NextResponse.json(
         { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
@@ -183,6 +188,7 @@ export async function POST(request) {
     }
     return NextResponse.json({ taskId: data.id, endpoint: model, bill });
   } catch (e) {
+    console.error('[ARK Seedance POST] error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
