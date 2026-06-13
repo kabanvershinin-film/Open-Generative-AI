@@ -28,8 +28,8 @@ function saveAvatarLibrary(items) {
 }
 
 export default function AvatarCreationDialog({ open, onClose, onCreated }) {
-  const [step, setStep] = useState('name'); // 'name' | 'choice' | 'media' | 'uploading' | 'training' | 'done'
-  const [mode, setMode] = useState('video'); // 'video' or 'photo'
+  const [step, setStep] = useState('name'); // 'name' | 'choice' | 'media' | 'uploading' | 'training' | 'processing' | 'done'
+  const [mode, setMode] = useState('video'); // 'video' | 'photo' | 'seedance_ark'
   const [displayName, setDisplayName] = useState('');
   const [video, setVideo] = useState(null);
   const [videoPreview, setVideoPreview] = useState(null);
@@ -253,7 +253,82 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     setStep('uploading');
 
     try {
-      if (mode === 'video') {
+      if (mode === 'seedance_ark') {
+        setStatusText('Загрузка фото…');
+        const publicImageUrl = await uploadImageToStorage(photo);
+        if (cancelPollRef.current) return;
+
+        setStep('processing');
+        setStatusText('Создание ARK-ассета…');
+
+        // Try to create asset without groupId first (for virtual characters)
+        let assetId = null;
+        try {
+          const createResp = await fetch('/api/face/create-asset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: publicImageUrl, assetType: 'Image', name: displayName.trim() }),
+          });
+          const createJson = await createResp.json().catch(() => ({}));
+          if (createResp.ok && createJson.assetId) {
+            assetId = createJson.assetId;
+          } else {
+            throw new Error(createJson.error || 'Не удалось создать ARK-ассет');
+          }
+        } catch (err) {
+          // If groupId is required, show error
+          throw new Error('Для виртуальных персонажей пока нужно сначала зарегистрировать реального человека, но можно попробовать загрузить как референсное изображение');
+        }
+
+        // Poll asset status
+        for (let i = 0; i < 60; i++) {
+          if (cancelPollRef.current) return;
+          await new Promise((r) => setTimeout(r, 3000));
+          setStatusText(`Проверка статуса ассета… ${i + 1}/60`);
+
+          const getResp = await fetch('/api/face/get-asset', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ assetId }),
+          });
+          const getJson = await getResp.json().catch(() => ({}));
+          if (!getResp.ok) continue;
+
+          if (getJson.status === 'Active') {
+            const newUri = `asset://${assetId}`;
+            const newAvatar = {
+              id: assetId,
+              name: displayName.trim(),
+              assetUri: newUri,
+              thumbnail: photoPreview,
+              rolePic: photoPreview,
+              addedAt: Date.now(),
+            };
+
+            const library = loadAvatarLibrary();
+            const nextLibrary = [
+              newAvatar,
+              ...library.filter((item) => item.id !== newAvatar.id && item.assetUri !== newAvatar.assetUri),
+            ];
+            saveAvatarLibrary(nextLibrary);
+
+            setResourceId(assetId);
+            setAssetUri(newUri);
+            setPreviewImage(photoPreview);
+            setStep('done');
+            setBusy(false);
+            onCreated?.(newAvatar);
+            toast.success('ARK-ассет для Seedance создан!');
+            return;
+          }
+
+          if (getJson.status === 'Failed') {
+            throw new Error('ARK-ассет не прошел проверку');
+          }
+        }
+
+        throw new Error('Создание ARK-ассета слишком долгое');
+      } else if (mode === 'video') {
         setStatusText('Загрузка видео…');
         const publicVideoUrl = await uploadVideoToStorage(video);
         if (cancelPollRef.current) return;
@@ -354,7 +429,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
         {/* Progress bar */}
         <div className="flex items-center gap-1.5">
           {['name', 'media', 'training', 'done'].map((s) => {
-            const order = ['name', 'choice', 'media', 'uploading', 'training', 'done'];
+            const order = ['name', 'choice', 'media', 'uploading', 'training', 'processing', 'done'];
             const active = order.indexOf(step) >= order.indexOf(s);
             return (
               <div
@@ -390,7 +465,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
           </>
         )}
 
-        {/* Step 2: Choice (Video or Photo) */}
+        {/* Step 2: Choice (Video or Photo or Seedance ARK) */}
         {step === 'choice' && (
           <>
             <div className="flex gap-2">
@@ -402,21 +477,30 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
                 Назад
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <button
-                onClick={() => { setMode('video'); setStep('media'); }}
-                className={`p-4 rounded-xl border transition-all ${mode === 'video' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                onClick={() => { setMode('seedance_ark'); setStep('media'); }}
+                className={`p-4 rounded-xl border transition-all ${mode === 'seedance_ark' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
               >
-                <div className="text-white font-medium text-sm mb-1">Из видео</div>
-                <div className="text-white/50 text-xs">Более точный</div>
+                <div className="text-white font-medium text-sm mb-1">Виртуальный персонаж для Seedance</div>
+                <div className="text-white/50 text-xs">Создаёт ARK-ассет, который работает в face_asset</div>
               </button>
-              <button
-                onClick={() => { setMode('photo'); setStep('media'); }}
-                className={`p-4 rounded-xl border transition-all ${mode === 'photo' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-              >
-                <div className="text-white font-medium text-sm mb-1">Из фото</div>
-                <div className="text-white/50 text-xs">Быстрый вариант</div>
-              </button>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => { setMode('video'); setStep('media'); }}
+                  className={`p-4 rounded-xl border transition-all ${mode === 'video' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                >
+                  <div className="text-white font-medium text-sm mb-1">Из видео</div>
+                  <div className="text-white/50 text-xs">Более точный (Visual API)</div>
+                </button>
+                <button
+                  onClick={() => { setMode('photo'); setStep('media'); }}
+                  className={`p-4 rounded-xl border transition-all ${mode === 'photo' ? 'bg-purple-600/20 border-purple-500' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+                >
+                  <div className="text-white font-medium text-sm mb-1">Из фото</div>
+                  <div className="text-white/50 text-xs">Быстрый (Visual API)</div>
+                </button>
+              </div>
             </div>
           </>
         )}
@@ -449,7 +533,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
             />
             <div
               onClick={() => fileRef.current?.click()}
-              className="w-full aspect-video bg-white/5 border border-dashed border-white/20 hover:border-purple-500 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden transition-colors"
+              className={`w-full ${mode === 'video' ? 'aspect-video' : 'aspect-square max-h-64 mx-auto'} bg-white/5 border border-dashed border-white/20 hover:border-purple-500 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden transition-colors`}
             >
               {mode === 'video' ? (
                 videoPreview ? (
@@ -482,8 +566,8 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
           </>
         )}
 
-        {/* Step 3: Uploading or Training */}
-        {(step === 'uploading' || step === 'training') && (
+        {/* Step 3: Uploading or Training or Processing */}
+        {(step === 'uploading' || step === 'training' || step === 'processing') && (
           <div className="py-6 text-center space-y-3">
             <FaSpinner className="h-10 w-10 animate-spin text-purple-400 mx-auto" />
             <p className="text-sm text-white">{statusText}</p>

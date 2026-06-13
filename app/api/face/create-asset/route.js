@@ -11,8 +11,18 @@ export async function POST(request) {
     }
 
     const { groupId, url, assetType, name } = await request.json();
-    if (!groupId || !url) {
-      return NextResponse.json({ error: 'groupId и url обязательны' }, { status: 400 });
+    if (!url) {
+      return NextResponse.json({ error: 'url обязателен' }, { status: 400 });
+    }
+
+    const body = {
+      URL: url,
+      AssetType: assetType || 'Image',
+      Name: name || '',
+      ProjectName: 'default',
+    };
+    if (groupId) {
+      body.GroupId = groupId;
     }
 
     const result = await callVolcOpenAPI({
@@ -20,16 +30,10 @@ export async function POST(request) {
       secretAccessKey: VOLC_SK,
       action: 'CreateAsset',
       version: '2024-01-01',
-      body: {
-        GroupId: groupId,
-        URL: url,
-        AssetType: assetType || 'Image',
-        Name: name || '',
-        ProjectName: 'default',
-      },
+      body,
     });
 
-    return NextResponse.json({ assetId: result.Id });
+    return NextResponse.json({ assetId: result.Id || result.AssetId || result.id });
   } catch (err) {
     console.error('[create-asset] error:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
