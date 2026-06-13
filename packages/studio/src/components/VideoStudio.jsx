@@ -19,7 +19,6 @@ import {
 } from "../models.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
-import AvatarCreationDialog from "./AvatarCreationDialog.jsx";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 
@@ -305,7 +304,6 @@ export default function VideoStudio({
   // ── Registered face/character for Seedance (asset://… + display name) ──
   const [faceRegOpen, setFaceRegOpen] = useState(false);   // register a new face
   const [facePickOpen, setFacePickOpen] = useState(false); // pick an existing asset
-  const [avatarCreateOpen, setAvatarCreateOpen] = useState(false); // create a new avatar
   const [faceAsset, setFaceAsset] = useState(null); // { uri, name } | null
 
   // ── generation / canvas ──
@@ -1659,7 +1657,6 @@ export default function VideoStudio({
     resetToPromptBar();
     setPrompt("");
     setUploadedImageUrl(null);
-    setUploadedImagePreview(null);
     setImageMode(false);
     setUploadedVideoUrl(null);
     setUploadedVideoName(null);
@@ -1677,7 +1674,6 @@ export default function VideoStudio({
     resetToPromptBar();
     setPrompt("");
     setUploadedImageUrl(null);
-    setUploadedImagePreview(null);
     setImageMode(false);
     setSelectedModel("seedance-v2.0-extend");
     setSelectedModelName("Seedance 2.0 Extend");
@@ -2780,7 +2776,6 @@ export default function VideoStudio({
           insertRefToken("@" + String(name || "лицо").trim().replace(/\s+/g, "_"));
         }}
         onRegisterNew={() => setFaceRegOpen(true)}
-        onCreateAvatar={() => setAvatarCreateOpen(true)}
       />
 
       {/* ── FACE REGISTRATION DIALOG (binds a face to Seedance) ── */}
@@ -2790,16 +2785,6 @@ export default function VideoStudio({
         onRegistered={(assetUri, displayName, photo) => {
           setFaceAsset({ uri: assetUri, name: displayName, thumbnail: photo || null });
           insertRefToken("@" + String(displayName || "лицо").trim().replace(/\s+/g, "_"));
-        }}
-      />
-
-      {/* ── AVATAR CREATION DIALOG (creates a digital character) ── */}
-      <AvatarCreationDialog
-        open={avatarCreateOpen}
-        onClose={() => setAvatarCreateOpen(false)}
-        onCreated={(avatar) => {
-          setFaceAsset({ uri: avatar.assetUri, name: avatar.name, thumbnail: avatar.thumbnail || null });
-          insertRefToken("@" + String(avatar.name || "аватар").trim().replace(/\s+/g, "_"));
         }}
       />
     </div>
