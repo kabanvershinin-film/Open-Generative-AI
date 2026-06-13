@@ -1331,6 +1331,7 @@ export default function VideoStudio({
       setGeneratingPrompt(trimmedPrompt);
       setGenerateError(null);
       try {
+        console.log("VideoStudio handleGenerate: faceAsset =", faceAsset);
         const params = {
           model: selectedModel,
           prompt: trimmedPrompt,
