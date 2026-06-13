@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { callVolcOpenAPI } from '../../_lib/volc-sign.js';
 

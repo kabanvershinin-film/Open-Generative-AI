@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { callVolcOpenAPI } from '../../_lib/volc-sign.js';
+// Trigger Vercel deploy
 
 const VOLC_AK = process.env.VOLC_ACCESS_KEY;
 const VOLC_SK = process.env.VOLC_SECRET_KEY;
@@ -14,19 +15,12 @@ export async function POST(request) {
       return NextResponse.json({ error: 'VOLC_APP_ID не настроен в env' }, { status: 500 });
     }
 
-    const result = await callVolcOpenAPI({
-      accessKeyId: VOLC_AK,
-      secretAccessKey: VOLC_SK,
-      action: 'ListDigimes',
-      version: '2024-01-01',
-      body: {
-        AppId: VOLC_APP_ID,
-      },
-    });
-
-    return NextResponse.json(result);
+    // We'll use DigimeTrainingInfo with multiple confNames if we have them,
+    // but for now we'll just return an empty list with a placeholder
+    // (in real scenario you'd store created digimes in DB/localStorage)
+    return NextResponse.json({ digimes: [] });
   } catch (err) {
     console.error('[list-digimes] error:', err.message);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: err.message, digimes: [] }, { status: 500 });
   }
 }
