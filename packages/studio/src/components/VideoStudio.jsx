@@ -1696,7 +1696,7 @@ export default function VideoStudio({
     const abortController = new AbortController();
     const timeoutId = setTimeout(async () => {
       const calculateCost = async () => {
-        // Вычисляем isSeedanceArk и isElSpy внутри useEffect
+        // Вычисляем isSeedanceArk внутри useEffect, чтобы не зависеть от него
         const currentModel = getCurrentModel();
         const isArk = currentModel?.provider === "ark";
         const isElSpy = currentModel?.platform === "elspy";
@@ -1729,10 +1729,10 @@ export default function VideoStudio({
             category: "video",
             model: pricingModelId,
             params: {
-              duration: selectedDuration || 6, // Omni Flash default is 6
+              duration: selectedDuration || 5,
               resolution: selectedResolution || "720p",
               video_url: hasVideoInput ? "exists" : undefined,
-              generate_audio: true
+              generate_audio: false // как было раньше
             }
           };
           console.log("[calculateCost] Request body:", requestBody);
