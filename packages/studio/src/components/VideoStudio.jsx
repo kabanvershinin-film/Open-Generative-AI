@@ -1696,34 +1696,40 @@ export default function VideoStudio({
     const abortController = new AbortController();
     const timeoutId = setTimeout(async () => {
       const calculateCost = async () => {
-        // Вычисляем isSeedanceArk внутри useEffect, чтобы не зависеть от него
+        // Вычисляем isSeedanceArk и isElSpy внутри useEffect
         const currentModel = getCurrentModel();
         const isArk = currentModel?.provider === "ark";
+        const isElSpy = currentModel?.platform === "elspy";
         
-        console.log("[calculateCost] Starting...", { selectedModel, isArk, selectedDuration, selectedResolution });
-        if (!isArk) {
-          console.log("[calculateCost] Not Seedance Ark, clearing cost");
+        console.log("[calculateCost] Starting...", { selectedModel, isArk, isElSpy, selectedDuration, selectedResolution });
+        if (!isArk && !isElSpy) {
+          console.log("[calculateCost] Not Seedance Ark or ElSpy, clearing cost");
           setEstimatedCost(null);
           return;
         }
 
         setIsLoadingCost(true);
         try {
-          // Map the selected model to the pricing model ID
-          const modelMap = {
-            "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
-            "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
-            "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
-            "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
-          };
+          let pricingModelId;
+          if (isArk) {
+            const modelMap = {
+              "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
+              "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
+              "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
+              "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
+            };
+            pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
+          } else {
+            // ElSpy: используем 'omni-flash' как pricing model id
+            pricingModelId = "omni-flash";
+          }
 
-          const pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
           const hasVideoInput = refFiles.some(f => f.kind === "video");
           const requestBody = {
             category: "video",
             model: pricingModelId,
             params: {
-              duration: selectedDuration || 5,
+              duration: selectedDuration || 6, // Omni Flash default is 6
               resolution: selectedResolution || "720p",
               video_url: hasVideoInput ? "exists" : undefined,
               generate_audio: true

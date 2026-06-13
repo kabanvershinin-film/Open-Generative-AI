@@ -800,16 +800,17 @@ export async function generateVideo(apiKey, params) {
 
 // ── ElSpy AI (Omni Flash) ────────────────────────────────────────────────────
 
-async function pollElspyTask(taskId, maxAttempts = 300, interval = 5000) {
+async function pollElspyTask(taskId, bill = '', maxAttempts = 300, interval = 5000) {
+  const billParam = bill ? `&bill=${encodeURIComponent(bill)}` : '';
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     await new Promise(r => setTimeout(r, interval));
     try {
-      const response = await fetch(`/api/elspy/status?taskId=${encodeURIComponent(taskId)}`);
+      const response = await fetch(`/api/elspy/status?taskId=${encodeURIComponent(taskId)}${billParam}`);
       if (!response.ok) continue;
       const data = await response.json();
       if (data.is_final) {
         if (data.state === 'success') {
-          return { url: data.result_url, id: taskId };
+          return { url: data.result_url, id: taskId, cost: data.cost };
         } else if (data.state === 'failed') {
           throw new Error(`ElSpy: генерация не удалась: ${data.error || 'Unknown error'}`);
         }
@@ -850,14 +851,15 @@ async function submitElspyVideo(modelInfo, params) {
   
   const submitData = await submit.json();
   const taskId = submitData.id;
+  const bill = submitData.bill || '';
   
   if (!taskId) {
     throw new Error('ElSpy: задача не создана (нет id).');
   }
   
-  params.onRequestId?.(taskId);
+  params.onRequestId?.(taskId, bill); // Передаем bill вместе с taskId
   
-  return pollElspyTask(taskId);
+  return pollElspyTask(taskId, bill);
 }
 
 export async function generateI2V(apiKey, params) {
