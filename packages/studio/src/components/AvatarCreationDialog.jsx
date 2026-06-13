@@ -255,7 +255,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     try {
       if (mode === 'video') {
         setStatusText('Загрузка видео…');
-        const publicVideoUrl = await uploadVideoToStorage(video!);
+        const publicVideoUrl = await uploadVideoToStorage(video);
         if (cancelPollRef.current) return;
 
         const vid = await waitForVid(publicVideoUrl);
@@ -277,7 +277,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
         await pollTrainingStatus(trainJson.taskId);
       } else {
         setStatusText('Загрузка фото…');
-        const publicImageUrl = await uploadImageToStorage(photo!);
+        const publicImageUrl = await uploadImageToStorage(photo);
         if (cancelPollRef.current) return;
 
         const submitResp = await fetch('/api/digital-avatar/photo-to-avatar', {
