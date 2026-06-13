@@ -60,6 +60,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
   };
 
   const uploadVideoToStorage = async (file) => {
+    console.log('[AvatarCreationDialog] uploadVideoToStorage - file:', file);
     const reader = new FileReader();
     const base64Promise = new Promise((resolve, reject) => {
       reader.onloadend = () => resolve(reader.result);
@@ -68,12 +69,17 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     reader.readAsDataURL(file);
     const base64Data = await base64Promise;
 
+    console.log('[AvatarCreationDialog] Sending to /api/upload-file');
     const uploadResp = await fetch('/api/upload-file', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: base64Data }),
     });
-    const uploadJson = await uploadResp.json().catch(() => ({}));
+    const uploadJson = await uploadResp.json().catch((err) => {
+      console.error('[AvatarCreationDialog] uploadResp.json error:', err);
+      return {};
+    });
+    console.log('[AvatarCreationDialog] uploadResp.ok:', uploadResp.ok, 'uploadJson:', uploadJson);
     if (!uploadResp.ok || !uploadJson.url) {
       throw new Error(uploadJson.error || 'Не удалось загрузить видео в хранилище');
     }
@@ -82,6 +88,7 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
   };
 
   const uploadImageToStorage = async (file) => {
+    console.log('[AvatarCreationDialog] uploadImageToStorage - file:', file);
     const reader = new FileReader();
     const base64Promise = new Promise((resolve, reject) => {
       reader.onloadend = () => resolve(reader.result);
@@ -90,12 +97,17 @@ export default function AvatarCreationDialog({ open, onClose, onCreated }) {
     reader.readAsDataURL(file);
     const base64Data = await base64Promise;
 
+    console.log('[AvatarCreationDialog] Sending to /api/upload-file, base64Data length:', base64Data.length);
     const uploadResp = await fetch('/api/upload-file', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ image: base64Data }),
     });
-    const uploadJson = await uploadResp.json().catch(() => ({}));
+    const uploadJson = await uploadResp.json().catch((err) => {
+      console.error('[AvatarCreationDialog] uploadResp.json error:', err);
+      return {};
+    });
+    console.log('[AvatarCreationDialog] uploadResp.ok:', uploadResp.ok, 'uploadJson:', uploadJson);
     if (!uploadResp.ok || !uploadJson.url) {
       throw new Error(uploadJson.error || 'Не удалось загрузить фото в хранилище');
     }
