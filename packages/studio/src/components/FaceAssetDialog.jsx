@@ -29,7 +29,7 @@ function loadAvatarLibrary() {
 
 function FaceThumb({ face, onSelect, onDelete, isAvatar }) {
   return (
-    <div className="relative group flex flex-col items-center gap-1">
+    <div className="relative group flex flex-col gap-0.5 items-center">
       <button
         type="button"
         onClick={() => onSelect(face)}
@@ -40,7 +40,7 @@ function FaceThumb({ face, onSelect, onDelete, isAvatar }) {
           <img src={face.thumbnail || face.rolePic} alt={face.name} className="w-full h-full object-cover" />
         ) : (
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-purple-300">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <path d="M20 21v-2a4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>
         )}
@@ -113,8 +113,8 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
     onClose?.();
   };
 
-  const pickAvatar = (confName, name) => {
-    onSelect?.(confName, name);
+  const pickAvatar = (avatar) => {
+    onSelect?.(avatar.rolePic, avatar.name);
     onClose?.();
   };
 
@@ -172,26 +172,27 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
       onClick={onClose}
     >
       <div
-        className="w-[92vw] max-w-[480px] bg-[#0c0d0f] border border-white/10 rounded-2xl shadow-2xl flex flex-col gap-0 max-h-[88vh] overflow-hidden"
+        className="w-[92vw] max-w-[480px] bg-[#0c0d0f] border border-white/10 rounded-2xl shadow-2xl flex flex-col gap-0 max-h-[95vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 shrink-0">
+        <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0">
           <h3 className="text-sm font-bold text-white">Библиотека лиц и аватаров</h3>
           <button type="button" onClick={onClose} className="text-white/40 hover:text-white transition-colors" title="Закрыть">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
 
-        <div className="overflow-y-auto flex flex-col gap-4 px-5 pb-5">
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex flex-col gap-3 px-5 flex-1 min-h-0">
           {/* AVATAR LIBRARY */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-wider text-purple-300 font-semibold">Мои цифровые аватары</span>
             {avatarLibrary.length === 0 ? (
-              <div className="text-xs text-white/30 py-2">Библиотека аватаров пуста.</div>
+              <div className="text-xs text-white/30 py-1">Библиотека аватаров пуста.</div>
             ) : (
               <div className="flex flex-wrap gap-3">
                 {avatarLibrary.map((avatar) => (
@@ -199,7 +200,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                     key={avatar.id}
                     face={avatar}
                     isAvatar={true}
-                    onSelect={(a) => pickAvatar(a.id, a.name)}
+                    onSelect={(a) => pickAvatar(a)}
                     onDelete={deleteAvatar}
                   />
                 ))}
@@ -208,10 +209,10 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
           </div>
 
           {/* LOCAL LIBRARY */}
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase tracking-wider text-white/40 font-semibold">Мои лица</span>
             {library.length === 0 ? (
-              <div className="text-xs text-white/30 py-2">Библиотека пуста — добавьте лицо ниже.</div>
+              <div className="text-xs text-white/30 py-1">Библиотека пуста — добавьте лицо ниже.</div>
             ) : (
               <div className="flex flex-wrap gap-3">
                 {library.map((face) => (
@@ -227,19 +228,19 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
           </div>
 
           {/* MANUAL ADD SECTION */}
-          <div className="flex flex-col gap-2 border-t border-white/10 pt-4">
+          <div className="flex flex-col gap-1.5 border-t border-white/10 pt-3">
             <span className="text-[11px] uppercase tracking-wider text-white/40 font-semibold">Добавить по ID</span>
             <input
               value={manualId}
               onChange={(e) => setManualId(e.target.value)}
               placeholder="asset://… или ID ассета"
-              className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 outline-none focus:border-purple-500/50"
+              className="h-8 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 outline-none focus:border-purple-500/50"
             />
             <input
               value={manualName}
               onChange={(e) => setManualName(e.target.value)}
               placeholder="Имя (необязательно)"
-              className="h-10 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 outline-none focus:border-purple-500/50"
+              className="h-8 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 outline-none focus:border-purple-500/50"
             />
 
             {/* thumbnail */}
@@ -253,16 +254,16 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                   value={thumbUrl}
                   onChange={(e) => setThumbUrl(e.target.value)}
                   placeholder="https://… (необязательно)"
-                  className="h-9 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 outline-none focus:border-purple-500/50"
+                  className="h-8 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-white/30 outline-none focus:border-purple-500/50"
                 />
               ) : (
                 <div className="flex items-center gap-2">
                   <input ref={thumbFileRef} type="file" accept="image/*" className="hidden" onChange={handleThumbFile} />
-                  <button type="button" onClick={() => thumbFileRef.current?.click()} className="h-9 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white/70 hover:text-white transition-colors">
+                  <button type="button" onClick={() => thumbFileRef.current?.click()} className="h-8 px-3 rounded-lg bg-white/5 border border-white/10 text-xs text-white/70 hover:text-white transition-colors">
                     {thumbUrl ? "Фото выбрано ✓" : "Выбрать файл…"}
                   </button>
                   {thumbUrl && (
-                    <img src={thumbUrl} alt="preview" className="w-9 h-9 rounded-lg object-cover border border-white/10" />
+                    <img src={thumbUrl} alt="preview" className="w-8 h-8 rounded-lg object-cover border border-white/10" />
                   )}
                 </div>
               )}
@@ -272,7 +273,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <div
                 onClick={() => setSaveToLib(!saveToLib)}
-                className={`w-8 h-4 rounded-full transition-colors ${saveToLib ? "bg-purple-600" : "bg-white/10"} relative`}
+                className={`w-8 h-4 rounded-full transition-colors ${saveToLib ? "bg-purple-600" : "bg-white/10"}`}
               >
                 <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${saveToLib ? "left-[18px]" : "left-0.5"}`} />
               </div>
@@ -283,18 +284,18 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
               type="button"
               onClick={selectManual}
               disabled={!manualId.trim()}
-              className="h-10 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              className="h-8 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {saveToLib ? "Сохранить и выбрать" : "Выбрать"}
             </button>
           </div>
 
           {/* ARK ASSETS (collapsible) */}
-          <div className="border-t border-white/10 pt-3">
+          <div className="border-t border-white/10 pt-2">
             <button
               type="button"
               onClick={() => { setArkOpen((v) => !v); if (!arkOpen) loadArkAssets(); }}
-              className="flex items-center gap-2 text-[11px] uppercase tracking-wider text-white/40 font-semibold hover:text-white/70 transition-colors w-full"
+              className="flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-white/40 font-semibold hover:text-white/70 transition-colors w-full"
             >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className={`transition-transform ${arkOpen ? "rotate-90" : ""}`}>
                 <polyline points="9 18 15 12 9 6" />
@@ -302,24 +303,24 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
               Ассеты ARK
             </button>
             {arkOpen && (
-              <div className="mt-2 flex flex-col gap-1.5 max-h-[25vh] overflow-y-auto">
+              <div className="mt-2 flex flex-col gap-1.5 max-h-[20vh] overflow-y-auto">
                 {arkLoading ? (
-                  <div className="text-xs text-white/40 py-3 text-center">Загрузка…</div>
+                  <div className="text-xs text-white/40 py-1 text-center">Загрузка…</div>
                 ) : arkAssets.length === 0 ? (
-                  <div className="text-xs text-white/40 py-3 text-center">Список пуст.</div>
+                  <div className="text-xs text-white/40 py-1 text-center">Список пуст.</div>
                 ) : (
                   arkAssets.map((a) => (
                     <div
                       key={a.id}
-                      className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-white/5 border border-transparent hover:border-purple-500/40"
+                      className="flex items-center justify-between gap-1.5 p-2 rounded-lg bg-white/5 border border-transparent hover:border-purple-500/40"
                     >
                       <button
                         type="button"
                         onClick={() => pickFace(toUri(a.id), a.name || a.id)}
-                        className="flex items-center gap-2 min-w-0 flex-1 text-left"
+                        className="flex items-center gap-1.5 min-w-0 flex-1 text-left"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-300 shrink-0">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <path d="M20 21v-2a4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
                         <span className="text-xs text-white truncate">{a.name || a.id}</span>
@@ -342,13 +343,18 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
             )}
           </div>
 
-          {/* register new */}
+          {/* Spacer to account for sticky footer */}
+          <div className="h-1"></div>
+        </div>
+
+        {/* Sticky footer with buttons */}
+        <div className="shrink-0 px-5 pt-3 pb-4 border-t border-white/10 bg-[#0a0b0d]">
           <div className="flex gap-2">
             {onRegisterNew && (
               <button
                 type="button"
                 onClick={() => { onClose?.(); onRegisterNew(); }}
-                className="flex-1 h-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-xs font-medium transition-all"
+                className="flex-1 h-11 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 text-[11px] font-semibold transition-all"
               >
                 + Зарегистрировать новое лицо
               </button>
@@ -357,7 +363,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
               <button
                 type="button"
                 onClick={() => { onClose?.(); onCreateAvatar(); }}
-                className="flex-1 h-10 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-xs font-medium transition-all"
+                className="flex-1 h-11 rounded-lg bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-100 text-[11px] font-semibold transition-all"
               >
                 + Создать цифровой аватар
               </button>
