@@ -146,8 +146,7 @@ export function AuthProvider({ children }) {
     // around, but reappears on the next load while they remain unregistered.
     useEffect(() => {
         if (loading || user) return;
-        const t = setTimeout(() => setLoginOpen(true), 600);
-        return () => clearTimeout(t);
+        setLoginOpen(true);
     }, [loading, user]);
 
     // Open login modal when any generation route returns 401 — but only if
