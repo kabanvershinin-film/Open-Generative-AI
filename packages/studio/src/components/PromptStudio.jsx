@@ -166,6 +166,28 @@ export default function PromptStudio({ apiKey }) {
     }
   };
 
+  const handleDeletePrompt = async (id) => {
+    if (!window.confirm('Вы уверены, что хотите удалить этот промт?')) return;
+
+    const toastId = toast.loading('Удаление...');
+    try {
+      const res = await fetch('/api/prompts/admin', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Промт удален', { id: toastId });
+        fetchPrompts();
+      } else {
+        toast.error('Ошибка: ' + data.error, { id: toastId });
+      }
+    } catch (e) {
+      toast.error('Ошибка при удалении', { id: toastId });
+    }
+  };
+
   const filteredPrompts = prompts.filter(p => {
     const matchesSearch = p.prompt.toLowerCase().includes(search.toLowerCase()) || 
                           p.model.toLowerCase().includes(search.toLowerCase());
@@ -266,6 +288,21 @@ export default function PromptStudio({ apiKey }) {
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0714] to-transparent opacity-60" />
                   )}
                   {!item.url && <span className="text-white/10 font-bold text-4xl relative z-10">Prompt {i + 1}</span>}
+                  
+                  {user?.isAdmin && item.id && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeletePrompt(item.id);
+                      }}
+                      className="absolute top-2 right-2 p-2 bg-red-500/80 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all hover:bg-red-600 z-20"
+                      title="Удалить промт"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 <div className="p-5">
                   <div className="flex items-center gap-2 mb-3">
