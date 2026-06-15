@@ -19,6 +19,8 @@ export default function PromptStudio({ apiKey }) {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   
+  const [uploadProgress, setUploadProgress] = useState(0);
+  
   // Form state
   const [newPrompt, setNewPrompt] = useState({
     prompt: '',
@@ -61,25 +63,45 @@ export default function PromptStudio({ apiKey }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const toastId = toast.loading('Загрузка видео...');
+    const toastId = toast.loading('Подготовка к загрузке...');
     setUploading(true);
+    setUploadProgress(0);
     try {
       // 1. Get presigned URL from our API
       const res = await fetch(`/api/upload-file?filename=${encodeURIComponent(file.name)}&type=${encodeURIComponent(file.type)}`);
       if (!res.ok) throw new Error('Не удалось получить URL для загрузки');
       const { putUrl, publicUrl } = await res.json();
 
-      // 2. PUT the file directly to TOS
-      const uploadRes = await fetch(putUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file
+      // 2. Upload with progress using XMLHttpRequest
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', putUrl);
+        xhr.setRequestHeader('Content-Type', file.type);
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            setUploadProgress(percent);
+            toast.loading(`Загрузка: ${percent}%`, { id: toastId });
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve();
+          } else {
+            reject(new Error(`Загрузка не удалась: ${xhr.status} ${xhr.statusText}`));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Ошибка сети при загрузке'));
+        xhr.send(file);
       });
-      if (!uploadRes.ok) throw new Error('Загрузка в облако не удалась');
 
       setNewPrompt(prev => ({ ...prev, videoUrl: publicUrl }));
-      toast.success('Видео загружено', { id: toastId });
+      toast.success('Видео успешно загружено!', { id: toastId });
     } catch (e) {
+      console.error('Upload error:', e);
       toast.error('Ошибка при загрузке: ' + e.message, { id: toastId });
     } finally {
       setUploading(false);
@@ -281,7 +303,11 @@ export default function PromptStudio({ apiKey }) {
                     ) : (
                       <div className="text-center p-6">
                         {uploading ? (
-                          <div className="w-8 h-8 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mx-auto mb-2" />
+                          <div className="flex flex-col items-center">
+                            <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-4" />
+                            <div className="text-2xl font-bold text-white mb-1">{uploadProgress}%</div>
+                            <div className="text-xs text-white/40 uppercase tracking-widest">Загрузка видео...</div>
+                          </div>
                         ) : (
                           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2 text-white/20">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
