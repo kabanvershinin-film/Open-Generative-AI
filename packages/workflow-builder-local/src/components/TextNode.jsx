@@ -3,7 +3,7 @@ import { Handle, Position } from "reactflow";
 import { TfiText } from "react-icons/tfi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
-import { toast } from "sonner";
+import { toast } from "react-hot-toast";
 import axios from "axios";
 import NodeOptionsMenu from "./NodeOptionsMenu";
 import NodeSendButton from "./NodeSendButton";
