@@ -48,7 +48,7 @@ export default function PromptStudio({ apiKey }) {
   const fetchPrompts = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/prompts/admin');
+      const res = await fetch('/api/prompts/admin?t=' + Date.now());
       const data = await res.json();
       if (data.prompts) {
         setPrompts(data.prompts);
