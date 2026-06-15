@@ -130,7 +130,7 @@ const SkylarkNode = ({ id, data, selected }) => {
   return (
     <div className={`nowheel group flex flex-col w-80 rounded-2xl border-2 transition-all duration-300 bg-[#0c0d0f] ${selected ? "border-blue-500 shadow-[0_0_25px_rgba(59,130,246,0.3)]" : "border-zinc-800 shadow-lg"}`}>
       <div className="flex items-center gap-2 absolute -top-5 left-0">
-        <h3 className="text-zinc-400 text-[10px] font-medium tracking-wider uppercase">Агент 小云雀 (Skylark)</h3>
+        <h3 className="text-zinc-400 text-[10px] font-medium tracking-wider uppercase">Агент Гена</h3>
       </div>
 
       <div className="flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3">
@@ -138,10 +138,10 @@ const SkylarkNode = ({ id, data, selected }) => {
           <div className={`p-1.5 rounded-lg ${selected ? "bg-blue-600 text-white" : "bg-zinc-800 text-zinc-400"}`}>
             <RiRobot2Line size={14} />
           </div>
-          <h3 className="text-xs font-bold text-zinc-100">Smart Video Agent</h3>
+          <h3 className="text-xs font-bold text-zinc-100">Агент Гена</h3>
         </div>
         <NodeOptionsMenu nodeId={id} onDuplicate={data.duplicateNode} onDelete={() => {
-          if (window.confirm("Удалить агента?")) {
+          if (window.confirm("Удалить агента Гена?")) {
             setNodes(nds => nds.filter(n => n.id !== id));
             setEdges(eds => eds.filter(e => e.source !== id && e.target !== id));
           }
@@ -195,7 +195,7 @@ const SkylarkNode = ({ id, data, selected }) => {
 
           <button onClick={handleRunSkylark} disabled={loading || data.isLoading} className="w-full py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2">
             {loading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : <FaPlay size={10} />}
-            Запустить Агента
+            Запустить Гену
           </button>
         </div>
       </div>
