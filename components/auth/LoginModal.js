@@ -86,20 +86,16 @@ export default function LoginModal() {
 
     return (
         <div className="fixed inset-0 z-[70] flex items-center p-4">
-            {/* Video Background */}
+            {/* Background Image */}
             <div className="absolute inset-0 overflow-hidden">
-                <video
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
+                <img
+                    src="/auth-bg.jpg"
                     className="absolute min-w-full min-h-full object-cover"
-                >
-                    <source src="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
-                </video>
+                    alt="Background"
+                />
             </div>
             {/* Darker overlay for readability */}
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
             
             <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 fade-in duration-200 md:translate-x-32">
                 {/* glow */}
