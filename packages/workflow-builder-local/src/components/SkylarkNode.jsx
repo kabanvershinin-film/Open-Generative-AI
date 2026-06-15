@@ -188,11 +188,17 @@ const SkylarkNode = ({ id, data, selected }) => {
       </div>
 
       {/* Handles */}
-      <Handle type="target" position={Position.Left} id="prompt" style={{ top: '40%' }} className={`!w-3 !h-3 !border-2 ${connectedInputs.prompt ? "!bg-blue-500 !border-white" : "!bg-zinc-900 !border-blue-500"}`} title="Текст (Промпт)" />
-      <Handle type="target" position={Position.Left} id="images" style={{ top: '60%' }} className={`!w-3 !h-3 !border-2 ${connectedInputs.images ? "!bg-emerald-500 !border-white" : "!bg-zinc-900 !border-emerald-500"}`} title="Изображения (Референсы)" />
-      <Handle type="target" position={Position.Left} id="videos" style={{ top: '80%' }} className={`!w-3 !h-3 !border-2 ${connectedInputs.videos ? "!bg-orange-500 !border-white" : "!bg-zinc-900 !border-orange-500"}`} title="Видео (Референсы)" />
+      <Handle type="target" position={Position.Left} id="prompt" style={{ top: '40%' }} className={`!w-3 !h-3 !border-2 ${connectedInputs.prompt ? "!bg-blue-500 !border-white shadow-[0_0_15px_rgba(37,99,235,0.8)]" : "!bg-zinc-900 !border-blue-500 hover:!border-blue-400 shadow-sm"}`} title="Текст (Промпт)" />
+      <p className={`absolute text-[11px] text-blue-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${data.activeHandleColor === "blue" ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} style={{ top: '40%', left: -40, transform: 'translateY(-50%)' }}>Текст</p>
+
+      <Handle type="target" position={Position.Left} id="images" style={{ top: '60%' }} className={`!w-3 !h-3 !border-2 ${connectedInputs.images ? "!bg-emerald-500 !border-white shadow-[0_0_15px_rgba(16,185,129,0.8)]" : "!bg-zinc-900 !border-emerald-500 hover:!border-emerald-400 shadow-sm"}`} title="Изображения (Референсы)" />
+      <p className={`absolute text-[11px] text-emerald-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} style={{ top: '60%', left: -75, transform: 'translateY(-50%)' }}>Изображения</p>
+
+      <Handle type="target" position={Position.Left} id="videos" style={{ top: '80%' }} className={`!w-3 !h-3 !border-2 ${connectedInputs.videos ? "!bg-orange-500 !border-white shadow-[0_0_15px_rgba(249,115,22,0.8)]" : "!bg-zinc-900 !border-orange-500 hover:!border-orange-400 shadow-sm"}`} title="Видео (Референсы)" />
+      <p className={`absolute text-[11px] text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} style={{ top: '80%', left: -45, transform: 'translateY(-50%)' }}>Видео</p>
       
-      <Handle type="source" position={Position.Right} id="videoOutput" style={{ top: '50%' }} className={`!w-3 !h-3 !border-2 ${outputHistory.length > 0 ? "!bg-orange-500 !border-white" : "!bg-zinc-900 !border-orange-500"}`} title="Результат (Видео)" />
+      <Handle type="source" position={Position.Right} id="videoOutput" style={{ top: '50%' }} className={`!w-3 !h-3 !border-2 ${outputHistory.length > 0 ? "!bg-orange-500 !border-white shadow-[0_0_15px_rgba(249,115,22,0.8)]" : "!bg-zinc-900 !border-orange-500 hover:!border-orange-400 shadow-sm"}`} title="Результат (Видео)" />
+      <p className={`absolute text-[11px] text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`} style={{ top: '50%', right: -45, transform: 'translateY(-50%)' }}>Видео</p>
     </div>
   );
 };
