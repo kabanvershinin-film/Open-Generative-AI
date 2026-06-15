@@ -1927,6 +1927,23 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       ...node.data,
       nodeSchemas,
       onDataChange,
+      setFormValues: (updater) => {
+        setNodes((nds) => nds.map((n) => {
+          if (n.id === node.id) {
+            const nextFormValues = typeof updater === 'function' 
+              ? updater(n.data.formValues || {}) 
+              : updater;
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                formValues: nextFormValues,
+              }
+            };
+          }
+          return n;
+        }));
+      },
       handleSaveWorkFlow,
       isLoading: loadingNodes[node.id] || false,
       activeHandleColor,
