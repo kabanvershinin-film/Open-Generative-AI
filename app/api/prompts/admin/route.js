@@ -46,7 +46,10 @@ async function tosUpload(key, buffer, contentType) {
             },
             body: buffer,
         });
-        if (!res.ok) return null;
+        if (!res.ok) {
+            console.error('[tosUpload] PUT failed:', res.status, await res.text().catch(() => ''));
+            return null;
+        }
         return `https://${host}${path}`;
     } catch (e) { 
         return null; 
@@ -67,10 +70,15 @@ async function tosGetSignedJson(host, key) {
     const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
     const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
     const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+    
+    console.log('[tosGetSignedJson] Fetching:', `https://${host}${path}`);
     const r = await fetch(`https://${host}${path}`, {
         headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime },
     });
-    if (!r.ok) return null;
+    if (!r.ok) {
+        console.error('[tosGetSignedJson] Failed:', r.status, await r.text().catch(() => ''));
+        return null;
+    }
     return r.json();
 }
 
@@ -96,7 +104,9 @@ async function tosList(prefix) {
     });
     if (!res.ok) return [];
     const xml = await res.text();
-    return [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map((m) => m[1]);
+        const keys = [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map((m) => m[1]);
+        console.log('[tosList] Found keys:', keys);
+        return keys;
 }
 
 export async function GET(request) {
