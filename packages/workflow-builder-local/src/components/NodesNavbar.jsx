@@ -307,10 +307,10 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
     <div ref={anchorRef} className="flex flex-col gap-2 relative z-50">
       <div 
         ref={menuRef}
-        className="flex flex-col gap-2 bg-[#151618] border border-gray-700 p-2 rounded-xl w-60 shadow-xl"
+        className="flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl opacity-100"
         style={menuStyle}
       >
-        <div className="flex items-center relative w-full pl-2 bg-[#1c1e21] border border-gray-600 rounded-lg shrink-0">
+        <div className="flex items-center relative w-full pl-2 bg-[#161719] border border-gray-600 rounded-lg shrink-0">
           <AiOutlineSearch className="text-gray-400" />
           <input
             type="search"
@@ -325,7 +325,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
           <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar min-h-0">
             {filteredMenuStructure.map((section, idx) => (
               <div key={idx} className="flex flex-col gap-1">
-                <h3 className="text-[10px] text-gray-500 text-left px-2 font-medium sticky top-0 bg-[#151618] z-10">{section.label}</h3>
+                <h3 className="text-[10px] text-gray-500 text-left px-2 font-medium sticky top-0 bg-[#0c0d0f] z-10">{section.label}</h3>
                 <div className="flex flex-col gap-0.5">
                   {section.items.map((item, i) => (
                     <div
@@ -456,7 +456,7 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
     <div
       ref={submenuRef}
       style={{ top: position.side === "overlay" ? 0 : `${position.top}px` }}
-      className={`absolute flex flex-col gap-2 bg-[#151618] border border-gray-700 p-2 rounded-xl w-60 shadow-xl overflow-hidden z-50 ${position.side === "overlay" ? "h-full" : "h-fit max-h-[80vh]"} ${getOverlayClass()}`}
+      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ${position.side === "overlay" ? "h-full" : "h-fit max-h-[80vh]"} ${getOverlayClass()}`}
     >
       <div
         className="flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors"

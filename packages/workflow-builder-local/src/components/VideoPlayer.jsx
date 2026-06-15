@@ -68,7 +68,7 @@ const VideoPlayer = ({
     <div 
       ref={containerRef} 
       style={{ "--accent-color": accentColor }}
-      className={`relative group/video w-full h-full bg-black/90 overflow-hidden flex items-center justify-center ${isFullscreen ? '' : 'rounded-b-none'}`}
+      className={`relative group/video w-full h-full bg-black overflow-hidden flex items-center justify-center ${isFullscreen ? '' : 'rounded-b-none'}`}
     >
       <video
         ref={videoRef}
@@ -92,14 +92,14 @@ const VideoPlayer = ({
           className="absolute inset-0 flex items-center justify-center pointer-events-none group-hover/video:opacity-100 transition-opacity duration-300"
           onClick={togglePlay}
         >
-          <div className="w-16 h-16 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 shadow-2xl transform group-hover/video:scale-110 transition-transform pointer-events-auto cursor-pointer">
+          <div className="w-16 h-16 bg-[#0c0d0f] rounded-full flex items-center justify-center text-white border border-white/20 shadow-2xl transform group-hover/video:scale-110 transition-transform pointer-events-auto cursor-pointer">
             <IoPlay size={32} className="ml-1" />
           </div>
         </div>
       )}
 
       {/* Bottom Controls Overlay */}
-      <div className={`absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent transition-opacity duration-300 rounded-b-none flex flex-col gap-2 z-20 ${!isPlaying ? 'opacity-100' : 'opacity-0 group-hover/video:opacity-100'}`}>
+      <div className={`absolute inset-x-0 bottom-0 p-3 bg-[#0c0d0f] transition-opacity duration-300 rounded-b-none flex flex-col gap-2 z-20 ${!isPlaying ? 'opacity-100' : 'opacity-0 group-hover/video:opacity-100'}`}>
         <input
           type="range"
           min="0"

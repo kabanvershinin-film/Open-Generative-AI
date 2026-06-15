@@ -211,8 +211,8 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
                 key={i}
                 className={`flex items-center gap-2 px-3 py-2 text-xs cursor-pointer rounded-lg transition-all ${
                   formValues[fieldName] === option
-                    ? "bg-blue-500/10 text-blue-400"
-                    : "text-zinc-400 hover:bg-white/5 hover:text-white"
+                    ? "bg-blue-600 text-white"
+                    : "text-zinc-400 hover:bg-[#2c3037] hover:text-white"
                 }`}
                 onClick={() => {handleChange(fieldName, option); setDropDown(-1)}}
               >

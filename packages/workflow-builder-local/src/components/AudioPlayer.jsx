@@ -153,7 +153,7 @@ const AudioPlayer = ({ src, className }) => {
             {isMuted || volume === 0 ? <FaVolumeMute size={14} /> : <FaVolumeUp size={14} />}
           </button>
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 pb-4 opacity-0 group-hover/volume:opacity-100 pointer-events-none group-hover/volume:pointer-events-auto transition-all duration-300 translate-y-2 group-hover/volume:translate-y-0 z-30">
-            <div className="bg-[#1a1b1e] border border-white/10 p-3 rounded-lg shadow-2xl backdrop-blur-xl flex flex-col items-center gap-2 h-24">
+            <div className="bg-[#1a1b1e] border border-white/10 p-3 rounded-lg shadow-2xl flex flex-col items-center gap-2 h-24">
               <input 
                 type="range" 
                 min="0" 

@@ -2309,7 +2309,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </div>
       )}
 
-      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#0f0c18] p-1 rounded-full border border-purple-500/20 shadow-xl ${isRestoring && "hidden"}`}>
+      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#0c0d0f] p-1 rounded-full border border-gray-700 shadow-xl ${isRestoring && "hidden"}`}>
         <button
           type="button"
           suppressHydrationWarning={true}
@@ -2335,7 +2335,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             suppressHydrationWarning={true}
             disabled={!interactionMode}
             onClick={() => setDropDown((prev) => prev === 1 ? 0 : 1)}
-            className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-white/70 active:bg-purple-700 hover:text-white hover:bg-purple-600/20"}`}
+            className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"}`}
           >
             <FaPlus size={18} />
           </button>
@@ -2350,7 +2350,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={zoomIn}
-          className="p-3 rounded-full hover:bg-purple-600/20 cursor-pointer outline-none text-white/70 active:bg-purple-700 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
         >
           <FiZoomIn size={18} />
         </button>
@@ -2358,7 +2358,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={zoomOut}
-          className="p-3 rounded-full hover:bg-purple-600/20 cursor-pointer outline-none text-white/70 active:bg-purple-700 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
         >
           <FiZoomOut size={18} />
         </button>
@@ -2366,7 +2366,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={() => fitView({ padding: 0.4, duration: 500, minZoom: 0.2 })}
-          className="p-3 rounded-full hover:bg-purple-600/20 cursor-pointer outline-none text-white/70 active:bg-purple-700 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
         >
           <MdOutlineZoomOutMap size={18} />
         </button>
@@ -2374,7 +2374,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={() => setIsDragging(!isDragging)}
-          className={`p-3 rounded-full cursor-pointer outline-none active:bg-purple-700 transition ${!isDragging ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-white/70 hover:bg-purple-600/20 hover:text-white"}`}
+          className={`p-3 rounded-full cursor-pointer outline-none active:bg-purple-700 transition ${!isDragging ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 hover:bg-purple-600 hover:text-white"}`}
         >
           <LuMousePointer2 size={18} />
         </button>
@@ -2439,7 +2439,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </ReactFlow>
       </div>
       {selectedNode && !["concatNode"].includes(selectedNode.type) && (
-        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#0f0c18] border border-purple-500/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-purple-900/20`}>
+        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#0c0d0f] border border-white/10 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-black/50`}>
           {isMobile && (
             <button
               type="button"

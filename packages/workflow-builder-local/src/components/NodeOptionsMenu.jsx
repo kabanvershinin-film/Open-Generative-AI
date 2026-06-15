@@ -42,8 +42,9 @@ const NodeOptionsMenu = ({
         <BsThreeDots size={18} />
       </button>
 
+      {/* Backdrop for solid feel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 whitespace-nowrap bg-[#1b1e23]/95 backdrop-blur-xl border border-white/10 rounded-md shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="absolute right-0 mt-2 whitespace-nowrap bg-[#0c0d0f] border border-white/10 rounded-md shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in duration-200">
           <button
             type="button"
             suppressHydrationWarning={true}

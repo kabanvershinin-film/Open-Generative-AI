@@ -184,7 +184,7 @@ export default function FaceRegistrationDialog({ open, onClose, onRegistered }) 
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[60] bg-black flex items-center justify-center p-4"
       onClick={handleClose}
     >
       <div
