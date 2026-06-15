@@ -50,8 +50,12 @@ export default function PromptStudio({ apiKey }) {
     try {
       const res = await fetch('/api/prompts/admin?t=' + Date.now());
       const data = await res.json();
+      console.log('Fetched prompts data:', data);
       if (data.prompts) {
         setPrompts(data.prompts);
+      }
+      if (data.debug) {
+        console.log('Debug info:', data.debug);
       }
     } catch (e) {
       console.error('Failed to fetch prompts', e);

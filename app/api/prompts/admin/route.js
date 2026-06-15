@@ -104,21 +104,51 @@ async function tosList(prefix) {
     });
     if (!res.ok) return [];
     const xml = await res.text();
+        console.log('[tosList] XML Response:', xml.slice(0, 500));
         const keys = [...xml.matchAll(/<Key>([^<]+)<\/Key>/g)].map((m) => m[1]);
-        console.log('[tosList] Found keys:', keys);
+        console.log('[tosList] Extracted keys:', keys);
         return keys;
 }
 
 export async function GET(request) {
     try {
-        if (!TOS_ENABLED) return NextResponse.json({ prompts: [] });
+        if (!TOS_ENABLED) {
+            console.error('[prompts/admin] TOS not enabled');
+            return NextResponse.json({ prompts: [], error: 'Storage not configured' });
+        }
         const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
         const prefix = `admin_prompts/`;
-        const keys = (await tosList(prefix)).filter(k => k.endsWith('.json'));
-        const prompts = await Promise.all(keys.map(k => tosGetSignedJson(host, k)));
-        const sorted = (prompts.filter(Boolean)).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        return NextResponse.json({ prompts: sorted });
+        const allKeys = await tosList(prefix);
+        console.log('[prompts/admin] Total keys found:', allKeys.length);
+        
+        const keys = allKeys.filter(k => k.endsWith('.json'));
+        console.log('[prompts/admin] JSON keys:', keys);
+
+        const prompts = await Promise.all(keys.map(async k => {
+            try {
+                return await tosGetSignedJson(host, k);
+            } catch (err) {
+                console.error(`[prompts/admin] Failed to load ${k}:`, err.message);
+                return null;
+            }
+        }));
+
+        const validPrompts = prompts.filter(Boolean);
+        console.log('[prompts/admin] Valid prompts loaded:', validPrompts.length);
+
+        const sorted = validPrompts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        return NextResponse.json({ 
+            prompts: sorted,
+            debug: {
+                tos_enabled: TOS_ENABLED,
+                keys_found: allKeys.length,
+                json_keys: keys.length,
+                loaded: validPrompts.length
+            }
+        });
     } catch (e) {
+        console.error('[prompts/admin] GET error:', e);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
