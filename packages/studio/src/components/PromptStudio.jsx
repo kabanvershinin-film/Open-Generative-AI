@@ -274,10 +274,10 @@ export default function PromptStudio({ apiKey }) {
             <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {displayPrompts.map((item, i) => (
-              <div key={item.id || i} className="group bg-white/5 border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-300">
-                <div className="aspect-[4/3] bg-purple-500/5 flex items-center justify-center relative overflow-hidden">
+              <div key={item.id || i} className="group bg-white/5 border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-300 flex flex-col">
+                <div className="aspect-[9/16] bg-purple-500/5 flex items-center justify-center relative overflow-hidden">
                   {item.url ? (
                     <video 
                       src={item.url} 
@@ -381,7 +381,7 @@ export default function PromptStudio({ apiKey }) {
                   {uploadMode === 'file' ? (
                     <div 
                       onClick={() => !uploading && fileInputRef.current?.click()}
-                      className={`aspect-video rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden relative ${
+                      className={`aspect-[9/16] max-h-[400px] mx-auto rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden relative ${
                         newPrompt.videoUrl ? 'border-purple-500/50' : 'border-white/10 hover:border-purple-500/30 bg-white/5'
                       }`}
                     >
@@ -427,7 +427,7 @@ export default function PromptStudio({ apiKey }) {
                         * Вставьте прямую ссылку на MP4. Видео будет автоматически перенесено в наше облако.
                       </p>
                       {newPrompt.videoUrl && newPrompt.videoUrl.includes('http') && (
-                        <div className="aspect-video rounded-xl overflow-hidden border border-purple-500/20">
+                        <div className="aspect-[9/16] max-h-[300px] mx-auto rounded-xl overflow-hidden border border-purple-500/20">
                           <video src={newPrompt.videoUrl} className="w-full h-full object-cover" autoPlay muted loop key={newPrompt.videoUrl} />
                         </div>
                       )}
