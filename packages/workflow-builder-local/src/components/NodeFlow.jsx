@@ -160,7 +160,7 @@ const formatNodeTitle = (id) => id
   .replace(/^api/i, "API")
   .replace(/^character/i, "Персонаж")
   .replace(/^concat/i, "Объединение")
-  .replace(/^skylark/i, "Агент Skylark")
+  .replace(/^skylark/i, "Агент Гена")
   .replace(/^vidConcat/i, "Видеообъединение");
 
 const getModelObjStatic = (category, modelId, nodeSchemas) => {
