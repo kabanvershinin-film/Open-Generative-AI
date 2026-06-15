@@ -2053,7 +2053,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       case "skylarkNode":
         validHandles = ["prompt", "images", "videos"];
-        break;
+        return true;
 
       case "vidConcatNode":
         validHandles = ["videoInput7"];
@@ -2117,6 +2117,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       imageInput: "blue", imageInput2: "green", imageInput3: "green", imageOutput: "green",
       videoInput: "blue", videoInput2: "green", videoInput3: "green", videoInput4: "orange", videoInput5: "yellow", videoInput6: "green", videoInput7: "orange", videoInput8: "yellow", videoOutput: "orange",
       audioInput: "yellow", audioInput2: "blue", audioInput3: "green", audioInput4: "orange", audioOutput: "yellow",
+      prompt: "blue", images: "green", videos: "orange",
     };
 
     const flowPosition = screenToFlowPosition({
