@@ -17,14 +17,19 @@ function supabaseAdmin() {
 }
 
 // Проверка доступа к воркфлоу: owner или есть в workflow_shares
-async function hasAccess(userId, workflowId) {
+async function hasAccess(userId, workflowId, knownOwnerId = null) {
     if (!SHARE_ENABLED) return { hasAccess: true, isOwner: true, role: 'owner' }; // Если деление отключено, все доступно (как раньше)
     if (!userId || !workflowId) return { hasAccess: false, isOwner: false, role: null };
     
     // Сначала проверяем, является ли пользователь владельцем
-    const index = await tosLoadIndex();
-    const wf = index.find(w => w.id === workflowId);
-    if (wf && wf.owner_id === userId) return { hasAccess: true, isOwner: true, role: 'owner' };
+    let ownerId = knownOwnerId;
+    if (!ownerId) {
+        const index = await tosLoadIndex();
+        const wf = index.find(w => w.id === workflowId);
+        ownerId = wf?.owner_id;
+    }
+    
+    if (ownerId && ownerId === userId) return { hasAccess: true, isOwner: true, role: 'owner' };
     
     // Если не владелец, проверяем таблицу workflow_shares
     const { data } = await supabaseAdmin()
@@ -1494,7 +1499,7 @@ export async function GET(request, { params }) {
             show_temp_button: false, run_id: null, category: 'General',
         };
         
-        const access = await hasAccess(user?.id, id);
+        const access = await hasAccess(user?.id, id, wf.owner_id);
         if (ownerId) {
             if (!access.hasAccess) return NextResponse.json(emptyDef);
         } else if (wf.nodes || wf.edges) {
@@ -1514,8 +1519,14 @@ export async function GET(request, { params }) {
             workflow_id: id, id, name: wf.name || 'Untitled Workflow',
             data: { nodes: wf.nodes || [] },
             edges: wf.edges || [],
-            is_owner: true, is_published: false, is_template: false,
-            show_temp_button: false, run_id: null, category: 'General',
+            is_owner: access.isOwner,
+            is_published: !!wf.is_published,
+            is_mine: access.isOwner,
+            can_edit: access.hasAccess,
+            is_template: !!wf.is_template,
+            show_temp_button: !!wf.show_temp_button,
+            run_id: null,
+            category: wf.category || 'General',
         });
     }
 
@@ -1641,12 +1652,24 @@ export async function GET(request, { params }) {
     const id = path[0];
     if (!id) return NextResponse.json([]);
     let wf = store.get(id);
+    const user = await getUserForGallery(request);
     if (!wf) {
-        const user = await getUserForGallery(request);
         wf = await tosLoadWorkflow(id, { userId: user?.id || null });
         if (wf) store.set(id, wf);
     }
-    return NextResponse.json(wf || emptyWorkflow(id));
+    
+    if (!wf) return NextResponse.json(emptyWorkflow(id));
+
+    const access = await hasAccess(user?.id, id, wf?.owner_id);
+    return NextResponse.json({
+        ...wf,
+        workflow_id: id,
+        id,
+        is_owner: access.isOwner,
+        is_published: !!wf.is_published,
+        is_mine: access.isOwner,
+        can_edit: access.hasAccess,
+    });
 }
 
 export async function POST(request, { params }) {
@@ -1666,7 +1689,7 @@ export async function POST(request, { params }) {
         const id = body.workflow_id || genId();
         const existing = store.get(id) || (await tosLoadWorkflow(id, { userId: owner?.id || null })) || null;
         // Don't let one user overwrite another user's workflow without access.
-        const access = await hasAccess(owner?.id, id);
+        const access = await hasAccess(owner?.id, id, existing?.owner_id);
         if (existing?.owner_id && owner?.id && !access.hasAccess) {
             return NextResponse.json({ error: 'forbidden' }, { status: 403 });
         }

@@ -234,7 +234,7 @@ const processWorkflowData = (workflowData, nodeSchemas, id) => {
       workflowId: id,
       runId: workflowData?.run_id,
       workflowName: workflowData.name,
-      interactionMode: workflowData.is_owner,
+      interactionMode: workflowData.can_edit ?? workflowData.is_owner,
       publishWorkflow: workflowData.is_published,
       template: {
         showTemplateBtn: workflowData.show_temp_button,
@@ -275,8 +275,23 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   // up-to-date data even when React 18 concurrent mode cancels a setNodes call
   // during SPA navigation (which would otherwise lose a freshly-generated result).
   const currentNodesRef = useRef(initialState?.nodes || []);
-  const [interactionMode, setInteractionMode] = useState(initialState?.metadata?.interactionMode || false);
+  const [interactionMode, setInteractionMode] = useState(() => {
+    const initial = initialState?.metadata?.interactionMode;
+    console.log("Initial interactionMode calculation:", initial);
+    return initial ?? true; // Default to true if missing, consistent with Studio
+  });
   const [publishWorkflow, setPublishWorkflow] = useState(initialState?.metadata?.publishWorkflow || false);
+
+  // Sync state with initialState metadata when it changes
+  useEffect(() => {
+    if (initialState?.metadata) {
+      console.log("Syncing NodeFlow state with initialState metadata:", initialState.metadata);
+      setInteractionMode(initialState.metadata.interactionMode ?? true);
+      setPublishWorkflow(initialState.metadata.publishWorkflow ?? false);
+      setWorkflowName(initialState.metadata.workflowName || "Untitled");
+      setWorkflowCategory(initialState.metadata.category || "General");
+    }
+  }, [initialState]);
   const [template, setTemplate] = useState(initialState?.metadata?.template || {
     showTemplateBtn: false,
     isPublishedTemplate: false
@@ -1442,26 +1457,34 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     };
   };
 
-  const handleSaveWorkFlow = async () => {
-    if (!interactionMode) return;
+  const handleSaveWorkFlow = useCallback(async () => {
+    console.log("handleSaveWorkFlow triggered, interactionMode:", interactionMode);
+    if (!interactionMode) {
+      console.log("handleSaveWorkFlow: interactionMode is false, skipping save");
+      toast.error("У вас нет прав для сохранения этого воркфлоу");
+      return;
+    }
     const workflowPayload = buildWorkflowPayload();
+    console.log("Built workflow payload for save:", workflowPayload);
 
     try {
       const response = await axios.post("/api/workflow/create", workflowPayload);
-      console.log("Workflow created:", response.data);
+      console.log("Workflow created/saved successfully:", response.data);
       setDropDown(0);
-      setWorkflowIds(response.data.workflow_id, runId);
-      setWorkflowId(response.data.workflow_id);
-      return response.data.workflow_id;
+      const newId = response.data.workflow_id;
+      setWorkflowIds(newId, runId);
+      setWorkflowId(newId);
+      return newId;
     } catch (error) {
-      console.log(error);
+      console.error("Save workflow error:", error);
       if (error.response) {
-        toast.error(`Failed: ${error.response.data.detail || "Server error"}`);
+        toast.error(`Ошибка сохранения: ${error.response.data.detail || "Ошибка сервера"}`);
       } else {
-        toast.error(`Error: ${error.message}`);
+        toast.error(`Ошибка сохранения: ${error.message}`);
       }
+      return null;
     }
-  };
+  }, [interactionMode, runId, edges, workflowName, workflowCategory, workflowId]); // removed workflowPayload, added necessary dependencies for buildWorkflowPayload indirectly
 
   // Auto-save whenever any node's generation result changes, so generated
   // videos/images persist with the workflow. The browser Seedance path updates
@@ -1482,7 +1505,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     lastSavedResultsSig.current = sig;
     handleSaveWorkFlow();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, interactionMode, isRestoring]);
+  }, [nodes, interactionMode, isRestoring, handleSaveWorkFlow]);
 
   // Keep currentNodesRef in sync with React state for all normal updates.
   useEffect(() => {
@@ -1496,15 +1519,15 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
     try {
       const response = await axios.post("/api/workflow/create", workflowPayload);
-      console.log("Workflow created:", response.data);
+      console.log("Workflow duplicated:", response.data);
       window.location.href = `/workflow/${response.data.workflow_id}`;
     } catch (error) {
       console.log(error);
       setIsRunning(0);
       if (error.response) {
-        toast.error(`Failed: ${error.response.data.detail || "Server error"}`);
+        toast.error(`Ошибка дублирования: ${error.response.data.detail || "Ошибка сервера"}`);
       } else {
-        toast.error(`Error: ${error.message}`);
+        toast.error(`Ошибка дублирования: ${error.message}`);
       }
     }
   };
@@ -1639,7 +1662,10 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   };
 
   const handleRunWorkflow = async () => {
-    if (!interactionMode) return;
+    if (!interactionMode) {
+      toast.error("У вас нет прав для запуска этого воркфлоу");
+      return;
+    }
     try {
       setIsRunning(1);
       setLoadingNodes({});
@@ -1656,40 +1682,90 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     } catch (error) {
       console.log(error);
       if (error.response) {
-        toast.error(`Failed: ${error.response.data.detail || "Server error"}`);
+        toast.error(`Ошибка запуска: ${error.response.data.detail || "Ошибка сервера"}`);
       } else {
-        toast.error(`Error: ${error.message}`);
+        toast.error(`Ошибка запуска: ${error.message}`);
       }
       setLoadingNodes({});
       setIsRunning(0);
     }
   };
 
-  const handlePublishWorkflow = async () => {
-    if (!interactionMode) return;
+  const handlePublishWorkflow = useCallback(async () => {
+    console.log("handlePublishWorkflow triggered, interactionMode:", interactionMode);
+    if (!interactionMode) {
+      toast.error("У вас нет прав для публикации этого воркфлоу");
+      return;
+    }
     try {
       setIsRunning(2);
+      
+      // 1. First save the workflow to ensure the backend has the latest state.
       const savedWorkflowId = await handleSaveWorkFlow();
+      console.log("Workflow saved before publish, id:", savedWorkflowId);
+      if (!savedWorkflowId) throw new Error("Не удалось сохранить воркфлоу перед публикацией");
 
-      const response = await axios.post(`/api/workflow/workflow/${savedWorkflowId}/publish`, {
-        publish: !publishWorkflow
-      });
-      setIsRunning(0);
-      toast.success(response.data.publish ? "Published successfully" : "Unpublished successfully");
-      setPublishWorkflow(response.data.publish);
-    } catch (error) {
-      console.log(error);
-      if (error.response) {
-        toast.error(`Failed: ${error.response.data.detail || "Server error"}`);
-      } else {
-        toast.error(`Error: ${error.message}`);
+      // 2. Determine if we need to show the publication form (name/thumbnail picker).
+      if (!publishWorkflow) {
+        console.log("Workflow not published yet, showing modal");
+        const candidates = nodes
+          .map(n => n.data?.resultUrl || n.data?.outputs?.[0]?.value)
+          .filter(url => url && typeof url === 'string' && (url.startsWith('http') || url.startsWith('/')));
+          
+        setPublishModal({
+          name: workflowName || "",
+          thumbnail: candidates[0] || "",
+          candidates: Array.from(new Set(candidates))
+        });
+        setIsRunning(0);
+        return;
       }
-      setLoadingNodes({});
+
+      // 3. If already published, toggle it OFF.
+      console.log("Workflow already published, unpublishing...");
+      const response = await axios.post(`/api/workflow/${savedWorkflowId}/publish`, {
+        publish: false
+      });
+      
+      setIsRunning(0);
+      toast.success("Воркфлоу снят с публикации");
+      setPublishWorkflow(false);
+      
+      window.dispatchEvent(new CustomEvent('workflow-publish-changed', { 
+        detail: { id: savedWorkflowId, isPublished: false } 
+      }));
+    } catch (error) {
+      console.error("Publish toggle error:", error);
+      toast.error(`Ошибка: ${error.response?.data?.detail || error.message}`);
       setIsRunning(0);
     }
-  };
+  }, [interactionMode, handleSaveWorkFlow, publishWorkflow, nodes, workflowName]);
 
-  const handlePublishWithForm = async () => {
+  // Use a ref to keep handlePublishWorkflow stable for the event listener
+  const publishRef = useRef(handlePublishWorkflow);
+  useEffect(() => {
+    publishRef.current = handlePublishWorkflow;
+  }, [handlePublishWorkflow]);
+
+  useEffect(() => {
+    const handleTriggerPublish = (e) => {
+      console.log("Received trigger-workflow-publish event via window.");
+      if (publishRef.current) {
+        console.log("Calling handlePublishWorkflow from event listener...");
+        publishRef.current();
+      } else {
+        console.error("publishRef.current is null, cannot trigger publish!");
+      }
+    };
+    console.log("Registering trigger-workflow-publish listener on window object");
+    window.addEventListener('trigger-workflow-publish', handleTriggerPublish);
+    return () => {
+      console.log("Removing trigger-workflow-publish event listener from window");
+      window.removeEventListener('trigger-workflow-publish', handleTriggerPublish);
+    };
+  }, []); // Stable listener
+
+  const handlePublishWithForm = useCallback(async () => {
     if (!interactionMode) return;
     try {
       setIsRunning(2);
@@ -1704,48 +1780,52 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       setWorkflowIds(savedWorkflowId, runId);
       setWorkflowId(savedWorkflowId);
 
-      const response = await axios.post(`/api/workflow/workflow/${savedWorkflowId}/publish`, {
+      const response = await axios.post(`/api/workflow/${savedWorkflowId}/publish`, {
         publish: true,
         name: formName,
         thumbnail: formThumbnail,
       });
       setIsRunning(0);
-      toast.success("Published successfully");
+      toast.success("Воркфлоу успешно опубликован");
       setPublishWorkflow(response.data.publish);
+      
+      window.dispatchEvent(new CustomEvent('workflow-publish-changed', { 
+        detail: { id: savedWorkflowId, isPublished: true, name: formName, thumbnail: formThumbnail } 
+      }));
     } catch (error) {
-      console.log(error);
+      console.error("Publish with form error:", error);
       if (error.response) {
-        toast.error(`Failed: ${error.response.data.detail || "Server error"}`);
+        toast.error(`Ошибка: ${error.response.data.detail || "Ошибка сервера"}`);
       } else {
-        toast.error(`Error: ${error.message}`);
+        toast.error(`Ошибка: ${error.message}`);
       }
       setIsRunning(0);
     }
-  };
+  }, [interactionMode, publishModal, workflowName, runId]);
 
-  const handleTemplatePublish = async () => {
+  const handleTemplatePublish = useCallback(async () => {
     if (!interactionMode) return;
     try {
       setIsRunning(4);
       const savedWorkflowId = await handleSaveWorkFlow();
 
-      const response = await axios.post(`/api/workflow/workflow/${savedWorkflowId}/template`, {
+      const response = await axios.post(`/api/workflow/${savedWorkflowId}/template`, {
         is_template: !template.isPublishedTemplate
       });
       const is_template = response.data.is_template;
       setIsRunning(0);
-      toast.success(is_template ? "Published successfully" : "Unpublished successfully");
+      toast.success(is_template ? "Опубликовано как шаблон" : "Снято с публикации как шаблон");
       setTemplate(prev => ({ ...prev, isPublishedTemplate: is_template }));
     } catch (error) {
-      console.log(error);
+      console.error("Template publish error:", error);
       if (error.response) {
-        toast.error(`Failed: ${error.response.data.detail || "Server error"}`);
+        toast.error(`Ошибка: ${error.response.data.detail || "Ошибка сервера"}`);
       } else {
-        toast.error(`Error: ${error.message}`);
+        toast.error(`Ошибка: ${error.message}`);
       }
       setIsRunning(0);
     }
-  };
+  }, [interactionMode, handleSaveWorkFlow, template]);
 
   const handleCategorySave = async () => {
     if (!workflowId) {
@@ -2345,6 +2425,29 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             </div>
           )}
         </div>
+        <button
+          type="button"
+          suppressHydrationWarning={true}
+          onClick={handleSaveWorkFlow}
+          className={`p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition ${!interactionMode && "hidden"}`}
+          title="Сохранить"
+        >
+          <MdSave size={18} />
+        </button>
+        <button
+          type="button"
+          suppressHydrationWarning={true}
+          onClick={handlePublishWorkflow}
+          disabled={isRunning === 2}
+          className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 ${!interactionMode && "hidden"} ${publishWorkflow ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"}`}
+          title={publishWorkflow ? "Снять с публикации" : "Опубликовать"}
+        >
+          {isRunning === 2 ? (
+            <div className="w-[18px] h-[18px] rounded-full border-2 border-t-transparent border-current animate-spin" />
+          ) : (
+            <FaTelegramPlane size={18} />
+          )}
+        </button>
         {/* Utility Node (toolbox) button removed. */}
         <button
           type="button"
@@ -2882,26 +2985,26 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       )}
       {publishModal && (
         <div
-          className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black"
+          className="fixed inset-0 flex flex-col items-center justify-center z-[100] overflow-auto bg-black/60 backdrop-blur-sm"
           onClick={() => setPublishModal(null)}
         >
-          <div className="bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base text-center font-semibold text-white">Publish Workflow</h3>
+          <div className="bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4 border border-white/10" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base text-center font-semibold text-white">Публикация воркфлоу</h3>
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-xs text-gray-400">Workflow Name</label>
+              <label className="text-xs text-gray-400">Название воркфлоу</label>
               <input
                 type="text"
                 value={publishModal.name}
                 autoFocus
                 onChange={(e) => setPublishModal(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter Workflow Name"
+                placeholder="Введите название..."
                 className="border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
               />
             </div>
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-xs text-gray-400">Превью</label>
+              <label className="text-xs text-gray-400">Превью (обложка)</label>
               {(publishModal.candidates || []).length > 0 ? (
-                <div className="grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto">
+                <div className="grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto custom-scrollbar-thin">
                   {(publishModal.candidates || []).map((url) => (
                     <div
                       key={url}
@@ -2928,7 +3031,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 onClick={() => setPublishModal(null)}
                 className="px-4 py-2 bg-gray-700 text-white rounded-full text-sm hover:bg-gray-600 transition w-full cursor-pointer"
               >
-                Cancel
+                Отмена
               </button>
               <button
                 type="button"
@@ -2942,7 +3045,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 ) : (
                   <FaTelegramPlane size={14} />
                 )}
-                Publish
+                Опубликовать
               </button>
             </div>
           </div>

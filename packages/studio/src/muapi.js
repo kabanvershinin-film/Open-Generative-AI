@@ -933,11 +933,16 @@ export async function getWorkflowData(apiKey, id) {
             name: wf.name || 'Untitled Workflow',
             data: { nodes: wf.nodes || [] },
             edges: wf.edges || [],
-            is_owner: true, is_published: false, is_template: false,
-            show_temp_button: false, run_id: null, category: 'General',
+            is_owner: wf.is_owner ?? true,
+            is_published: wf.is_published ?? false,
+            is_template: wf.is_template ?? false,
+            show_temp_button: wf.show_temp_button ?? false,
+            can_edit: wf.can_edit ?? wf.is_owner ?? true,
+            run_id: wf.run_id || null,
+            category: wf.category || 'General',
         };
     } catch {
-        return { workflow_id: id, id, name: 'Untitled Workflow', data: { nodes: [] }, edges: [], is_owner: true, is_published: false, is_template: false, show_temp_button: false, run_id: null, category: 'General' };
+        return { workflow_id: id, id, name: 'Untitled Workflow', data: { nodes: [] }, edges: [], is_owner: true, can_edit: true, is_published: false, is_template: false, show_temp_button: false, run_id: null, category: 'General' };
     }
 }
 export async function getWorkflowInputs(apiKey, id) {

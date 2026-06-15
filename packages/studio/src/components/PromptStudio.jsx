@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 
 const CATEGORIES = [
   'Все',
-  'Фотореализм',
-  'Персонажи',
-  'Архитектура',
-  'Интерьер',
-  'Логотипы',
-  'Арт',
-  'Киберпанк'
+  'Google Omni',
+  'Seedance 2.0',
+  'Flux 1.1',
+  'Midjourney',
+  'DALL-E 3',
+  'Stable Diffusion',
+  'Kling AI'
 ];
 
 export default function PromptStudio({ apiKey }) {
@@ -35,7 +35,7 @@ export default function PromptStudio({ apiKey }) {
           <div className="relative w-full md:max-w-md">
             <input
               type="text"
-              placeholder="Поиск промтов..."
+              placeholder="Поиск по моделям и промтам..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full h-12 bg-white/5 border border-purple-500/10 rounded-xl px-12 text-sm text-white focus:outline-none focus:border-purple-500/30 transition-all"
@@ -67,20 +67,29 @@ export default function PromptStudio({ apiKey }) {
 
         {/* Empty State / Grid Placeholder */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+          {[
+            { model: 'Google Omni', prompt: 'Cinematic portrait of a futuristic cyberpunk warrior in a rain-soaked Neo-Tokyo street, neon lights reflecting in armor, 8k resolution, highly detailed' },
+            { model: 'Seedance 2.0', prompt: 'A magical forest with glowing plants and floating islands, ethereal atmosphere, cinematic lighting, hyper-realistic' },
+            { model: 'Flux 1.1', prompt: 'Architectural visualization of a modern minimalist villa by the ocean, sunset lighting, glass reflections, high-end design' },
+            { model: 'Midjourney', prompt: 'Cute 3D character design of a small robot explorer, Pixar style, soft shadows, vibrant colors' },
+            { model: 'DALL-E 3', prompt: 'A cozy coffee shop interior with plants and vintage furniture, warm sunlight streaming through windows, isometric view' },
+            { model: 'Stable Diffusion', prompt: 'Epic landscape of a dragon flying over snow-capped mountains, dramatic clouds, fantasy art style' },
+            { model: 'Kling AI', prompt: 'A futuristic electric car driving through a desert at night, long exposure light trails, sci-fi aesthetic' },
+            { model: 'Google Omni', prompt: 'Close up of a human eye with a galaxy inside, cosmic reflection, surrealism, macro photography' },
+          ].map((item, i) => (
             <div key={i} className="group bg-white/5 border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-300">
               <div className="aspect-[4/3] bg-purple-500/5 flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0a0714] to-transparent opacity-60" />
-                <span className="text-white/10 font-bold text-4xl">Prompt {i}</span>
+                <span className="text-white/10 font-bold text-4xl">Prompt {i + 1}</span>
               </div>
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[10px] font-bold uppercase rounded border border-purple-500/20">
-                    Stable Diffusion
+                    {activeCategory === 'Все' ? item.model : activeCategory}
                   </span>
                 </div>
                 <p className="text-sm text-white/60 line-clamp-3 mb-4 italic">
-                  "Cinematic portrait of a futuristic cyberpunk warrior in a rain-soaked Neo-Tokyo street, neon lights reflecting in armor, 8k resolution, highly detailed..."
+                  "{item.prompt}"
                 </p>
                 <div className="flex items-center justify-between">
                   <button className="text-xs font-bold text-[#d946ef] hover:underline flex items-center gap-1">

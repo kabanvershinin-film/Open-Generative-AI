@@ -373,6 +373,19 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
         }
 
         setWorkflowDef(def);
+
+        // Sync selectedWorkflow with full data (especially is_owner and can_edit)
+        setSelectedWorkflow(prev => {
+          if (!prev || prev.id !== wfId) return prev;
+          return {
+            ...prev,
+            name: def.name,
+            is_owner: def.is_owner,
+            is_published: def.is_published,
+            can_edit: def.can_edit,
+            thumbnail: def.thumbnail || prev.thumbnail
+          };
+        });
       } catch (err) {
         console.error("Error loading workflow:", err);
         setNodeSchemas([]);
@@ -432,12 +445,22 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
   };
 
   const handlePublishWorkflow = async (wf, publish) => {
+    console.log("handlePublishWorkflow called for wf:", wf.id, "publish:", publish, "activeSubTab:", activeSubTab);
+    // If the builder is open for this workflow, let it handle publishing (with modal/saving)
+    if (selectedWorkflow?.id === wf.id && activeSubTab === 'builder') {
+      console.log("Builder is active, dispatching trigger-workflow-publish to window");
+      window.dispatchEvent(new CustomEvent('trigger-workflow-publish'));
+      return;
+    }
+
     try {
+      console.log("Builder not active or different wf, calling API directly");
       await publishWorkflow(apiKey, wf.id, publish);
       setWorkflows((prev) => prev.map((w) => w.id === wf.id ? { ...w, is_published: publish } : w));
+      alert(publish ? "Воркфлоу опубликован" : "Воркфлоу снят с публикации");
     } catch (err) {
       console.error("Publish failed:", err);
-      alert("Failed to publish workflow");
+      alert("Ошибка публикации");
     }
   };
 
@@ -571,7 +594,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
     }
   }, [urlWorkflowId, urlTab, router]);
 
-  // 1. Sync state with URL on mount or URL change
+  // Sync state with URL on mount or URL change
   useEffect(() => {
     if (loading) return;
 
@@ -609,6 +632,34 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
     handleCreateWorkflow,
     handleSelectWorkflow,
   ]);
+
+  // Listen for publish state changes from the builder
+  useEffect(() => {
+    const handlePublishChange = (e) => {
+      const { id, isPublished, name, thumbnail } = e.detail;
+      setWorkflows((prev) => prev.map((w) => {
+        if (w.id === id) {
+          return { 
+            ...w, 
+            is_published: isPublished,
+            ...(name ? { name } : {}),
+            ...(thumbnail ? { thumbnail } : {})
+          };
+        }
+        return w;
+      }));
+      if (selectedWorkflow?.id === id) {
+        setSelectedWorkflow((prev) => ({ 
+          ...prev, 
+          is_published: isPublished,
+          ...(name ? { name } : {}),
+          ...(thumbnail ? { thumbnail } : {})
+        }));
+      }
+    };
+    window.addEventListener('workflow-publish-changed', handlePublishChange);
+    return () => window.removeEventListener('workflow-publish-changed', handlePublishChange);
+  }, [selectedWorkflow]);
 
   // Handle reload on exit to clear builder CSS
   useEffect(() => {
