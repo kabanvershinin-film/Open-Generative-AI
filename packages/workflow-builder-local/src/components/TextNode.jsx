@@ -598,53 +598,55 @@ const TextGeneration = ({ id, data, selected }) => {
               )}
             </div>
           ) : (
-            {/* Connected images — shown together as one gallery */}
-            {(() => {
-              const extra = Array.isArray(formValues.images_list) ? formValues.images_list.filter(Boolean) : [];
-              const all = [
-                ...(formValues.image_url ? [{ url: formValues.image_url, primary: true }] : []),
-                ...extra.map((u) => ({ url: u, primary: false })),
-              ];
-              if (!all.length) return null;
-              const removeAt = (item) => {
-                setFormValues(cfv => {
-                  const updated = { ...cfv };
-                  if (item.primary) {
-                    const rest = Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : [];
-                    updated.image_url = rest.length ? rest[0] : null;
-                    updated.images_list = rest.slice(1);
-                  } else {
-                    updated.images_list = (Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : []).filter((u) => u !== item.url);
-                  }
-                  return updated;
-                });
-              };
-              return (
-                <div className="px-3 pb-2">
-                  <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1.5">
-                    Подключенные изображения ({all.length})
-                  </p>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {all.map((item, i) => (
-                      <div key={`${item.url}-${i}`} className="relative group/refimg rounded-lg overflow-hidden border border-emerald-500/30 bg-black aspect-square">
-                        <img src={item.url} alt="ref" className="w-full h-full object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeAt(item)}
-                          className="absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity z-10"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+            <div className="flex flex-col items-center justify-center gap-2">
+              {/* Connected images — shown together as one gallery */}
+              {(() => {
+                const extra = Array.isArray(formValues.images_list) ? formValues.images_list.filter(Boolean) : [];
+                const all = [
+                  ...(formValues.image_url ? [{ url: formValues.image_url, primary: true }] : []),
+                  ...extra.map((u) => ({ url: u, primary: false })),
+                ];
+                if (!all.length) return null;
+                const removeAt = (item) => {
+                  setFormValues(cfv => {
+                    const updated = { ...cfv };
+                    if (item.primary) {
+                      const rest = Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : [];
+                      updated.image_url = rest.length ? rest[0] : null;
+                      updated.images_list = rest.slice(1);
+                    } else {
+                      updated.images_list = (Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : []).filter((u) => u !== item.url);
+                    }
+                    return updated;
+                  });
+                };
+                return (
+                  <div className="w-full px-3 pb-2">
+                    <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1.5">
+                      Подключенные изображения ({all.length})
+                    </p>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {all.map((item, i) => (
+                        <div key={`${item.url}-${i}`} className="relative group/refimg rounded-lg overflow-hidden border border-emerald-500/30 bg-black aspect-square">
+                          <img src={item.url} alt="ref" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => removeAt(item)}
+                            className="absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity z-10"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
 
-            <div className="flex flex-col items-center justify-center text-zinc-400 gap-2">
-              <TfiText size={32} />
-              <span className="text-[10px] italic">Результат появится здесь...</span>
+              <div className="flex flex-col items-center justify-center text-zinc-400 gap-2">
+                <TfiText size={32} />
+                <span className="text-[10px] italic">Результат появится здесь...</span>
+              </div>
             </div>
           )}
         </div>
