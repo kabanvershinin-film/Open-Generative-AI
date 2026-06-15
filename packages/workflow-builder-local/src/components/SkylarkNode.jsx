@@ -13,6 +13,7 @@ import NodeOptionsMenu from "./NodeOptionsMenu";
 
 const RATIOS = ["auto", "16:9", "9:16", "4:3", "3:4"];
 const DURATIONS = ["auto", "～15s", "～30s", "40～60s"];
+const MODES = ["standard", "fast"];
 const LANGUAGES = ["Chinese", "English", "Japanese", "Thai", "Russian", "French", "German", "Spanish"];
 
 const SkylarkNode = ({ id, data, selected }) => {
@@ -26,6 +27,7 @@ const SkylarkNode = ({ id, data, selected }) => {
     video_url_list: [],
     ratio: "auto",
     duration: "auto",
+    mode: "standard",
     language: "Russian",
     accent: "PuTongHua",
     enable_watermark: true
@@ -190,6 +192,25 @@ const SkylarkNode = ({ id, data, selected }) => {
               <select value={formValues.duration} onChange={e => setFormValues(v => ({ ...v, duration: e.target.value }))} className="w-full bg-zinc-900 border border-zinc-800 rounded px-2 py-1 text-[10px] text-white outline-none">
                 {DURATIONS.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] text-zinc-500 uppercase block">Режим</label>
+            <div className="flex bg-zinc-900 border border-zinc-800 rounded p-0.5">
+              {MODES.map(m => (
+                <button
+                  key={m}
+                  onClick={() => setFormValues(v => ({ ...v, mode: m }))}
+                  className={`flex-1 py-1 text-[9px] uppercase font-bold rounded transition-all ${
+                    formValues.mode === m 
+                      ? "bg-blue-600 text-white shadow-sm" 
+                      : "text-zinc-500 hover:text-zinc-300"
+                  }`}
+                >
+                  {m === "standard" ? "Стандарт" : "Фаст"}
+                </button>
+              ))}
             </div>
           </div>
 
