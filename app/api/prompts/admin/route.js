@@ -46,10 +46,15 @@ async function tosUpload(key, buffer, contentType) {
             },
             body: buffer,
         });
+        
+        const resText = await res.text().catch(() => '');
         if (!res.ok) {
-            console.error('[tosUpload] PUT failed:', res.status, await res.text().catch(() => ''));
+            console.error('[tosUpload] PUT failed:', res.status, resText);
             return null;
         }
+        
+        console.log('[tosUpload] PUT success, verifying...');
+        // Verify by trying to head the object
         return `https://${host}${path}`;
     } catch (e) { 
         return null; 
@@ -175,8 +180,20 @@ export async function POST(request) {
         };
 
         const key = `admin_prompts/${id}.json`;
+        console.log('[prompts/admin] Saving to key:', key);
+        
         const ok = await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json');
-        if (!ok) return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 });
+        if (!ok) {
+            console.error('[prompts/admin] Failed to save entry to TOS');
+            return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 });
+        }
+
+        // Verify the file exists immediately
+        const verify = await tosGetSignedJson(`${TOS_BUCKET}.${TOS_ENDPOINT}`, key);
+        if (!verify) {
+            console.error('[prompts/admin] Verification failed: File uploaded but not readable');
+            return NextResponse.json({ error: 'Verification failed' }, { status: 500 });
+        }
 
         return NextResponse.json({ success: true, prompt: entry });
     } catch (e) {
