@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthProvider';
-import NeonPixelBackground from './NeonPixelBackground';
 
 export default function LoginModal() {
     const {
@@ -87,14 +86,22 @@ export default function LoginModal() {
 
     return (
         <div className="fixed inset-0 z-[70] flex items-center p-4">
-            {/* Neon Pixel Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-[#0a090f] via-[#120f1c] to-[#0a090f]">
-                <NeonPixelBackground />
+            {/* Video Background */}
+            <div className="absolute inset-0 overflow-hidden">
+                <video
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className="absolute min-w-full min-h-full object-cover opacity-60"
+                >
+                    <source src="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
+                </video>
             </div>
             {/* Darker overlay for readability */}
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
             
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-purple-400/30 bg-gradient-to-b from-[#120f1c] to-[#0a090f] shadow-[0_30px_100px_rgba(124,58,237,0.45)] animate-in zoom-in-95 fade-in duration-200" style={{ marginLeft: '1600px' }}>
+            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 fade-in duration-200">
                 {/* glow */}
                 <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
