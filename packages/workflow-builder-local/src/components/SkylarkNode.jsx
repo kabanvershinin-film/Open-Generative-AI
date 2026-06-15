@@ -62,7 +62,7 @@ const SkylarkNode = ({ id, data, selected }) => {
 
   const handleRunSkylark = async () => {
     if (inFlightRef.current || loading) return;
-    if (!formValues.prompt) {
+    if (!formValues?.prompt) {
       toast.error("Промпт обязателен для запуска Скайларк");
       return;
     }

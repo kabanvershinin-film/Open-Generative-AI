@@ -10,7 +10,10 @@ import NodeSendButton from "./NodeSendButton";
 import UploadNode from "./UploadNode";
 
 const TextGeneration = ({ id, data, selected }) => {
-  const { formValues, setFormValues, selectedModel, loading } = data;
+  const formValues = data.formValues || {};
+  const setFormValues = data.setFormValues || (() => {});
+  const selectedModel = data.selectedModel || {};
+  const loading = data.loading || false;
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(
     data.outputHistory ? data.outputHistory.length - 1 : -1
   );

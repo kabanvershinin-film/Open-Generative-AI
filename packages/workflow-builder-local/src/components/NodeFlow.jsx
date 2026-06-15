@@ -583,7 +583,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         if (!edge) return node;
 
         const targetHandle = edge.targetHandle;
-        let updatedFormValues = { ...node.data.formValues };
+        let updatedFormValues = { ...(node.data?.formValues || {}) };
 
         const sourceNode = updatedNodes.find((n) => n.id === edge.source);
         const sourceValue = sourceNode?.type === "concatNode"
@@ -801,7 +801,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           prev.map((n) => {
             if (n.id !== targetNode.id) return n;
 
-            let updatedFormValues = { ...n.data.formValues };
+            let updatedFormValues = { ...(n.data?.formValues || {}) };
 
             if (n.id === params.target && n.type === "apiNode") {
               const listFields = ["images", "image_urls", "images_list"];
@@ -1117,7 +1117,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         setNodes((prev) =>
           prev.map((n) => {
             if (n.id !== targetNode.id) return n;
-            let updatedFormValues = { ...n.data.formValues };
+            let updatedFormValues = { ...(n.data?.formValues || {}) };
             updatedFormValues.face_asset = null;
             updatedFormValues.face_thumbnail = null;
             if (token && typeof updatedFormValues.prompt === "string") {
@@ -1138,7 +1138,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               e.target === targetNode.id && e.targetHandle === "concatInput"
             );
 
-            let updatedFormValues = { ...n.data.formValues };
+            let updatedFormValues = { ...(n.data?.formValues || {}) };
 
             if (remainingConcatEdges.length > 0) {
               const concatValues = remainingConcatEdges.map((e) => {
@@ -1176,7 +1176,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               return src?.data?.resultUrl || src?.data?.outputs?.[0]?.value || "";
             }).filter(v => v);
 
-            let updatedFormValues = { ...n.data.formValues };
+            let updatedFormValues = { ...(n.data?.formValues || {}) };
             if (remainingUrls.length > 0) {
               const key = updatedFormValues.video_files ? "video_files" : "videos_list";
               updatedFormValues[key] = remainingUrls;
@@ -1244,7 +1244,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           : [];
       } else {
         const promptConnections = connectedEdges.filter((e) =>
-          ["textInput", "imageInput", "videoInput", "audioInput2", "apiInput"].includes(e.targetHandle)
+          ["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(e.targetHandle)
         );
         dynamicPrompt = promptConnections.length > 0
           ? `{{ ${promptConnections[0].source}.outputs[0].value }}`
@@ -1263,7 +1263,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       const isCharSource = (srcId) => currentNodesRef.current.find((n) => n.id === srcId)?.type === "characterNode";
 
       const imageListConnections = connectedEdges.filter((e) =>
-        ["textInput3", "imageInput2", "videoInput6", "apiInput2"].includes(e.targetHandle) && !isCharSource(e.source)
+        ["textInput3", "imageInput2", "videoInput6", "apiInput2", "images"].includes(e.targetHandle) && !isCharSource(e.source)
       );
 
       const dynamicImagesList =
@@ -1271,7 +1271,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           ? imageListConnections.map(
             (conn) => `{{ ${conn.source}.outputs[0].value }}`
           )
-          : formValues?.images_list || []; // || [node.data?.outputs?.[0]?.value]
+          : formValues?.images_list || formValues?.img_url_list || []; // || [node.data?.outputs?.[0]?.value]
 
       const imageUrlConnections = connectedEdges.filter((e) =>
         ["textInput2", "videoInput2", "imageInput3", "audioInput3", "apiInput3"].includes(e.targetHandle) && !isCharSource(e.source)
@@ -1282,7 +1282,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       );
 
       const videoListConnections = connectedEdges.filter((e) =>
-        e.targetHandle === "videoInput7"
+        ["videoInput7", "videos"].includes(e.targetHandle)
       );
 
       const audioListConnections = connectedEdges.filter((e) =>
