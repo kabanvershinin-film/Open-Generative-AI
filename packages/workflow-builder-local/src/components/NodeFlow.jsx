@@ -1981,7 +1981,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     if (!sourceType || !targetType || (sourceType !== targetType && targetType !== 'white')) return false;
 
     const isSourceOutput = sourceHandle.toLowerCase().includes("output");
-    const isTargetInput = targetHandle.toLowerCase().includes("input") || (targetNode.type === "apiNode" && targetHandle !== "apiOutput");
+    const isTargetInput = 
+      targetHandle.toLowerCase().includes("input") || 
+      ["prompt", "images", "videos"].includes(targetHandle) ||
+      (targetNode.type === "apiNode" && targetHandle !== "apiOutput");
+
     if (!isSourceOutput || !isTargetInput) return false;
 
     const formValues = targetNode.data?.formValues || {};
@@ -2054,7 +2058,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       case "skylarkNode":
         validHandles = ["prompt", "images", "videos"];
-        return true;
+        break;
 
       case "vidConcatNode":
         validHandles = ["videoInput7"];
