@@ -115,41 +115,41 @@ async function tosList(prefix) {
         return keys;
 }
 
+const INDEX_KEY = 'admin_prompts/index.json';
+
+async function readIndex() {
+    if (!TOS_ENABLED) return [];
+    try {
+        const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+        const data = await tosGetSignedJson(host, INDEX_KEY);
+        return Array.isArray(data) ? data : [];
+    } catch (e) {
+        console.error('[prompts/admin] Failed to read index:', e.message);
+        return [];
+    }
+}
+
+async function writeIndex(data) {
+    if (!TOS_ENABLED) return false;
+    const buffer = Buffer.from(JSON.stringify(data));
+    return !!(await tosUpload(INDEX_KEY, buffer, 'application/json'));
+}
+
 export async function GET(request) {
     try {
         if (!TOS_ENABLED) {
-            console.error('[prompts/admin] TOS not enabled');
             return NextResponse.json({ prompts: [], error: 'Storage not configured' });
         }
-        const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-        const prefix = `admin_prompts/`;
-        const allKeys = await tosList(prefix);
-        console.log('[prompts/admin] Total keys found:', allKeys.length);
         
-        const keys = allKeys.filter(k => k.endsWith('.json'));
-        console.log('[prompts/admin] JSON keys:', keys);
+        const prompts = await readIndex();
+        console.log('[prompts/admin] Loaded from index:', prompts.length);
 
-        const prompts = await Promise.all(keys.map(async k => {
-            try {
-                return await tosGetSignedJson(host, k);
-            } catch (err) {
-                console.error(`[prompts/admin] Failed to load ${k}:`, err.message);
-                return null;
-            }
-        }));
-
-        const validPrompts = prompts.filter(Boolean);
-        console.log('[prompts/admin] Valid prompts loaded:', validPrompts.length);
-
-        const sorted = validPrompts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        
         return NextResponse.json({ 
-            prompts: sorted,
+            prompts: prompts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)),
             debug: {
                 tos_enabled: TOS_ENABLED,
-                keys_found: allKeys.length,
-                json_keys: keys.length,
-                loaded: validPrompts.length
+                source: 'index_file',
+                count: prompts.length
             }
         });
     } catch (e) {
@@ -166,6 +166,7 @@ export async function POST(request) {
 
         const body = await request.json();
         const { videoUrl, model, prompt } = body;
+
         if (!videoUrl || !model || !prompt) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
@@ -179,24 +180,23 @@ export async function POST(request) {
             created_at: new Date().toISOString()
         };
 
-        const key = `admin_prompts/${id}.json`;
-        console.log('[prompts/admin] Saving to key:', key);
-        
-        const ok = await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json');
-        if (!ok) {
-            console.error('[prompts/admin] Failed to save entry to TOS');
-            return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 });
-        }
+        // 1. Save individual file (optional, for backup)
+        const key = `admin_prompts/entries/${id}.json`;
+        await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json');
 
-        // Verify the file exists immediately
-        const verify = await tosGetSignedJson(`${TOS_BUCKET}.${TOS_ENDPOINT}`, key);
-        if (!verify) {
-            console.error('[prompts/admin] Verification failed: File uploaded but not readable');
-            return NextResponse.json({ error: 'Verification failed' }, { status: 500 });
+        // 2. Update index file (main source of truth)
+        let index = await readIndex();
+        index.unshift(entry);
+        if (index.length > 2000) index = index.slice(0, 2000); // Limit size
+
+        const ok = await writeIndex(index);
+        if (!ok) {
+            return NextResponse.json({ error: 'Failed to update index' }, { status: 500 });
         }
 
         return NextResponse.json({ success: true, prompt: entry });
     } catch (e) {
+        console.error('[prompts/admin] POST error:', e);
         return NextResponse.json({ error: e.message }, { status: 500 });
     }
 }
