@@ -1,7 +1,7 @@
 import StandaloneShell from '@/components/StandaloneShell';
 
 export const metadata = {
-  title: 'Студия — МАСТЕР ПРОМТОВ',
+  title: 'Студия — Сапог AI',
 };
 
 export default function StudioPage() {

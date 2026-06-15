@@ -4,7 +4,7 @@
  * The api key is available via the muapi_key cookie which StandaloneShell sets.
  */
 export const metadata = {
-  title: "Агенты — МАСТЕР ПРОМТОВ",
+  title: "Агенты — Сапог AI",
 };
 
 export default function AgentsLayout({ children }) {

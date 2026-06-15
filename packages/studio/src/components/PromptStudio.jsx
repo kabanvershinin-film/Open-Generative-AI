@@ -23,7 +23,7 @@ export default function PromptStudio({ apiKey }) {
         {/* Hero Section */}
         <div className="mb-12">
           <h1 className="text-4xl font-bold text-white mb-4 bg-gradient-to-r from-purple-400 to-fuchsia-500 bg-clip-text text-transparent">
-            База Промтов
+            База Промтов — Сапог AI
           </h1>
           <p className="text-white/40 text-lg max-w-2xl">
             Исследуйте лучшие промты для генерации изображений и видео. Копируйте, адаптируйте и создавайте свои шедевры.
