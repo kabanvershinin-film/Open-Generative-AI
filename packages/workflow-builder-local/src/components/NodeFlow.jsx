@@ -593,7 +593,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         // A Character node plugged into a video node is a face reference — route
         // it to face_asset (reference_image) regardless of which image handle it
         // lands on, instead of treating it as a first-frame image.
-        if (sourceNode?.type === "characterNode" && node.type === "videoNode") {
+        if (sourceNode?.type === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode")) {
           updatedFormValues.face_asset = resultValue;
           updatedFormValues.face_thumbnail =
             sourceNode?.data?.formValues?.character_photo || updatedFormValues.face_thumbnail || null;
@@ -821,7 +821,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             // CharacterNode → VideoNode: treat the face reference as face_asset,
             // carry the thumbnail for display, and tag @Name into the prompt
             // (same UX as Video Studio).
-            if (sourceNode?.type === "characterNode" && n.type === "videoNode") {
+            if (sourceNode?.type === "characterNode" && (n.type === "videoNode" || n.type === "skylarkNode")) {
               updatedFormValues.face_asset = resultValue || null;
               updatedFormValues.face_thumbnail = sourceNode?.data?.formValues?.character_photo || null;
               const cname = sourceNode?.data?.formValues?.character_name;
@@ -892,8 +892,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             if (color === "orange") {
               if (["videoInput4", "audioInput4"].includes(params.targetHandle)) {
                 updatedFormValues.video_url = resultValue || null;
-              } else if (params.targetHandle === "videoInput7") {
-                const key = updatedFormValues.video_files ? "video_files" : "videos_list";
+              } else if (["videoInput7", "videos"].includes(params.targetHandle)) {
+                const key = n.type === "skylarkNode" ? "video_url_list" : (updatedFormValues.video_files ? "video_files" : "videos_list");
                 const list = Array.isArray(updatedFormValues[key]) ? [...updatedFormValues[key]] : [];
                 if (!list.includes(resultValue) && resultValue && resultValue.trim() !== "") {
                   list.push(resultValue);
@@ -1110,7 +1110,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       // Disconnecting a Character node from a video node: clear the face
       // reference and strip its @Name token out of the prompt.
       const removedSource = nodes.find((n) => n.id === edge.source);
-      if (removedSource?.type === "characterNode" && targetNode?.type === "videoNode") {
+      if (removedSource?.type === "characterNode" && (targetNode?.type === "videoNode" || targetNode?.type === "skylarkNode")) {
         const cname = removedSource?.data?.formValues?.character_name;
         const token = cname && cname.trim() ? "@" + cname.trim().replace(/\s+/g, "_") : null;
         setNodes((prev) =>
@@ -1969,9 +1969,9 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
     if (!sourceNode || !targetNode) return false;
 
-    // CharacterNode feeds face_asset — allow it to land on any green image handle of a video node.
-    if (sourceNode.type === "characterNode" && targetNode.type === "videoNode") {
-      return ["videoInput2", "videoInput3", "videoInput6"].includes(targetHandle);
+    // CharacterNode feeds face_asset — allow it to land on any green image handle of a video node or agent.
+    if (sourceNode.type === "characterNode" && (targetNode.type === "videoNode" || targetNode.type === "skylarkNode")) {
+      return ["videoInput2", "videoInput3", "videoInput6", "images"].includes(targetHandle);
     }
 
     const sourceType = sourceNode?.data?.handleTypes?.[sourceHandle];
@@ -2614,6 +2614,38 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                         <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-xs text-white">Загрузка модели...</span>
                       </div>
+                    ) : selectedNode.type === "skylarkNode" ? (
+                      <div className="flex flex-col gap-4 w-full">
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Промпт</label>
+                          <textarea
+                            value={selectedNode.data.formValues?.prompt || ""}
+                            onChange={(e) => updateNodeFromPanel("prompt", e.target.value)}
+                            placeholder="Опишите, что должен сделать агент..."
+                            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white min-h-[100px] outline-none focus:border-blue-500/50 transition-all resize-none"
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Соотношение сторон</label>
+                          <select
+                            value={selectedNode.data.formValues?.ratio || "auto"}
+                            onChange={(e) => updateNodeFromPanel("ratio", e.target.value)}
+                            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+                          >
+                            {["auto", "16:9", "9:16", "4:3", "3:4"].map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                        </div>
+                        <div className="flex flex-col gap-1.5">
+                          <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Длительность</label>
+                          <select
+                            value={selectedNode.data.formValues?.duration || "auto"}
+                            onChange={(e) => updateNodeFromPanel("duration", e.target.value)}
+                            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+                          >
+                            {["auto", "～15s", "～30s", "40～60s"].map(d => <option key={d} value={d}>{d}</option>)}
+                          </select>
+                        </div>
+                      </div>
                     ) : selectedNode.type === "apiNode" ? (
                       <div className="flex flex-col gap-2 w-full h-full relative pt-2">
                         <button
@@ -2759,9 +2791,9 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             </div>
             {/* Connected images — first-frame image_url + extra images_list,
                 shown together as one gallery (replaces the single Image URL field). */}
-            {selectedNode?.type === "videoNode" && (() => {
+            {(selectedNode?.type === "videoNode" || selectedNode?.type === "skylarkNode") && (() => {
               const fv = selectedNode?.data?.formValues || {};
-              const extra = Array.isArray(fv.images_list) ? fv.images_list.filter(Boolean) : [];
+              const extra = Array.isArray(fv.images_list || fv.img_url_list) ? (fv.images_list || fv.img_url_list).filter(Boolean) : [];
               const all = [
                 ...(fv.image_url ? [{ url: fv.image_url, primary: true }] : []),
                 ...extra.map((u) => ({ url: u, primary: false })),
@@ -2771,13 +2803,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 setNodes((nds) => nds.map((n) => {
                   if (n.id !== selectedNode.id) return n;
                   const cfv = { ...n.data.formValues };
+                  const listKey = n.type === "skylarkNode" ? "img_url_list" : "images_list";
                   if (item.primary) {
                     // Promote the first extra image to be the new first-frame.
-                    const rest = Array.isArray(cfv.images_list) ? cfv.images_list.filter(Boolean) : [];
+                    const rest = Array.isArray(cfv[listKey]) ? cfv[listKey].filter(Boolean) : [];
                     cfv.image_url = rest.length ? rest[0] : null;
-                    cfv.images_list = rest.slice(1);
+                    cfv[listKey] = rest.slice(1);
                   } else {
-                    cfv.images_list = (Array.isArray(cfv.images_list) ? cfv.images_list.filter(Boolean) : []).filter((u) => u !== item.url);
+                    cfv[listKey] = (Array.isArray(cfv[listKey]) ? cfv[listKey].filter(Boolean) : []).filter((u) => u !== item.url);
                   }
                   return { ...n, data: { ...n.data, formValues: cfv } };
                 }));
@@ -2809,8 +2842,43 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 </div>
               );
             })()}
+            {/* Connected videos — video_url_list for SkylarkNode */}
+            {selectedNode?.type === "skylarkNode" && (() => {
+              const fv = selectedNode?.data?.formValues || {};
+              const all = Array.isArray(fv.video_url_list) ? fv.video_url_list.filter(Boolean) : [];
+              if (!all.length) return null;
+              const removeAt = (url) => {
+                setNodes((nds) => nds.map((n) => {
+                  if (n.id !== selectedNode.id) return n;
+                  const cfv = { ...n.data.formValues };
+                  cfv.video_url_list = (Array.isArray(cfv.video_url_list) ? cfv.video_url_list.filter(Boolean) : []).filter((u) => u !== url);
+                  return { ...n, data: { ...n.data, formValues: cfv } };
+                }));
+              };
+              return (
+                <div className="px-4 pb-3">
+                  <p className="text-[10px] font-semibold text-orange-300 uppercase tracking-wider mb-1.5">
+                    Видео ({all.length})
+                  </p>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {all.map((url, i) => (
+                      <div key={`${url}-${i}`} className="relative group/refvid rounded-lg overflow-hidden border border-orange-500/30 bg-black aspect-video flex items-center justify-center">
+                        <IoVideocamOutline className="text-orange-500/50" size={20} />
+                        <button
+                          type="button"
+                          onClick={() => removeAt(url)}
+                          className="absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refvid:opacity-100 transition-opacity z-10"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
             {/* Face reference badge — shown when a CharacterNode feeds this video node */}
-            {selectedNode?.type === "videoNode" && selectedNode?.data?.formValues?.face_asset && (() => {
+            {(selectedNode?.type === "videoNode" || selectedNode?.type === "skylarkNode") && selectedNode?.data?.formValues?.face_asset && (() => {
               const fa = String(selectedNode.data.formValues.face_asset);
               const isAsset = fa.startsWith("asset://");
               const thumb = selectedNode.data.formValues.face_thumbnail;
