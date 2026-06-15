@@ -196,7 +196,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     const targetSet = new Set(
       fedTargets.filter((tid) => {
         const n = nodesArr.find((nn) => nn.id === tid);
-        return n?.type === "videoNode" || n?.type === "imageNode";
+        return n?.type === "videoNode" || n?.type === "imageNode" || n?.type === "skylarkNode";
       })
     );
     if (!targetSet.size) return [];
@@ -244,7 +244,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     const targetSet = new Set(
       fedTargets.filter((tid) => {
         const n = nodesArr.find((nn) => nn.id === tid);
-        return n?.type === "videoNode" || n?.type === "imageNode";
+        return n?.type === "videoNode" || n?.type === "imageNode" || n?.type === "skylarkNode";
       })
     );
     if (!targetSet.size) return [];
