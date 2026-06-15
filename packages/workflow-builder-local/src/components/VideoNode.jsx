@@ -675,12 +675,12 @@ const VideoGeneration = ({ id, data, selected }) => {
 
   return (
     <div 
-      style={{ minHeight: 220, '--loader-color': '#f97316' }} 
+      style={{ minHeight: 220, '--loader-color': '#f97316' }}
       className={`
-        nowheel group flex flex-col w-80 
-        rounded-2xl border-2 relative transition-all duration-300 ease-in-out 
+        nowheel group flex flex-col flex-1 w-80 
+        rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out 
         ${selected 
-          ? "border-orange-600 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" 
+          ? "border-orange-500 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" 
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"} 
         bg-[#0c0d0f]
       `}
@@ -689,9 +689,9 @@ const VideoGeneration = ({ id, data, selected }) => {
         <div className="loader-border" />
       )}
       <div className="flex items-center gap-2 absolute -top-5 left-0">
-        <h4 className="text-zinc-400 text-[10px] font-medium tracking-wider uppercase">
+        <h3 className="text-zinc-400 text-[10px] font-medium tracking-wider uppercase">
           Video {id.replace(/^\D+/g, "")}
-        </h4>
+        </h3>
         {generationCost !== null && !selectedModel?.id.includes("passthrough") && (
           <span className="text-xs text-orange-500 -mt-0.5 font-medium flex items-center gap-1 opacity-80">
             {isRefreshingCost ? (
@@ -707,7 +707,7 @@ const VideoGeneration = ({ id, data, selected }) => {
         )}
       </div>
       <div className="flex flex-col">
-        <div className="flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 p-3">
+        <div className="flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3">
           <div className="flex items-center gap-2.5">
             <div className={`p-1.5 rounded-lg ${selected ? "bg-orange-600 text-white" : "bg-zinc-800 text-zinc-400"} transition-colors`}>
               <IoVideocamOutline size={14} />
@@ -776,9 +776,9 @@ const VideoGeneration = ({ id, data, selected }) => {
           <UploadNode id={id} data={data} formValues={formValues} setFormValues={setFormValues} selectedModel={selectedModel} loading={loading} uploadType="upload" acceptType="video" />
         </div>
       ) : (
-        <div className="flex flex-col flex-grow w-full rounded-b-[14px] overflow-hidden transition-all duration-500">
+        <div className="flex flex-col flex-grow w-full rounded-b-none overflow-hidden transition-all duration-500">
           {data.isLoading ? (
-            <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-gray-800 animate-pulse rounded-b-[14px]">
+            <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-gray-800 animate-pulse rounded-b-none">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-[10px] font-bold text-orange-500 tracking-wider uppercase">Generating...</span>
@@ -796,7 +796,7 @@ const VideoGeneration = ({ id, data, selected }) => {
               {data.errorMsg || "Generation failed"}
             </div>
           ) : currentOutput && !data.isLoading ? (
-            <div className="h-full w-full relative overflow-hidden rounded-b-[14px]">
+            <div className="h-full w-full relative overflow-hidden rounded-b-none">
               <VideoPlayer 
                 key={currentOutput}
                 src={currentOutput}

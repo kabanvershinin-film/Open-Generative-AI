@@ -424,7 +424,7 @@ const AudioGeneration = ({ id, data, selected }) => {
       style={{ minHeight: 220, '--loader-color': '#eab308' }}
       className={`
         nowheel group flex flex-col flex-1 w-80 
-        rounded-2xl border-2 relative transition-all duration-300 ease-in-out 
+        rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out 
         ${selected 
           ? "border-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.3)] scale-[1.02] ring-1 ring-yellow-500/20" 
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"} 
@@ -522,9 +522,9 @@ const AudioGeneration = ({ id, data, selected }) => {
           <UploadNode id={id} data={data} formValues={formValues} setFormValues={setFormValues} selectedModel={selectedModel} loading={loading} uploadType="upload" acceptType="audio" />
         </div>
       ) : (
-        <div className="flex flex-col flex-grow w-full rounded-b-[14px] overflow-hidden transition-all duration-500">
+        <div className="flex flex-col flex-grow w-full rounded-b-none overflow-hidden transition-all duration-500">
           {data.isLoading ? (
-            <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-[14px]">
+            <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-none">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-[10px] font-bold text-yellow-500 tracking-wider uppercase">Generating...</span>
@@ -535,11 +535,11 @@ const AudioGeneration = ({ id, data, selected }) => {
               {data.errorMsg || "Generation failed"}
             </div>
           ) : currentOutput && !data.isLoading ? (
-            <div className="w-full h-full relative group/audio flex flex-col items-center justify-center overflow-hidden rounded-b-[14px]">
+            <div className="w-full h-full relative group/audio flex flex-col items-center justify-center overflow-hidden rounded-b-none">
               <AudioPlayer 
                 src={currentOutput} 
                 nodeId={id}
-                className="flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-[14px]"
+                className="flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-none"
               />
               {currentOutputList.length > 1 && (
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black border border-white/10 rounded-full px-2 py-1 z-10 shadow-xl">
