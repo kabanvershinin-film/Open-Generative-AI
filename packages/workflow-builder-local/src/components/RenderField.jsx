@@ -183,7 +183,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             suppressHydrationWarning={true}
             ref={buttonRef} 
             onClick={() => handleDropdownToggle(idx + 1)}
-            className="flex items-center justify-between gap-1 text-xs text-center text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-1.5 bg-zinc-900/50 border border-white/10 hover:border-white/20 focus:outline-none rounded-lg transition-all"
+            className="flex items-center justify-between gap-1 text-xs text-center text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-1.5 bg-zinc-900 border border-white/10 hover:border-white/20 focus:outline-none rounded-lg transition-all"
           >
             <div className="flex items-center gap-2 truncate">
               <span className="truncate">{translateUi(value)}</span>
@@ -198,7 +198,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           <div
             tabIndex={-1}
             style={dropdownStyle}
-            className={`absolute left-0 ${isOpeningUp ? "bottom-full mb-2" : "top-full mt-2"} border border-white/10 p-1 rounded-xl flex flex-col overflow-y-auto bg-zinc-900/95 backdrop-blur-3xl shadow-2xl transition-all duration-200 w-full z-50 max-h-60 custom-scrollbar-thin ${
+            className={`absolute left-0 ${isOpeningUp ? "bottom-full mb-2" : "top-full mt-2"} border border-white/10 p-1 rounded-xl flex flex-col overflow-y-auto bg-zinc-900 shadow-2xl transition-all duration-200 w-full z-50 max-h-60 custom-scrollbar-thin ${
               dropDown === idx + 1
                 ? "opacity-100 scale-100 visible translate-y-0"
                 : `opacity-0 scale-95 invisible ${isOpeningUp ? "translate-y-2" : "-translate-y-2"}`
@@ -238,7 +238,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             value={formValues[fieldName] || ''} 
             readOnly
             // onChange={(e) => handleChange(fieldName, e.target.value)} 
-            className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 transition-all hover:border-white/20 w-full outline-none focus:border-blue-500/50" 
+            className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 transition-all hover:border-white/20 w-full outline-none focus:border-blue-500/50" 
             placeholder={translateUi("Add a file or provide an URL")} 
           />
           {/* <input 
@@ -434,7 +434,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             //   const clamped = Math.max(meta.minValue, Math.min(val, meta.maxValue));
             //   handleChange(fieldName, clamped);
             // }} 
-            className="w-12 h-8 text-center text-white rounded-lg border border-white/10 text-[10px] font-bold bg-zinc-900/50 outline-none focus:border-blue-500/50 transition-all" 
+            className="w-12 h-8 text-center text-white rounded-lg border border-white/10 text-[10px] font-bold bg-zinc-900 outline-none focus:border-blue-500/50 transition-all" 
           />
         </div>
       </div>
@@ -470,7 +470,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               num = Math.max(min, Math.min(num, max));
               handleChange(fieldName, num);
             }} 
-            className="w-full rounded-lg border border-white/10 px-3 py-2 text-white text-xs bg-zinc-900/50 hover:border-white/20 focus:border-blue-500/50 outline-none transition-all" 
+            className="w-full rounded-lg border border-white/10 px-3 py-2 text-white text-xs bg-zinc-900 hover:border-white/20 focus:border-blue-500/50 outline-none transition-all" 
           />
         </div>
       </div>
@@ -504,7 +504,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           value={value}
           placeholder={translateUi(meta.placeholder || "")}
           onChange={(e) => handleChange(fieldName, e.target.value)}
-          className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
+          className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
         />
       </div>
     );
@@ -542,7 +542,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           readOnly
           // onChange={(e) => handleChange(fieldName, e.target.value)}
           placeholder={translateUi(meta.description || "")}
-          className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
+          className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
           rows={6}
         />
       </div>

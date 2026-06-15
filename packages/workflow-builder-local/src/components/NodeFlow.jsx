@@ -2309,7 +2309,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </div>
       )}
 
-      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#0f0c18] backdrop-blur-xl p-1 rounded-full border border-purple-500/20 shadow-xl ${isRestoring && "hidden"}`}>
+      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#0f0c18] p-1 rounded-full border border-purple-500/20 shadow-xl ${isRestoring && "hidden"}`}>
         <button
           type="button"
           suppressHydrationWarning={true}
@@ -2439,7 +2439,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </ReactFlow>
       </div>
       {selectedNode && !["concatNode"].includes(selectedNode.type) && (
-        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#0f0c18]/80 backdrop-blur-xl border border-purple-500/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-purple-900/20`}>
+        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#0f0c18] border border-purple-500/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-purple-900/20`}>
           {isMobile && (
             <button
               type="button"
@@ -2463,7 +2463,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           </button>
           <div className="flex flex-col gap-4 h-full w-full">
             <h3 className="text-base font-semibold text-center text-white mt-6 tracking-tight">Свойства</h3>
-            <h1 className="flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800/50 border border-white/5 rounded-xl px-3 py-2 transition-all">
+            <h1 className="flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800 border border-white/5 rounded-xl px-3 py-2 transition-all">
               {selectedNode.id.startsWith("text") ? <TfiText className="text-blue-400" /> : selectedNode.id.startsWith("image") ? <IoImageOutline className="text-green-400" /> : selectedNode.id.startsWith("video") ? <IoVideocamOutline className="text-orange-400" /> : selectedNode.id.startsWith("audio") ? <AiOutlineAudio className="text-yellow-400" /> : <RiInputMethodLine className="text-purple-400" />}
               {formatNodeTitle(selectedNode.id)}
             </h1>
@@ -2471,7 +2471,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               <div className="flex flex-col gap-4 w-full h-full">
                 <div className="flex flex-col gap-1 relative w-full">
                   <label className="text-[10px] font-bold text-zinc-500 text-start px-1">Модель</label>
-                  <div className="flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg">
+                  <div className="flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-lg">
                     {selectedNode?.data?.selectedModel?.name || ""}
                   </div>
                 </div>
@@ -2671,7 +2671,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                         <button
                           type="button"
                           onClick={() => removeAt(item)}
-                          className="absolute top-0.5 right-0.5 bg-black/60 hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity"
+                          className="absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity"
                         >
                           ×
                         </button>
@@ -2708,7 +2708,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                     </div>
                   )}
                   {isAsset && (
-                    <div className="flex items-center gap-2 rounded-lg bg-purple-900/20 border border-purple-500/30 px-2.5 py-2">
+                    <div className="flex items-center gap-2 rounded-lg bg-purple-900 border border-purple-500/30 px-2.5 py-2">
                       <div className="w-4 h-4 rounded-full bg-purple-600 flex-shrink-0" />
                       <span className="text-[10px] font-mono text-purple-200 truncate">{fa}</span>
                     </div>
@@ -2797,7 +2797,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </div>
       )}
       <div
-        className={`fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black/30 backdrop-blur transition-all duration-200 ease-in-out ${
+        className={`fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black transition-all duration-200 ease-in-out ${
           dropDown === 2 ? "opacity-100 scale-100 visible" : "opacity-0 scale-80 invisible"
         }`}
         onClick={() => setDropDown(0)}
@@ -2820,7 +2820,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               type="button"
               suppressHydrationWarning={true}
               onClick={() => setDropDown(0)}
-              className="px-4 py-2 bg-gray-700/50 text-white rounded-full text-sm hover:bg-gray-600/50 transition w-full cursor-pointer"
+              className="px-4 py-2 bg-gray-700 text-white rounded-full text-sm hover:bg-gray-600 transition w-full cursor-pointer"
             >
               Cancel
             </button>
@@ -2838,7 +2838,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       {/* Assistant chat widget (bottom-right robot button) removed per request. */}
       {isCategoryPopupOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black px-4">
           <div className="bg-[#1b1e23] border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6">
               <h3 className="text-lg font-semibold text-white mb-4">Edit Workflow Category</h3>
@@ -2856,7 +2856,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 </div>
               </div>
             </div>
-            <div className="p-4 bg-[#151618]/50 flex items-center justify-end gap-3 border-t border-gray-700/50">
+            <div className="p-4 bg-[#151618] flex items-center justify-end gap-3 border-t border-gray-700">
               <button
                 type="button"
                 suppressHydrationWarning={true}
@@ -2880,7 +2880,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       )}
       {publishModal && (
         <div
-          className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black/30 backdrop-blur"
+          className="fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black"
           onClick={() => setPublishModal(null)}
         >
           <div className="bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
@@ -2908,7 +2908,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                     >
                       <img src={url} alt="" className="w-full h-16 object-cover" onError={(e) => { e.target.parentElement.style.display = 'none'; }} />
                       {publishModal.thumbnail === url && (
-                        <div className="absolute inset-0 bg-blue-500/30 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-blue-500/80 flex items-center justify-center">
                           <FaCheck className="text-white drop-shadow" size={16} />
                         </div>
                       )}
@@ -2924,7 +2924,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 type="button"
                 suppressHydrationWarning={true}
                 onClick={() => setPublishModal(null)}
-                className="px-4 py-2 bg-gray-700/50 text-white rounded-full text-sm hover:bg-gray-600/50 transition w-full cursor-pointer"
+                className="px-4 py-2 bg-gray-700 text-white rounded-full text-sm hover:bg-gray-600 transition w-full cursor-pointer"
               >
                 Cancel
               </button>

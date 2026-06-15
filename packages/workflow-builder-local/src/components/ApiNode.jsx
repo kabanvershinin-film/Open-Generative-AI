@@ -586,7 +586,7 @@ const ApiNode = ({ id, data, selected }) => {
         ${selected 
           ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" 
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"} 
-        bg-[#0c0d0f]/95 backdrop-blur-sm
+        bg-[#0c0d0f]
       `}
     >
       <div className="flex items-center gap-2 absolute -top-5 left-0">
@@ -608,7 +608,7 @@ const ApiNode = ({ id, data, selected }) => {
             </h3>
           </div>
           {outputHistory.length > 0 && (
-            <div className="absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
+            <div className="absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
               <button 
                 type="button"
                 suppressHydrationWarning={true}
@@ -707,7 +707,7 @@ const ApiNode = ({ id, data, selected }) => {
               )}
             </div>
             {currentOutputList.length > 1 && (
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/10 opacity-0 group-hover/api:opacity-100 transition-opacity">
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black border border-white/10 px-2 py-0.5 rounded-full opacity-0 group-hover/api:opacity-100 transition-opacity">
                 <button
                   type="button"
                   suppressHydrationWarning={true}
@@ -800,11 +800,12 @@ const ApiNode = ({ id, data, selected }) => {
             data-type={outputColor}
           />
           <p 
-            className={`absolute -right-10 top-[100px] text-xs ${labelColor} transition-opacity duration-200 ${
+            className={`absolute text-xs ${labelColor} transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
               data.activeHandleColor === outputColor
                 ? "opacity-100" 
                 : "opacity-0 group-hover:opacity-100"
             }`}
+            style={{ top: 100, right: -40 }}
           > 
             {labelText}
           </p>
@@ -837,12 +838,16 @@ const ApiNode = ({ id, data, selected }) => {
               data-type="white"
             />
             <p 
-              className={`absolute -left-20 top-[${150 + idx * 50}px] text-xs text-white text-right w-16 transition-opacity duration-200 ${
+              className={`absolute text-xs text-white text-right w-16 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
                 isExposed
                   ? "opacity-100" 
                   : "opacity-0 group-hover:opacity-100"
               }`}
-               style={{ top: 150 + idx * 50, opacity: isExposed ? undefined : 0, pointerEvents: isExposed ? 'all' : 'none' }} 
+               style={{ 
+                 top: 150 + idx * 50, 
+                 left: -80,
+                 opacity: isExposed ? undefined : 0
+               }} 
             > 
               {key} 
             </p>

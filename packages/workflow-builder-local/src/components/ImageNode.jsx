@@ -558,7 +558,7 @@ const ImageGeneration = ({ id, data, selected }) => {
         ${selected 
           ? "border-emerald-600 shadow-[0_0_25px_rgba(16,185,129,0.3)] scale-[1.02] ring-1 ring-emerald-500/20" 
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"} 
-        bg-[#0c0d0f]/95 backdrop-blur-sm
+        bg-[#0c0d0f]
       `}
     >
       {data.isLoading && (
@@ -593,7 +593,7 @@ const ImageGeneration = ({ id, data, selected }) => {
             </h3>
           </div>
           {outputHistory.length > 0 && (
-            <div className="absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
+            <div className="absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
               <button 
                 type="button"
                 suppressHydrationWarning={true}
@@ -763,11 +763,12 @@ const ImageGeneration = ({ id, data, selected }) => {
       />
       {hasPrompt && (
         <p 
-          className={`absolute -left-8 top-[100px] text-xs text-blue-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-blue-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "blue"
               ? "opacity-100"
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 100, left: -40 }}
         > 
           Text 
         </p>
@@ -795,11 +796,12 @@ const ImageGeneration = ({ id, data, selected }) => {
       />
       {hasImagesList && (
         <p 
-          className={`absolute -left-10 top-[150px] text-xs text-green-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 150, left: -45 }}
         > 
           Image 
         </p>
@@ -827,11 +829,12 @@ const ImageGeneration = ({ id, data, selected }) => {
       />
       {hasImageUrl && (
         <p 
-          className={`absolute -left-10 top-[200px] text-xs text-green-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 200, left: -45 }}
         > 
           Image 
         </p>
@@ -855,11 +858,12 @@ const ImageGeneration = ({ id, data, selected }) => {
         data-type="green"
       />
       <p 
-        className={`absolute -right-10 top-[100px] text-xs text-green-500 transition-opacity duration-200 ${
+        className={`absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
           data.activeHandleColor === "green"
             ? "opacity-100" 
             : "opacity-0 group-hover:opacity-100"
         }`}
+        style={{ top: 100, right: -45 }}
       > 
         Image 
       </p>

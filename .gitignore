@@ -37,3 +37,6 @@ out/
 .env
 .env.*
 !.env.example
+
+# Duplicate folder
+Open-Generative-AI-main/

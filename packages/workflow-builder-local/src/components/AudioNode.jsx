@@ -428,7 +428,7 @@ const AudioGeneration = ({ id, data, selected }) => {
         ${selected 
           ? "border-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.3)] scale-[1.02] ring-1 ring-yellow-500/20" 
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"} 
-        bg-[#0c0d0f]/95 backdrop-blur-sm
+        bg-[#0c0d0f]
       `}
     >
       {data.isLoading && (
@@ -463,7 +463,7 @@ const AudioGeneration = ({ id, data, selected }) => {
             </h3>
           </div>
           {outputHistory.length > 0 && (
-            <div className="absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
+            <div className="absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
               <button 
                 type="button"
                 suppressHydrationWarning={true}
@@ -542,7 +542,7 @@ const AudioGeneration = ({ id, data, selected }) => {
                 className="flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-2xl"
               />
               {currentOutputList.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-2 py-1 z-10 shadow-xl">
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black border border-white/10 rounded-full px-2 py-1 z-10 shadow-xl">
                   <button
                     type="button"
                     suppressHydrationWarning={true}
@@ -601,11 +601,12 @@ const AudioGeneration = ({ id, data, selected }) => {
       />
       {hasAudioUrl && (
         <p 
-          className={`absolute -left-7 top-[70px] text-xs text-yellow-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "yellow" 
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 70, left: -40 }}
         > 
           Audio 
         </p>
@@ -632,11 +633,12 @@ const AudioGeneration = ({ id, data, selected }) => {
       />
       {hasPrompt && (
         <p 
-          className={`absolute -left-8 top-[100px] text-xs text-blue-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-blue-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "blue"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 100, left: -40 }}
         > 
           Text 
         </p>
@@ -663,11 +665,12 @@ const AudioGeneration = ({ id, data, selected }) => {
       />
       {hasImageUrl && (
         <p 
-          className={`absolute -left-10 top-[130px] text-xs text-green-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 130, left: -45 }}
         > 
           Image 
         </p>
@@ -694,11 +697,12 @@ const AudioGeneration = ({ id, data, selected }) => {
       />
       {hasVideoUrl && (
         <p 
-          className={`absolute -left-10 top-[160px] text-xs text-orange-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "orange"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 160, left: -45 }}
         > 
           Video
         </p>
@@ -722,11 +726,12 @@ const AudioGeneration = ({ id, data, selected }) => {
         data-type="yellow"
       />
       <p 
-        className={`absolute -right-10 top-[100px] text-xs text-yellow-500 transition-opacity duration-200 ${
+        className={`absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
           data.activeHandleColor === "yellow" 
             ? "opacity-100" 
             : "opacity-0 group-hover:opacity-100"
         }`}
+        style={{ top: 100, right: -45 }}
       > 
         Audio 
       </p>

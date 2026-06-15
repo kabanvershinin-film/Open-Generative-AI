@@ -273,7 +273,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
             <label className="flex items-center gap-2 cursor-pointer select-none">
               <div
                 onClick={() => setSaveToLib(!saveToLib)}
-                className={`w-8 h-4 rounded-full transition-colors ${saveToLib ? "bg-purple-600" : "bg-white/10"}`}
+                className={`relative w-8 h-4 rounded-full transition-colors ${saveToLib ? "bg-purple-600" : "bg-white/10"}`}
               >
                 <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${saveToLib ? "left-[18px]" : "left-0.5"}`} />
               </div>

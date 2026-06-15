@@ -186,7 +186,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
         >
           <div 
             ref={containerRef}
-            className="flex items-center gap-1 border border-white/10 rounded-lg bg-zinc-900/50 hover:border-white/20 transition-all relative overflow-hidden"
+            className="flex items-center gap-1 border border-white/10 rounded-lg bg-zinc-900 hover:border-white/20 transition-all relative overflow-hidden"
           >
             {isManual ? (
               <input
@@ -233,7 +233,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
           <div
             tabIndex={-1}
             style={dropdownStyle}
-            className={`absolute left-0 ${isOpeningUp ? "bottom-full mb-2" : "top-full mt-2"} border border-white/10 p-2 rounded-lg flex flex-col overflow-y-auto bg-zinc-900/95 backdrop-blur-3xl shadow-2xl z-50 transition-all duration-200 w-full max-h-60 custom-scrollbar-thin ${
+            className={`absolute left-0 ${isOpeningUp ? "bottom-full mb-2" : "top-full mt-2"} border border-white/10 p-2 rounded-lg flex flex-col overflow-y-auto bg-zinc-900 shadow-2xl z-50 transition-all duration-200 w-full max-h-60 custom-scrollbar-thin ${
               dropDown === idx + 1
                 ? "opacity-100 scale-100 visible translate-y-0"
                 : `opacity-0 scale-95 invisible ${isOpeningUp ? "translate-y-2" : "-translate-y-2"}`
@@ -286,7 +286,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
             value={formValues[fieldName] || ''} 
             readOnly
             // onChange={(e) => handleChange(fieldName, e.target.value)} 
-            className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50" 
+            className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50" 
             placeholder="Add a file or provide an URL" 
           />
           {/* <input 
@@ -316,7 +316,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
           </label> */}
         </div>
         {uploading && (
-          <div className="w-full bg-gray-700/70 rounded h-1 overflow-hidden">
+          <div className="w-full bg-gray-700 rounded h-1 overflow-hidden">
             <div className="bg-blue-500 h-full" style={{ width: `${uploadProgress}%` }}></div>
           </div>
         )}
@@ -325,16 +325,14 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
-            >
+              className="min-h-11 px-4 rounded-lg bg-cyan-500/50 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/60 transition-colors">
               Выбрать файл
             </button>
             {isImageField && (
               <button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                className="min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
-              >
+                className="min-h-11 px-4 rounded-lg bg-purple-500/50 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/60 transition-colors">
                 Камера
               </button>
             )}
@@ -416,7 +414,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
                   className="w-full h-full aspect-[1/1] object-cover border border-gray-500 rounded" 
                 />
               )}
-              <div className="inset-0 group-hover:bg-gray-600/40 absolute rounded">
+              <div className="inset-0 group-hover:bg-gray-600 absolute rounded">
                 <button 
                   type="button" 
                   suppressHydrationWarning={true}
@@ -444,8 +442,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
               />
               <label
                 htmlFor={`file-upload-${fieldName}`} 
-                className="w-full h-full aspect-[1/1] flex items-center justify-center border border-dashed border-gray-400 text-gray-500 hover:text-white text-xl rounded cursor-pointer hover:bg-gray-800/50"
-              >
+                className="w-full h-full aspect-[1/1] flex items-center justify-center border border-dashed border-gray-400 text-gray-500 hover:text-white text-xl rounded cursor-pointer hover:bg-gray-800">
                 {uploading ? (
                   <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
                 ) : (
@@ -512,7 +509,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
           value={value}
           onChange={(e) => handleChange(fieldName, parseFloat(e.target.value || 0))}
           placeholder={meta.description || ""}
-          className="bg-zinc-900/50 text-white text-xs p-2 rounded-lg border border-white/10 hover:border-white/20 transition-all outline-none focus:border-blue-500/50"
+          className="bg-zinc-900 text-white text-xs p-2 rounded-lg border border-white/10 hover:border-white/20 transition-all outline-none focus:border-blue-500/50"
         />
       </div>
     );
@@ -539,7 +536,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
           value={value}
           placeholder={meta.placeholder || meta.description || fieldName}
           onChange={(e) => handleChange(fieldName, e.target.value)}
-          className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
+          className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
         />
       </div>
     );
@@ -595,7 +592,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
         readOnly
         // onChange={(e) => handleChange(fieldName, e.target.value)}
         placeholder={meta.description || ""}
-        className="bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
+        className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
         rows={6}
       />
     </div>

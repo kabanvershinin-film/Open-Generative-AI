@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import { generateVideo, generateI2V, processV2V, uploadFile, pollArkTask } from "../muapi.js";
 import {
-  t2vModels,
-  i2vModels,
-  v2vModels,
+  getT2vModels,
+  getI2vModels,
+  getV2vModels,
   getAspectRatiosForVideoModel,
   getDurationsForModel,
   getResolutionsForVideoModel,
@@ -19,6 +19,7 @@ import {
   getCharacterOrientationForModel,
   getKeepOriginalSoundForModel,
 } from "../models.js";
+import { useModelConfig } from "../useModelConfig.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
 
@@ -108,7 +109,7 @@ function DropdownItem({ label, selected, onClick }) {
   );
 }
 
-function ModelDropdown({ imageMode, selectedModel, onSelect, onClose }) {
+function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels, i2vModels, v2vModels, isAdmin }) {
   const [search, setSearch] = useState("");
 
   const generationModels = imageMode ? i2vModels : t2vModels;
@@ -132,9 +133,9 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose }) {
   const renderItem = (m, isV2V = false) => (
     <div
       key={m.id}
-      className={`flex items-center justify-between p-3.5 ${!m.disabled ? "hover:bg-white/5 cursor-pointer" : "opacity-50 cursor-not-allowed"} rounded-2xl transition-all border border-transparent ${!m.disabled && "hover:border-white/5"} ${selectedModel === m.id && !m.disabled ? "bg-white/5 border-white/5" : ""}`}
+      className={`flex items-center justify-between p-3.5 ${(!m.disabled || isAdmin) ? "hover:bg-white/5 cursor-pointer" : "opacity-50 cursor-not-allowed"} rounded-2xl transition-all border border-transparent ${(!m.disabled || isAdmin) && "hover:border-white/5"} ${selectedModel === m.id && (!m.disabled || isAdmin) ? "bg-white/5 border-white/5" : ""}`}
       onClick={(e) => {
-        if (m.disabled) return;
+        if (m.disabled && !isAdmin) return;
         e.stopPropagation();
         onSelect(m, isV2V);
         onClose();
@@ -142,12 +143,12 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose }) {
     >
       <div className="flex items-center gap-3.5">
         <div
-          className={`w-10 h-10 ${m.disabled ? "bg-gray-500/10 text-gray-400" : getIconColor(m, isV2V)} border border-white/5 rounded-xl flex items-center justify-center font-black text-sm shadow-inner uppercase`}
+          className={`w-10 h-10 ${m.disabled && !isAdmin ? "bg-gray-500/10 text-gray-400" : getIconColor(m, isV2V)} border border-white/5 rounded-xl flex items-center justify-center font-black text-sm shadow-inner uppercase`}
         >
           {m.name.charAt(0)}
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className={`text-xs font-bold ${m.disabled ? "text-gray-400" : "text-white"} tracking-tight`}>
+          <span className={`text-xs font-bold ${m.disabled && !isAdmin ? "text-gray-400" : "text-white"} tracking-tight`}>
             {m.name}
           </span>
           {m.comingSoon && (
@@ -160,7 +161,7 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose }) {
           )}
         </div>
       </div>
-      {selectedModel === m.id && !m.disabled && <CheckSvg />}
+      {selectedModel === m.id && (!m.disabled || isAdmin) && <CheckSvg />}
     </div>
   );
 
@@ -244,11 +245,15 @@ function ControlBtn({ icon, label, onClick, style }) {
 
 export default function VideoStudio({
   apiKey,
+  isAdmin = false,
   onGenerationComplete,
   historyItems,
   droppedFiles,
   onFilesHandled,
 }) {
+  // Get models with config
+  const { t2vModels, i2vModels, v2vModels, loading } = useModelConfig();
+  
   const PERSIST_KEY = "mf_video_studio_persistent";
   const ARK_TASK_KEY = "mf_video_active_ark_task";
   const PENDING_KEY = "mf_video_studio_pending";
@@ -259,7 +264,7 @@ export default function VideoStudio({
   const [v2vMode, setV2vMode] = useState(false);
 
   // ── model / params ──
-  const defaultModel = t2vModels[0];
+  const defaultModel = t2vModels[0] || i2vModels[0] || { id: "", name: "", inputs: {} };
   const [selectedModel, setSelectedModel] = useState(defaultModel.id);
   const [selectedModelName, setSelectedModelName] = useState(defaultModel.name);
   const [selectedAr, setSelectedAr] = useState(
@@ -1836,6 +1841,26 @@ export default function VideoStudio({
     setOpenDropdown((prev) => (prev === type ? null : type));
   };
 
+  // ── If loading or no models, show appropriate state ───────────────────────
+  if (loading) {
+    return (
+      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+        <div className="text-4xl mb-4">⏳</div>
+        <div className="text-lg font-medium">Загрузка...</div>
+      </div>
+    );
+  }
+  
+  if (t2vModels.length === 0 && i2vModels.length === 0 && v2vModels.length === 0) {
+    return (
+      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+        <div className="text-4xl mb-4">🎬</div>
+        <div className="text-lg font-medium">Студия видео временно недоступна</div>
+        <div className="text-sm mt-2">Попробуйте позже</div>
+      </div>
+    );
+  }
+
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <div
@@ -2489,6 +2514,10 @@ export default function VideoStudio({
                       selectedModel={selectedModel}
                       onSelect={handleModelSelect}
                       onClose={() => setOpenDropdown(null)}
+                      t2vModels={t2vModels}
+                      i2vModels={i2vModels}
+                      v2vModels={v2vModels}
+                      isAdmin={isAdmin}
                     />
                   </div>
                 )}

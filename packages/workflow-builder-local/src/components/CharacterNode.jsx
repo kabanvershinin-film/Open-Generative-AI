@@ -176,7 +176,7 @@ const CharacterNode = ({ id, data, selected }) => {
         ${selected
           ? "border-purple-600 shadow-[0_0_25px_rgba(168,85,247,0.3)] scale-[1.02] ring-1 ring-purple-500/20"
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"}
-        bg-[#0c0d0f]/95 backdrop-blur-sm`}
+        bg-[#0c0d0f]`}
     >
       <div className="flex items-center gap-2 absolute -top-5 left-0">
         <h3 className="text-zinc-400 text-[10px] font-medium tracking-wider uppercase">
@@ -208,7 +208,7 @@ const CharacterNode = ({ id, data, selected }) => {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Имя персонажа…"
-          className="h-9 px-3 rounded-lg bg-white/5 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+          className="h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
         />
 
         {/* Tabs */}
@@ -217,7 +217,7 @@ const CharacterNode = ({ id, data, selected }) => {
             type="button"
             onClick={() => setTab("photo")}
             className={`h-8 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${
-              tab === "photo" ? "bg-purple-600/30 border-purple-500/50 text-purple-100" : "bg-white/5 border-zinc-800 text-zinc-400 hover:text-white"
+              tab === "photo" ? "bg-purple-600 border-purple-500/50 text-purple-100" : "bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-white"
             }`}
           >
             <FiUpload size={12} /> Фото
@@ -226,7 +226,7 @@ const CharacterNode = ({ id, data, selected }) => {
             type="button"
             onClick={() => setTab("uri")}
             className={`h-8 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${
-              tab === "uri" ? "bg-purple-600/30 border-purple-500/50 text-purple-100" : "bg-white/5 border-zinc-800 text-zinc-400 hover:text-white"
+              tab === "uri" ? "bg-purple-600 border-purple-500/50 text-purple-100" : "bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-white"
             }`}
           >
             <FiLink size={12} /> Asset URI
@@ -258,13 +258,13 @@ const CharacterNode = ({ id, data, selected }) => {
               <button
                 type="button"
                 onClick={() => setPhotoUrl("")}
-                className="absolute top-2 right-2 bg-black/60 hover:bg-black text-white rounded px-1.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 bg-black hover:bg-black text-white rounded px-1.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
               >
                 &#10005;
               </button>
             </div>
           ) : (
-            <label className="cursor-pointer flex flex-col items-center justify-center gap-1.5 text-zinc-500 border border-dashed border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/40">
+            <label className="cursor-pointer flex flex-col items-center justify-center gap-1.5 text-zinc-500 border border-dashed border-zinc-700 rounded-lg p-4 hover:bg-zinc-800">
               <FiUpload size={18} />
               <span className="text-[11px]">Загрузить фото лица</span>
               <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
@@ -275,14 +275,14 @@ const CharacterNode = ({ id, data, selected }) => {
             value={assetUri}
             onChange={(e) => { setAssetUri(e.target.value); setPhotoUrl(""); }}
             placeholder="asset://asset-…"
-            className="h-9 px-3 rounded-lg bg-white/5 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50 font-mono"
+            className="h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50 font-mono"
           />
         )}
 
         {/* Current value / status */}
         {faceValue && (
           <div className="flex flex-col gap-1">
-            <div className="text-[10px] font-mono text-zinc-500 truncate bg-black/30 rounded px-2 py-1 border border-zinc-800">
+            <div className="text-[10px] font-mono text-zinc-500 truncate bg-black rounded px-2 py-1 border border-zinc-800">
               {faceValue}
             </div>
             <span className="text-[10px] text-emerald-400 flex items-center gap-1">
@@ -296,7 +296,7 @@ const CharacterNode = ({ id, data, selected }) => {
           type="button"
           onClick={saveToLibrary}
           disabled={!faceValue}
-          className="h-9 rounded-lg bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 text-purple-200 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="h-9 rounded-lg bg-purple-900 hover:bg-purple-800 border border-purple-500/30 text-purple-200 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           + Сохранить в библиотеку
         </button>
@@ -314,7 +314,7 @@ const CharacterNode = ({ id, data, selected }) => {
                     type="button"
                     onClick={() => pickFromLibrary(face)}
                     title={face.name}
-                    className={`w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-white/5 ${
+                    className={`w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-zinc-800 ${
                       faceValue && faceValue === face.assetUri ? "border-purple-500" : "border-zinc-800 hover:border-purple-500/50"
                     }`}
                   >
@@ -328,7 +328,7 @@ const CharacterNode = ({ id, data, selected }) => {
                   <button
                     type="button"
                     onClick={() => deleteFromLibrary(face.id)}
-                    className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500/80 text-white text-[8px] hidden group-hover/lib:flex items-center justify-center"
+                    className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] hidden group-hover/lib:flex items-center justify-center"
                   >
                     ×
                   </button>
@@ -352,9 +352,10 @@ const CharacterNode = ({ id, data, selected }) => {
         data-type="purple"
       />
       <p
-        className={`absolute -right-12 top-[100px] text-xs text-purple-400 transition-opacity duration-200 ${
+        className={`absolute text-xs text-purple-400 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
           data.activeHandleColor === "purple" ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         }`}
+        style={{ top: 100, right: -45 }}
       >
         Лицо
       </p>

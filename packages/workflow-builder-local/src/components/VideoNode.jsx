@@ -682,7 +682,7 @@ const VideoGeneration = ({ id, data, selected }) => {
         ${selected 
           ? "border-orange-600 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" 
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"} 
-        bg-[#0c0d0f]/95 backdrop-blur-sm
+        bg-[#0c0d0f]
       `}
     >
       {data.isLoading && (
@@ -717,7 +717,7 @@ const VideoGeneration = ({ id, data, selected }) => {
             </h3>
           </div>
           {outputHistory.length > 0 && (
-            <div className="absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
+            <div className="absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
               <button 
                 type="button"
                 suppressHydrationWarning={true}
@@ -778,21 +778,21 @@ const VideoGeneration = ({ id, data, selected }) => {
       ) : (
         <div className="flex items-center flex-grow justify-center w-full h-full rounded transition-all duration-500">
           {data.isLoading ? (
-            <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-2xl">
+            <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-gray-800 animate-pulse rounded-b-2xl">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-[10px] font-bold text-orange-500 tracking-wider uppercase">Generating...</span>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleCancelGeneration(); }}
-                  className="text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-3 py-1 rounded-md border border-zinc-700 hover:border-red-500/50 bg-zinc-900/80"
+                  className="text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-3 py-1 rounded-md border border-zinc-700 hover:border-red-500/50 bg-zinc-900"
                 >
                   Отмена
                 </button>
               </div>
             </div>
           ) : data.errorMsg ? (
-            <div className="text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 m-3 w-full">
+            <div className="text-red-400 text-xs font-medium p-3 bg-red-500/30 rounded-xl border border-red-500/20 m-3 w-full">
               {data.errorMsg || "Generation failed"}
             </div>
           ) : currentOutput && !data.isLoading ? (
@@ -811,7 +811,7 @@ const VideoGeneration = ({ id, data, selected }) => {
                       e.stopPropagation();
                       setCurrentVideoIndex((prev) => (prev > 0 ? prev - 1 : currentOutputList.length - 1));
                     }}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-800"
                   >
                     <FaAngleLeft size={16} />
                   </button>
@@ -822,7 +822,7 @@ const VideoGeneration = ({ id, data, selected }) => {
                       e.stopPropagation();
                       setCurrentVideoIndex((prev) => (prev < currentOutputList.length - 1 ? prev + 1 : 0));
                     }}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-800"
                   >
                     <FaAngleRight size={16} />
                   </button>
@@ -834,7 +834,7 @@ const VideoGeneration = ({ id, data, selected }) => {
                     <div
                       key={idx}
                       className={`w-1.5 h-1.5 rounded-full transition-all ${
-                        idx === currentVideoIndex ? "bg-white scale-125" : "bg-white/40"
+                        idx === currentVideoIndex ? "bg-white scale-125" : "bg-gray-600"
                       }`}
                     />
                   ))}
@@ -871,11 +871,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasPrompt && (
         <p 
-          className={`absolute -left-8 top-[70px] text-xs text-blue-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-blue-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "blue"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 70, left: -40 }}
         > 
           Text 
         </p>
@@ -903,11 +904,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasImageUrl && (
         <p 
-          className={`absolute -left-10 top-[100px] text-xs text-green-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 100, left: -50 }}
         > 
           Image 
         </p>
@@ -935,11 +937,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasImagesList && (
         <p 
-          className={`absolute -left-10 top-[100px] text-xs text-green-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 100, left: -55 }}
         > 
           Images
         </p>
@@ -967,11 +970,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasLastImage && (
         <p 
-          className={`absolute -left-16 top-[130px] text-xs text-green-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 130, left: -75 }}
         > 
           Last Frame 
         </p>
@@ -998,11 +1002,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasVideoUrl && (
         <p 
-          className={`absolute -left-10 top-[160px] text-xs text-orange-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "orange"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 160, left: -45 }}
         > 
           Video
         </p>
@@ -1030,11 +1035,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasVideosList && (
         <p 
-          className={`absolute -left-10 top-[160px] text-xs text-orange-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "orange"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 160, left: -50 }}
         > 
           Videos
         </p>
@@ -1061,11 +1067,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasAudiosList && (
         <p 
-          className={`absolute -left-10 top-[190px] text-xs text-yellow-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "yellow"
               ? "opacity-100" 
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 190, left: -55 }}
         > 
           Audios
         </p>
@@ -1092,11 +1099,12 @@ const VideoGeneration = ({ id, data, selected }) => {
       />
       {hasAudioUrl && (
         <p
-          className={`absolute -left-10 top-[190px] text-xs text-yellow-500 transition-opacity duration-200 ${
+          className={`absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "yellow"
               ? "opacity-100"
               : "opacity-0 group-hover:opacity-100"
           }`}
+          style={{ top: 190, left: -45 }}
         >
           Audio
         </p>
@@ -1120,11 +1128,12 @@ const VideoGeneration = ({ id, data, selected }) => {
         data-type="orange"
       />
       <p 
-        className={`absolute -right-10 top-[100px] text-xs text-orange-500 transition-opacity duration-200 ${
+        className={`absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ${
           data.activeHandleColor === "orange"
             ? "opacity-100" 
             : "opacity-0 group-hover:opacity-100"
         }`}
+        style={{ top: 100, right: -45 }}
       > 
         Video 
       </p>

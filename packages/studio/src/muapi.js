@@ -16,21 +16,7 @@ function bearerHeaders(key) {
     return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` };
 }
 
-async function readApiError(response, prefix = 'API Request Failed') {
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-        const data = await response.json().catch(() => ({}));
-        if (response.status === 402 && (data.error === 'insufficient_funds' || data.required !== undefined)) {
-            return `Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`;
-        }
-        const detail = data.detail || data.error || data.message || JSON.stringify(data);
-        return `${prefix}: ${response.status} ${response.statusText} - ${String(detail).slice(0, 200)}`;
-    }
-    const errText = await response.text().catch(() => response.statusText);
-    return `${prefix}: ${response.status} ${response.statusText} - ${errText.slice(0, 200)}`;
-}
-
-// ── Unified video format (/v1/video/create → /v1/video/task/{id}) ────────────
+// ── Unified video format (/v1/video/create → /v1/video/task/{id}) ─────────────
 
 async function pollVideoTask(taskId, key, maxAttempts = 300, interval = 3000) {
     const pollUrl = `${BASE_URL}/v1/video/task/${taskId}`;
@@ -337,9 +323,9 @@ export async function generateImage(apiKey, params) {
         body: JSON.stringify(payload)
     });
     if (!response.ok) {
-        const errMsg = await readApiError(response);
-        notifyAuthRequired(response.status, errMsg);
-        throw new Error(errMsg);
+        const errText = await response.text();
+        notifyAuthRequired(response.status, errText);
+        throw new Error(`API Request Failed: ${response.status} ${response.statusText} - ${errText.slice(0, 200)}`);
     }
     const data = await response.json();
     const url = extractImageUrl(data);
@@ -352,7 +338,7 @@ export async function generateImage(apiKey, params) {
     return { ...data, url };
 }
 
-// Fetch a remote image (or pass through a data URI) and return Gemini inline_data.
+// Fetch a remote image (or pass through a data URL) and return Gemini inline data.
 async function urlToInlineData(url) {
     try {
         if (!url) return null;
@@ -393,7 +379,7 @@ function extractGeminiImage(data) {
 // Generate / edit an image via the native Gemini generateContent endpoint
 // (gemini-*-image-* models, e.g. gemini-3.1-flash-image-preview / Nano Banana 2).
 // Supports generationConfig.imageConfig (aspectRatio + imageSize) and base64
-// reference images embedded inline. Returns the raw base64 data URI; the caller
+// reference images embedded inline. Returns the raw base64 data URL; the caller
 // mirrors it to TOS in the background.
 async function generateGeminiImage(apiKey, baseModelId, params) {
     const routing = params.routing && params.routing !== 'default' ? `:${params.routing}` : '';
@@ -427,9 +413,9 @@ async function generateGeminiImage(apiKey, baseModelId, params) {
         body: JSON.stringify(body),
     });
     if (!response.ok) {
-        const errMsg = await readApiError(response);
-        notifyAuthRequired(response.status, errMsg);
-        throw new Error(errMsg);
+        const errText = await response.text();
+        notifyAuthRequired(response.status, errText);
+        throw new Error(`API Request Failed: ${response.status} ${response.statusText} - ${errText.slice(0, 200)}`);
     }
     const data = await response.json();
     const raw = extractGeminiImage(data);
@@ -441,20 +427,19 @@ async function generateGeminiImage(apiKey, baseModelId, params) {
     return { ...data, url: raw };
 }
 
-// Mirror an image to TOS via the server, returning a permanent public URL.
-// Provider URLs from image models can be short-lived, so remote http(s) URLs
-// are mirrored too rather than being treated as already durable.
+// Mirror an image (base64 data URL) to TOS via the server, returning a permanent
+// public URL. The upload runs server-side because browser→TOS PUTs are CORS-blocked.
 // Falls back to the original image on any failure so generation still works.
 export async function persistImageToTOS(image) {
     try {
         if (typeof window === 'undefined' || !image) return image;
-        if (typeof image !== 'string') return image;
-        const payload = image.startsWith('data:') ? { image } : { url: image };
+        // Only base64 data URLs need mirroring; remote http URLs already persist.
+        if (typeof image === 'string' && !image.startsWith('data:')) return image;
 
         const resp = await fetch('/api/upload-file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ image }),
         });
         if (!resp.ok) return image; // storage not configured / upload failed → keep original
         const { url } = await resp.json();
@@ -465,7 +450,7 @@ export async function persistImageToTOS(image) {
     }
 }
 
-// Robustly pull an image URL (or base64 data URI) out of various provider response shapes.
+// Robustly pull an image URL (or base64 data URL) out of various provider response shapes.
 function extractImageUrl(data) {
     if (!data || typeof data !== 'object') return null;
 
@@ -515,86 +500,13 @@ function aspectRatioToSize(ratio) {
     return map[ratio] || '1024x1024';
 }
 
-function parseSizeDimensions(size) {
-    const m = String(size || '').match(/^(\d+)x(\d+)$/);
-    if (!m) return null;
-    return { width: Number(m[1]), height: Number(m[2]) };
-}
-
-function canvasToBlob(canvas, mimeType, quality) {
-    return new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error('Не удалось подготовить изображение для редактирования.'));
-        }, mimeType, quality);
-    });
-}
-
-async function loadImageBitmap(blob) {
-    if (typeof createImageBitmap === 'function') {
-        return createImageBitmap(blob);
-    }
-    const objectUrl = URL.createObjectURL(blob);
-    try {
-        const img = await new Promise((resolve, reject) => {
-            const el = new Image();
-            el.onload = () => resolve(el);
-            el.onerror = () => reject(new Error('Не удалось открыть референсное изображение.'));
-            el.src = objectUrl;
-        });
-        return img;
-    } finally {
-        URL.revokeObjectURL(objectUrl);
-    }
-}
-
-// Vercel functions reject oversized multipart payloads before the request even
-// reaches the upstream edits API. Downscale/compress large reference images in
-// the browser so GPT Image edits stay below the function body limit.
-async function optimizeEditImageBlob(blob, { maxBytes, maxDimension }) {
-    if (typeof window === 'undefined' || !(blob instanceof Blob) || !blob.type.startsWith('image/')) {
-        return blob;
-    }
-    if (blob.size <= maxBytes) return blob;
-
-    const source = await loadImageBitmap(blob);
-    let width = source.width;
-    let height = source.height;
-    let currentMaxDimension = maxDimension;
-    let best = blob;
-
-    for (let attempt = 0; attempt < 4; attempt++) {
-        const scale = Math.min(1, currentMaxDimension / Math.max(width, height));
-        const targetWidth = Math.max(1, Math.round(width * scale));
-        const targetHeight = Math.max(1, Math.round(height * scale));
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d', { alpha: false });
-        if (!ctx) break;
-        ctx.drawImage(source, 0, 0, targetWidth, targetHeight);
-
-        let candidate = await canvasToBlob(canvas, 'image/jpeg', 0.9);
-        let quality = 0.9;
-        while (candidate.size > maxBytes && quality > 0.55) {
-            quality -= 0.1;
-            candidate = await canvasToBlob(canvas, 'image/jpeg', quality);
-        }
-        best = candidate;
-        if (candidate.size <= maxBytes) break;
-        currentMaxDimension = Math.max(1024, Math.round(currentMaxDimension * 0.8));
-    }
-
-    if (typeof source.close === 'function') source.close();
-    return best.size < blob.size ? best : blob;
-}
-
 // Image editing via POST /v1/images/edits (multipart/form-data).
 // Fetches each image URL as a blob and appends it to the form.
 // Used by gpt-image-2 and any model with editEndpoint: true in models.js.
 async function generateImageEdit(apiKey, params) {
     const form = new FormData();
     const modelInfo = getModelById(params.model);
+    // /v1/images/edits expects the base model name (e.g. gpt-image-2).
     form.append('model', applyRouting(modelInfo?.apiId || params.model, params.routing));
     form.append('prompt', params.prompt || '');
     form.append('n', '1');
@@ -612,46 +524,23 @@ async function generateImageEdit(apiKey, params) {
     const urls = Array.isArray(params.images_list) && params.images_list.length > 0
         ? params.images_list
         : params.image_url ? [params.image_url] : [];
-    const sizeDims = parseSizeDimensions(size);
-    const perImageBudget = Math.max(900_000, Math.floor(3_200_000 / Math.max(urls.length, 1)));
-    const maxDimension = Math.max(1024, Math.min(2048, Math.round(Math.max(sizeDims?.width || 1024, sizeDims?.height || 1024) * 1.5)));
     for (const url of urls) {
-        // Uploaded references already live in TOS and Memefast accepts public
-        // image URLs in the edits form. Send URLs directly so the request stays
-        // tiny and bypasses the Vercel function body limit.
-        if (/^https?:\/\//i.test(url)) {
-            form.append('image[]', url);
-            continue;
-        }
-
         const r = await fetch(url);
         if (!r.ok) throw new Error(`Не удалось загрузить изображение: ${url}`);
         const blob = await r.blob();
-        const optimizedBlob = await optimizeEditImageBlob(blob, {
-            maxBytes: perImageBudget,
-            maxDimension,
-        });
-        const mime = optimizedBlob.type || blob.type || 'image/jpeg';
-        const ext = mime.includes('png') ? 'png' : mime.includes('webp') ? 'webp' : 'jpeg';
-        form.append('image', optimizedBlob, `image.${ext}`);
+        const ext = blob.type.includes('png') ? 'png' : 'jpeg';
+        form.append('image', blob, `image.${ext}`);
     }
 
-    const proxyEditUrl = `${BASE_URL}/v1/images/edits`;
-    let response;
-    // Route edits through our proxy so the server can apply the same billing /
-    // refund logic as workflow image generations.
-    response = await fetch(proxyEditUrl, {
+    const response = await fetch(`${BASE_URL}/v1/images/edits`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}` },
         body: form,
     });
     if (!response.ok) {
-        const errMsg = await readApiError(response);
-        notifyAuthRequired(response.status, errMsg);
-        if (response.status === 413) {
-            throw new Error('Выбранное изображение слишком большое для редактирования. Попробуйте JPG/PNG меньшего размера.');
-        }
-        throw new Error(errMsg);
+        const errText = await response.text();
+        notifyAuthRequired(response.status, errText);
+        throw new Error(`API Request Failed: ${response.status} - ${errText.slice(0, 200)}`);
     }
     const data = await response.json();
     const url = extractImageUrl(data);
@@ -662,6 +551,10 @@ async function generateImageEdit(apiKey, params) {
 
 export async function generateI2I(apiKey, params) {
     const modelInfo = getModelById(params.model);
+    const hasImages = Array.isArray(params.images_list) && params.images_list.length > 0;
+    if (hasImages && !modelInfo?.editEndpoint && !modelInfo?.acceptsImage) {
+        throw new Error('Эта модель не поддерживает загрузку изображений.');
+    }
     if (modelInfo?.editEndpoint) {
         return generateImageEdit(apiKey, params);
     }
@@ -754,10 +647,6 @@ export async function generateVideo(apiKey, params) {
         return generateSeedanceArk(modelInfo, params);
     }
 
-    if (platform === 'elspy') {
-        return submitElspyVideo(modelInfo, params);
-    }
-
     if (platform === 'kling') {
         const payload = {
             model_name: modelId,
@@ -798,79 +687,6 @@ export async function generateVideo(apiKey, params) {
     return submitUnifiedVideo(apiKey, payload, params.onRequestId);
 }
 
-// ── ElSpy AI (Omni Flash) ────────────────────────────────────────────────────
-
-async function pollElspyTask(taskId, bill = '', maxAttempts = 300, interval = 5000) {
-  const billParam = bill ? `&bill=${encodeURIComponent(bill)}` : '';
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    await new Promise(r => setTimeout(r, interval));
-    try {
-      const response = await fetch(`/api/elspy/status?taskId=${encodeURIComponent(taskId)}${billParam}`);
-      if (!response.ok) continue;
-      const data = await response.json();
-      if (data.is_final) {
-        if (data.state === 'success') {
-          return { url: data.result_url, id: taskId, cost: data.cost };
-        } else if (data.state === 'failed') {
-          throw new Error(`ElSpy: генерация не удалась: ${data.error || 'Unknown error'}`);
-        }
-      }
-    } catch (e) {
-        console.error('ElSpy poll error:', e);
-    }
-  }
-  throw new Error('ElSpy: превышено время ожидания генерации.');
-}
-
-async function submitElspyVideo(modelInfo, params) {
-  const body = {
-    model: modelInfo.apiId,
-    prompt: params.prompt || '',
-    params: {}
-  };
-  
-  if (modelInfo.apiId === 'kling-motion-control-v3') {
-    // Kling-Motion Control V3 специфические параметры
-    if (params.image_url) body.params.image_url = params.image_url;
-    if (params.video_url) body.params.video_url = params.video_url;
-    body.params.character_orientation = params.character_orientation;
-    body.params.keep_original_sound = params.keep_original_sound;
-    body.params.mode = params.mode;
-  } else {
-    // Omni Flash и другие модели
-    body.params.aspect_ratio = params.aspect_ratio;
-    body.params.duration = params.duration;
-    body.params.enhance_prompt = params.enhance_prompt;
-    body.params.enable_upsample = params.enable_upsample;
-    if (params.image_url) {
-      body.params.images = [params.image_url];
-    }
-  }
-  
-  const submit = await fetch('/api/elspy/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  
-  if (!submit.ok) {
-    const errorData = await submit.json().catch(() => ({}));
-    throw new Error(errorData.error || `ElSpy: ${submit.status}`);
-  }
-  
-  const submitData = await submit.json();
-  const taskId = submitData.id;
-  const bill = submitData.bill || '';
-  
-  if (!taskId) {
-    throw new Error('ElSpy: задача не создана (нет id).');
-  }
-  
-  params.onRequestId?.(taskId, bill); // Передаем bill вместе с taskId
-  
-  return pollElspyTask(taskId, bill);
-}
-
 export async function generateI2V(apiKey, params) {
     const modelInfo = getI2VModelById(params.model);
     const modelId = modelInfo?.apiId || params.model;
@@ -879,10 +695,6 @@ export async function generateI2V(apiKey, params) {
 
     if (modelInfo?.provider === 'ark') {
         return generateSeedanceArk(modelInfo, params);
-    }
-
-    if (platform === 'elspy') {
-        return submitElspyVideo(modelInfo, params);
     }
 
     if (platform === 'kling') {
@@ -1095,6 +907,16 @@ export async function updateWorkflowName(apiKey, id, name) {
     if (!r.ok) return {};
     return await r.json();
 }
+export async function updateWorkflowThumbnail(apiKey, id, thumbnail) {
+    const r = await fetch(`/api/workflow/${id}/thumbnail`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ thumbnail }),
+    });
+    if (!r.ok) throw new Error('Failed to update thumbnail');
+    return await r.json();
+}
+
 export async function deleteWorkflow(apiKey, id) {
     await fetch(`/api/workflow/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${apiKey}` } });
     return { success: true };
@@ -1171,8 +993,8 @@ export async function executeWorkflow(apiKey, id, inputs) {
     return await response.json();
 }
 export async function runSingleNode(_apiKey, _type, _inputs) { return { status: 'completed', output: {} }; }
-export async function deleteNodeRun()                        { return {}; }
-export async function getNodeStatus()                        { return { status: 'completed' }; }
+export async function deleteNodeRun()          { return {}; }
+export async function getNodeStatus()          { return { status: 'completed' }; }
 
 // ── Agents (local storage) ────────────────────────────────────────────────────
 export async function getTemplateAgents()    { return []; }

@@ -436,7 +436,7 @@ const TextGeneration = ({ id, data, selected }) => {
         ${selected 
           ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" 
           : "border-zinc-800 hover:border-zinc-700 shadow-lg"} 
-        bg-[#0c0d0f]/95 backdrop-blur-sm
+        bg-[#0c0d0f]
       `}
     >
       {data.isLoading && (
@@ -471,7 +471,7 @@ const TextGeneration = ({ id, data, selected }) => {
             </h3>
           </div>
           {outputHistory.length > 0 && (
-            <div className="absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
+            <div className="absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto">
               <button 
                 type="button"
                 suppressHydrationWarning={true}
@@ -555,7 +555,7 @@ const TextGeneration = ({ id, data, selected }) => {
                 className="w-full h-full max-h-96 text-xs leading-relaxed outline-none bg-transparent resize-none text-zinc-100 overflow-hidden font-medium placeholder:italic placeholder:opacity-50"
               />
               {currentOutputList.length > 1 && (
-                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/10 opacity-0 group-hover/text:opacity-100 transition-opacity">
+                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black px-2 py-0.5 rounded-full border border-white/10 opacity-0 group-hover/text:opacity-100 transition-opacity">
                   <button
                     type="button"
                     suppressHydrationWarning={true}
@@ -615,11 +615,12 @@ const TextGeneration = ({ id, data, selected }) => {
       />
       {hasPrompt && (
         <p 
-          className={`absolute -left-9 top-[100px] text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 ${
+          className={`absolute text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "blue" 
               ? "opacity-100 translate-x-0" 
               : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
           }`}
+          style={{ top: 100, left: -40 }}
         > 
           TEXT 
         </p>
@@ -648,11 +649,12 @@ const TextGeneration = ({ id, data, selected }) => {
       />
       {hasImageUrl && (
         <p 
-          className={`absolute -left-11 top-[150px] text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 ${
+          className={`absolute text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green" 
               ? "opacity-100 translate-x-0" 
               : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
           }`}
+          style={{ top: 150, left: -45 }}
         > 
           IMAGE 
         </p>
@@ -681,11 +683,12 @@ const TextGeneration = ({ id, data, selected }) => {
       />
       {hasImagesList && (
         <p 
-          className={`absolute -left-11 top-[200px] text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 ${
+          className={`absolute text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "green" 
               ? "opacity-100 translate-x-0" 
               : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
           }`}
+          style={{ top: 200, left: -45 }}
         > 
           IMAGE 
         </p>
@@ -714,11 +717,12 @@ const TextGeneration = ({ id, data, selected }) => {
       />
       {hasSystemPrompt && (
         <p 
-          className={`absolute -left-14 top-[250px] text-[10px] font-bold tracking-tight text-blue-600 transition-all duration-300 ${
+          className={`absolute text-[10px] font-bold tracking-tight text-blue-600 transition-all duration-300 pointer-events-none whitespace-nowrap ${
             data.activeHandleColor === "blue" 
               ? "opacity-100 translate-x-0" 
               : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
           }`}
+          style={{ top: 250, left: -50 }}
         > 
           SYSTEM 
         </p>
@@ -744,11 +748,12 @@ const TextGeneration = ({ id, data, selected }) => {
         data-type="blue"
       />
       <p 
-        className={`absolute -right-9 top-[100px] text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 ${
+        className={`absolute text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 pointer-events-none whitespace-nowrap ${
           data.activeHandleColor === "blue" 
             ? "opacity-100 translate-x-0" 
             : "opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"
         }`}
+        style={{ top: 100, right: -40 }}
       > 
         TEXT 
       </p>

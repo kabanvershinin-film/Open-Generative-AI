@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import { generateImage, generateI2I, uploadFile, persistImageToTOS, getUserWorkflows } from "../muapi.js";
 import {
-  t2iModels,
-  i2iModels,
+  getT2iModels,
+  getI2iModels,
   getAspectRatiosForModel,
   getResolutionsForModel,
   getQualityFieldForModel,
@@ -21,6 +21,7 @@ import {
   routingOptions,
   routingLabels,
 } from "../models.js";
+import { useModelConfig } from "../useModelConfig.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -663,7 +664,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
 
 // ─── ModelDropdown ────────────────────────────────────────────────────────────
 
-function ModelDropdown({ models, selectedModel, onSelect, onClose }) {
+function ModelDropdown({ models, selectedModel, onSelect, onClose, isAdmin }) {
   const [search, setSearch] = useState("");
 
   const filtered = models.filter(
@@ -706,17 +707,19 @@ function ModelDropdown({ models, selectedModel, onSelect, onClose }) {
           <div
             key={m.id}
             onClick={(e) => {
+              if (m.disabled && !isAdmin) return;
               e.stopPropagation();
               onSelect(m);
               onClose();
             }}
-            className={`flex items-center justify-between p-3.5 hover:bg-white/5 rounded-lg cursor-pointer transition-all border border-transparent hover:border-white/5 ${
-              selectedModel === m.id ? "bg-white/5 border-white/5" : ""
+            className={`flex items-center justify-between p-3.5 ${(!m.disabled || isAdmin) ? "hover:bg-white/5 cursor-pointer" : "opacity-50 cursor-not-allowed"} rounded-lg transition-all border border-transparent ${(!m.disabled || isAdmin) && "hover:border-white/5"} ${
+              selectedModel === m.id && (!m.disabled || isAdmin) ? "bg-white/5 border-white/5" : ""
             }`}
           >
             <div className="flex items-center gap-3.5">
               <div
                 className={`w-10 h-10 ${
+                  m.disabled && !isAdmin ? "bg-gray-500/10 text-gray-400" :
                   m.family === "kontext"
                     ? "bg-blue-500/10 text-blue-400"
                     : m.family === "effects"
@@ -727,12 +730,12 @@ function ModelDropdown({ models, selectedModel, onSelect, onClose }) {
                 {m.name.charAt(0)}
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="text-xs font-bold text-white tracking-tight">
+                <span className={`text-xs font-bold ${m.disabled && !isAdmin ? "text-gray-400" : "text-white"} tracking-tight`}>
                   {m.name}
                 </span>
               </div>
             </div>
-            {selectedModel === m.id && (
+            {selectedModel === m.id && (!m.disabled || isAdmin) && (
               <svg
                 width="16"
                 height="16"
@@ -802,6 +805,7 @@ function SimpleDropdown({ title, options, selected, onSelect, onClose, labels })
 
 export default function ImageStudio({
   apiKey,
+  isAdmin = false,
   onGenerationComplete,
   onHistoryChange,
   onGeneratingChange,
@@ -809,6 +813,9 @@ export default function ImageStudio({
   droppedFiles,
   onFilesHandled,
 }) {
+  // Get models with config
+  const { t2iModels, i2iModels, loading } = useModelConfig();
+  
   const PERSIST_KEY = "mf_image_studio_persistent";
   const PERSIST_REFS_KEY = "mf_image_studio_refs";
   const PERSIST_RECENT_RESULTS_KEY = "mf_image_studio_recent_results";
@@ -925,39 +932,17 @@ export default function ImageStudio({
   const [pickerWorkflows, setPickerWorkflows] = useState([]);
   const [pickerLoading, setPickerLoading] = useState(false);
 
-  const openWorkflowPicker = async (url, prompt) => {
-    setWorkflowPicker({ url, prompt });
-    setPickerLoading(true);
-    try {
-      const data = await getUserWorkflows(apiKey);
-      setPickerWorkflows(data || []);
-    } catch {
-      setPickerWorkflows([]);
-    } finally {
-      setPickerLoading(false);
-    }
-  };
-
-  const sendToWorkflow = (wf) => {
-    try {
-      localStorage.setItem("mf_pending_workflow_image", JSON.stringify({
-        url: workflowPicker.url,
-        workflowId: wf.id,
-      }));
-    } catch {}
-    setWorkflowPicker(null);
-    router.push(`/workflow/${wf.id}/builder`);
-  };
-
   // ── Model / mode state ──────────────────────────────────────────────────
   const [imageMode, setImageMode] = useState(false); // false=t2i, true=i2i
-  const [selectedModelId, setSelectedModelId] = useState(t2iModels[0].id);
-  const [selectedModelName, setSelectedModelName] = useState(t2iModels[0].name);
+  const defaultModel = t2iModels[0] || i2iModels[0];
+  const [selectedModelId, setSelectedModelId] = useState(defaultModel?.id || "");
+  const [selectedModelName, setSelectedModelName] = useState(defaultModel?.name || "");
   const [selectedAr, setSelectedAr] = useState(
-    t2iModels[0].inputs?.aspect_ratio?.default || "1:1",
+    defaultModel?.inputs?.aspect_ratio?.default || "1:1",
   );
   const [selectedQuality, setSelectedQuality] = useState(() => {
-    const resolutions = getResolutionsForModel(t2iModels[0].id);
+    if (!defaultModel) return null;
+    const resolutions = getResolutionsForModel(defaultModel.id);
     return resolutions[0] || null;
   });
   const [selectedEffect, setSelectedEffect] = useState("");
@@ -965,10 +950,10 @@ export default function ImageStudio({
   // Extra image parameters (quality / format / background / moderation), mirroring
   // the memefast playground. Each defaults to the model's declared default.
   const [selectedQualityOpt, setSelectedQualityOpt] = useState(
-    () => getImageInputDefault(t2iModels[0].id, "quality"),
+    () => (defaultModel ? getImageInputDefault(defaultModel.id, "quality") : null),
   );
   const [selectedFormat, setSelectedFormat] = useState(
-    () => getImageInputDefault(t2iModels[0].id, "format"),
+    () => (defaultModel ? getImageInputDefault(defaultModel.id, "format") : null),
   );
   const [selectedBackground, setSelectedBackground] = useState(null);
   const [selectedModeration, setSelectedModeration] = useState(null);
@@ -976,7 +961,7 @@ export default function ImageStudio({
   const [selectedRouting, setSelectedRouting] = useState("default");
   // Gemini output resolution (imageConfig.imageSize: 1K/2K/4K/512).
   const [selectedImageSize, setSelectedImageSize] = useState(
-    () => getImageInputDefault(t2iModels[0].id, "imageSize"),
+    () => (defaultModel ? getImageInputDefault(defaultModel.id, "imageSize") : null),
   );
 
   // ── Prompt / upload state ───────────────────────────────────────────────
@@ -1202,25 +1187,52 @@ export default function ImageStudio({
 
   // ── Derived: current model lists & helpers ───────────────────────────────
   const currentModels = imageMode ? i2iModels : t2iModels;
-  const currentAspectRatios = imageMode
+  const currentAspectRatios = imageMode && selectedModelId
     ? getAspectRatiosForI2IModel(selectedModelId)
-    : getAspectRatiosForModel(selectedModelId);
-  const currentResolutions = imageMode
+    : selectedModelId ? getAspectRatiosForModel(selectedModelId) : [];
+  const currentResolutions = imageMode && selectedModelId
     ? getResolutionsForI2IModel(selectedModelId)
-    : getResolutionsForModel(selectedModelId);
-  const currentQualityField = imageMode
+    : selectedModelId ? getResolutionsForModel(selectedModelId) : [];
+  const currentQualityField = imageMode && selectedModelId
     ? getQualityFieldForI2IModel(selectedModelId)
-    : getQualityFieldForModel(selectedModelId);
+    : selectedModelId ? getQualityFieldForModel(selectedModelId) : "";
   const showQualityBtn = currentResolutions.length > 0;
-  const currentEffects = imageMode ? getEffectsForI2IModel(selectedModelId) : [];
+  const currentEffects = imageMode && selectedModelId ? getEffectsForI2IModel(selectedModelId) : [];
   const showEffectBtn = currentEffects.length > 0;
 
+  // Validate selected model exists in current models, reset if not
+  useEffect(() => {
+    const currentModelIds = currentModels.map(m => m.id);
+    if (currentModels.length > 0 && !currentModelIds.includes(selectedModelId)) {
+      const firstModel = currentModels[0];
+      setSelectedModelId(firstModel.id);
+      setSelectedModelName(firstModel.name);
+      const ars = imageMode
+        ? getAspectRatiosForI2IModel(firstModel.id)
+        : getAspectRatiosForModel(firstModel.id);
+      const resolutions = imageMode
+        ? getResolutionsForI2IModel(firstModel.id)
+        : getResolutionsForModel(firstModel.id);
+      setSelectedAr(ars[0] || "1:1");
+      setSelectedQuality(resolutions[0] || null);
+      setSelectedQualityOpt(getImageInputDefault(firstModel.id, "quality"));
+      setSelectedFormat(getImageInputDefault(firstModel.id, "format"));
+      setSelectedBackground(getImageInputDefault(firstModel.id, "background"));
+      setSelectedModeration(getImageInputDefault(firstModel.id, "moderation"));
+      setSelectedImageSize(getImageInputDefault(firstModel.id, "imageSize"));
+      if (imageMode) {
+        const effects = getEffectsForI2IModel(firstModel.id);
+        setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(firstModel.id) || effects[0]) : "");
+      }
+    }
+  }, [currentModels, selectedModelId, imageMode]);
+
   // Extra parameter option lists for the current model.
-  const currentQualityOptions = getImageInputOptions(selectedModelId, "quality");
-  const currentFormatOptions = getImageInputOptions(selectedModelId, "format");
-  const currentBackgroundOptions = getImageInputOptions(selectedModelId, "background");
-  const currentModerationOptions = getImageInputOptions(selectedModelId, "moderation");
-  const currentImageSizeOptions = getImageInputOptions(selectedModelId, "imageSize");
+  const currentQualityOptions = selectedModelId ? getImageInputOptions(selectedModelId, "quality") : [];
+  const currentFormatOptions = selectedModelId ? getImageInputOptions(selectedModelId, "format") : [];
+  const currentBackgroundOptions = selectedModelId ? getImageInputOptions(selectedModelId, "background") : [];
+  const currentModerationOptions = selectedModelId ? getImageInputOptions(selectedModelId, "moderation") : [];
+  const currentImageSizeOptions = selectedModelId ? getImageInputOptions(selectedModelId, "imageSize") : [];
 
   // ── Textarea auto-resize ─────────────────────────────────────────────────
   const handleTextareaInput = () => {
@@ -1237,26 +1249,28 @@ export default function ImageStudio({
       const newUrls = urls || [url];
       setUploadedImageUrls(newUrls);
 
-      if (!imageMode) {
+      if (!imageMode && selectedModelId) {
         const currentT2I = t2iModels.find((m) => m.id === selectedModelId);
         const matchedI2I =
           (currentT2I && i2iModels.find((m) => m.apiId === currentT2I.apiId)) ||
           i2iModels[0];
-        const ars = getAspectRatiosForI2IModel(matchedI2I.id);
-        const resolutions = getResolutionsForI2IModel(matchedI2I.id);
-        const effects = getEffectsForI2IModel(matchedI2I.id);
-        setImageMode(true);
-        setSelectedModelId(matchedI2I.id);
-        setSelectedModelName(matchedI2I.name);
-        setSelectedAr(ars[0] || "1:1");
-        setSelectedQuality(resolutions[0] || null);
-        setSelectedQualityOpt(getImageInputDefault(matchedI2I.id, "quality"));
-        setSelectedFormat(getImageInputDefault(matchedI2I.id, "format"));
-        setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
-        setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
-        setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
-        setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
-        setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
+        if (matchedI2I) {
+          const ars = getAspectRatiosForI2IModel(matchedI2I.id);
+          const resolutions = getResolutionsForI2IModel(matchedI2I.id);
+          const effects = getEffectsForI2IModel(matchedI2I.id);
+          setImageMode(true);
+          setSelectedModelId(matchedI2I.id);
+          setSelectedModelName(matchedI2I.name);
+          setSelectedAr(ars[0] || "1:1");
+          setSelectedQuality(resolutions[0] || null);
+          setSelectedQualityOpt(getImageInputDefault(matchedI2I.id, "quality"));
+          setSelectedFormat(getImageInputDefault(matchedI2I.id, "format"));
+          setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
+          setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
+          setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
+          setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
+          setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
+        }
       }
     },
     [imageMode, selectedModelId],
@@ -1266,20 +1280,22 @@ export default function ImageStudio({
     setUploadedImageUrls([]);
     setImageMode(false);
     const firstT2I = t2iModels[0];
-    const ars = getAspectRatiosForModel(firstT2I.id);
-    const resolutions = getResolutionsForModel(firstT2I.id);
-    setSelectedModelId(firstT2I.id);
-    setSelectedModelName(firstT2I.name);
-    setSelectedAr(ars[0] || "1:1");
-    setSelectedQuality(resolutions[0] || null);
-    setSelectedQualityOpt(getImageInputDefault(firstT2I.id, "quality"));
-    setSelectedFormat(getImageInputDefault(firstT2I.id, "format"));
-    setSelectedBackground(getImageInputDefault(firstT2I.id, "background"));
-    setSelectedModeration(getImageInputDefault(firstT2I.id, "moderation"));
-    setSelectedImageSize(getImageInputDefault(firstT2I.id, "imageSize"));
-    setSelectedEffect("");
-    setMaxImages(1);
-  }, []);
+    if (firstT2I) {
+      const ars = getAspectRatiosForModel(firstT2I.id);
+      const resolutions = getResolutionsForModel(firstT2I.id);
+      setSelectedModelId(firstT2I.id);
+      setSelectedModelName(firstT2I.name);
+      setSelectedAr(ars[0] || "1:1");
+      setSelectedQuality(resolutions[0] || null);
+      setSelectedQualityOpt(getImageInputDefault(firstT2I.id, "quality"));
+      setSelectedFormat(getImageInputDefault(firstT2I.id, "format"));
+      setSelectedBackground(getImageInputDefault(firstT2I.id, "background"));
+      setSelectedModeration(getImageInputDefault(firstT2I.id, "moderation"));
+      setSelectedImageSize(getImageInputDefault(firstT2I.id, "imageSize"));
+      setSelectedEffect("");
+      setMaxImages(1);
+    }
+  }, [t2iModels]);
 
   // ── Model selection ──────────────────────────────────────────────────────
   const handleModelSelect = (m) => {
@@ -1373,19 +1389,21 @@ export default function ImageStudio({
     setUploadedImageUrls([]);
     setImageMode(false);
     const firstT2I = t2iModels[0];
-    const ars = getAspectRatiosForModel(firstT2I.id);
-    const resolutions = getResolutionsForModel(firstT2I.id);
-    setSelectedModelId(firstT2I.id);
-    setSelectedModelName(firstT2I.name);
-    setSelectedAr(ars[0] || "1:1");
-    setSelectedQuality(resolutions[0] || null);
-    setSelectedQualityOpt(getImageInputDefault(firstT2I.id, "quality"));
-    setSelectedFormat(getImageInputDefault(firstT2I.id, "format"));
-    setSelectedBackground(getImageInputDefault(firstT2I.id, "background"));
-    setSelectedModeration(getImageInputDefault(firstT2I.id, "moderation"));
-    setSelectedImageSize(getImageInputDefault(firstT2I.id, "imageSize"));
-    setSelectedEffect("");
-    setMaxImages(1);
+    if (firstT2I) {
+      const ars = getAspectRatiosForModel(firstT2I.id);
+      const resolutions = getResolutionsForModel(firstT2I.id);
+      setSelectedModelId(firstT2I.id);
+      setSelectedModelName(firstT2I.name);
+      setSelectedAr(ars[0] || "1:1");
+      setSelectedQuality(resolutions[0] || null);
+      setSelectedQualityOpt(getImageInputDefault(firstT2I.id, "quality"));
+      setSelectedFormat(getImageInputDefault(firstT2I.id, "format"));
+      setSelectedBackground(getImageInputDefault(firstT2I.id, "background"));
+      setSelectedModeration(getImageInputDefault(firstT2I.id, "moderation"));
+      setSelectedImageSize(getImageInputDefault(firstT2I.id, "imageSize"));
+      setSelectedEffect("");
+      setMaxImages(1);
+    }
   };
 
   // ── Generation ───────────────────────────────────────────────────────────
@@ -1526,8 +1544,6 @@ export default function ImageStudio({
   );
 
   const handleGenerate = () => {
-    if (generating) return;
-
     if (imageMode) {
       if (uploadedImageUrls.length === 0) {
         alert("Пожалуйста, сначала загрузите референсное изображение.");
@@ -1694,6 +1710,50 @@ export default function ImageStudio({
       : imageMode
         ? "Опишите как трансформировать изображение (необязательно)"
         : "Опишите изображение, которое хотите создать";
+
+  const openWorkflowPicker = async (url, prompt) => {
+    setWorkflowPicker({ url, prompt });
+    setPickerLoading(true);
+    try {
+      const data = await getUserWorkflows(apiKey);
+      setPickerWorkflows(data || []);
+    } catch {
+      setPickerWorkflows([]);
+    } finally {
+      setPickerLoading(false);
+    }
+  };
+
+  const sendToWorkflow = (wf) => {
+    try {
+      localStorage.setItem("mf_pending_workflow_image", JSON.stringify({
+        url: workflowPicker.url,
+        workflowId: wf.id,
+      }));
+    } catch {}
+    setWorkflowPicker(null);
+    router.push(`/workflow/${wf.id}/builder`);
+  };
+
+  // ── If loading or no models, show appropriate state ─────────────────────────────
+  if (loading) {
+    return (
+      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+        <div className="text-4xl mb-4">⏳</div>
+        <div className="text-lg font-medium">Загрузка...</div>
+      </div>
+    );
+  }
+  
+  if (t2iModels.length === 0 && i2iModels.length === 0) {
+    return (
+      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+        <div className="text-4xl mb-4">🎬</div>
+        <div className="text-lg font-medium">Студия фото временно недоступна</div>
+        <div className="text-sm mt-2">Перейдите в Студию видео для генерации</div>
+      </div>
+    );
+  }
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -1960,6 +2020,7 @@ export default function ImageStudio({
                       selectedModel={selectedModelId}
                       onSelect={handleModelSelect}
                       onClose={() => setDropdownOpen(null)}
+                      isAdmin={isAdmin}
                     />
                   </div>
                 )}
@@ -2316,8 +2377,7 @@ export default function ImageStudio({
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={generating}
-              className="bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 disabled:opacity-50 disabled:cursor-not-allowed z-10"
+              className="bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10"
             >
               {generating ? (
                 <>
