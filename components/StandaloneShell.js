@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { ImageStudio, VideoStudio, ClippingStudio, VibeMotionStudio, LipSyncStudio, CinemaStudio, MarketingStudio, WorkflowStudio, AgentStudio, AppsStudio, getUserBalance } from 'studio';
+import { ImageStudio, VideoStudio, ClippingStudio, VibeMotionStudio, LipSyncStudio, CinemaStudio, MarketingStudio, WorkflowStudio, AgentStudio, AppsStudio, getUserBalance, PromptStudio } from 'studio';
 
 const DesignAgentStudio = () => (
   <div className="h-full w-full bg-black flex items-center justify-center text-white/40">
@@ -15,6 +15,12 @@ const GalleryStudio = dynamic(() => import('studio').then(mod => mod.GalleryStud
   ssr: false,
   loading: () => <div className="h-full w-full bg-black flex items-center justify-center text-white/20">Загрузка галереи...</div>
 });
+
+const PromptStudioTab = dynamic(() => import('studio').then(mod => mod.PromptStudio), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-black flex items-center justify-center text-white/20">Загрузка базы промтов...</div>
+});
+
 import axios from 'axios';
 import ApiKeyModal from './ApiKeyModal';
 
@@ -23,6 +29,7 @@ const TABS = [
   { id: 'video',   label: 'Студия видео' },
   { id: 'workflows', label: 'Процессы' },
   { id: 'gallery', label: 'Галерея' },
+  { id: 'prompts', label: 'База промтов' },
 ];
 
 const STORAGE_KEY = 'muapi_key';
@@ -318,6 +325,7 @@ export default function StandaloneShell() {
         {activeTab === 'video'   && <VideoStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
         {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
         {activeTab === 'gallery' && <GalleryStudio apiKey={apiKey} />}
+        {activeTab === 'prompts' && <PromptStudioTab apiKey={apiKey} />}
 
         {/* Generation indicator overlay - visible across all tabs */}
         {isGenerating && (
