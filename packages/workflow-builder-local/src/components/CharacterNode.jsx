@@ -169,6 +169,12 @@ const CharacterNode = ({ id, data, selected }) => {
     setLibrary(next);
   };
 
+  const updateLibraryThumb = (id, thumb) => {
+    const next = library.map((f) => (f.id === id ? { ...f, thumbnail: thumb } : f));
+    saveLibrary(next);
+    setLibrary(next);
+  };
+
   return (
     <div
       style={{ minHeight: 220, "--loader-color": "#a855f7" }}
@@ -310,11 +316,24 @@ const CharacterNode = ({ id, data, selected }) => {
             <div className="flex flex-wrap gap-2">
               {library.map((face) => (
                 <div key={face.id} className="relative group/lib flex flex-col items-center gap-0.5">
+                  <input
+                    id={`thumb-upload-${face.id}`}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      const reader = new FileReader();
+                      reader.onload = (ev) => updateLibraryThumb(face.id, ev.target.result);
+                      reader.readAsDataURL(file);
+                    }}
+                  />
                   <button
                     type="button"
                     onClick={() => pickFromLibrary(face)}
                     title={face.name}
-                    className={`w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-zinc-800 ${
+                    className={`w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-zinc-800 relative ${
                       faceValue && faceValue === face.assetUri ? "border-purple-500" : "border-zinc-800 hover:border-purple-500/50"
                     }`}
                   >
@@ -323,6 +342,15 @@ const CharacterNode = ({ id, data, selected }) => {
                     ) : (
                       <IoPersonCircleOutline size={22} className="text-purple-300" />
                     )}
+
+                    {/* Upload overlay */}
+                    <div 
+                      onClick={(e) => { e.stopPropagation(); document.getElementById(`thumb-upload-${face.id}`)?.click(); }}
+                      className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/lib:opacity-100 transition-opacity cursor-pointer"
+                      title="Загрузить превью"
+                    >
+                      <FiUpload size={14} className="text-white" />
+                    </div>
                   </button>
                   <span className="text-[8px] text-zinc-500 truncate w-12 text-center">{face.name}</span>
                   <button

@@ -27,23 +27,55 @@ function loadAvatarLibrary() {
   }
 }
 
-function FaceThumb({ face, onSelect, onDelete, isAvatar }) {
+function FaceThumb({ face, onSelect, onDelete, onUpdateThumb, isAvatar }) {
+  const fileRef = useRef(null);
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => onUpdateThumb?.(face.id, ev.target.result);
+    reader.readAsDataURL(file);
+  };
+
   return (
     <div className="relative group flex flex-col gap-0.5 items-center">
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFile}
+      />
       <button
         type="button"
         onClick={() => onSelect(face)}
-        className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/60 transition-all flex items-center justify-center"
+        className="w-14 h-14 rounded-xl overflow-hidden bg-white/5 border border-white/10 hover:border-purple-500/60 transition-all flex items-center justify-center relative"
         title={face.name}
       >
         {face.thumbnail || face.rolePic ? (
           <img src={face.thumbnail || face.rolePic} alt={face.name} className="w-full h-full object-cover" />
         ) : (
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-purple-300">
-            <path d="M20 21v-2a4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
+          <div className="flex flex-col items-center justify-center gap-1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-purple-300/50">
+              <path d="M20 21v-2a4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+            <span className="text-[7px] text-purple-300/40 uppercase font-bold">Нет фото</span>
+          </div>
         )}
+        
+        {/* Upload overlay */}
+        <div 
+          onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}
+          className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          title="Загрузить превью"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+        </div>
       </button>
       <span className="text-[9px] text-white/50 truncate w-14 text-center">{face.name}</span>
       {isAvatar && (
@@ -132,6 +164,20 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
     setAvatarLibrary(next);
   };
 
+  const updateFaceThumb = (id, thumb) => {
+    const next = library.map((f) => (f.id === id ? { ...f, thumbnail: thumb } : f));
+    saveLibrary(next);
+    setLibrary(next);
+  };
+
+  const updateAvatarThumb = (id, thumb) => {
+    const next = avatarLibrary.map((a) => (a.id === id ? { ...a, thumbnail: thumb } : a));
+    try {
+      localStorage.setItem(AVATAR_LIBRARY_KEY, JSON.stringify(next));
+    } catch {}
+    setAvatarLibrary(next);
+  };
+
   const addToLibrary = (assetUri, name, thumbnail) => {
     const item = { id: Date.now().toString(), name: name || assetUri.replace(/^asset:\/\//, "").slice(0, 16), assetUri, thumbnail: thumbnail || null, addedAt: Date.now() };
     const next = [item, ...library.filter((f) => f.assetUri !== assetUri)];
@@ -202,6 +248,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                     isAvatar={true}
                     onSelect={(a) => pickAvatar(a)}
                     onDelete={deleteAvatar}
+                    onUpdateThumb={updateAvatarThumb}
                   />
                 ))}
               </div>
@@ -221,6 +268,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                     face={face}
                     onSelect={(f) => pickFace(f.assetUri, f.name)}
                     onDelete={deleteFace}
+                    onUpdateThumb={updateFaceThumb}
                   />
                 ))}
               </div>
