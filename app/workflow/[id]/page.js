@@ -1,7 +1,7 @@
 import StandaloneShell from '@/components/StandaloneShell';
 
 export const metadata = {
-  title: 'Workflow — Open Generative AI',
+  title: 'Процесс — МАСТЕР ПРОМТОВ',
 };
 
 export default function WorkflowPage() {

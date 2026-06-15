@@ -1,7 +1,7 @@
 import AdminPanel from '@/components/admin/AdminPanel';
 
 export const metadata = {
-    title: 'Admin — OpenGenerativeAI',
+    title: 'Админ — МАСТЕР ПРОМТОВ',
 };
 
 export default function AdminPage() {

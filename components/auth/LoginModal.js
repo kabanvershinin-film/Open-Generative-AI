@@ -106,7 +106,7 @@ export default function LoginModal() {
                     {/* Brand */}
                     <div className="flex items-center justify-center gap-2.5 mb-2">
                         <span className="grid place-items-center h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 shadow-lg shadow-purple-600/30 text-white text-lg font-black">◆</span>
-                        <span className="text-white font-bold text-lg tracking-tight">OpenGenerativeAI</span>
+                        <span className="text-white font-bold text-lg tracking-tight">МАСТЕР ПРОМТОВ</span>
                     </div>
                     <p className="text-center text-[11px] tracking-[0.22em] text-purple-300/70 uppercase mb-7">
                         От креаторов · для креаторов
