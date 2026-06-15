@@ -654,7 +654,7 @@ const ImageGeneration = ({ id, data, selected }) => {
           <UploadNode id={id} data={data} formValues={formValues} setFormValues={setFormValues} selectedModel={selectedModel} loading={loading} uploadType="upload" acceptType="image" />
         </div>
       ) : (
-        <div className="flex items-center flex-grow justify-center w-full h-full rounded transition-all duration-500">
+        <div className="flex items-center flex-grow justify-center w-full h-full rounded-b-2xl overflow-hidden transition-all duration-500">
           {data.isLoading ? (
             <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-2xl">
               <div className="flex flex-col items-center gap-3">
@@ -701,7 +701,7 @@ const ImageGeneration = ({ id, data, selected }) => {
                 loading="lazy"
                 decoding="async"
                 onError={(e) => { if (currentOutput && e.currentTarget.src !== currentOutput) e.currentTarget.src = currentOutput; }}
-                className="w-full h-full object-contain rounded-b-xl animate-in fade-in duration-500"
+                className="w-full h-full object-contain rounded-b-2xl animate-in fade-in duration-500"
               />
               <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none rounded-b-xl flex flex-col justify-end">
                 <div className="flex items-center justify-between">

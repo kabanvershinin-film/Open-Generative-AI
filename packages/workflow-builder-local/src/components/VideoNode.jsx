@@ -776,7 +776,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           <UploadNode id={id} data={data} formValues={formValues} setFormValues={setFormValues} selectedModel={selectedModel} loading={loading} uploadType="upload" acceptType="video" />
         </div>
       ) : (
-        <div className="flex items-center flex-grow justify-center w-full h-full rounded transition-all duration-500">
+        <div className="flex items-center flex-grow justify-center w-full h-full rounded-b-2xl overflow-hidden transition-all duration-500">
           {data.isLoading ? (
             <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-gray-800 animate-pulse rounded-b-2xl">
               <div className="flex flex-col items-center gap-3">
