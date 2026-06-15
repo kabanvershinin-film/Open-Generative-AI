@@ -14,7 +14,7 @@ const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 let CNY_TO_RUB = Number(process.env.CNY_TO_RUB || 10.55); // live CBR rate, see ensureCnyRate()
-let PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.15);
+let PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.20);
 let _platformMarkupCache = { value: PLATFORM_MARKUP, updatedAt: 0 };
 const MARKUP_CACHE_TTL = 60_000; // 1 minute
 

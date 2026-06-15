@@ -13,5 +13,5 @@ alter table config enable row level security;
 
 -- Insert the default platform markup
 insert into config (key, value)
-values ('platform_markup', '1.15')
+values ('platform_markup', '1.20')
 on conflict (key) do nothing;
