@@ -25,10 +25,16 @@ const TextGeneration = ({ id, data, selected }) => {
   const outputHistory = data.outputHistory || [];
   const connectedInputs = data.connectedInputs || {};
   const connectedOutputs = data.connectedOutputs || {};
-  const hasPrompt = data.hasPrompt !== false;
-  const hasImageUrl = data.hasImageUrl !== false;
-  const hasImagesList = data.hasImagesList !== false;
-  const hasSystemPrompt = data.hasSystemPrompt !== false;
+
+  const properties = data.nodeSchemas?.categories?.text?.models?.[selectedModel.id]?.input_schema?.schemas?.input_data?.properties || 
+                     data.nodeSchemas?.categories?.text?.models?.[selectedModel.id]?.input_params?.properties || {};
+
+  const isPassthrough = selectedModel?.id?.includes("passthrough");
+
+  const hasPrompt = data.hasPrompt !== false && !isPassthrough && ("prompt" in properties || Object.keys(properties).length === 0);
+  const hasImageUrl = data.hasImageUrl !== false && !isPassthrough && "image_url" in properties;
+  const hasImagesList = data.hasImagesList !== false && !isPassthrough && "images_list" in properties;
+  const hasSystemPrompt = data.hasSystemPrompt !== false && !isPassthrough && "system_prompt" in properties;
 
   const handlePrev = (e) => {
     e.stopPropagation();
@@ -76,6 +82,28 @@ const TextGeneration = ({ id, data, selected }) => {
   const currentOutput = currentOutputList.length > 0
     ? currentOutputList[currentOutputIndex]?.value || currentOutputList[0]?.value || data.resultUrl
     : data.resultUrl;
+
+  const { setNodes, setEdges } = data;
+
+  useEffect(() => {
+    if (!setEdges) return;
+    const timeout = setTimeout(() => {
+      const validHandles = [
+        hasPrompt && "textInput",
+        hasImageUrl && "textInput2",
+        hasImagesList && "textInput3",
+        hasSystemPrompt && "textInput4",
+      ].filter(Boolean);
+
+      setEdges((prevEdges) =>
+        prevEdges.filter((edge) => {
+          if (edge.target !== id) return true;
+          return validHandles.includes(edge.targetHandle);
+        })
+      );
+    }, 2000);
+    return () => clearTimeout(timeout);
+  }, [hasPrompt, hasImageUrl, hasImagesList, hasSystemPrompt, id, setEdges]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
