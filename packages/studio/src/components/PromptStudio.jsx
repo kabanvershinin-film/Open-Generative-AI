@@ -5,12 +5,7 @@ import React, { useState } from 'react';
 const CATEGORIES = [
   'Все',
   'Google Omni',
-  'Seedance 2.0',
-  'Flux 1.1',
-  'Midjourney',
-  'DALL-E 3',
-  'Stable Diffusion',
-  'Kling AI'
+  'Seedance 2.0'
 ];
 
 export default function PromptStudio({ apiKey }) {
@@ -70,12 +65,12 @@ export default function PromptStudio({ apiKey }) {
           {[
             { model: 'Google Omni', prompt: 'Cinematic portrait of a futuristic cyberpunk warrior in a rain-soaked Neo-Tokyo street, neon lights reflecting in armor, 8k resolution, highly detailed' },
             { model: 'Seedance 2.0', prompt: 'A magical forest with glowing plants and floating islands, ethereal atmosphere, cinematic lighting, hyper-realistic' },
-            { model: 'Flux 1.1', prompt: 'Architectural visualization of a modern minimalist villa by the ocean, sunset lighting, glass reflections, high-end design' },
-            { model: 'Midjourney', prompt: 'Cute 3D character design of a small robot explorer, Pixar style, soft shadows, vibrant colors' },
-            { model: 'DALL-E 3', prompt: 'A cozy coffee shop interior with plants and vintage furniture, warm sunlight streaming through windows, isometric view' },
-            { model: 'Stable Diffusion', prompt: 'Epic landscape of a dragon flying over snow-capped mountains, dramatic clouds, fantasy art style' },
-            { model: 'Kling AI', prompt: 'A futuristic electric car driving through a desert at night, long exposure light trails, sci-fi aesthetic' },
             { model: 'Google Omni', prompt: 'Close up of a human eye with a galaxy inside, cosmic reflection, surrealism, macro photography' },
+            { model: 'Seedance 2.0', prompt: 'Cute 3D character design of a small robot explorer, Pixar style, soft shadows, vibrant colors' },
+            { model: 'Google Omni', prompt: 'Architectural visualization of a modern minimalist villa by the ocean, sunset lighting, glass reflections, high-end design' },
+            { model: 'Seedance 2.0', prompt: 'Epic landscape of a dragon flying over snow-capped mountains, dramatic clouds, fantasy art style' },
+            { model: 'Google Omni', prompt: 'A cozy coffee shop interior with plants and vintage furniture, warm sunlight streaming through windows, isometric view' },
+            { model: 'Seedance 2.0', prompt: 'A futuristic electric car driving through a desert at night, long exposure light trails, sci-fi aesthetic' },
           ].map((item, i) => (
             <div key={i} className="group bg-white/5 border border-purple-500/10 rounded-2xl overflow-hidden hover:border-purple-500/30 transition-all duration-300">
               <div className="aspect-[4/3] bg-purple-500/5 flex items-center justify-center relative overflow-hidden">
