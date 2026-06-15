@@ -3,6 +3,7 @@ import { Handle, Position, useReactFlow, useStore, useUpdateNodeInternals } from
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { IoVideocamOutline, IoTrashOutline } from "react-icons/io5";
+import { TfiText } from "react-icons/tfi";
 import { FaAngleLeft, FaAngleRight, FaPlay } from "react-icons/fa6";
 import { RiRobot2Line } from "react-icons/ri";
 import { stableStringify } from "./utility";

@@ -1383,23 +1383,23 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       let output_params = {};
 
       if (node.type === "apiNode") {
-        for (const [key, meta] of Object.entries(wavespeedSchema)) {
+        for (const [key, meta] of Object.entries(wavespeedSchema || {})) {
           if (localSources[key] !== undefined && localSources[key] !== null) {
             params[key] = localSources[key];
           } else {
-            params[key] = meta.default ?? null;
+            params[key] = meta?.default ?? null;
           }
         }
 
         const filteredInputParams = Object.fromEntries(
-          Object.entries(input_params).filter(([key]) =>
+          Object.entries(input_params || {}).filter(([key]) =>
             key !== "model_url" && key !== "api_key" && key !== "model_name" && key !== "model_type"
           )
         );
 
         params["params"] = filteredInputParams;
 
-        for (const [key, meta] of Object.entries(filteredInputParams)) {
+        for (const [key, meta] of Object.entries(filteredInputParams || {})) {
           if (localSources[key] !== undefined && localSources[key] !== null) {
             params.params[key] = localSources[key];
           } else {
@@ -1408,27 +1408,27 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         }
       } else if (node.type === "vidConcatNode") {
         const vcSchema = videoCombinerSchema || { videos_list: { default: [] }, aspect_ratio: { default: "auto" } };
-        for (const [key, meta] of Object.entries(vcSchema)) {
+        for (const [key, meta] of Object.entries(vcSchema || {})) {
           if (localSources[key] !== undefined && localSources[key] !== null) {
             params[key] = localSources[key];
           } else {
-            params[key] = meta.default ?? null;
+            params[key] = meta?.default ?? null;
           }
         }
       } else if (node.type === "concatNode") {
-        for (const [key, meta] of Object.entries(concatSchema)) {
+        for (const [key, meta] of Object.entries(concatSchema || {})) {
           if (localSources[key] !== undefined && localSources[key] !== null) {
             params[key] = localSources[key];
           } else {
-            params[key] = meta.default ?? null;
+            params[key] = meta?.default ?? null;
           }
         }
       } else {
-        for (const [key, meta] of Object.entries(inputSchema)) {
+        for (const [key, meta] of Object.entries(inputSchema || {})) {
           if (localSources[key] !== undefined && localSources[key] !== null) {
             params[key] = localSources[key];
           } else {
-            params[key] = meta.default ?? null;
+            params[key] = meta?.default ?? null;
           }
         }
         // face_asset isn't in the model schema, so carry it through explicitly
@@ -2749,7 +2749,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                         })}
                       </div>
                     ) : (inputSchema?.properties || (inputSchema && Object.keys(inputSchema).length > 0)) ? (
-                      Object.entries(inputSchema?.properties || inputSchema).map(([key, meta], idx) => {
+                      Object.entries(inputSchema?.properties || inputSchema || {}).map(([key, meta], idx) => {
                         if (key === "schemas") return null;
                         // Hide the single image_url field on video nodes — connected
                         // images are shown together in the combined gallery below.
