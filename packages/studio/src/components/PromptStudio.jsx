@@ -20,6 +20,7 @@ export default function PromptStudio({ apiKey }) {
   const [uploading, setUploading] = useState(false);
   
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadMode, setUploadMode] = useState('file'); // 'file' or 'url'
   
   // Form state
   const [newPrompt, setNewPrompt] = useState({
@@ -105,6 +106,29 @@ export default function PromptStudio({ apiKey }) {
       toast.error('Ошибка при загрузке: ' + e.message, { id: toastId });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleUrlBlur = async () => {
+    if (newPrompt.videoUrl && newPrompt.videoUrl.startsWith('http') && !newPrompt.videoUrl.includes('tos-s3')) {
+      setUploading(true);
+      const toastId = toast.loading('Обработка ссылки...');
+      try {
+        const res = await fetch('/api/upload-file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: newPrompt.videoUrl })
+        });
+        const data = await res.json();
+        if (data.url) {
+          setNewPrompt(prev => ({ ...prev, videoUrl: data.url }));
+          toast.success('Видео успешно перенесено в базу!', { id: toastId });
+        }
+      } catch (e) {
+        toast.error('Ошибка при обработке ссылки: ' + e.message, { id: toastId });
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -289,41 +313,85 @@ export default function PromptStudio({ apiKey }) {
               </div>
               
               <div className="p-6 space-y-6">
-                {/* Video Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-white/60 mb-2">Видео-пример</label>
-                  <div 
-                    onClick={() => !uploading && fileInputRef.current?.click()}
-                    className={`aspect-video rounded-xl border-2 border-dashed flex flex-center items-center justify-center cursor-pointer transition-all overflow-hidden relative ${
-                      newPrompt.videoUrl ? 'border-purple-500/50' : 'border-white/10 hover:border-purple-500/30 bg-white/5'
+                {/* Mode Toggle */}
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                  <button
+                    onClick={() => setUploadMode('file')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                      uploadMode === 'file' ? 'bg-purple-500 text-white' : 'text-white/40 hover:text-white/60'
                     }`}
                   >
-                    {newPrompt.videoUrl ? (
-                      <video src={newPrompt.videoUrl} className="w-full h-full object-cover" autoPlay muted loop />
-                    ) : (
-                      <div className="text-center p-6">
-                        {uploading ? (
-                          <div className="flex flex-col items-center">
-                            <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-4" />
-                            <div className="text-2xl font-bold text-white mb-1">{uploadProgress}%</div>
-                            <div className="text-xs text-white/40 uppercase tracking-widest">Загрузка видео...</div>
-                          </div>
-                        ) : (
-                          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2 text-white/20">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                          </svg>
-                        )}
-                        <p className="text-sm text-white/40">Нажмите для загрузки видео</p>
-                      </div>
-                    )}
-                    <input 
-                      type="file" 
-                      ref={fileInputRef} 
-                      onChange={handleFileChange} 
-                      accept="video/*" 
-                      className="hidden" 
-                    />
-                  </div>
+                    Загрузить файл
+                  </button>
+                  <button
+                    onClick={() => setUploadMode('url')}
+                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                      uploadMode === 'url' ? 'bg-purple-500 text-white' : 'text-white/40 hover:text-white/60'
+                    }`}
+                  >
+                    Вставить ссылку
+                  </button>
+                </div>
+
+                {/* Video Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-white/60 mb-2">Видео-пример</label>
+                  
+                  {uploadMode === 'file' ? (
+                    <div 
+                      onClick={() => !uploading && fileInputRef.current?.click()}
+                      className={`aspect-video rounded-xl border-2 border-dashed flex items-center justify-center cursor-pointer transition-all overflow-hidden relative ${
+                        newPrompt.videoUrl ? 'border-purple-500/50' : 'border-white/10 hover:border-purple-500/30 bg-white/5'
+                      }`}
+                    >
+                      {newPrompt.videoUrl ? (
+                        <video src={newPrompt.videoUrl} className="w-full h-full object-cover" autoPlay muted loop />
+                      ) : (
+                        <div className="text-center p-6">
+                          {uploading ? (
+                            <div className="flex flex-col items-center">
+                              <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-4" />
+                              <div className="text-2xl font-bold text-white mb-1">{uploadProgress}%</div>
+                              <div className="text-xs text-white/40 uppercase tracking-widest">Загрузка видео...</div>
+                            </div>
+                          ) : (
+                            <>
+                              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2 text-white/20">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                              </svg>
+                              <p className="text-sm text-white/40">Нажмите для загрузки видео</p>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        onChange={handleFileChange} 
+                        accept="video/*" 
+                        className="hidden" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <input
+                        type="text"
+                        placeholder="https://example.com/video.mp4"
+                        value={newPrompt.videoUrl}
+                        onChange={e => setNewPrompt(prev => ({ ...prev, videoUrl: e.target.value }))}
+                        onBlur={handleUrlBlur}
+                        className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-purple-500/30 transition-all"
+                      />
+                      <p className="text-[10px] text-white/30 px-1">
+                        * Вставьте прямую ссылку на MP4. Видео будет автоматически перенесено в наше облако.
+                      </p>
+                      {newPrompt.videoUrl && newPrompt.videoUrl.includes('http') && (
+                        <div className="aspect-video rounded-xl overflow-hidden border border-purple-500/20">
+                          <video src={newPrompt.videoUrl} className="w-full h-full object-cover" autoPlay muted loop key={newPrompt.videoUrl} />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Model Selection */}
