@@ -4,7 +4,7 @@ import { FaAngleLeft, FaAngleRight, FaLayerGroup } from "react-icons/fa6";
 import { IoImageOutline, IoVideocamOutline, IoAddCircleOutline } from "react-icons/io5";
 import { TfiText } from "react-icons/tfi";
 import { MdAutoFixHigh, MdCrop, MdOutlineImage } from "react-icons/md";
-import { RiImageAiLine, RiVideoOnAiLine } from "react-icons/ri";
+import { RiImageAiLine, RiVideoOnAiLine, RiRobot2Line } from "react-icons/ri";
 import {
   imageModels,
   videoModels,
@@ -169,6 +169,12 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
           icon: <MdAutoFixHigh />,
           action: () => handleAddNode("seedancePromptNode", { id: "text-passthrough", name: "Seedance Промпт" }),
         },
+        {
+          label: "Агент 小云雀",
+          id: "skylark-agent",
+          icon: <RiRobot2Line />,
+          action: () => handleAddNode("skylarkNode", { id: "skylark", name: "Агент 小云雀" }),
+        },
       ]
     },
     // Audio (Generate Audio) and API Models (Api Node) sections removed.
@@ -218,6 +224,8 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
       ...audio.map(m => ({ ...m, type: "audioNode" })),
       ...textUtils.map(m => ({ ...m, type: m.id === "video-combiner" ? "vidConcatNode" : "concatNode" })),
       ...apiNodeModels.map(m => ({ ...m, type: "apiNode" })),
+      { id: "seedance-prompt", name: "Seedance Промпт", type: "seedancePromptNode" },
+      { id: "skylark-agent", name: "Агент 小云雀", type: "skylarkNode" },
     ];
 
     const filtered = allModels.filter(m => m && m.name && m.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -238,6 +246,8 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             {item.type === "audioNode" && <AiOutlineAudio />}
             {item.type === "concatNode" && <TbArrowMerge className="rotate-90" />}
             {item.type === "apiNode" && <RiInputMethodLine />}
+            {item.type === "skylarkNode" && <RiRobot2Line />}
+            {item.type === "seedancePromptNode" && <MdAutoFixHigh />}
             <span>{item.name}</span>
           </button>
         )) : (
@@ -482,7 +492,7 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
             </button>
           ))
         ) : (
-          <div className="px-2 py-4 text-xs text-gray-500 text-center">No items available</div>
+          <div className="px-2 py-4 text-xs text-gray-500 text-center">Нет доступных элементов</div>
         )}
       </div>
     </div>

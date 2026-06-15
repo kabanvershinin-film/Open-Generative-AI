@@ -366,7 +366,7 @@ const CharacterNode = ({ id, data, selected }) => {
         <FaceRegistrationDialog
           open={faceRegOpen}
           onClose={() => setFaceRegOpen(false)}
-          onRegistered={(uri, regName) => onFaceRegistered(uri, regName)}
+          onRegistered={onFaceRegistered}
         />,
         document.body
       )}

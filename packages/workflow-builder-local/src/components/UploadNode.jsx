@@ -56,7 +56,8 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     const type = file.type.startsWith("video") ? "video_url" : file.type.startsWith("image") ? "image_url": "audio_url";
     
     if (!isAcceptedFile) {
-      toast.error(`Please upload a valid ${acceptType} file`);
+      const typeRus = acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио";
+      toast.error(`Пожалуйста, загрузите корректный файл (${typeRus})`);
       return;
     };
 
@@ -85,7 +86,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     })
     .catch((error) => {
       console.error("Upload failed", error);
-      toast.error("Upload failed.", error?.response?.data);
+      toast.error("Ошибка загрузки.", error?.response?.data);
       setUploading(false);
       setUploadProgress(0);
     })
@@ -364,7 +365,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
             <textarea
               ref={textareaRef}
               className="bg-transparent border border-gray-800 w-full h-full max-h-96 p-2 text-xs text-white resize-none overflow-y-auto custom-scrollbar"
-              placeholder="Enter your text prompt here..."
+              placeholder="Введите текстовый промпт здесь..."
               value={formValues?.prompt || ""}
               onChange={handleTextChange}
             />
@@ -376,7 +377,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
           >
             {uploading ? (
               <div className="flex flex-col justify-center gap-2 w-full h-full max-w-[95%]">
-                <h4 className="text-xs text-white">Uploading... {uploadProgress}%</h4>
+                <h4 className="text-xs text-white">Загрузка... {uploadProgress}%</h4>
                 <div className="w-full bg-gray-100 rounded h-1 overflow-hidden">
                   <div className="bg-blue-500 h-full" style={{ width: `${uploadProgress}%` }}></div>
                 </div>
@@ -400,14 +401,14 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
                     <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none flex flex-col justify-end">
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Dimensions</span>
+                          <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Разрешение</span>
                           <span className="text-xs text-white font-medium tabular-nums">
                             {imageMetadata.width} × {imageMetadata.height}
                           </span>
                         </div>
                         {imageMetadata.size && (
                           <div className="flex flex-col items-end gap-0.5">
-                            <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">File Size</span>
+                            <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Размер файла</span>
                             <span className="text-xs text-white font-medium tabular-nums">{imageMetadata.size}</span>
                           </div>
                         )}
@@ -439,7 +440,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
                   className="flex flex-col items-center justify-center gap-3 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 h-full"
                 >
                   <FiUpload size={20} />
-                  <span className="text-xs capitalize">Upload {acceptType}</span>
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
                   <span className="text-[11px] text-gray-500 text-center">
                     На телефоне используйте выбор файла или камеру. Перетаскивание можно не использовать.
                   </span>
@@ -485,8 +486,392 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
                   className="cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 hover:bg-gray-700/50 h-full"
                 >
                   <FiUpload size={20} />
-                  <span className="text-xs capitalize">Upload {acceptType}</span>
-                  <span className="text-xs text-gray-500">Hint: drag and drop file(s) here.</span>
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
+                  <span className="text-xs text-gray-500">Подсказка: перетащите файл(ы) сюда.</span>
+                  <input
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+              )
+            )}
+          </div>
+        ) : uploadType === "upload" && (
+          <div 
+            className="flex flex-col items-center justify-center w-full h-full relative" 
+            onDragOver={handleDragOver} onDrop={handleDrop}
+          >
+            {uploading ? (
+              <div className="flex flex-col justify-center gap-2 w-full h-full max-w-[95%]">
+                <h4 className="text-xs text-white">Загрузка... {uploadProgress}%</h4>
+                <div className="w-full bg-gray-100 rounded h-1 overflow-hidden">
+                  <div className="bg-blue-500 h-full" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+              </div>
+            ) : hasFileUrl ? (
+              <div className="flex-1 w-full h-full group z-0">
+                {formValues?.video_url ? (
+                  <div className="relative w-full h-full">
+                    <VideoPlayer 
+                      src={formValues?.video_url}
+                      accentColor="#f97316"
+                    />
+                  </div>
+                ) : formValues?.image_url ? (
+                  <div className="relative w-full h-full group/image">
+                    <img
+                      src={formValues?.image_url}
+                      alt="Uploaded"
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none flex flex-col justify-end">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Разрешение</span>
+                          <span className="text-xs text-white font-medium tabular-nums">
+                            {imageMetadata.width} × {imageMetadata.height}
+                          </span>
+                        </div>
+                        {imageMetadata.size && (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Размер файла</span>
+                            <span className="text-xs text-white font-medium tabular-nums">{imageMetadata.size}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full relative group/audio flex flex-col items-center justify-center">
+                    <AudioPlayer 
+                      nodeId={id}
+                      src={formValues?.audio_url} 
+                      className="flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-2xl"
+                    />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  suppressHydrationWarning={true}
+                  className="text-white hover:text-red-500 bg-black/40 hover:bg-black cursor-pointer absolute left-4 top-4 px-1.5 rounded opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  onClick={removeData}
+                >
+                  &#10005;
+                </button>
+              </div>
+            ) : (
+              isMobileUploadUi ? (
+                <div
+                  style={{ minHeight: 200 }}
+                  className="flex flex-col items-center justify-center gap-3 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
+                  <span className="text-[11px] text-gray-500 text-center">
+                    На телефоне используйте выбор файла или камеру. Перетаскивание можно не использовать.
+                  </span>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
+                    >
+                      Выбрать файл
+                    </button>
+                    {acceptType === "image" && (
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex-1 min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
+                      >
+                        Камера
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  {acceptType === "image" && (
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept={acceptAttr}
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  )}
+                </div>
+              ) : (
+                <label 
+                  style={{ minHeight: 200 }} 
+                  className="cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 hover:bg-gray-700/50 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
+                  <span className="text-xs text-gray-500">Подсказка: перетащите файл(ы) сюда.</span>
+                  <input
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+              )
+            )}
+          </div>
+        ) : uploadType === "upload" && (
+          <div 
+            className="flex flex-col items-center justify-center w-full h-full relative" 
+            onDragOver={handleDragOver} onDrop={handleDrop}
+          >
+            {uploading ? (
+              <div className="flex flex-col justify-center gap-2 w-full h-full max-w-[95%]">
+                <h4 className="text-xs text-white">Загрузка... {uploadProgress}%</h4>
+                <div className="w-full bg-gray-100 rounded h-1 overflow-hidden">
+                  <div className="bg-blue-500 h-full" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+              </div>
+            ) : hasFileUrl ? (
+              <div className="flex-1 w-full h-full group z-0">
+                {formValues?.video_url ? (
+                  <div className="relative w-full h-full">
+                    <VideoPlayer 
+                      src={formValues?.video_url}
+                      accentColor="#f97316"
+                    />
+                  </div>
+                ) : formValues?.image_url ? (
+                  <div className="relative w-full h-full group/image">
+                    <img
+                      src={formValues?.image_url}
+                      alt="Uploaded"
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none flex flex-col justify-end">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Разрешение</span>
+                          <span className="text-xs text-white font-medium tabular-nums">
+                            {imageMetadata.width} × {imageMetadata.height}
+                          </span>
+                        </div>
+                        {imageMetadata.size && (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Размер файла</span>
+                            <span className="text-xs text-white font-medium tabular-nums">{imageMetadata.size}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full relative group/audio flex flex-col items-center justify-center">
+                    <AudioPlayer 
+                      nodeId={id}
+                      src={formValues?.audio_url} 
+                      className="flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-2xl"
+                    />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  suppressHydrationWarning={true}
+                  className="text-white hover:text-red-500 bg-black/40 hover:bg-black cursor-pointer absolute left-4 top-4 px-1.5 rounded opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  onClick={removeData}
+                >
+                  &#10005;
+                </button>
+              </div>
+            ) : (
+              isMobileUploadUi ? (
+                <div
+                  style={{ minHeight: 200 }}
+                  className="flex flex-col items-center justify-center gap-3 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
+                  <span className="text-[11px] text-gray-500 text-center">
+                    На телефоне используйте выбор файла или камеру. Перетаскивание можно не использовать.
+                  </span>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
+                    >
+                      Выбрать файл
+                    </button>
+                    {acceptType === "image" && (
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex-1 min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
+                      >
+                        Камера
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  {acceptType === "image" && (
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept={acceptAttr}
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  )}
+                </div>
+              ) : (
+                <label 
+                  style={{ minHeight: 200 }} 
+                  className="cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 hover:bg-gray-700/50 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
+                  <span className="text-xs text-gray-500">Подсказка: перетащите файл(ы) сюда.</span>
+                  <input
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </label>
+              )
+            )}
+          </div>
+        ) : (
+          <div 
+            className="flex flex-col items-center justify-center w-full h-full relative" 
+            onDragOver={handleDragOver} onDrop={handleDrop}
+          >
+            {uploading ? (
+              <div className="flex flex-col justify-center gap-2 w-full h-full max-w-[95%]">
+                <h4 className="text-xs text-white">Загрузка... {uploadProgress}%</h4>
+                <div className="w-full bg-gray-100 rounded h-1 overflow-hidden">
+                  <div className="bg-blue-500 h-full" style={{ width: `${uploadProgress}%` }}></div>
+                </div>
+              </div>
+            ) : hasFileUrl ? (
+              <div className="flex-1 w-full h-full group z-0">
+                {formValues?.video_url ? (
+                  <div className="relative w-full h-full">
+                    <VideoPlayer 
+                      src={formValues?.video_url}
+                      accentColor="#f97316"
+                    />
+                  </div>
+                ) : formValues?.image_url ? (
+                  <div className="relative w-full h-full group/image">
+                    <img
+                      src={formValues?.image_url}
+                      alt="Uploaded"
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none flex flex-col justify-end">
+                      <div className="flex items-center justify-between">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Разрешение</span>
+                          <span className="text-xs text-white font-medium tabular-nums">
+                            {imageMetadata.width} × {imageMetadata.height}
+                          </span>
+                        </div>
+                        {imageMetadata.size && (
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span className="text-[10px] text-white/50 uppercase tracking-tighter font-semibold">Размер файла</span>
+                            <span className="text-xs text-white font-medium tabular-nums">{imageMetadata.size}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full h-full relative group/audio flex flex-col items-center justify-center">
+                    <AudioPlayer 
+                      nodeId={id}
+                      src={formValues?.audio_url} 
+                      className="flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-2xl"
+                    />
+                  </div>
+                )}
+                <button
+                  type="button"
+                  suppressHydrationWarning={true}
+                  className="text-white hover:text-red-500 bg-black/40 hover:bg-black cursor-pointer absolute left-4 top-4 px-1.5 rounded opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  onClick={removeData}
+                >
+                  &#10005;
+                </button>
+              </div>
+            ) : (
+              isMobileUploadUi ? (
+                <div
+                  style={{ minHeight: 200 }}
+                  className="flex flex-col items-center justify-center gap-3 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
+                  <span className="text-[11px] text-gray-500 text-center">
+                    На телефоне используйте выбор файла или камеру. Перетаскивание можно не использовать.
+                  </span>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
+                    >
+                      Выбрать файл
+                    </button>
+                    {acceptType === "image" && (
+                      <button
+                        type="button"
+                        onClick={() => cameraInputRef.current?.click()}
+                        className="flex-1 min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
+                      >
+                        Камера
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={acceptAttr}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  {acceptType === "image" && (
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept={acceptAttr}
+                      capture="environment"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  )}
+                </div>
+              ) : (
+                <label 
+                  style={{ minHeight: 200 }} 
+                  className="cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 hover:bg-gray-700/50 h-full"
+                >
+                  <FiUpload size={20} />
+                  <span className="text-xs capitalize">Загрузить {acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"}</span>
+                  <span className="text-xs text-gray-500">Подсказка: перетащите файл(ы) сюда.</span>
                   <input
                     type="file"
                     accept={acceptAttr}

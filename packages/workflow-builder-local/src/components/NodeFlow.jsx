@@ -43,6 +43,7 @@ import { AiOutlineAudio } from "react-icons/ai";
 import VideoCombiner from "./VideoCombiner";
 import CharacterNode from "./CharacterNode";
 import SeedancePromptNode from "./SeedancePromptNode";
+import SkylarkNode from "./SkylarkNode";
 import { useGenerationCost } from "./useGenerationCost";
 
 const nodeTypes = {
@@ -54,7 +55,8 @@ const nodeTypes = {
   vidConcatNode: VideoCombiner,
   apiNode: ApiNode,
   characterNode: CharacterNode,
-  seedancePromptNode: SeedancePromptNode
+  seedancePromptNode: SeedancePromptNode,
+  skylarkNode: SkylarkNode
 }
 
 const initialNodes = [
@@ -115,9 +117,9 @@ const getEdgeColor = (sourceHandle, targetHandle, sourceNode = null, targetNode 
   if (["audioOutput"].includes(sourceHandle)) return "yellow";
   if (["characterOutput"].includes(sourceHandle)) return "purple";
 
-  if (["textInput", "textInput4", "imageInput", "videoInput", "audioInput2", "concatInput", "apiInput"].includes(targetHandle)) return "blue";
-  if (["textInput2", "textInput3", "imageInput2", "imageInput3", "videoInput2", "videoInput3", "videoInput6", "audioInput3", "apiInput2", "apiInput3"].includes(targetHandle)) return "green";
-  if (["videoInput4", "audioInput4", "videoInput7"].includes(targetHandle)) return "orange";
+  if (["textInput", "textInput4", "imageInput", "videoInput", "audioInput2", "concatInput", "apiInput", "prompt"].includes(targetHandle)) return "blue";
+  if (["textInput2", "textInput3", "imageInput2", "imageInput3", "videoInput2", "videoInput3", "videoInput6", "audioInput3", "apiInput2", "apiInput3", "images"].includes(targetHandle)) return "green";
+  if (["videoInput4", "audioInput4", "videoInput7", "videos"].includes(targetHandle)) return "orange";
   if (["audioInput", "videoInput5", "videoInput8"].includes(targetHandle)) return "yellow";
 
   if (sourceNode) {
@@ -158,6 +160,7 @@ const formatNodeTitle = (id) => id
   .replace(/^api/i, "API")
   .replace(/^character/i, "Персонаж")
   .replace(/^concat/i, "Объединение")
+  .replace(/^skylark/i, "Агент Skylark")
   .replace(/^vidConcat/i, "Видеообъединение");
 
 const getModelObjStatic = (category, modelId, nodeSchemas) => {
@@ -596,7 +599,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             sourceNode?.data?.formValues?.character_photo || updatedFormValues.face_thumbnail || null;
         }
 
-        else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput"].includes(targetHandle)) {
+        else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(targetHandle)) {
           updatedFormValues.prompt = sourceValue;
         }
 
@@ -604,14 +607,18 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           updatedFormValues.system_prompt = sourceValue;
         }
 
-        else if (["textInput3", "imageInput2", "videoInput6"].includes(targetHandle)) {
-          const existing = Array.isArray(updatedFormValues.images_list) ? updatedFormValues.images_list : [];
-          // Only assign a new array when the value is actually added — otherwise we
-          // churn the reference every pass and feed an infinite update loop.
+        else if (["textInput3", "imageInput2", "videoInput6", "images"].includes(targetHandle)) {
+          const existing = Array.isArray(updatedFormValues.images_list || updatedFormValues.img_url_list) 
+            ? (updatedFormValues.images_list || updatedFormValues.img_url_list) 
+            : [];
+          // Only assign a new array when the value is actually added
           if (resultValue && resultValue.trim?.() !== "" && !existing.includes(resultValue)) {
-            updatedFormValues.images_list = [...existing, resultValue];
-          } else {
-            updatedFormValues.images_list = existing;
+            const newList = [...existing, resultValue];
+            if (node.type === "skylarkNode") {
+              updatedFormValues.img_url_list = newList;
+            } else {
+              updatedFormValues.images_list = newList;
+            }
           }
         }
 
@@ -645,8 +652,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           updatedFormValues.video_url = resultValue;
         }
 
-        else if (targetHandle === "videoInput7") {
-          const key = updatedFormValues.video_files ? "video_files" : "videos_list";
+        else if (["videoInput7", "videos"].includes(targetHandle)) {
+          const key = node.type === "skylarkNode" ? "video_url_list" : (updatedFormValues.video_files ? "video_files" : "videos_list");
           const list = Array.isArray(updatedFormValues[key])
             ? [...updatedFormValues[key]]
             : [];
@@ -1207,7 +1214,15 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       const connectedEdges = edges.filter((e) => e.target === node.id);
       const inputNodes = connectedEdges.map((e) => e.source);
-      const category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : node.type === "seedancePromptNode" ? "seedancePrompt" : "utility";
+      const category = node.type === "textNode" ? "text" : 
+                       node.type === "imageNode" ? "image" : 
+                       node.type === "videoNode" ? "video" : 
+                       node.type === "apiNode" ? "api" : 
+                       node.type === "audioNode" ? "audio" : 
+                       node.type === "characterNode" ? "character" : 
+                       node.type === "seedancePromptNode" ? "seedancePrompt" : 
+                       node.type === "skylarkNode" ? "agent" :
+                       "utility";
       const isVideoCombiner = node.type === "vidConcatNode";
       const model = node.data?.selectedModel?.id ? node.data?.selectedModel?.id : category === "utility" ? (isVideoCombiner ? "video-combiner" : "prompt-concatenator") : category === "character" ? "character-passthrough" : `${category}-passthrough`;
       const modelSchema = nodeSchemas?.categories?.[category]?.models?.[model]?.input_schema?.schemas?.input_data;
@@ -1336,6 +1351,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         video_files: dynamicVideosList,
         audios_list: dynamicAudiosList,
         audio_files: dynamicAudiosList,
+        img_url_list: dynamicImagesList,
+        video_url_list: dynamicVideosList,
         ...(dynamicFaceAsset ? { face_asset: dynamicFaceAsset } : {}),
       };
 
@@ -1938,6 +1955,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         videoInput: "blue", videoInput2: "green", videoInput3: "green", videoInput4: "orange", videoInput5: "yellow", videoInput6: "green", videoInput7: "orange", videoInput8: "yellow", videoOutput: "orange",
         audioInput: "yellow", audioInput2: "blue", audioInput3: "green", audioInput4: "orange", audioOutput: "yellow",
         characterOutput: "green",
+        prompt: "blue", images: "green", videos: "orange",
       }
     },
   }));

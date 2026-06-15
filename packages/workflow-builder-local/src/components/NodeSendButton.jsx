@@ -29,7 +29,7 @@ const NodeSendButton = ({ id, data, outputHistory, currentHistoryIndex, currentO
           }
         }}
         className={`group/btn relative flex items-center justify-center w-5 h-5 rounded-full transition-all duration-300 bg-blue-600 hover:bg-blue-500 text-white shadow-lg`}
-        title="Send to Connected Node"
+        title="Отправить в связанную ноду"
       >
         <div className="w-1.5 h-1.5 rounded-full bg-current" />
       </button>
@@ -54,7 +54,7 @@ const NodeSendButton = ({ id, data, outputHistory, currentHistoryIndex, currentO
                   setShowMenu(false);
                 }}
               >
-                Send to {edge.target} {targetCounts[edge.target] > 1 ? `(${edge.targetHandle})` : ""}
+                Отправить в {edge.target} {targetCounts[edge.target] > 1 ? `(${edge.targetHandle})` : ""}
               </button>
             ));
           })()}

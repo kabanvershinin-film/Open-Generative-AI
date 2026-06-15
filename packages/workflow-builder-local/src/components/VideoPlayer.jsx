@@ -42,7 +42,7 @@ const VideoPlayer = ({
     
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().catch((err) => {
-        toast.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        toast.error(`Ошибка при переходе в полноэкранный режим: ${err.message}`);
       });
     } else {
       document.exitFullscreen();

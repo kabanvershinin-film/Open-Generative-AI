@@ -232,12 +232,12 @@ const TextGeneration = ({ id, data, selected }) => {
 
         if (latest.status === "failed") {
           const outputs = latest?.result?.outputs;
-          let errorMsg = "Generation failed";
+          let errorMsg = "Ошибка генерации";
 
           if (outputs && outputs[0]?.value?.error) {
             errorMsg = outputs[0].value.error; 
           }
-          toast.error(`Node ${id} failed`);
+          toast.error(`Нода ${id} ошибка`);
           
           const currentHistory = data.outputHistory || [];
           data.onDataChange(id, { isLoading: false, errorMsg, outputHistory: currentHistory });
@@ -248,7 +248,7 @@ const TextGeneration = ({ id, data, selected }) => {
         console.log(error);
         clearInterval(interval);
         data.onDataChange(id, { isLoading: false });
-        toast.error(`Failed to get workflow status Text ${id.replace(/^\D+/g, "")}`);
+        toast.error(`Не удалось получить статус текста ${id.replace(/^\D+/g, "")}`);
       });
     }; _check(); interval = setInterval(_check, 500);
   };
@@ -260,14 +260,14 @@ const TextGeneration = ({ id, data, selected }) => {
       const workflow_id = await data.handleSaveWorkFlow();
 
       if (!workflow_id) {
-        toast.error("Failed to save workflow before running node");
+        toast.error("Не удалось сохранить воркфлоу перед запуском ноды");
         data.onDataChange(id, { isLoading: false });
         return;
       }
 
       const modelSchema = nodeSchemas?.categories?.text?.models[selectedModel.id]?.input_schema?.schemas?.input_data;
       if (!modelSchema || !modelSchema.properties) {
-        toast.error("No input schema found for this model");
+        toast.error("Схема входных данных для этой модели не найдена");
         data.onDataChange(id, { isLoading: false });
         return;
       }
@@ -289,19 +289,19 @@ const TextGeneration = ({ id, data, selected }) => {
         cost: generationCost,
         node_id: "AI Text"
       });
-      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
+      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Ошибка генерации" }); } else { pollNodeStatus(_r.run_id); } }
     } catch(error) {
       data.onDataChange(id, { isLoading: false });
-      toast.error(error.response?.data?.detail || "Error running node");
+      toast.error(error.response?.data?.detail || "Ошибка при запуске ноды");
       console.error(error);
     };
   };
 
   const handleDeleteNode = () => {
-    if (window.confirm(`Are you sure you want to delete this ${id} node?`)) {
+    if (window.confirm(`Вы уверены, что хотите удалить ноду ${id}?`)) {
       setNodes((nds) => nds.filter((n) => n.id !== id));
       setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
-      toast.success(`Deleted node ${id}`);
+      toast.success(`Нода ${id} удалена`);
     };
   };
 
@@ -387,7 +387,7 @@ const TextGeneration = ({ id, data, selected }) => {
     const currentHistory = outputHistory[currentHistoryIndex];
     if (!currentHistory || !currentHistory.node_run_id) return;
 
-    if (window.confirm("Are you sure you want to delete this history entry?")) {
+    if (window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
       try {
         await axios.delete(`/api/workflow/node-run/${currentHistory.node_run_id}`);
         const newHistory = outputHistory.filter((_, i) => i !== currentHistoryIndex);
@@ -402,9 +402,9 @@ const TextGeneration = ({ id, data, selected }) => {
         } else {
           setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
         }
-        toast.success("History entry deleted");
+        toast.success("Запись удалена");
       } catch (error) {
-        toast.error(error.response?.data?.detail || "Failed to delete history entry");
+        toast.error(error.response?.data?.detail || "Не удалось удалить запись");
         console.error(error);
       }
     }
@@ -444,7 +444,7 @@ const TextGeneration = ({ id, data, selected }) => {
       )}
       <div className="flex items-center gap-2 absolute -top-5 left-0">
         <h3 className="text-zinc-400 text-[10px] font-medium tracking-wider uppercase">
-          Text {id.replace(/^\D+/g, "")}
+          Текст {id.replace(/^\D+/g, "")}
         </h3>
         {generationCost !== null && !selectedModel?.id.includes("passthrough") && (
           <span className="text-xs text-blue-500 -mt-0.5 font-medium flex items-center gap-1 opacity-80">
@@ -454,7 +454,7 @@ const TextGeneration = ({ id, data, selected }) => {
               </span>
             ) : (
               <span>
-                {generationCost === 0 ? 'Free' : `≈ ${generationCost.toFixed(2)} ₽`}
+                {generationCost === 0 ? 'Бесплатно' : `≈ ${generationCost.toFixed(2)} ₽`}
               </span>
             )}
           </span>
@@ -478,7 +478,7 @@ const TextGeneration = ({ id, data, selected }) => {
                 onClick={handlePrev}
                 disabled={currentHistoryIndex <= 0}
                 className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                title="Previous"
+                title="Назад"
               >
                 <FaAngleLeft size={10} />
               </button>
@@ -493,7 +493,7 @@ const TextGeneration = ({ id, data, selected }) => {
                   suppressHydrationWarning={true}
                   onClick={handleDeleteHistory}
                   className="p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center"
-                  title="Delete history"
+                  title="Удалить историю"
                 >
                   <IoTrashOutline size={10} />
                 </button>
@@ -512,7 +512,7 @@ const TextGeneration = ({ id, data, selected }) => {
                 onClick={handleNext}
                 disabled={currentHistoryIndex >= outputHistory.length - 1}
                 className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                title="Next"
+                title="Вперед"
               >
                 <FaAngleRight size={10} />
               </button>
@@ -543,7 +543,7 @@ const TextGeneration = ({ id, data, selected }) => {
             </div>
           ) : data.errorMsg ? (
             <div className="text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 w-full">
-              {data.errorMsg || "Generation failed"}
+              {data.errorMsg || "Ошибка генерации"}
             </div>
           ) : currentOutput && !data.isLoading ? ( 
             <div className="relative flex flex-col gap-2 bg-zinc-900/30 rounded-xl border border-zinc-800/50 w-full h-full p-2">
@@ -551,7 +551,7 @@ const TextGeneration = ({ id, data, selected }) => {
                 ref={textareaRef}
                 readOnly
                 value={currentOutput || ""}
-                placeholder="Output will appear here..."
+                placeholder="Результат появится здесь..."
                 className="w-full h-full max-h-96 text-xs leading-relaxed outline-none bg-transparent resize-none text-zinc-100 overflow-hidden font-medium placeholder:italic placeholder:opacity-50"
               />
               {currentOutputList.length > 1 && (
@@ -587,7 +587,7 @@ const TextGeneration = ({ id, data, selected }) => {
           ) : (
             <div className="flex flex-col items-center justify-center text-zinc-400 gap-2">
               <TfiText size={32} />
-              <span className="text-[10px] italic">Result appeared here...</span>
+              <span className="text-[10px] italic">Результат появится здесь...</span>
             </div>
           )}
         </div>
@@ -622,7 +622,7 @@ const TextGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 100, left: -40 }}
         > 
-          TEXT 
+          ТЕКСТ 
         </p>
       )}
       
@@ -656,7 +656,7 @@ const TextGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 150, left: -45 }}
         > 
-          IMAGE 
+          ИЗОБРАЖЕНИЕ 
         </p>
       )}
 
@@ -690,7 +690,7 @@ const TextGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 200, left: -45 }}
         > 
-          IMAGE 
+          ИЗОБРАЖЕНИЕ 
         </p>
       )}
 
@@ -724,7 +724,7 @@ const TextGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 250, left: -50 }}
         > 
-          SYSTEM 
+          СИСТЕМНЫЙ 
         </p>
       )}
 
@@ -755,7 +755,7 @@ const TextGeneration = ({ id, data, selected }) => {
         }`}
         style={{ top: 100, right: -40 }}
       > 
-        TEXT 
+        ТЕКСТ 
       </p>
     </div>
   );

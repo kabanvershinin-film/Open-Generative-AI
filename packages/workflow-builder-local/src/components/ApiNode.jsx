@@ -130,7 +130,7 @@ const ApiNode = ({ id, data, selected }) => {
   
   const fetchSchema = (workflowId) => {
     if (!workflowId) {
-      toast.error("Failed to save workflow before running node");
+      toast.error("Не удалось сохранить воркфлоу перед запуском узла");
       setLoading(0);
       return;
     }
@@ -202,13 +202,13 @@ const ApiNode = ({ id, data, selected }) => {
           }));
         }
       } else {
-        toast.warn(`No schema found for id: ${id}`);
+        toast.warn(`Схема для id: ${id} не найдена`);
       }
       setLoading(0);
     })
       .catch((error) => {
       setLoading(0);
-      toast.error(error.response?.data?.detail || "Failed to fetch model details.");
+      toast.error(error.response?.data?.detail || "Не удалось получить данные модели.");
       console.error(error);
     })
   };
@@ -378,12 +378,12 @@ const ApiNode = ({ id, data, selected }) => {
 
         if (latest.status === "failed") {
           const outputs = latest?.result?.outputs;
-          let errorMsg = "Generation failed";
+          let errorMsg = "Ошибка генерации";
 
           if (outputs && outputs[0]?.value?.error) {
             errorMsg = outputs[0].value.error; 
           }
-          toast.error(`Node ${id} failed`);
+          toast.error(`Узел ${id} завершился с ошибкой`);
           const currentHistory = data.outputHistory || [];
           data.onDataChange(id, { isLoading: false, errorMsg, outputHistory: currentHistory }); 
           clearInterval(interval);
@@ -393,7 +393,7 @@ const ApiNode = ({ id, data, selected }) => {
         console.log(error);
         clearInterval(interval);
         data.onDataChange(id, { isLoading: false });
-        toast.error(`Failed to get workflow status Api ${id.replace(/^\D+/g, "")}`);
+        toast.error(`Не удалось получить статус воркфлоу Api ${id.replace(/^\D+/g, "")}`);
       });
     }; _check(); interval = setInterval(_check, 500);
   };
@@ -404,13 +404,13 @@ const ApiNode = ({ id, data, selected }) => {
       const workflow_id = await data.handleSaveWorkFlow();
 
       if (!workflow_id) {
-        toast.error("Failed to save workflow before running node");
+        toast.error("Не удалось сохранить воркфлоу перед запуском узла");
         data.onDataChange(id, { isLoading: false });
         return;
       }
 
       if (!modelSchema || !modelSchema.input_schema) {
-        toast.error("No input schema found for this model");
+        toast.error("Схема входных данных не найдена для этой модели");
         data.onDataChange(id, { isLoading: false });
         return;
       }
@@ -441,19 +441,19 @@ const ApiNode = ({ id, data, selected }) => {
           node_id: "API Node"
         }
       );
-      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
+      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: (_o[0] && _o[0].value) || "", isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Ошибка генерации" }); } else { pollNodeStatus(_r.run_id); } }
     } catch(error) {
       data.onDataChange(id, { isLoading: false });
-      toast.error(error.response?.data?.detail || "Error running node");
+      toast.error(error.response?.data?.detail || "Ошибка при запуске узла");
       console.error(error);
     };
   };
 
   const handleDeleteNode = () => {
-    if (window.confirm(`Are you sure you want to delete this ${id} node?`)) {
+    if (window.confirm(`Вы уверены, что хотите удалить узел ${id}?`)) {
       setNodes((nds) => nds.filter((n) => n.id !== id));
       setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
-      toast.success(`Deleted node ${id}`);
+      toast.success(`Узел ${id} удален`);
     };
   };
 
@@ -462,7 +462,7 @@ const ApiNode = ({ id, data, selected }) => {
     const missingFields = requiredFields.filter(field => !formValues?.[field] || !formValues[field].trim());
 
     if (missingFields.length > 0) {
-      toast.error(`${missingFields} required before fetching schema`);
+      toast.error(`${missingFields} обязательны перед получением схемы`);
       return;
     }
 
@@ -470,7 +470,7 @@ const ApiNode = ({ id, data, selected }) => {
     const workflow_id = await data.handleSaveWorkFlow();
 
     if (!workflow_id) {
-      toast.error("Failed to save workflow before running node");
+      toast.error("Не удалось сохранить воркфлоу перед запуском узла");
       setLoading(0);
       return;
     }
@@ -533,7 +533,7 @@ const ApiNode = ({ id, data, selected }) => {
     const currentHistory = outputHistory[currentHistoryIndex];
     if (!currentHistory || !currentHistory.node_run_id) return;
 
-    if (window.confirm("Are you sure you want to delete this history entry?")) {
+    if (window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
       try {
         await axios.delete(`/api/workflow/node-run/${currentHistory.node_run_id}`);
         const newHistory = outputHistory.filter((_, i) => i !== currentHistoryIndex);
@@ -548,9 +548,9 @@ const ApiNode = ({ id, data, selected }) => {
         } else {
           setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
         }
-        toast.success("History entry deleted");
+        toast.success("Запись истории удалена");
       } catch (error) {
-        toast.error(error.response?.data?.detail || "Failed to delete history entry");
+        toast.error(error.response?.data?.detail || "Не удалось удалить запись истории");
         console.error(error);
       }
     }
@@ -615,7 +615,7 @@ const ApiNode = ({ id, data, selected }) => {
                 onClick={handlePrev}
                 disabled={currentHistoryIndex <= 0}
                 className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Previous"
+                title="Назад"
               >
                 <FaAngleLeft size={10} />
               </button>
@@ -629,7 +629,7 @@ const ApiNode = ({ id, data, selected }) => {
                   suppressHydrationWarning={true}
                   onClick={handleDeleteHistory}
                   className="p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center"
-                  title="Delete history"
+                  title="Удалить историю"
                 >
                   <IoTrashOutline size={10} />
                 </button>
@@ -648,7 +648,7 @@ const ApiNode = ({ id, data, selected }) => {
                 onClick={handleNext}
                 disabled={currentHistoryIndex >= outputHistory.length - 1}
                 className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Next"
+                title="Вперед"
               >
                 <FaAngleRight size={10} />
               </button>
@@ -667,12 +667,12 @@ const ApiNode = ({ id, data, selected }) => {
           <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-2xl">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-[10px] font-bold text-blue-500 tracking-wider uppercase">Processing...</span>
+              <span className="text-[10px] font-bold text-blue-500 tracking-wider uppercase">Обработка...</span>
             </div>
           </div>
         ) : data.errorMsg ? (
           <div className="text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 m-3 w-full">
-            {data.errorMsg || "API failure"}
+            {data.errorMsg || "Ошибка API"}
           </div>
         ) : currentOutput && !data.isLoading ? (
           <div className="w-full h-full relative group/api">
@@ -739,7 +739,7 @@ const ApiNode = ({ id, data, selected }) => {
         ) : (
           <div className="flex flex-col items-center justify-center text-zinc-400 gap-2">
             <RiInputMethodLine size={32} />
-            <span className="text-[10px] italic">Result appeared here...</span>
+            <span className="text-[10px] italic">Результат появится здесь...</span>
           </div>
         )}
       </div>    
@@ -747,7 +747,7 @@ const ApiNode = ({ id, data, selected }) => {
         let outputColor = "green";
         let activeClass = "!bg-green-500 !border-white shadow-[0_0_20px_rgba(34,197,94,1)]";
         let inactiveClass = "!bg-black !border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]";
-        let labelText = "Image";
+        let labelText = "Изображение";
         let labelColor = "text-green-500";
         
         const output = data.outputs?.[0];
@@ -757,25 +757,25 @@ const ApiNode = ({ id, data, selected }) => {
           outputColor = "blue";
           activeClass = "!bg-blue-600 !border-zinc-900 shadow-[0_0_15px_rgba(37,99,235,0.8)]";
           inactiveClass = "!bg-zinc-900 !border-blue-600/50 hover:!border-blue-600 shadow-sm";
-          labelText = "Text";
+          labelText = "Текст";
           labelColor = "text-blue-500";
         } else if (output?.type === 'video_url' || modelType === 'video') {
           outputColor = "orange";
           activeClass = "!bg-orange-600 !border-zinc-900 shadow-[0_0_15px_rgba(249,115,22,0.8)]";
           inactiveClass = "!bg-zinc-900 !border-orange-600/50 hover:!border-orange-600 shadow-sm";
-          labelText = "Video";
+          labelText = "Видео";
           labelColor = "text-orange-500";
         } else if (output?.type === 'audio_url' || modelType === 'audio') {
           outputColor = "yellow";
           activeClass = "!bg-yellow-500 !border-zinc-900 shadow-[0_0_15px_rgba(234,179,8,0.8)]";
           inactiveClass = "!bg-zinc-900 !border-yellow-500/50 hover:!border-yellow-500 shadow-sm";
-          labelText = "Audio";
+          labelText = "Аудио";
           labelColor = "text-yellow-500";
         } else {
           outputColor = "green";
           activeClass = "!bg-emerald-600 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]";
           inactiveClass = "!bg-zinc-900 !border-emerald-600/50 hover:!border-emerald-600 shadow-sm";
-          labelText = "Image";
+          labelText = "Изображение";
           labelColor = "text-emerald-500";
         }
 

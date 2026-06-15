@@ -9,6 +9,44 @@ import { IoCloudUploadOutline } from "react-icons/io5";
 import { Handle, Position } from "reactflow";
 import { TbBoxModel2, TbExternalLink } from "react-icons/tb";
 
+const UI_TRANSLATIONS = {
+  "Prompt": "Промпт",
+  "Reference Images": "Референсные изображения",
+  "Aspect Ratio": "Соотношение сторон",
+  "Resolution": "Разрешение",
+  "Routing": "Маршрутизация",
+  "Size": "Размер",
+  "Quality": "Качество",
+  "Format": "Формат",
+  "Background": "Фон",
+  "Moderation": "Модерация",
+  "default": "По умолчанию",
+  "nitro": "Нитро",
+  "floor": "Флор",
+  "stable": "Стабильный",
+  "auto": "Авто",
+  "high": "Высокое",
+  "medium": "Среднее",
+  "low": "Низкое",
+  "transparent": "Прозрачный",
+  "opaque": "Непрозрачный",
+  "Add a file or provide an URL": "Добавьте файл или укажите URL",
+  "Unsupported file type": "Неподдерживаемый тип файла",
+  "Upload failed": "Не удалось загрузить файл",
+  "Upload failed.": "Не удалось загрузить файл",
+  "Preview": "Предпросмотр",
+  "* required": "* обязательно",
+  "Remove input": "Удалить вход",
+  "Set as input": "Сделать входом",
+  "Select or type...": "Выберите или введите...",
+  "No options found": "Ничего не найдено",
+};
+
+const translateUi = (value) => {
+  if (typeof value !== "string") return value;
+  return UI_TRANSLATIONS[value] || value;
+};
+
 const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handleChange, hasHandle = false, exposedHandles = [], onToggleHandle }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dropDown, setDropDown] = useState(-1);
@@ -35,8 +73,8 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
   const label = (
     <div className="flex items-center justify-between w-full group/label">
       <label htmlFor={fieldName} className="text-xs font-bold text-zinc-500 text-start flex-grow cursor-pointer">
-        {fieldName}
-        {isRequired && <span className="text-blue-500 text-[9px] ml-1">* required</span>}
+        {translateUi(fieldName)}
+        {isRequired && <span className="text-blue-500 text-[9px] ml-1">{translateUi("* required")}</span>}
       </label>
       {onToggleHandle && (
         <button
@@ -44,7 +82,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
           suppressHydrationWarning={true}
           onClick={(e) => { e.stopPropagation(); onToggleHandle(fieldName); }}
           className={`p-1 rounded-lg transition-all group-hover/label:opacity-100 h-6 w-6 flex items-center justify-center ${exposedHandles.includes(fieldName) ? "text-blue-500 bg-blue-500/10 opacity-100" : "text-zinc-500 hover:text-white hover:bg-white/5 opacity-0"}`}
-          title={exposedHandles.includes(fieldName) ? "Remove input" : "Set as input"}
+          title={translateUi(exposedHandles.includes(fieldName) ? "Remove input" : "Set as input")}
         >
           <TbExternalLink size={14} />
         </button>
@@ -91,7 +129,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
             : file.type.startsWith("image/") || file.type.startsWith("video/");
 
     if (!isAcceptedType) {
-      toast.error("Unsupported file type");
+      toast.error(translateUi("Unsupported file type"));
       return;
     };
 
@@ -126,7 +164,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     })
     .catch((error) => {
       console.error("Upload failed", error);
-      toast.error("Upload failed.", error?.response?.data);
+      toast.error(translateUi("Upload failed."), error?.response?.data);
       setUploading(false);
       setUploadProgress(0);
     })
@@ -194,7 +232,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
                 value={value}
                 onChange={(e) => handleChange(fieldName, e.target.value)}
                 onFocus={() => setDropDown(idx + 1)}
-                placeholder="Select or type..."
+                placeholder={translateUi("Select or type...")}
                 className="flex-grow text-xs text-white bg-transparent outline-none px-2 py-[5px] w-full"
               />
             ) : (
@@ -207,9 +245,9 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
                 <div className="flex items-center gap-2 truncate">
                   <span className="truncate">
                     {(() => {
-                      if (typeof value === 'object') return value.label || value.value;
+                      if (typeof value === 'object') return translateUi(value.label || value.value);
                       const option = meta.enum?.find(opt => (typeof opt === 'object' ? opt.value : opt) === value);
-                      return typeof option === 'object' ? option.label : value;
+                      return typeof option === 'object' ? translateUi(option.label) : translateUi(value);
                     })()}
                   </span>
                 </div>
@@ -252,14 +290,14 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
                   }`}
                   onClick={() => {handleChange(fieldName, typeof option === "object" ? option.value : option); setDropDown(-1)}}
                 >
-                  <span className="truncate">{typeof option === "object" ? option.label || option.value : option}</span>
+                  <span className="truncate">{typeof option === "object" ? translateUi(option.label || option.value) : translateUi(option)}</span>
                   {(typeof option === "object" ? formValues[fieldName] === option.value : formValues[fieldName] === option) && (
                     <span className="ml-auto text-blue-400 font-bold">✓</span>
                   )}
                 </button>
               ))
             ) : (
-              <div className="text-gray-500 text-xs p-2 text-center">No options found</div>
+              <div className="text-gray-500 text-xs p-2 text-center">{translateUi("No options found")}</div>
             )}
           </div>
         </div>
@@ -287,7 +325,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
             readOnly
             // onChange={(e) => handleChange(fieldName, e.target.value)} 
             className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50" 
-            placeholder="Add a file or provide an URL" 
+            placeholder={translateUi("Add a file or provide an URL")} 
           />
           {/* <input 
             type="file" 
@@ -397,7 +435,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
         )}
         <div className="flex items-center justify-between">
           {label}
-          {meta.maxItems && <span className="text-xs text-gray-400">max items: {meta.maxItems}</span>}
+          {meta.maxItems && <span className="text-xs text-gray-400">{translateUi("max items:")} {meta.maxItems}</span>}
         </div>
         <div className="grid grid-cols-3 gap-2">
           {imageList.map((url, idx) => (
@@ -534,7 +572,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
           type="text"
           id={fieldName}
           value={value}
-          placeholder={meta.placeholder || meta.description || fieldName}
+          placeholder={translateUi(meta.placeholder || meta.description || fieldName)}
           onChange={(e) => handleChange(fieldName, e.target.value)}
           className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
         />

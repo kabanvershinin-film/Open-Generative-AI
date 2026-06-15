@@ -75,9 +75,9 @@ const VideoGeneration = ({ id, data, selected }) => {
       const response = await axios.post(`/api/workflow/${workflow_id}/thumbnail`, { 
         thumbnail 
       });
-      if (response.data.success) toast.success("Cover image updated successfully");
+      if (response.data.success) toast.success("Обложка успешно обновлена");
     } catch(error) {
-      toast.error(error.response?.data?.detail || "Failed to save thumbnail");
+      toast.error(error.response?.data?.detail || "Не удалось сохранить обложку");
       console.error(error);
     };
   };
@@ -255,8 +255,8 @@ const VideoGeneration = ({ id, data, selected }) => {
     const _check = () => {
       if (++attempts > MAX_ATTEMPTS) {
         stopPoll();
-        data.onDataChange(id, { isLoading: false, errorMsg: "Generation timed out" });
-        toast.error(`Video generation timed out`);
+        data.onDataChange(id, { isLoading: false, errorMsg: "Превышено время ожидания генерации" });
+        toast.error(`Время ожидания генерации видео истекло`);
         return;
       }
       axios.get(`/api/workflow/run/${run_id}/status`)
@@ -287,12 +287,12 @@ const VideoGeneration = ({ id, data, selected }) => {
 
         if (latest.status === "failed") {
           const outputs = latest?.result?.outputs;
-          let errorMsg = "Generation failed";
+          let errorMsg = "Ошибка генерации";
 
           if (outputs && outputs[0]?.value?.error) {
             errorMsg = outputs[0].value.error;
           }
-          toast.error(`Node ${id} failed`);
+          toast.error(`Нода ${id} ошибка`);
           const currentHistory = data.outputHistory || [];
           data.onDataChange(id, { isLoading: false, errorMsg, outputHistory: currentHistory });
           stopPoll();
@@ -302,7 +302,7 @@ const VideoGeneration = ({ id, data, selected }) => {
         console.log(error);
         stopPoll();
         data.onDataChange(id, { isLoading: false });
-        toast.error(`Failed to get workflow status Video ${id.replace(/^\D+/g, "")}`);
+        toast.error(`Не удалось получить статус видео ${id.replace(/^\D+/g, "")}`);
       });
     };
     _check();
@@ -505,14 +505,14 @@ const VideoGeneration = ({ id, data, selected }) => {
       const workflow_id = await data.handleSaveWorkFlow();
 
       if (!workflow_id) {
-        toast.error("Failed to save workflow before running node");
+        toast.error("Не удалось сохранить воркфлоу перед запуском ноды");
         data.onDataChange(id, { isLoading: false });
         return;
       }
 
       const modelSchema = nodeSchemas?.categories?.video?.models[selectedModel.id]?.input_schema?.schemas?.input_data;
       if (!modelSchema || !modelSchema.properties) {
-        toast.error("No input schema found for this model");
+        toast.error("Схема входных данных для этой модели не найдена");
         data.onDataChange(id, { isLoading: false });
         return;
       }
@@ -536,10 +536,10 @@ const VideoGeneration = ({ id, data, selected }) => {
         cost: generationCost,
         node_id: "AI Video"
       });
-      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; const videoUrl = (_o[0] && _o[0].value) || ""; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: videoUrl, isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); updateWorkflowThumbnail(videoUrl); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Generation failed" }); } else { pollNodeStatus(_r.run_id); } }
+      { var _r = response.data; var _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]); var _lt = _nd && _nd[_nd.length - 1]; if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) { var _o = _lt.result.outputs; const videoUrl = (_o[0] && _o[0].value) || ""; data && data.onDataChange && data.onDataChange(id, { outputs: _o, resultUrl: videoUrl, isLoading: false, errorMsg: null, outputHistory: (data.outputHistory || []).concat([_lt]) }); updateWorkflowThumbnail(videoUrl); } else if (_lt && _lt.status === "failed") { data && data.onDataChange && data.onDataChange(id, { isLoading: false, errorMsg: "Ошибка генерации" }); } else { pollNodeStatus(_r.run_id); } }
     } catch(error) {
       data.onDataChange(id, { isLoading: false });
-      toast.error(error.response?.data?.detail || "Error running node");
+      toast.error(error.response?.data?.detail || "Ошибка при запуске ноды");
       console.error(error);
     } finally {
       inFlightRef.current = false;
@@ -547,10 +547,10 @@ const VideoGeneration = ({ id, data, selected }) => {
   };
 
   const handleDeleteNode = () => {
-    if (window.confirm(`Are you sure you want to delete this ${id} node?`)) {
+    if (window.confirm(`Вы уверены, что хотите удалить ноду ${id}?`)) {
       setNodes((nds) => nds.filter((n) => n.id !== id));
       setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
-      toast.success(`Deleted node ${id}`);
+      toast.success(`Нода ${id} удалена`);
     };
   };
 
@@ -642,7 +642,7 @@ const VideoGeneration = ({ id, data, selected }) => {
     const currentHistory = outputHistory[currentHistoryIndex];
     if (!currentHistory || !currentHistory.node_run_id) return;
 
-    if (window.confirm("Are you sure you want to delete this history entry?")) {
+    if (window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
       try {
         await axios.delete(`/api/workflow/node-run/${currentHistory.node_run_id}`);
         const newHistory = outputHistory.filter((_, i) => i !== currentHistoryIndex);
@@ -657,9 +657,9 @@ const VideoGeneration = ({ id, data, selected }) => {
         } else {
           setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
         }
-        toast.success("History entry deleted");
+        toast.success("Запись удалена");
       } catch (error) {
-        toast.error(error.response?.data?.detail || "Failed to delete history entry");
+        toast.error(error.response?.data?.detail || "Не удалось удалить запись");
         console.error(error);
       }
     }
@@ -690,7 +690,7 @@ const VideoGeneration = ({ id, data, selected }) => {
       )}
       <div className="flex items-center gap-2 absolute -top-5 left-0">
         <h3 className="text-zinc-400 text-[10px] font-medium tracking-wider uppercase">
-          Video {id.replace(/^\D+/g, "")}
+          Видео {id.replace(/^\D+/g, "")}
         </h3>
         {generationCost !== null && !selectedModel?.id.includes("passthrough") && (
           <span className="text-xs text-orange-500 -mt-0.5 font-medium flex items-center gap-1 opacity-80">
@@ -700,7 +700,7 @@ const VideoGeneration = ({ id, data, selected }) => {
               </span>
             ) : (
               <span>
-                {generationCost === 0 ? 'Free' : (`≈ ${generationCost.toFixed(2)} ₽`)}
+                {generationCost === 0 ? 'Бесплатно' : (`≈ ${generationCost.toFixed(2)} ₽`)}
               </span>
             )}
           </span>
@@ -724,7 +724,7 @@ const VideoGeneration = ({ id, data, selected }) => {
                 onClick={handlePrev}
                 disabled={currentHistoryIndex <= 0}
                 className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Previous"
+                title="Назад"
               >
                 <FaAngleLeft size={10} />
               </button>
@@ -738,7 +738,7 @@ const VideoGeneration = ({ id, data, selected }) => {
                   suppressHydrationWarning={true}
                   onClick={handleDeleteHistory}
                   className="p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center"
-                  title="Delete history"
+                  title="Удалить историю"
                 >
                   <IoTrashOutline size={10} />
                 </button>
@@ -757,7 +757,7 @@ const VideoGeneration = ({ id, data, selected }) => {
                 onClick={handleNext}
                 disabled={currentHistoryIndex >= outputHistory.length - 1}
                 className="w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Next"
+                title="Вперед"
               >
                 <FaAngleRight size={10} />
               </button>
@@ -781,7 +781,7 @@ const VideoGeneration = ({ id, data, selected }) => {
             <div className="flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-gray-800 animate-pulse rounded-b-none">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                <span className="text-[10px] font-bold text-orange-500 tracking-wider uppercase">Generating...</span>
+                <span className="text-[10px] font-bold text-orange-500 tracking-wider uppercase">Генерация...</span>
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); handleCancelGeneration(); }}
@@ -793,7 +793,7 @@ const VideoGeneration = ({ id, data, selected }) => {
             </div>
           ) : data.errorMsg ? (
             <div className="text-red-400 text-xs font-medium p-3 bg-red-500/30 rounded-xl border border-red-500/20 m-3 w-full">
-              {data.errorMsg || "Generation failed"}
+              {data.errorMsg || "Ошибка генерации"}
             </div>
           ) : currentOutput && !data.isLoading ? (
             <div className="h-full w-full relative overflow-hidden rounded-b-none">
@@ -844,7 +844,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           ) : (
             <div className="flex flex-col items-center justify-center text-zinc-400 gap-2">
               <IoVideocamOutline size={32} />
-              <span className="text-[10px] italic">Result appeared here...</span>
+              <span className="text-[10px] italic">Результат появится здесь...</span>
             </div>
           )}
         </div>
@@ -878,7 +878,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 70, left: -40 }}
         > 
-          Text 
+          Текст 
         </p>
       )}
       
@@ -911,7 +911,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 100, left: -50 }}
         > 
-          Image 
+          Изображение 
         </p>
       )}
 
@@ -944,7 +944,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 100, left: -55 }}
         > 
-          Images
+          Изображения
         </p>
       )}
       
@@ -977,7 +977,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 130, left: -75 }}
         > 
-          Last Frame 
+          Последний кадр 
         </p>
       )}
       <Handle 
@@ -1009,7 +1009,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 160, left: -45 }}
         > 
-          Video
+          Видео
         </p>
       )}
 
@@ -1042,7 +1042,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 160, left: -50 }}
         > 
-          Videos
+          Видео
         </p>
       )}
       <Handle 
@@ -1074,7 +1074,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 190, left: -55 }}
         > 
-          Audios
+          Аудио
         </p>
       )}
       <Handle 
@@ -1106,7 +1106,7 @@ const VideoGeneration = ({ id, data, selected }) => {
           }`}
           style={{ top: 190, left: -45 }}
         >
-          Audio
+          Аудио
         </p>
       )}
       <Handle
@@ -1135,7 +1135,7 @@ const VideoGeneration = ({ id, data, selected }) => {
         }`}
         style={{ top: 100, right: -45 }}
       > 
-        Video 
+        Видео 
       </p>
     </div>
   );

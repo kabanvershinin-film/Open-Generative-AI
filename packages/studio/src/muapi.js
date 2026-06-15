@@ -1002,7 +1002,22 @@ export async function deleteNodeRun()          { return {}; }
 export async function getNodeStatus()          { return { status: 'completed' }; }
 
 // ── Agents (local storage) ────────────────────────────────────────────────────
-export async function getTemplateAgents()    { return []; }
+export async function getTemplateAgents()    { 
+    return [
+        {
+            id: 'skylark-video-agent',
+            agent_id: 'skylark-video-agent',
+            name: '小云雀 (Skylark)',
+            description: 'Интеллектуальный агент для генерации видео. Просто опишите вашу идею, и Skylark создаст потрясающий ролик.',
+            category: 'Видео',
+            icon_url: 'https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=cute%20cyber%20lark%20bird%20logo%20flat%20design%20blue%20colors&image_size=square',
+            system_prompt: 'Вы — 小云雀 (Skylark), продвинутый ИИ-агент для создания видео. Ваша цель — помогать пользователям воплощать их идеи в видеоролики. Вы вежливы, креативны и профессиональны. Когда пользователь просит создать видео, уточняйте детали (стиль, длительность, соотношение сторон) и используйте встроенные инструменты для генерации.',
+            greeting: 'Привет! Я 小云雀 (Skylark), ваш персональный помощник по созданию видео. Что мы создадим сегодня?',
+            owner_username: 'Volcengine',
+            is_template: true
+        }
+    ]; 
+}
 export async function getUserAgents()        { return lsGet('mf_agents', []); }
 export async function getPublishedAgents()   { return []; }
 export async function getUserConversations() { return lsGet('mf_conversations', []); }

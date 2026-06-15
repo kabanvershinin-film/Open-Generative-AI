@@ -33,6 +33,12 @@ const UI_TRANSLATIONS = {
   "Upload failed": "Не удалось загрузить файл",
   "Upload failed.": "Не удалось загрузить файл",
   "Preview": "Предпросмотр",
+  "* required": "* обязательно",
+  "Remove input": "Удалить вход",
+  "Set as input": "Сделать входом",
+  "Select or type...": "Выберите или введите...",
+  "No options found": "Ничего не найдено",
+  "max items:": "макс. элементов:",
 };
 
 const translateUi = (value) => {
@@ -342,7 +348,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
       <div key={fieldName} className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           {label}
-          <span className="text-[10px] text-gray-500">{imageList.length}/{meta.maxItems}</span>
+          <span className="text-[10px] text-gray-500">{translateUi("max items:")} {imageList.length}/{meta.maxItems}</span>
         </div>
         <div className="grid grid-cols-3 gap-2">
           {imageList.map((url, idx) => (

@@ -56,7 +56,7 @@ const NodeOptionsMenu = ({
             className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-medium text-zinc-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
           >
             <IoDuplicateOutline size={14} className="text-blue-400" />
-            <span>Duplicate</span>
+            <span>Дублировать</span>
           </button>
 
           {downloadUrl && (
@@ -71,7 +71,7 @@ const NodeOptionsMenu = ({
               className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-medium text-zinc-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
             >
               <MdOutlineFileDownload size={14} className="text-emerald-400" />
-              <span>Download</span>
+              <span>Скачать</span>
             </button>
           )}
 
@@ -87,7 +87,7 @@ const NodeOptionsMenu = ({
               className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-medium text-zinc-300 hover:bg-white/5 hover:text-white transition-colors border-b border-white/5"
             >
               <HiOutlinePhotograph size={14} className="text-purple-400" />
-              <span>Set Thumbnail</span>
+              <span>Установить обложку</span>
             </button>
           )}
 
@@ -102,7 +102,7 @@ const NodeOptionsMenu = ({
             className="w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
           >
             <IoTrashOutline size={14} />
-            <span>Delete Node {nodeId}</span>
+            <span>Удалить ноду {nodeId}</span>
           </button>
         </div>
       )}

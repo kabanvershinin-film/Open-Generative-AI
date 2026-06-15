@@ -142,10 +142,10 @@ const PromptConcate = ({ id, data, selected }) => {
   }, [formValues, data.formValues]);
 
   const handleDeleteNode = () => {
-    if (window.confirm(`Are you sure you want to delete this ${id} node?`)) {
+    if (window.confirm(`Вы уверены, что хотите удалить ноду ${id}?`)) {
       setNodes((nds) => nds.filter((n) => n.id !== id));
       setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
-      toast.success(`Deleted node ${id}`);
+      toast.success(`Нода ${id} удалена`);
     };
   };
 
@@ -208,7 +208,7 @@ const PromptConcate = ({ id, data, selected }) => {
       `}
     >
       <h3 className="absolute -top-5 left-0 text-zinc-400 text-[10px] font-medium tracking-wider uppercase">
-        Prompt Concatenator {id.replace(/^\D+/g, "")}
+        Объединитель промптов {id.replace(/^\D+/g, "")}
       </h3>
       <div className="flex flex-col">
         <div className="flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3">
@@ -264,7 +264,7 @@ const PromptConcate = ({ id, data, selected }) => {
                 : "opacity-0 group-hover:opacity-100"
             }`}
           > 
-            Text 
+            Текст 
           </p>
         </>
       )}
@@ -294,7 +294,7 @@ const PromptConcate = ({ id, data, selected }) => {
             : "opacity-0 group-hover:opacity-100"
         }`}
       > 
-        Text 
+        Текст 
       </p>
     </div>
   );
