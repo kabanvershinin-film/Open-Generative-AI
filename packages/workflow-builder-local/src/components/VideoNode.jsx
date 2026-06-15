@@ -700,7 +700,7 @@ const VideoGeneration = ({ id, data, selected }) => {
               </span>
             ) : (
               <span>
-                {generationCost === 0 ? 'Free' : (`$${generationCost}`)}
+                {generationCost === 0 ? 'Free' : (`≈ ${generationCost.toFixed(2)} ₽`)}
               </span>
             )}
           </span>

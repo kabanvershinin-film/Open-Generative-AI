@@ -2760,19 +2760,21 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                   {(loadingNodes[selectedNode.id] || selectedNode?.data?.isLoading) ? (
                     <><div className="w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin"></div>Generating...</>
                   ) : (
-                    <>
-                      <FaPlay size={16} /> 
-                      Generate
-                      {generationCost !== null && (
-                        <span className="text-xs font-medium">
+                    <div className="flex items-center gap-3">
+                      {generationCost !== null && generationCost > 0 && (
+                        <span className="text-[#22d3ee] font-medium text-xs">
                           {isRefreshingCost ? (
                             <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block align-middle"></div>
                           ) : (
-                            generationCost === 0 ? 'Free' : `$${generationCost}`
+                            `≈ ${generationCost.toFixed(2)} ₽`
                           )}
                         </span>
                       )}
-                    </>
+                      <div className="flex items-center gap-2">
+                        <FaPlay size={14} /> 
+                        Generate
+                      </div>
+                    </div>
                   )}
                 </button>
               )}
