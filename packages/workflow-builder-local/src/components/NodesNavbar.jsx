@@ -170,10 +170,11 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
           action: () => handleAddNode("seedancePromptNode", { id: "text-passthrough", name: "Seedance Промпт" }),
         },
         {
-          label: "Агент 小云雀",
+          label: "Агент Гена",
           id: "skylark-agent",
-          icon: <RiRobot2Line />,
-          action: () => handleAddNode("skylarkNode", { id: "skylark", name: "Агент 小云雀" }),
+          icon: <RiRobot2Line className="text-purple-400" size={18} />,
+          description: "Умный видео-агент для генерации контента",
+          action: () => handleAddNode("skylarkNode", { id: "skylark", name: "Агент Гена" }),
         },
       ]
     },
@@ -225,7 +226,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
       ...textUtils.map(m => ({ ...m, type: m.id === "video-combiner" ? "vidConcatNode" : "concatNode" })),
       ...apiNodeModels.map(m => ({ ...m, type: "apiNode" })),
       { id: "seedance-prompt", name: "Seedance Промпт", type: "seedancePromptNode" },
-      { id: "skylark-agent", name: "Агент 小云雀", type: "skylarkNode" },
+      { id: "skylark-agent", name: "Агент Гена", type: "skylarkNode" },
     ];
 
     const filtered = allModels.filter(m => m && m.name && m.name.toLowerCase().includes(searchQuery.toLowerCase()));
