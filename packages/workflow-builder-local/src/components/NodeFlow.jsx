@@ -849,7 +849,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 updatedFormValues.prompt = concatValues.join(" ");
               }
 
-              else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput"].includes(params.targetHandle)) {
+              else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(params.targetHandle)) {
                 updatedFormValues.prompt = sourceValue || "";
               }
               else if (params.targetHandle === "textInput4") {
@@ -870,12 +870,13 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 } else {
                   updatedFormValues.image_url = resultValue || null;
                 }
-              } else if (["textInput3", "imageInput2", "videoInput6"].includes(params.targetHandle)) {
-                const list = Array.isArray(updatedFormValues.images_list) ? [...updatedFormValues.images_list] : [];
+              } else if (["textInput3", "imageInput2", "videoInput6", "images"].includes(params.targetHandle)) {
+                const listKey = n.type === "skylarkNode" ? "img_url_list" : "images_list";
+                const list = Array.isArray(updatedFormValues[listKey]) ? [...updatedFormValues[listKey]] : [];
                 if (!list.includes(resultValue) && resultValue && resultValue.trim() !== "") {
                   list.push(resultValue);
                 }
-                updatedFormValues.images_list = list;
+                updatedFormValues[listKey] = list;
               } else if (params.targetHandle === "apiInput2") {
                 const list = Array.isArray(updatedFormValues.images) ? [...updatedFormValues.images] : [];
                 if (!list.includes(resultValue) && resultValue && resultValue.trim() !== "") {
@@ -2617,12 +2618,20 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                     ) : selectedNode.type === "skylarkNode" ? (
                       <div className="flex flex-col gap-4 w-full">
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Промпт</label>
+                          <div className="flex items-center justify-between px-1">
+                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Промпт</label>
+                            {edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt") && (
+                              <span className="text-[9px] text-blue-400 font-bold bg-blue-500/10 px-1.5 py-0.5 rounded uppercase">Подключено</span>
+                            )}
+                          </div>
                           <textarea
                             value={selectedNode.data.formValues?.prompt || ""}
                             onChange={(e) => updateNodeFromPanel("prompt", e.target.value)}
-                            placeholder="Опишите, что должен сделать агент..."
-                            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white min-h-[100px] outline-none focus:border-blue-500/50 transition-all resize-none"
+                            placeholder={edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt") ? "Промпт поступает из другого узла..." : "Опишите, что должен сделать агент..."}
+                            readOnly={edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt")}
+                            className={`w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white min-h-[100px] outline-none transition-all resize-none ${
+                              edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt") ? "opacity-60 cursor-not-allowed border-blue-500/30" : "focus:border-blue-500/50"
+                            }`}
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">

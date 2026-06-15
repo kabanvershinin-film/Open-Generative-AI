@@ -147,7 +147,19 @@ const SkylarkNode = ({ id, data, selected }) => {
         }} downloadUrl={currentOutput} />
       </div>
 
+      {/* Preview Area */}
       <div className="p-3 flex flex-col gap-3">
+        {connectedInputs.prompt && (
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 mb-3 animate-in fade-in slide-in-from-top-1 duration-300">
+            <TfiText className="text-blue-400" size={12} />
+            <div className="flex flex-col">
+              <span className="text-[9px] text-blue-400 font-bold uppercase tracking-tight">Промпт подключен</span>
+              <span className="text-[8px] text-blue-300/60 truncate max-w-[140px]">
+                {data.formValues?.prompt || "Ожидание текста..."}
+              </span>
+            </div>
+          </div>
+        )}
         {data.isLoading ? (
           <div className="aspect-video bg-zinc-900 rounded-lg flex flex-col items-center justify-center gap-2">
             <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
