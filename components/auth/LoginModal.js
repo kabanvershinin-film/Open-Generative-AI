@@ -93,15 +93,15 @@ export default function LoginModal() {
                     muted
                     loop
                     playsInline
-                    className="absolute min-w-full min-h-full object-cover opacity-60"
+                    className="absolute min-w-full min-h-full object-cover"
                 >
                     <source src="https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4" type="video/mp4" />
                 </video>
             </div>
             {/* Darker overlay for readability */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
             
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 fade-in duration-200">
+            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 fade-in duration-200 md:translate-x-32">
                 {/* glow */}
                 <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
