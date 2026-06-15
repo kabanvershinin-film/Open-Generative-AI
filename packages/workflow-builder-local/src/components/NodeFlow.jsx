@@ -113,7 +113,7 @@ const getEdgeColor = (sourceHandle, targetHandle, sourceNode = null, targetNode 
 
   if (["textOutput", "concatOutput"].includes(sourceHandle)) return "blue";
   if (["imageOutput"].includes(sourceHandle)) return "green";
-  if (["videoOutput"].includes(sourceHandle)) return "orange";
+  if (["videoOutput", "videoOutput"].includes(sourceHandle)) return "orange";
   if (["audioOutput"].includes(sourceHandle)) return "yellow";
   if (["characterOutput"].includes(sourceHandle)) return "purple";
 
@@ -1955,7 +1955,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         videoInput: "blue", videoInput2: "green", videoInput3: "green", videoInput4: "orange", videoInput5: "yellow", videoInput6: "green", videoInput7: "orange", videoInput8: "yellow", videoOutput: "orange",
         audioInput: "yellow", audioInput2: "blue", audioInput3: "green", audioInput4: "orange", audioOutput: "yellow",
         characterOutput: "green",
-        prompt: "blue", images: "green", videos: "orange",
+        prompt: "blue", images: "green", videos: "orange", videoOutput: "orange",
       }
     },
   }));
@@ -2051,6 +2051,10 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         validHandles = apiInputs.filter(k => k !== 'apiOutput' && exposedHandles.includes(k));
         break;
 
+      case "skylarkNode":
+        validHandles = ["prompt", "images", "videos"];
+        break;
+
       case "vidConcatNode":
         validHandles = ["videoInput7"];
         break;
@@ -2141,6 +2145,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         audioNode: ["audioInput", "audioInput2", "audioInput3", "audioInput4"],
         apiNode: ["apiInput", "apiInput2", "apiInput3"],
         concatNode: ["concatInput"],
+        skylarkNode: ["prompt", "images", "videos"],
         vidConcatNode: ["videoInput7"],
       };
 
@@ -2166,6 +2171,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         audioNode: ["audioOutput"],
         apiNode: ["apiOutput"],
         concatNode: ["concatOutput"],
+        skylarkNode: ["videoOutput"],
         vidConcatNode: ["videoOutput"],
       };
 
@@ -2199,17 +2205,17 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   const getCompatibleNodeTypes = (handleColor, isOutput) => {
     if (isOutput) {
       const compatibilityMap = {
-        blue: ['textNode', 'imageNode', 'videoNode', 'audioNode', 'apiNode', 'concatNode'],
-        green: ['imageNode', 'videoNode', 'apiNode'],
-        orange: ['videoNode', 'vidConcatNode'],
+        blue: ['textNode', 'imageNode', 'videoNode', 'audioNode', 'apiNode', 'concatNode', 'skylarkNode'],
+        green: ['imageNode', 'videoNode', 'apiNode', 'skylarkNode'],
+        orange: ['videoNode', 'vidConcatNode', 'skylarkNode'],
         yellow: ['audioNode', 'videoNode']
       };
       return compatibilityMap[handleColor] || [];
     } else {
       const compatibilityMap = {
-        blue: ['textNode', 'concatNode', 'apiNode'],
-        green: ['imageNode', 'apiNode'],
-        orange: ['videoNode', 'vidConcatNode'],
+        blue: ['textNode', 'concatNode', 'apiNode', 'skylarkNode'],
+        green: ['imageNode', 'apiNode', 'skylarkNode'],
+        orange: ['videoNode', 'vidConcatNode', 'skylarkNode'],
         yellow: ['audioNode']
       };
       return compatibilityMap[handleColor] || [];
