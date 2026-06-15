@@ -1,4 +1,4 @@
-// Server-side pricing for Open-Generative-AI generations.
+// Server-side pricing for Сапог AI generations.
 // Ported from creator-club src/lib/billing.ts.
 //
 // Method: ruble_price = memefast_cost_in_CNY (¥) × CNY_TO_RUB × PLATFORM_MARKUP.

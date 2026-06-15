@@ -872,7 +872,7 @@ function lsSet(key, val) {
 }
 function genId() { return `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`; }
 
-// ── Workflows (TOS-backed) ────────────────────────────────────────────────────
+// ── Workflows (Сапог AI backed) ────────────────────────────────────────────────────
 export async function getTemplateWorkflows(_apiKey) { return []; }
 export async function getUserWorkflows(apiKey) {
     try {

@@ -1,4 +1,4 @@
-# Open Generative AI — Open-Source Alternative to AI Video Platforms
+# Сапог AI — Open-Source Alternative to AI Video Platforms
 
 > **The free, open-source alternative to AI Video Platforms.** Generate AI images and videos using 200+ state-of-the-art models — no content filters, no closed ecosystem, no subscription fees.
 
@@ -115,7 +115,7 @@ echo 'kernel.apparmor_restrict_unprivileged_userns=0' | sudo tee /etc/sysctl.d/9
 
 Open Generative AI is a free, open-source AI image, video, cinema, and lip sync studio that brings creative workflows to everyone. No content filters, no prompt rejections, no guardrails — just full creative freedom. Powered by [Muapi.ai](https://muapi.ai), it supports text-to-image, image-to-image, text-to-video, image-to-video, and audio-driven lip sync generation across models like Flux, Nano Banana, Midjourney, Kling, Sora, Veo, Seedream, Infinite Talk, LTX Lipsync, Wan 2.2, and more — all from a sleek, modern interface you can self-host and customize.
 
-**Why Open Generative AI instead of other AI Video Platforms?**
+**Why Сапог AI instead of other AI Video Platforms?**
 - **No filters** — no content filters, no nanny guardrails, no prompt rejections
 - **Free & open-source** — no subscription, no vendor lock-in
 - **Self-hosted** — your data stays on your machine, full creative control
@@ -523,7 +523,7 @@ Lip sync jobs use the same two-step pattern: a dedicated `processLipSync()` meth
 
 **Open Generative AI** is a community-driven, open-source alternative that provides similar creative capabilities without the closed ecosystem:
 
-| | Other providers | Open Generative AI |
+| | Other providers | Сапог AI |
 | :--- | :--- | :--- |
 | **Cost** | Subscription-based | Free (open-source) |
 | **Content filters** | Yes — prompts blocked or altered | None |

@@ -36,9 +36,9 @@
     "electron:build:all": "vite build && electron-builder --mac --win --linux"
   },
   "build": {
-    "appId": "ai.generative.open",
-    "productName": "Open Generative AI",
-    "copyright": "Copyright © 2025",
+    "appId": "ai.sapog",
+    "productName": "Сапог AI",
+    "copyright": "Copyright © 2026",
     "directories": {
       "output": "release"
     },
@@ -90,7 +90,7 @@
     "linux": {
       "icon": "public/banner.png",
       "category": "Utility",
-      "maintainer": "Open Generative AI Team",
+      "maintainer": "Сапог AI Team",
       "extraFiles": [
         {
           "from": "build/linux/apparmor.profile",
