@@ -89,7 +89,7 @@ export default function LoginModal() {
             {/* Background Image */}
             <div className="absolute inset-0 overflow-hidden">
                 <img
-                    src="/auth-bg.jpg"
+                    src="/auth-bg.png"
                     className="absolute min-w-full min-h-full object-cover"
                     alt="Background"
                 />
