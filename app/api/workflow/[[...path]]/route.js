@@ -314,13 +314,13 @@ async function tosSaveWorkflow(id, data) {
     if (!TOS_ENABLED) return;
     const buf = Buffer.from(JSON.stringify(data));
     await tosUpload(buildWorkflowStorageKey(data?.owner_id || null, id), buf, 'application/json').catch(() => {});
-    // Update workflow index (carry owner_id so the list can be scoped per user;
-    // only set it when known so we never null out an existing owner).
+    // Update workflow index (carry owner_id so the list can be scoped per user).
+    // Always include owner_id (null if anonymous) to keep the index structure consistent.
     await tosUpdateIndex(id, {
         id, name: data.name || 'Untitled',
         updated_at: data.updated_at || new Date().toISOString(),
         thumbnail: data.thumbnail || null,
-        ...(data.owner_id ? { owner_id: data.owner_id } : {}),
+        owner_id: data.owner_id || null,
     }).catch(() => {});
 }
 
@@ -1462,8 +1462,15 @@ export async function GET(request, { params }) {
         }
         
         const admin = isAdminUser(user);
-        let ownerWorkflows = allIndex.filter(e => e && (e.owner_id === user.id || (admin && !e.owner_id)));
-        console.log('Owner workflows:', ownerWorkflows.map(i => i.id));
+        let ownerWorkflows;
+        if (admin) {
+            // Admins see everything in the index to help find missing/anonymous workflows
+            ownerWorkflows = allIndex.filter(Boolean);
+            console.log('Admin view: showing all index entries. Total:', ownerWorkflows.length);
+        } else {
+            ownerWorkflows = allIndex.filter(e => e && e.owner_id === user.id);
+        }
+        console.log('Filtered workflows:', ownerWorkflows.map(i => i.id));
         
         let sharedWorkflows = [];
         if (SHARE_ENABLED) {
@@ -1746,7 +1753,7 @@ export async function POST(request, { params }) {
             updated_at: new Date().toISOString(),
         };
         store.set(id, wf);
-        tosSaveWorkflow(id, wf).catch(() => {});
+        await tosSaveWorkflow(id, wf).catch(() => {});
         return NextResponse.json(wf);
     }
 
@@ -2127,7 +2134,7 @@ export async function POST(request, { params }) {
     // Preserve/own the workflow; never let the body override owner_id.
     const updated = { ...existing, ...body, workflow_id: id, id, owner_id: existing.owner_id || owner?.id || null, updated_at: new Date().toISOString() };
     store.set(id, updated);
-    tosSaveWorkflow(id, updated).catch(() => {});
+    await tosSaveWorkflow(id, updated).catch(() => {});
     return NextResponse.json(updated);
 }
 
