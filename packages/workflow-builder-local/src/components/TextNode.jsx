@@ -286,18 +286,24 @@ const TextGeneration = ({ id, data, selected }) => {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center gap-2">
-                {/* Connected images — shown together as one gallery */}
+                {/* Connected images & characters — shown together as one gallery */}
                 {(() => {
                   const extra = Array.isArray(formValues.images_list) ? formValues.images_list.filter(Boolean) : [];
                   const all = [
-                    ...(formValues.image_url ? [{ url: formValues.image_url, primary: true }] : []),
-                    ...extra.map((u) => ({ url: u, primary: false })),
+                    ...(formValues.image_url ? [{ url: formValues.image_url, primary: true, type: 'image' }] : []),
+                    ...extra.map((u) => ({ url: u, primary: false, type: 'image' })),
+                    ...(formValues.face_thumbnail ? [{ url: formValues.face_thumbnail, type: 'character' }] : []),
                   ];
                   if (!all.length) return null;
                   const removeAt = (item) => {
                     setFormValues(cfv => {
                       const updated = { ...cfv };
-                      if (item.primary) {
+                      if (item.type === 'character') {
+                        updated.face_thumbnail = null;
+                        updated.face_asset = null;
+                        // Optional: also remove @token from prompt if we want to be thorough,
+                        // but usually the user handles prompt text manually in TextNode.
+                      } else if (item.primary) {
                         const rest = Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : [];
                         updated.image_url = rest.length ? rest[0] : null;
                         updated.images_list = rest.slice(1);
@@ -310,12 +316,15 @@ const TextGeneration = ({ id, data, selected }) => {
                   return (
                     <div className="w-full px-3 pb-2">
                       <p className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1.5">
-                        Подключенные изображения ({all.length})
+                        Подключенные объекты ({all.length})
                       </p>
                       <div className="grid grid-cols-4 gap-1.5">
                         {all.map((item, i) => (
-                          <div key={`${item.url}-${i}`} className="relative group/refimg rounded-lg overflow-hidden border border-emerald-500/30 bg-black aspect-square">
+                          <div key={`${item.url}-${i}`} className={`relative group/refimg rounded-lg overflow-hidden border bg-black aspect-square ${item.type === 'character' ? 'border-purple-500/50 ring-1 ring-purple-500/20' : 'border-emerald-500/30'}`}>
                             <img src={item.url} alt="ref" className="w-full h-full object-cover" />
+                            {item.type === 'character' && (
+                              <div className="absolute inset-0 bg-purple-600/10 pointer-events-none" />
+                            )}
                             <button
                               type="button"
                               onClick={() => removeAt(item)}
@@ -323,6 +332,11 @@ const TextGeneration = ({ id, data, selected }) => {
                             >
                               ×
                             </button>
+                            {item.type === 'character' && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-purple-600/80 text-[7px] text-white font-bold py-0.5 text-center uppercase tracking-tighter">
+                                Лицо
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>

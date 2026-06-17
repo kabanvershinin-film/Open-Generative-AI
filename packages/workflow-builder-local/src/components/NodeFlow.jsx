@@ -590,11 +590,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           ? sourceNode?.data?.formValues?.prompt
           : resultValue;
 
-        // A Character node plugged into a video node is a face reference — route
-        // it to face_asset (reference_image) regardless of which image handle it
-        // lands on, instead of treating it as a first-frame image.
-        if (sourceNode?.type === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode")) {
-          updatedFormValues.face_asset = resultValue;
+        // A Character node plugged into a video or text node is a face reference
+        if (sourceNode?.type === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode" || node.type === "textNode")) {
+          if (node.type !== "textNode") {
+            updatedFormValues.face_asset = resultValue;
+          }
           updatedFormValues.face_thumbnail =
             sourceNode?.data?.formValues?.character_photo || updatedFormValues.face_thumbnail || null;
         }
@@ -818,18 +818,21 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               }
             }
 
-            // CharacterNode → VideoNode: treat the face reference as face_asset,
-            // carry the thumbnail for display, and tag @Name into the prompt
-            // (same UX as Video Studio).
-            if (sourceNode?.type === "characterNode" && (n.type === "videoNode" || n.type === "skylarkNode")) {
-              updatedFormValues.face_asset = resultValue || null;
-              updatedFormValues.face_thumbnail = sourceNode?.data?.formValues?.character_photo || null;
-              const cname = sourceNode?.data?.formValues?.character_name;
-              if (cname && cname.trim()) {
-                const token = "@" + cname.trim().replace(/\s+/g, "_");
-                const cur = updatedFormValues.prompt || "";
-                if (!cur.includes(token)) {
-                  updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+            // CharacterNode → VideoNode or TextNode: carry the thumbnail for display
+            // and tag @Name into the prompt (same UX as Video Studio).
+            if (sourceNode?.type === "characterNode") {
+              if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode") {
+                if (n.type !== "textNode") {
+                  updatedFormValues.face_asset = resultValue || null;
+                }
+                updatedFormValues.face_thumbnail = sourceNode?.data?.formValues?.character_photo || null;
+                const cname = sourceNode?.data?.formValues?.character_name;
+                if (cname && cname.trim()) {
+                  const token = "@" + cname.trim().replace(/\s+/g, "_");
+                  const cur = updatedFormValues.prompt || "";
+                  if (!cur.includes(token)) {
+                    updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+                  }
                 }
               }
             }
@@ -1108,17 +1111,19 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       const targetNode = nodes.find((n) => n.id === edge.target);
 
-      // Disconnecting a Character node from a video node: clear the face
+      // Disconnecting a Character node from a node: clear the face
       // reference and strip its @Name token out of the prompt.
       const removedSource = nodes.find((n) => n.id === edge.source);
-      if (removedSource?.type === "characterNode" && (targetNode?.type === "videoNode" || targetNode?.type === "skylarkNode")) {
+      if (removedSource?.type === "characterNode" && (targetNode?.type === "videoNode" || targetNode?.type === "skylarkNode" || targetNode?.type === "textNode")) {
         const cname = removedSource?.data?.formValues?.character_name;
         const token = cname && cname.trim() ? "@" + cname.trim().replace(/\s+/g, "_") : null;
         setNodes((prev) =>
           prev.map((n) => {
             if (n.id !== targetNode.id) return n;
             let updatedFormValues = { ...(n.data?.formValues || {}) };
-            updatedFormValues.face_asset = null;
+            if (n.type !== "textNode") {
+              updatedFormValues.face_asset = null;
+            }
             updatedFormValues.face_thumbnail = null;
             if (token && typeof updatedFormValues.prompt === "string") {
               updatedFormValues.prompt = updatedFormValues.prompt
@@ -1988,8 +1993,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     if (!sourceNode || !targetNode) return false;
 
     // CharacterNode feeds face_asset — allow it to land on any green image handle of a video node or agent.
-    if (sourceNode.type === "characterNode" && (targetNode.type === "videoNode" || targetNode.type === "skylarkNode")) {
-      return ["videoInput2", "videoInput3", "videoInput6", "images"].includes(targetHandle);
+    // Also allow it to connect to TextNode handles to pass the character reference.
+    if (sourceNode.type === "characterNode") {
+      if (targetNode.type === "videoNode" || targetNode.type === "skylarkNode") {
+        return ["videoInput2", "videoInput3", "videoInput6", "images"].includes(targetHandle);
+      }
+      if (targetNode.type === "textNode") {
+        return ["textInput", "textInput2", "textInput3", "textInput4"].includes(targetHandle);
+      }
     }
 
     const sourceType = sourceNode?.data?.handleTypes?.[sourceHandle];

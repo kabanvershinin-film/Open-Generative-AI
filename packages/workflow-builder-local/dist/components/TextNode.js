@@ -321,18 +321,28 @@ var TextGeneration = function TextGeneration(_ref) {
     var extra = Array.isArray(formValues.images_list) ? formValues.images_list.filter(Boolean) : [];
     var all = [].concat(_toConsumableArray(formValues.image_url ? [{
       url: formValues.image_url,
-      primary: true
+      primary: true,
+      type: 'image'
     }] : []), _toConsumableArray(extra.map(function (u) {
       return {
         url: u,
-        primary: false
+        primary: false,
+        type: 'image'
       };
-    })));
+    })), _toConsumableArray(formValues.face_thumbnail ? [{
+      url: formValues.face_thumbnail,
+      type: 'character'
+    }] : []));
     if (!all.length) return null;
     var removeAt = function removeAt(item) {
       setFormValues(function (cfv) {
         var updated = _objectSpread({}, cfv);
-        if (item.primary) {
+        if (item.type === 'character') {
+          updated.face_thumbnail = null;
+          updated.face_asset = null;
+          // Optional: also remove @token from prompt if we want to be thorough,
+          // but usually the user handles prompt text manually in TextNode.
+        } else if (item.primary) {
           var rest = Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : [];
           updated.image_url = rest.length ? rest[0] : null;
           updated.images_list = rest.slice(1);
@@ -348,23 +358,27 @@ var TextGeneration = function TextGeneration(_ref) {
       className: "w-full px-3 pb-2"
     }, /*#__PURE__*/_react["default"].createElement("p", {
       className: "text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1.5"
-    }, "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043D\u044B\u0435 \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u044F (", all.length, ")"), /*#__PURE__*/_react["default"].createElement("div", {
+    }, "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043D\u044B\u0435 \u043E\u0431\u044A\u0435\u043A\u0442\u044B (", all.length, ")"), /*#__PURE__*/_react["default"].createElement("div", {
       className: "grid grid-cols-4 gap-1.5"
     }, all.map(function (item, i) {
       return /*#__PURE__*/_react["default"].createElement("div", {
         key: "".concat(item.url, "-").concat(i),
-        className: "relative group/refimg rounded-lg overflow-hidden border border-emerald-500/30 bg-black aspect-square"
+        className: "relative group/refimg rounded-lg overflow-hidden border bg-black aspect-square ".concat(item.type === 'character' ? 'border-purple-500/50 ring-1 ring-purple-500/20' : 'border-emerald-500/30')
       }, /*#__PURE__*/_react["default"].createElement("img", {
         src: item.url,
         alt: "ref",
         className: "w-full h-full object-cover"
+      }), item.type === 'character' && /*#__PURE__*/_react["default"].createElement("div", {
+        className: "absolute inset-0 bg-purple-600/10 pointer-events-none"
       }), /*#__PURE__*/_react["default"].createElement("button", {
         type: "button",
         onClick: function onClick() {
           return removeAt(item);
         },
         className: "absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity z-10"
-      }, "\xD7"));
+      }, "\xD7"), item.type === 'character' && /*#__PURE__*/_react["default"].createElement("div", {
+        className: "absolute bottom-0 left-0 right-0 bg-purple-600/80 text-[7px] text-white font-bold py-0.5 text-center uppercase tracking-tighter"
+      }, "\u041B\u0438\u0446\u043E"));
     })));
   }(), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-center justify-center text-zinc-400 gap-2"

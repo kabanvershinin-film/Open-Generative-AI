@@ -753,12 +753,12 @@ var NodeFlow = function NodeFlow(_ref) {
         });
         var sourceValue = (sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "concatNode" ? sourceNode === null || sourceNode === void 0 || (_sourceNode$data = sourceNode.data) === null || _sourceNode$data === void 0 || (_sourceNode$data = _sourceNode$data.formValues) === null || _sourceNode$data === void 0 ? void 0 : _sourceNode$data.prompt : resultValue;
 
-        // A Character node plugged into a video node is a face reference — route
-        // it to face_asset (reference_image) regardless of which image handle it
-        // lands on, instead of treating it as a first-frame image.
-        if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode")) {
+        // A Character node plugged into a video or text node is a face reference
+        if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode" || node.type === "textNode")) {
           var _sourceNode$data2;
-          updatedFormValues.face_asset = resultValue;
+          if (node.type !== "textNode") {
+            updatedFormValues.face_asset = resultValue;
+          }
           updatedFormValues.face_thumbnail = (sourceNode === null || sourceNode === void 0 || (_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2.formValues) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.character_photo) || updatedFormValues.face_thumbnail || null;
         } else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(targetHandle)) {
           updatedFormValues.prompt = sourceValue;
@@ -928,19 +928,22 @@ var NodeFlow = function NodeFlow(_ref) {
             }
           }
 
-          // CharacterNode → VideoNode: treat the face reference as face_asset,
-          // carry the thumbnail for display, and tag @Name into the prompt
-          // (same UX as Video Studio).
-          if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && (n.type === "videoNode" || n.type === "skylarkNode")) {
-            var _sourceNode$data6, _sourceNode$data7;
-            updatedFormValues.face_asset = resultValue || null;
-            updatedFormValues.face_thumbnail = (sourceNode === null || sourceNode === void 0 || (_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6.formValues) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.character_photo) || null;
-            var cname = sourceNode === null || sourceNode === void 0 || (_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.formValues) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.character_name;
-            if (cname && cname.trim()) {
-              var token = "@" + cname.trim().replace(/\s+/g, "_");
-              var cur = updatedFormValues.prompt || "";
-              if (!cur.includes(token)) {
-                updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+          // CharacterNode → VideoNode or TextNode: carry the thumbnail for display
+          // and tag @Name into the prompt (same UX as Video Studio).
+          if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode") {
+            if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode") {
+              var _sourceNode$data6, _sourceNode$data7;
+              if (n.type !== "textNode") {
+                updatedFormValues.face_asset = resultValue || null;
+              }
+              updatedFormValues.face_thumbnail = (sourceNode === null || sourceNode === void 0 || (_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6.formValues) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.character_photo) || null;
+              var cname = sourceNode === null || sourceNode === void 0 || (_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.formValues) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.character_name;
+              if (cname && cname.trim()) {
+                var token = "@" + cname.trim().replace(/\s+/g, "_");
+                var cur = updatedFormValues.prompt || "";
+                if (!cur.includes(token)) {
+                  updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+                }
               }
             }
           }
@@ -1246,12 +1249,12 @@ var NodeFlow = function NodeFlow(_ref) {
         return n.id === edge.target;
       });
 
-      // Disconnecting a Character node from a video node: clear the face
+      // Disconnecting a Character node from a node: clear the face
       // reference and strip its @Name token out of the prompt.
       var removedSource = nodes.find(function (n) {
         return n.id === edge.source;
       });
-      if ((removedSource === null || removedSource === void 0 ? void 0 : removedSource.type) === "characterNode" && ((targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "videoNode" || (targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "skylarkNode")) {
+      if ((removedSource === null || removedSource === void 0 ? void 0 : removedSource.type) === "characterNode" && ((targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "videoNode" || (targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "skylarkNode" || (targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "textNode")) {
         var _removedSource$data;
         var cname = removedSource === null || removedSource === void 0 || (_removedSource$data = removedSource.data) === null || _removedSource$data === void 0 || (_removedSource$data = _removedSource$data.formValues) === null || _removedSource$data === void 0 ? void 0 : _removedSource$data.character_name;
         var token = cname && cname.trim() ? "@" + cname.trim().replace(/\s+/g, "_") : null;
@@ -1260,7 +1263,9 @@ var NodeFlow = function NodeFlow(_ref) {
             var _n$data2;
             if (n.id !== targetNode.id) return n;
             var updatedFormValues = _objectSpread({}, ((_n$data2 = n.data) === null || _n$data2 === void 0 ? void 0 : _n$data2.formValues) || {});
-            updatedFormValues.face_asset = null;
+            if (n.type !== "textNode") {
+              updatedFormValues.face_asset = null;
+            }
             updatedFormValues.face_thumbnail = null;
             if (token && typeof updatedFormValues.prompt === "string") {
               updatedFormValues.prompt = updatedFormValues.prompt.replace(new RegExp("\\s*" + token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b", "g"), "").trim();
@@ -2316,8 +2321,14 @@ var NodeFlow = function NodeFlow(_ref) {
     if (!sourceNode || !targetNode) return false;
 
     // CharacterNode feeds face_asset — allow it to land on any green image handle of a video node or agent.
-    if (sourceNode.type === "characterNode" && (targetNode.type === "videoNode" || targetNode.type === "skylarkNode")) {
-      return ["videoInput2", "videoInput3", "videoInput6", "images"].includes(targetHandle);
+    // Also allow it to connect to TextNode handles to pass the character reference.
+    if (sourceNode.type === "characterNode") {
+      if (targetNode.type === "videoNode" || targetNode.type === "skylarkNode") {
+        return ["videoInput2", "videoInput3", "videoInput6", "images"].includes(targetHandle);
+      }
+      if (targetNode.type === "textNode") {
+        return ["textInput", "textInput2", "textInput3", "textInput4"].includes(targetHandle);
+      }
     }
     var sourceType = sourceNode === null || sourceNode === void 0 || (_sourceNode$data10 = sourceNode.data) === null || _sourceNode$data10 === void 0 || (_sourceNode$data10 = _sourceNode$data10.handleTypes) === null || _sourceNode$data10 === void 0 ? void 0 : _sourceNode$data10[sourceHandle];
     var targetType = targetNode === null || targetNode === void 0 || (_targetNode$data = targetNode.data) === null || _targetNode$data === void 0 || (_targetNode$data = _targetNode$data.handleTypes) === null || _targetNode$data === void 0 ? void 0 : _targetNode$data[targetHandle];
