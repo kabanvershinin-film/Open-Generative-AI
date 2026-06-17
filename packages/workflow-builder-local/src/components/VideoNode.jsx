@@ -337,45 +337,72 @@ const VideoGeneration = ({ id, data, selected }) => {
     const nodes = getNodes ? getNodes() : [];
     const edges = getEdges ? getEdges() : [];
 
-    // Gather all character nodes connected to this node, directly or via intermediate nodes (like prompt nodes)
-    const findConnectedFaces = (nodeId, visited = new Set()) => {
-      if (visited.has(nodeId)) return [];
+    // Gather all character nodes and images connected to this node
+    const findConnectedAssets = (nodeId, visited = new Set()) => {
+      if (visited.has(nodeId)) return { faces: [], images: [], videos: [], audios: [] };
       visited.add(nodeId);
       const incoming = edges.filter(e => e.target === nodeId);
-      let assets = [];
+      let assets = { faces: [], images: [], videos: [], audios: [] };
+      
       incoming.forEach(edge => {
         const source = nodes.find(n => n.id === edge.source);
         if (!source) return;
+        
         if (source.type === "characterNode") {
           const fv = source.data?.formValues || {};
           const rawAsset = fv.face_asset || source.data?.resultUrl || source.data?.outputs?.[0]?.value;
           const asset = toAssetUri(rawAsset);
-          if (asset) assets.push(asset);
+          if (asset) assets.faces.push(asset);
+          // Add character photo as a reference image so prompt tags like 图片1 work
+          if (fv.character_photo) assets.images.push(fv.character_photo);
+        } else if (source.type === "imageNode" || source.type === "uploadNode") {
+          const url = source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+          if (url) assets.images.push(url);
+        } else if (source.type === "videoNode") {
+          const url = source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+          if (url) assets.videos.push(url);
+        } else if (source.type === "audioNode") {
+          const url = source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+          if (url) assets.audios.push(url);
         } else if (["concatNode", "seedancePromptNode"].includes(source.type)) {
-          assets = [...assets, ...findConnectedFaces(source.id, visited)];
+          const sub = findConnectedAssets(source.id, visited);
+          assets.faces = [...assets.faces, ...sub.faces];
+          assets.images = [...assets.images, ...sub.images];
+          assets.videos = [...assets.videos, ...sub.videos];
+          assets.audios = [...assets.audios, ...sub.audios];
         }
       });
       return assets;
     };
 
-    const allFaces = Array.from(new Set(findConnectedFaces(id)));
-    if (allFaces.length > 0) {
-      toast(`Использую ${allFaces.length} референса лиц`, { icon: "🧑" });
+    const allAssets = findConnectedAssets(id);
+    const uniqueFaces = Array.from(new Set(allAssets.faces));
+    const uniqueImages = Array.from(new Set(allAssets.images));
+    const uniqueVideos = Array.from(new Set(allAssets.videos));
+    const uniqueAudios = Array.from(new Set(allAssets.audios));
+
+    if (uniqueFaces.length > 0 || uniqueImages.length > 0) {
+      toast(`Использую: ${uniqueFaces.length} лиц, ${uniqueImages.length} фото`, { icon: "🎨" });
     }
 
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
+    
+    const faceAssetPayload = uniqueFaces.length > 1 ? uniqueFaces : (uniqueFaces[0] || src.face_asset || undefined);
+
     const body = {
       fast,
       prompt: src.prompt || "",
-      image_url: src.image_url || undefined,
-      image_urls: Array.isArray(src.images_list) ? src.images_list.filter(Boolean) : undefined,
-      video_url: src.video_url || undefined,
-      audio_url: src.audio_url || undefined,
+      image_url: uniqueImages[0] || src.image_url || undefined,
+      image_urls: uniqueImages.length > 1 ? uniqueImages.slice(1) : (Array.isArray(src.images_list) ? src.images_list : undefined),
+      video_url: uniqueVideos[0] || src.video_url || undefined,
+      video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
+      audio_url: uniqueAudios[0] || src.audio_url || undefined,
+      audio_urls: uniqueAudios.length > 1 ? uniqueAudios.slice(1) : undefined,
       resolution: src.resolution || undefined,
       ratio: src.aspect_ratio || src.ratio || undefined,
       duration: src.duration || undefined,
-      face_asset: allFaces.length > 1 ? allFaces : (allFaces[0] || src.face_asset || undefined),
+      face_asset: faceAssetPayload,
     };
 
     // Step 1: submit — fast, just creates the Ark task and returns a taskId.

@@ -60,16 +60,17 @@ const SeedancePromptNode = ({ id, data }) => {
         || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url;
       const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
       if (n.type === "characterNode") {
-        out.push({ id: n.id, label: (fvN.character_name || "Персонаж").trim() || "Персонаж", kind: "character", url });
+        counters.images += 1;
+        out.push({ id: n.id, label: `图片${counters.images}`, kind: "character", url, name: (fvN.character_name || "角色").trim() });
       } else if (n.type === "videoNode") {
         counters.video += 1;
-        out.push({ id: n.id, label: `видео${counters.video}`, kind: "video", url });
+        out.push({ id: n.id, label: `视频${counters.video}`, kind: "video", url });
       } else if (n.type === "audioNode") {
         counters.audio += 1;
-        out.push({ id: n.id, label: `аудио${counters.audio}`, kind: "audio", url });
+        out.push({ id: n.id, label: `音频${counters.audio}`, kind: "audio", url });
       } else {
         counters.images += 1;
-        out.push({ id: n.id, label: `изображение${counters.images}`, kind: "images", url });
+        out.push({ id: n.id, label: `图片${counters.images}`, kind: "images", url });
       }
     }
     return out;

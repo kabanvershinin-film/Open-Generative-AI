@@ -55,9 +55,9 @@ export async function POST(request) {
         let userMsg = `Идея: ${idea}\nДлительность: ${durationSec} секунд`;
         if (style) userMsg += `\nСтиль: ${style}`;
         if (cameraPrompt) userMsg += `\nНастройки камеры: ${cameraPrompt}`;
-        if (photoRefs > 0) userMsg += `\nИзображения: ${Array.from({ length: photoRefs }, (_, i) => `@Изображение${i + 1}`).join(', ')}`;
-        if (videoRefs > 0) userMsg += `\nВидео: ${Array.from({ length: videoRefs }, (_, i) => `@Видео${i + 1}`).join(', ')}`;
-        if (audioRefs > 0) userMsg += `\nАудио: ${Array.from({ length: audioRefs }, (_, i) => `@Аудио${i + 1}`).join(', ')}`;
+        if (photoRefs > 0) userMsg += `\nИзображения: ${Array.from({ length: photoRefs }, (_, i) => `图片${i + 1}`).join(', ')}`;
+        if (videoRefs > 0) userMsg += `\nВидео: ${Array.from({ length: videoRefs }, (_, i) => `视频${i + 1}`).join(', ')}`;
+        if (audioRefs > 0) userMsg += `\nАудио: ${Array.from({ length: audioRefs }, (_, i) => `音频${i + 1}`).join(', ')}`;
 
         try {
             // Проверим, доступен ли MEMEFAST
