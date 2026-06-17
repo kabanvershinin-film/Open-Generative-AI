@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { BILLING_ENABLED, getUserForGallery, deduct, refund } from '../_lib/balance';
 import { priceRub, ensureCnyRate } from '../_lib/pricing';
 
-export const maxDuration = 60;
+export const maxDuration = 120; // Увеличено до 120 секунд для Vercel
 
 const MEMEFAST = 'https://memefast.top';
 
@@ -62,7 +62,7 @@ export async function POST(request) {
         try {
             // Проверим, доступен ли MEMEFAST
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // Увеличили таймаут до 30 секунд
+            const timeoutId = setTimeout(() => controller.abort(), 120000); // Увеличили таймаут до 120 секунд (2 минуты)
             const res = await fetch(`${MEMEFAST}/v1/chat/completions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
