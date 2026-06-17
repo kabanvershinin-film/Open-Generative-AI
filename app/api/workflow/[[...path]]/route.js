@@ -1721,6 +1721,42 @@ export async function GET(request, { params }) {
         }
     }
 
+    // GET /api/workflow/restore-to-me?ids=id1,id2 — claims workflows for current user
+    if (path[0] === 'restore-to-me') {
+        const user = await getUserForGallery(request);
+        if (!user?.id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+        
+        const { searchParams } = new URL(request.url);
+        const ids = (searchParams.get('ids') || '').split(',').map(id => id.trim()).filter(Boolean);
+        
+        if (ids.length === 0) return NextResponse.json({ error: 'No IDs provided' }, { status: 400 });
+        
+        const results = [];
+        for (const id of ids) {
+            try {
+                // Try to load from any storage location
+                const wf = await tosLoadWorkflow(id, { userId: user.id });
+                if (wf) {
+                    wf.owner_id = user.id;
+                    wf.updated_at = new Date().toISOString();
+                    // Save file with new owner
+                    await tosSaveWorkflow(id, wf);
+                    results.push({ id, status: 'restored', name: wf.name });
+                } else {
+                    results.push({ id, status: 'not_found' });
+                }
+            } catch (e) {
+                results.push({ id, status: 'error', message: e.message });
+            }
+        }
+        
+        return NextResponse.json({ 
+            success: true, 
+            restored: results.filter(r => r.status === 'restored').length,
+            details: results 
+        });
+    }
+
     // GET /api/workflow/debug-admin-all — lists ALL workflows directly from files (bypass index)
     if (path[0] === 'debug-admin-all') {
         const user = await getUserForGallery(request);
