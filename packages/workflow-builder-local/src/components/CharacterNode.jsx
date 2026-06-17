@@ -118,8 +118,10 @@ const CharacterNode = ({ id, data, selected }) => {
           })
           .then(() => {
             setPhotoUrl(publicUrl);
-            setAssetUri("");
-            setTab("photo");
+            // Если мы во вкладке "фото", очищаем URI. Если в "uri", оставляем его.
+            if (tab === "photo") {
+              setAssetUri("");
+            }
           })
       )
       .catch((err) => {
@@ -271,12 +273,40 @@ const CharacterNode = ({ id, data, selected }) => {
             </label>
           )
         ) : (
-          <input
-            value={assetUri}
-            onChange={(e) => { setAssetUri(e.target.value); setPhotoUrl(""); }}
-            placeholder="asset://asset-…"
-            className="h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50 font-mono"
-          />
+          <div className="flex flex-col gap-2.5">
+            <input
+              value={assetUri}
+              onChange={(e) => setAssetUri(e.target.value)}
+              placeholder="asset://asset-…"
+              className="h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50 font-mono"
+            />
+            
+            {uploading ? (
+              <div className="flex flex-col gap-1.5 py-2">
+                <span className="text-[11px] text-zinc-400">Загрузка превью… {progress}%</span>
+                <div className="w-full bg-zinc-800 rounded h-1 overflow-hidden">
+                  <div className="bg-purple-500 h-full transition-all" style={{ width: `${progress}%` }} />
+                </div>
+              </div>
+            ) : photoUrl ? (
+              <div className="relative group/photo rounded-lg overflow-hidden border border-zinc-800">
+                <img src={photoUrl} alt="face" className="w-full h-32 object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setPhotoUrl("")}
+                  className="absolute top-2 right-2 bg-black hover:bg-black text-white rounded px-1.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
+                >
+                  &#10005;
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer flex flex-col items-center justify-center gap-1.5 text-zinc-500 border border-dashed border-zinc-700 rounded-lg p-4 hover:bg-zinc-800">
+                <FiUpload size={18} />
+                <span className="text-[11px]">Добавить фото (превью)</span>
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+              </label>
+            )}
+          </div>
         )}
 
         {/* Current value / status */}
