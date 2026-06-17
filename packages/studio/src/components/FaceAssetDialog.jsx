@@ -139,13 +139,13 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
 
   if (!open) return null;
 
-  const pickFace = (assetUri, name) => {
-    onSelect?.(assetUri, name);
+  const pickFace = (face) => {
+    onSelect?.(face.assetUri, face.name, face.thumbnail);
     onClose?.();
   };
 
   const pickAvatar = (avatar) => {
-    onSelect?.(avatar.assetUri || `asset://${avatar.id}`, avatar.name);
+    onSelect?.(avatar.assetUri || `asset://${avatar.id}`, avatar.name, avatar.thumbnail);
     onClose?.();
   };
 
@@ -200,7 +200,8 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
     const name = manualName.trim() || id.replace(/^asset:\/\//, "").slice(0, 16);
     const thumb = thumbTab === "url" ? (thumbUrl.trim() || null) : (thumbUrl || null);
     if (saveToLib) addToLibrary(uri, name, thumb);
-    pickFace(uri, name);
+    onSelect?.(uri, name, thumb);
+    onClose?.();
     setManualId("");
     setManualName("");
     setThumbUrl("");
@@ -209,6 +210,11 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
 
   const saveArkToLib = (a) => {
     addToLibrary(toUri(a.id), a.name || a.id, null);
+  };
+
+  const pickArkAsset = (a) => {
+    onSelect?.(toUri(a.id), a.name || a.id, null);
+    onClose?.();
   };
 
   return (
@@ -265,7 +271,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                   <FaceThumb
                     key={face.id}
                     face={face}
-                    onSelect={(f) => pickFace(f.assetUri, f.name)}
+                    onSelect={pickFace}
                     onDelete={deleteFace}
                     onUpdateThumb={updateFaceThumb}
                   />
@@ -363,7 +369,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                     >
                       <button
                         type="button"
-                        onClick={() => pickFace(toUri(a.id), a.name || a.id)}
+                        onClick={() => pickArkAsset(a)}
                         className="flex items-center gap-1.5 min-w-0 flex-1 text-left"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-300 shrink-0">

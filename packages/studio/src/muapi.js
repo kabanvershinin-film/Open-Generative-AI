@@ -572,12 +572,12 @@ async function generateSeedanceArk(modelInfo, params) {
     const fast = /fast/.test(modelInfo?.apiId || '');
     
     // Ark handles face_asset for trusted assets.
-    // CRITICAL: We also include the face asset URI in image_urls to bypass the
-    // "real person" safety filter (Ark trusts its own asset:// URIs).
+    // We pass the face asset URI in face_asset field, 
+    // but for image_urls we must use a real HTTP URL (thumbnail) to avoid validation errors.
     const faceAsset = params.face_asset;
     const initialImages = Array.isArray(params.image_urls) ? [...params.image_urls] : [];
-    if (faceAsset && !initialImages.includes(faceAsset)) {
-        initialImages.unshift(faceAsset);
+    if (params.face_thumbnail && !initialImages.includes(params.face_thumbnail)) {
+        initialImages.unshift(params.face_thumbnail);
     }
 
     const body = {

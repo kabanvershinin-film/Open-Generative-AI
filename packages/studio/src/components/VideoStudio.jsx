@@ -2068,10 +2068,14 @@ export default function VideoStudio({
                 title={`Лицо «${faceAsset.name}» привязано к Seedance. Кликните, чтобы добавить в промпт`}
                 onClick={() => insertRefToken(String(faceAsset.name || "лицо").trim().replace(/\s+/g, "_"))}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
+                {faceAsset.thumbnail ? (
+                  <img src={faceAsset.thumbnail} alt="" className="w-5 h-5 rounded-full object-cover border border-purple-500/30" />
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                )}
                 <span className="whitespace-nowrap max-w-[140px] truncate">{faceAsset.name}</span>
                 <button
                   type="button"
@@ -2830,8 +2834,8 @@ export default function VideoStudio({
       <FaceAssetDialog
         open={facePickOpen}
         onClose={() => setFacePickOpen(false)}
-        onSelect={(assetUri, name) => {
-          setFaceAsset({ uri: assetUri, name });
+        onSelect={(assetUri, name, thumb) => {
+          setFaceAsset({ uri: assetUri, name, thumbnail: thumb });
           insertRefToken(String(name || "лицо").trim().replace(/\s+/g, "_"));
         }}
         onRegisterNew={() => setFaceRegOpen(true)}
