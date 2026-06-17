@@ -584,16 +584,19 @@ async function generateSeedanceArk(modelInfo, params) {
     let finalImages = [];
     
     // 1. Primary character (if exists) -> Always 图片1
-    if (faceThumb) {
-        finalImages.push({ url: faceThumb, face_asset: faceAsset || undefined });
+    // Use the asset URI directly as the URL if no uploaded image is present.
+    if (faceAsset) {
+        finalImages.push({ 
+            url: uploadedUrl || faceAsset, 
+            face_asset: faceAsset 
+        });
+    } else if (faceThumb) {
+        finalImages.push({ url: faceThumb });
     }
     
-    // 2. Main uploaded image (if exists) -> 图片2 (or 图片1 if no character)
-    if (uploadedUrl) {
-        // Skip if same as faceThumb
-        if (uploadedUrl !== faceThumb) {
-            finalImages.push(typeof uploadedUrl === 'string' ? { url: uploadedUrl } : uploadedUrl);
-        }
+    // 2. Main uploaded image (if exists and not already used as character base)
+    if (uploadedUrl && !faceAsset) {
+        finalImages.push(typeof uploadedUrl === 'string' ? { url: uploadedUrl } : uploadedUrl);
     }
     
     // 3. Other reference images from refFiles

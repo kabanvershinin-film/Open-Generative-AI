@@ -57,8 +57,8 @@ function pickEndpoint(fast) {
 
 function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset }) {
   const content = [];
-  if (prompt) content.push({ type: 'text', text: prompt });
-
+  // Some versions of Seedance prefer text at the end to keep image indexing (图片1, 图片2) clean.
+  
   const images = [];
   if (image_url) images.push(image_url);
   if (Array.isArray(image_urls)) images.push(...image_urls.filter(Boolean));
@@ -87,7 +87,11 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
 
     const item = { 
       type: 'image_url', 
-      image_url: { url }
+      image_url: { 
+        url,
+        // Double-bind: some Ark endpoints look for face_asset inside image_url
+        ...(effectiveFace ? { face_asset: effectiveFace } : {})
+      }
     };
     
     if (effectiveFace) {
@@ -101,8 +105,13 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
     
     content.push(item);
   });
+  
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
   audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u }, role: 'reference_audio' }));
+  
+  // Text prompt at the end
+  if (prompt) content.push({ type: 'text', text: prompt });
+  
   return content;
 }
 

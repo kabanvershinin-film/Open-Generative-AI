@@ -416,14 +416,8 @@ const VideoGeneration = ({ id, data, selected }) => {
         // Add other connected images
         finalImages.push(...connectedImages.slice(1));
       } 
-      // Otherwise, use the character's own reference photo (thumbnail) as 图片1.
-      else if (primaryFace.thumbnail) {
-        finalImages.push({
-          url: primaryFace.thumbnail,
-          face_asset: primaryFace.uri
-        });
-      }
-      // Last resort: just the asset URI (might fail if Ark needs a visual URL)
+      // User says "pass the asset... not the photo". 
+      // Use the asset URI directly as the reference image.
       else {
         finalImages.push({
           url: primaryFace.uri,
