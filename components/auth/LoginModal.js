@@ -267,6 +267,27 @@ export default function LoginModal() {
                             )}
                         </div>
                     )}
+
+                    {/* Legal Footer */}
+                    <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
+                        <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-[10px] text-white/30">
+                            <a href="/terms" className="hover:text-purple-300 transition-colors">Условия использования</a>
+                            <span>·</span>
+                            <a href="/privacy" className="hover:text-purple-300 transition-colors">Политика конфиденциальности</a>
+                        </div>
+                        
+                        <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5">
+                            <p className="text-[9px] uppercase tracking-wider text-purple-300/40 mb-2 font-bold">Реквизиты</p>
+                            <div className="grid grid-cols-[40px_1fr] gap-y-1 text-[10px] text-white/40 leading-relaxed">
+                                <span>ИП</span>
+                                <span className="text-white/60">Вершинин Евгений Александрович</span>
+                                <span>ИНН</span>
+                                <span className="text-white/60 font-mono">692700514344</span>
+                                <span>ОГРНИП</span>
+                                <span className="text-white/60 font-mono">326690000024874</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
