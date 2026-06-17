@@ -92,9 +92,9 @@ export async function POST(request) {
             console.error('Seedance prompt error:', e);
             if (billed) await refund(user.id, cost, `refund_seedance_prompt_${model}`, { model }).catch(() => {});
             
-            // Если ошибка — вернём пользователю простой промпт из его идеи, чтобы не блокировать работу
-            const fallbackPrompt = `Идея: ${idea}${style ? `\nСтиль: ${style}` : ''}`;
-            return NextResponse.json({ prompt: fallbackPrompt });
+            // Если ошибка в API (например, баланс или таймаут) — выбрасываем её, чтобы пользователь видел проблему,
+            // а не получал просто повторение своего текста.
+            return NextResponse.json({ error: `Ошибка LLM: ${e.message}. Попробуйте сменить модель в настройках.` }, { status: 500 });
         }
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
