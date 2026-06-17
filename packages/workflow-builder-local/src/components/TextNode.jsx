@@ -235,9 +235,17 @@ const TextGeneration = ({ id, data, selected }) => {
         <div className="flex flex-col flex-1 w-full h-full bg-black/20">
           {connectedInputs.textInput && (
             <div className="mx-3 mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 animate-in fade-in slide-in-from-top-1 duration-300">
-              <TfiText className="text-blue-400" size={12} />
+              {formValues.face_thumbnail ? (
+                <div className="w-6 h-6 rounded border border-purple-500/50 overflow-hidden flex-shrink-0 bg-black shadow-sm shadow-purple-500/20">
+                  <img src={formValues.face_thumbnail} alt="character" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <TfiText className="text-blue-400" size={12} />
+              )}
               <div className="flex flex-col overflow-hidden">
-                <span className="text-[9px] text-blue-400 font-bold uppercase tracking-tight">Входящий текст подключен</span>
+                <span className="text-[9px] text-blue-400 font-bold uppercase tracking-tight">
+                  {formValues.face_thumbnail ? "Персонаж подключен" : "Входящий текст подключен"}
+                </span>
                 <span className="text-[8px] text-blue-300/60 truncate max-w-[200px]">
                   {formValues.prompt || "Ожидание данных..."}
                 </span>

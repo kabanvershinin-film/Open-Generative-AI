@@ -256,14 +256,20 @@ var TextGeneration = function TextGeneration(_ref) {
     className: "flex flex-col flex-1 w-full h-full bg-black/20"
   }, connectedInputs.textInput && /*#__PURE__*/_react["default"].createElement("div", {
     className: "mx-3 mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 animate-in fade-in slide-in-from-top-1 duration-300"
-  }, /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, {
+  }, formValues.face_thumbnail ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "w-6 h-6 rounded border border-purple-500/50 overflow-hidden flex-shrink-0 bg-black shadow-sm shadow-purple-500/20"
+  }, /*#__PURE__*/_react["default"].createElement("img", {
+    src: formValues.face_thumbnail,
+    alt: "character",
+    className: "w-full h-full object-cover"
+  })) : /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, {
     className: "text-blue-400",
     size: 12
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col overflow-hidden"
   }, /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[9px] text-blue-400 font-bold uppercase tracking-tight"
-  }, "\u0412\u0445\u043E\u0434\u044F\u0449\u0438\u0439 \u0442\u0435\u043A\u0441\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D"), /*#__PURE__*/_react["default"].createElement("span", {
+  }, formValues.face_thumbnail ? "Персонаж подключен" : "Входящий текст подключен"), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[8px] text-blue-300/60 truncate max-w-[200px]"
   }, formValues.prompt || "Ожидание данных..."))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-center flex-1 w-full h-full p-3"

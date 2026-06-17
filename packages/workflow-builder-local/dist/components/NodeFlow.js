@@ -755,11 +755,12 @@ var NodeFlow = function NodeFlow(_ref) {
 
         // A Character node plugged into a video or text node is a face reference
         if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode" || node.type === "textNode")) {
-          var _sourceNode$data2;
+          var _newData$formValues, _sourceNode$data2;
+          var freshPhoto = ((_newData$formValues = newData.formValues) === null || _newData$formValues === void 0 ? void 0 : _newData$formValues.character_photo) || (sourceNode === null || sourceNode === void 0 || (_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2.formValues) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.character_photo);
           if (node.type !== "textNode") {
             updatedFormValues.face_asset = resultValue;
           }
-          updatedFormValues.face_thumbnail = (sourceNode === null || sourceNode === void 0 || (_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2.formValues) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.character_photo) || updatedFormValues.face_thumbnail || null;
+          updatedFormValues.face_thumbnail = freshPhoto || updatedFormValues.face_thumbnail || null;
         } else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(targetHandle)) {
           updatedFormValues.prompt = sourceValue;
         } else if (targetHandle === "textInput4") {

@@ -592,11 +592,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
         // A Character node plugged into a video or text node is a face reference
         if (sourceNode?.type === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode" || node.type === "textNode")) {
+          const freshPhoto = newData.formValues?.character_photo || sourceNode?.data?.formValues?.character_photo;
           if (node.type !== "textNode") {
             updatedFormValues.face_asset = resultValue;
           }
-          updatedFormValues.face_thumbnail =
-            sourceNode?.data?.formValues?.character_photo || updatedFormValues.face_thumbnail || null;
+          updatedFormValues.face_thumbnail = freshPhoto || updatedFormValues.face_thumbnail || null;
         }
 
         else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(targetHandle)) {
