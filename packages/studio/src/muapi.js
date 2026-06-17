@@ -584,25 +584,28 @@ async function generateSeedanceArk(modelInfo, params) {
     let finalImages = [];
     
     // 1. Primary character (if exists) -> Always 图片1
-    // Use the asset URI directly as the URL if no uploaded image is present.
+    // We prioritize the asset URI (asset://) over the thumbnail.
     if (faceAsset) {
         finalImages.push({ 
+            // Use the uploaded image as visual base if provided, 
+            // otherwise use the asset URI itself.
             url: uploadedUrl || faceAsset, 
             face_asset: faceAsset 
         });
+    } else if (uploadedUrl) {
+        // No character, just use the main uploaded image as 图片1
+        finalImages.push(typeof uploadedUrl === 'string' ? { url: uploadedUrl } : uploadedUrl);
     } else if (faceThumb) {
+        // Fallback to thumbnail if no uploadedUrl and no faceAsset (unlikely)
         finalImages.push({ url: faceThumb });
     }
     
-    // 2. Main uploaded image (if exists and not already used as character base)
-    if (uploadedUrl && !faceAsset) {
-        finalImages.push(typeof uploadedUrl === 'string' ? { url: uploadedUrl } : uploadedUrl);
-    }
-    
-    // 3. Other reference images from refFiles
+    // 2. Additional reference images from refFiles (initialImages)
     initialImages.forEach(img => {
         const url = typeof img === 'string' ? img : img.url;
-        if (url && url !== faceThumb && url !== uploadedUrl) {
+        // Skip if this image was already used as the primary one
+        const primaryUrl = finalImages[0]?.url;
+        if (url && url !== primaryUrl && url !== faceThumb && url !== uploadedUrl) {
             finalImages.push(typeof img === 'string' ? { url: img } : img);
         }
     });
