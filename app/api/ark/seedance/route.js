@@ -55,7 +55,7 @@ function pickEndpoint(fast) {
   return ep;
 }
 
-function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls }) {
+function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset }) {
   const content = [];
   if (prompt) content.push({ type: 'text', text: prompt });
 
@@ -73,11 +73,28 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
 
   // Single image with no other media → first-frame I2V (no role, per Ark docs).
   // Multiple images or image + video/audio → multimodal reference (role: reference_image).
+  // If face_asset is present (either at top level or per-image), any image MUST be a reference_image.
   const hasRefMedia = videos.length > 0 || audios.length > 0;
   const multiImage  = images.length > 1;
-  images.forEach((u) => {
-    const item = { type: 'image_url', image_url: { url: u } };
-    if (hasRefMedia || multiImage) item.role = 'reference_image';
+  const hasFaceAsset = !!face_asset;
+
+  images.forEach((u, idx) => {
+    const url = typeof u === 'string' ? u : (u.url || u.image_url);
+    const face = typeof u === 'object' ? u.face_asset : null;
+    
+    const item = { type: 'image_url', image_url: { url } };
+    
+    // If top-level face_asset is a string and this is the first image,
+    // or if this specific image has a face_asset, or if there are multiple images/media.
+    const isFirstImage = idx === 0;
+    const effectiveFace = face || (isFirstImage && typeof face_asset === 'string' ? face_asset : null);
+    
+    if (hasRefMedia || multiImage || hasFaceAsset || effectiveFace) {
+      item.role = 'reference_image';
+    }
+    if (effectiveFace) {
+      item.face_asset = effectiveFace;
+    }
     content.push(item);
   });
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
@@ -108,7 +125,16 @@ export async function POST(request) {
       face_asset,
     } = body;
 
-    const content = buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls });
+    const content = buildContent({ 
+      prompt, 
+      image_url, 
+      image_urls, 
+      video_url, 
+      video_urls, 
+      audio_url, 
+      audio_urls,
+      face_asset // Pass the top-level face_asset
+    });
     if (content.length === 0) {
       return NextResponse.json({ error: 'Empty content' }, { status: 400 });
     }
@@ -116,6 +142,8 @@ export async function POST(request) {
     const model = pickEndpoint(fast) || (fast ? FAST_MODEL_ID : STD_MODEL_ID);
 
     const payload = { model, content, generate_audio, watermark: false };
+    // We keep face_asset at top level for backward compatibility with some models/versions,
+    // but buildContent now also puts it inside 'content' items for more precision.
     if (face_asset) payload.face_asset = face_asset;
     if (resolution) {
       let res = String(resolution).toLowerCase();
