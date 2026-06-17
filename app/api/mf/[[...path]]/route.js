@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { priceRub, ensureCnyRate } from '../../_lib/pricing';
-import { BILLING_ENABLED, spendBalance, refundBalanceRpc } from '../../_lib/balance';
+import { BILLING_ENABLED, spendBalance, refundBalanceRpc, getUserForGallery } from '../../_lib/balance';
 
 const MEMEFAST_BASE_URL = 'https://memefast.top';
 
@@ -54,9 +54,10 @@ async function maybeChargeImageRequest(request, pathParts) {
         return { ok: true, billed: false };
     }
 
+    const user = await getUserForGallery(request);
     const payload = await getBillingPayload(request.clone(), pathParts);
     const model = payload?.model;
-    const cost = model ? await priceRub('image', model, payload?.params || {}) : 0;
+    const cost = model ? await priceRub('image', model, payload?.params || {}, user?.id) : 0;
     if (!(cost > 0)) return { ok: true, billed: false };
 
     await ensureCnyRate();

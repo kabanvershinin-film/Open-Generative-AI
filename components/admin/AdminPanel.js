@@ -38,6 +38,10 @@ export default function AdminPanel() {
     const [amount, setAmount] = useState('');
     const [submitting, setSubmitting] = useState(false);
     
+    const [markupDialogOpen, setMarkupDialogOpen] = useState(false);
+    const [userMarkup, setUserMarkup] = useState('');
+    const [savingUserMarkup, setSavingUserMarkup] = useState(false);
+    
     const [transactionsOpen, setTransactionsOpen] = useState(false);
     const [transactionsUser, setTransactionsUser] = useState(null);
     const [transactions, setTransactions] = useState([]);
@@ -157,6 +161,41 @@ export default function AdminPanel() {
     }, [users]);
 
     const openDialog = (u) => { setTargetUser(u); setAmount(''); setDialogOpen(true); };
+
+    const openMarkupDialog = (u) => {
+        setTargetUser(u);
+        setUserMarkup(u.markup ? u.markup.toString() : '');
+        setMarkupDialogOpen(true);
+    };
+
+    const submitMarkup = async () => {
+        if (!targetUser) return;
+        const val = userMarkup.trim() === '' ? null : Number(userMarkup.replace(',', '.').trim());
+        if (val !== null && (isNaN(val) || val < 0)) {
+            toast.error('Введите корректное число (напр. 1.2) или оставьте пустым');
+            return;
+        }
+        setSavingUserMarkup(true);
+        try {
+            const { data: sess } = await supabase.auth.getSession();
+            const token = sess.session?.access_token;
+            if (!token) throw new Error('Нет сессии');
+            const res = await fetch('/api/admin/update-markup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ userId: targetUser.id, markup: val }),
+            });
+            const payload = await res.json();
+            if (!res.ok) throw new Error(payload?.error || `Ошибка ${res.status}`);
+            toast.success('Наценка пользователя обновлена');
+            setMarkupDialogOpen(false);
+            loadUsers();
+        } catch (e) {
+            toast.error(e.message);
+        } finally {
+            setSavingUserMarkup(false);
+        }
+    };
 
     const submitBalance = async () => {
         if (!targetUser) return;
@@ -313,6 +352,7 @@ export default function AdminPanel() {
                                 <tr className="border-b border-white/5">
                                     <th className="text-left px-4 py-3 text-xs text-white/40 font-medium">Пользователь</th>
                                     <th className="text-left px-4 py-3 text-xs text-white/40 font-medium">Баланс</th>
+                                    <th className="text-left px-4 py-3 text-xs text-white/40 font-medium">Наценка</th>
                                     <th className="text-left px-4 py-3 text-xs text-white/40 font-medium hidden md:table-cell">Регистрация</th>
                                     <th className="px-4 py-3 text-xs text-white/40 font-medium text-right">Действия</th>
                                 </tr>
@@ -329,6 +369,17 @@ export default function AdminPanel() {
                                                 ₽{Number(u.balance).toFixed(2)}
                                             </span>
                                         </td>
+                                        <td className="px-4 py-3">
+                                            {u.markup ? (
+                                                <span className="text-xs text-orange-400 font-medium">
+                                                    {u.markup}x
+                                                </span>
+                                            ) : (
+                                                <span className="text-xs text-white/20">
+                                                    стандарт ({platformMarkup}x)
+                                                </span>
+                                            )}
+                                        </td>
                                         <td className="px-4 py-3 text-xs text-white/40 hidden md:table-cell">
                                             {new Date(u.created_at).toLocaleDateString('ru-RU')}
                                         </td>
@@ -337,6 +388,10 @@ export default function AdminPanel() {
                                                 onClick={() => openTransactions(u)}
                                                 className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium transition-colors"
                                             >История</button>
+                                            <button
+                                                onClick={() => openMarkupDialog(u)}
+                                                className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium transition-colors"
+                                            >Наценка</button>
                                             <button
                                                 onClick={() => openDialog(u)}
                                                 className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium transition-colors"
@@ -433,6 +488,51 @@ export default function AdminPanel() {
                                 ))}
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Markup dialog */}
+            {markupDialogOpen && (
+                <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                     onClick={() => setMarkupDialogOpen(false)}>
+                    <div className="bg-neutral-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm space-y-4"
+                         onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-base font-semibold text-white">Индивидуальная наценка</h3>
+                            <button onClick={() => setMarkupDialogOpen(false)} className="text-white/40 hover:text-white">✕</button>
+                        </div>
+                        {targetUser && (
+                            <div className="text-sm text-white/50">
+                                {targetUser.full_name || '—'} · {targetUser.email}
+                                <div className="mt-1 text-orange-400">Глобальная наценка: {platformMarkup}x</div>
+                            </div>
+                        )}
+                        <div className="space-y-1">
+                            <div className="text-xs text-white/40">Наценка (коэффициент, напр. 1.5)</div>
+                            <input
+                                value={userMarkup}
+                                onChange={e => setUserMarkup(e.target.value)}
+                                placeholder="Оставьте пустым для стандартной"
+                                className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-purple-500"
+                                autoFocus
+                                onKeyDown={e => e.key === 'Enter' && submitMarkup()}
+                            />
+                            <p className="text-[10px] text-white/30 italic">
+                                Если пусто, будет использоваться общая наценка платформы ({platformMarkup}x).
+                            </p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setMarkupDialogOpen(false)}
+                                className="flex-1 py-2 rounded-xl border border-white/10 text-white/60 text-sm hover:border-white/30 transition-colors"
+                            >Отмена</button>
+                            <button
+                                onClick={submitMarkup}
+                                disabled={savingUserMarkup || !targetUser}
+                                className="flex-1 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white text-sm font-medium transition-colors"
+                            >{savingUserMarkup ? '...' : 'Сохранить'}</button>
+                        </div>
                     </div>
                 </div>
             )}

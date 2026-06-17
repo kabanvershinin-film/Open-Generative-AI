@@ -146,10 +146,11 @@ export async function POST(request) {
     // instead of a pre-charge + refund pair. The model id (not the ep-... endpoint)
     // drives the token-based Seedance price in pricing.js.
     const billingModelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
+    const user = await getUserForGallery(request);
     // A reference VIDEO (not an image first frame) switches to the cheaper rate.
     const hasVideoInput = !!(video_url || (Array.isArray(video_urls) && video_urls.filter(Boolean).length));
     await ensureCnyRate(); // live CBR rate for the estimate gate
-    const cost = await priceRub('video', billingModelId, { duration: effDur, resolution: effRes, video_url, generate_audio });
+    const cost = await priceRub('video', billingModelId, { duration: effDur, resolution: effRes, video_url, generate_audio }, user?.id);
     let bill = '';
     if (BILLING_ENABLED && cost > 0) {
       const balance = await getBalance(request);
@@ -228,9 +229,10 @@ export async function GET(request) {
     if (succeeded && BILLING_ENABLED) {
       const billData = verifyBillData(searchParams.get('bill'));
       if (billData) {
+        const user = await getUserForGallery(request);
         await ensureCnyRate(); // live CBR rate so the charge follows the real ¥→₽
         const rate = Number(billData.r || 0);
-        const actual = (tokens > 0 && rate > 0) ? await rubFromTokens(tokens, rate) : Number(billData.c || 0);
+        const actual = (tokens > 0 && rate > 0) ? await rubFromTokens(tokens, rate, user?.id) : Number(billData.c || 0);
         if (actual > 0) {
           const fastM = String(billData.m || '').includes('fast');
           const reason = `Seedance 2.0${fastM ? ' Fast' : ''} ${billData.res || ''} ${billData.d || ''}s`.replace(/\s+/g, ' ').trim();

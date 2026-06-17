@@ -1035,8 +1035,8 @@ function modelCategory(model) {
 }
 
 // Cost of a node run in rubles (0 for passthroughs / unknown free models).
-async function costForNode(model, params) {
-    return await priceRub(modelCategory(model), model, params);
+async function costForNode(model, params, userId = null) {
+    return await priceRub(modelCategory(model), model, params, userId);
 }
 
 // Seedance 2.0 nodes are billed POST-generation by ARK's real token usage (like
@@ -1048,13 +1048,13 @@ function isSeedance2Node(model) {
 
 // Exact ruble cost from the tokens generateVideoARK attached to the output.
 // Falls back to `estimate` when usage is missing.
-async function seedanceActualCost(model, params, outputs, estimate) {
+async function seedanceActualCost(model, params, outputs, estimate, userId = null) {
     const tokens = Number(outputs?.[0]?.tokens || 0);
     if (!(tokens > 0)) return estimate;
     const res = params?.resolution || '720p';
     const hasVideoInput = !!(params?.video_url);
     const rate = seedance2RateCny(model, res, hasVideoInput);
-    const actual = await rubFromTokens(tokens, rate);
+    const actual = await rubFromTokens(tokens, rate, userId);
     return actual > 0 ? actual : estimate;
 }
 
@@ -1790,7 +1790,7 @@ export async function POST(request, { params }) {
             // Saved nodes use node.model (not node.data.selectedModel.id)
             const model = node.model || '';
             if (model) {
-                const cost = await costForNode(model, params);
+                const cost = await costForNode(model, params, galleryUser?.id);
                 const seed2 = isSeedance2Node(model);
                 let billed = false;
                 // Non-Seedance: pre-charge the estimate before running (as before).
@@ -1827,7 +1827,7 @@ export async function POST(request, { params }) {
                 }
                 // Seedance 2.0: charge the real cost once, on success (failure = free).
                 if (billingUser && seed2 && nr?.status === 'completed') {
-                    const actual = await seedanceActualCost(model, params, outs, cost);
+                    const actual = await seedanceActualCost(model, params, outs, cost, galleryUser?.id);
                     if (actual > 0) {
                         await deduct(billingUser.id, actual, model, { model, tokens: Number(outs?.[0]?.tokens || 0) }).catch(() => {});
                     }
@@ -1857,16 +1857,12 @@ export async function POST(request, { params }) {
         const model = body.model || '';
         const params = body.params || {};
 
-        // Gallery: identify the user unconditionally (needs only the public anon
-        // key — no service-role key) so photos/videos are saved to the gallery
-        // even when billing is disabled (BILLING_ENABLED = false).
-        // Billing: deduct from balance only when billing is fully configured and
-        // the model has a non-zero cost.
-        const cost = await costForNode(model, params);
-        const seed2 = isSeedance2Node(model);
-        let billedUser = null;
         const galleryUser = await getUserForGallery(request);
         const galleryUserId = galleryUser?.id || null;
+
+        const cost = await costForNode(model, params, galleryUserId);
+        const seed2 = isSeedance2Node(model);
+        let billedUser = null;
         
         // Проверка доступа
         const access = await hasAccess(galleryUserId, wfId);
@@ -1896,11 +1892,6 @@ export async function POST(request, { params }) {
             await ensureCnyRate(); // live CBR rate for the post-charge
         }
 
-        // Mirror to TOS server-side (the server already holds the base64, so this
-        // avoids sending a multi-MB body from the browser, which Vercel caps at
-        // ~4.5MB and which broke saving for larger images). The gallery save runs
-        // in the background (see runNode), so the only thing on the critical path
-        // is the single image upload — the node shows its permanent url right after.
         const singleNodeImageRun = isImageWorkflowModel(model);
         await runNode(
             runId,
@@ -1921,7 +1912,7 @@ export async function POST(request, { params }) {
         let charged = cost;
         if (BILLING_ENABLED && galleryUser && seed2 && result.status === 'completed') {
             const outs = result.nodes?.[nodeId]?.[0]?.result?.outputs || [];
-            charged = await seedanceActualCost(model, params, outs, cost);
+            charged = await seedanceActualCost(model, params, outs, cost, galleryUserId);
             if (charged > 0) {
                 await deduct(galleryUser.id, charged, model, { model, tokens: Number(outs?.[0]?.tokens || 0) }).catch(() => {});
             }

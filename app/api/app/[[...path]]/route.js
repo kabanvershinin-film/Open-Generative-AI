@@ -135,8 +135,9 @@ export async function POST(request, { params }) {
     if (path === 'calculate_dynamic_cost') {
         let cb = {};
         try { cb = await request.json(); } catch {}
+        const user = await getUserForGallery(request);
         // priceRub auto-detects video/audio/image from the model id.
-        const cost = await priceRub(undefined, cb?.task_name || '', cb?.payload || {});
+        const cost = await priceRub(undefined, cb?.task_name || '', cb?.payload || {}, user?.id);
         return NextResponse.json({ cost, currency: 'RUB' });
     }
 

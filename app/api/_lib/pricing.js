@@ -18,8 +18,27 @@ let PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.20);
 let _platformMarkupCache = { value: PLATFORM_MARKUP, updatedAt: 0 };
 const MARKUP_CACHE_TTL = 60_000; // 1 minute
 
-async function loadPlatformMarkup() {
+async function loadPlatformMarkup(userId = null) {
     const now = Date.now();
+    
+    // If we have a userId, we check their specific markup in profiles
+    if (userId) {
+        try {
+            const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+            const { data } = await admin
+                .from('profiles')
+                .select('markup')
+                .eq('id', userId)
+                .single();
+            
+            if (data?.markup && Number(data.markup) > 0) {
+                return Number(data.markup);
+            }
+        } catch (e) {
+            console.error('[pricing] Error loading user markup:', e);
+        }
+    }
+
     if (now - _platformMarkupCache.updatedAt < MARKUP_CACHE_TTL) {
         return _platformMarkupCache.value;
     }
@@ -171,8 +190,8 @@ const SEEDANCE2_DIMS = { '480p': [864, 496], '720p': [1280, 720], '1080p': [1920
 //   rate   = hasVideoInput ? withVideo : noVideo   (¥ per 1M tokens)
 //   tokens = round((inputSec + outputSec) × w × h × 24 / 1024); ×2 if generateAudio
 //   ₽      = tokens/1e6 × rate × CNY_TO_RUB × PLATFORM_MARKUP
-async function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, generateAudio, inputVideoSec) {
-    const markup = await loadPlatformMarkup();
+async function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, generateAudio, inputVideoSec, userId = null) {
+    const markup = await loadPlatformMarkup(userId);
     const variant = model.includes('fast') ? 'fast' : 'standard';
     const tier = resolution === '1080p' ? 'hd' : 'sd';
     const rate = hasVideoInput
@@ -202,14 +221,14 @@ function seedance2RateCny(model, resolution, hasVideoInput) {
 }
 
 // Exact price from the real token count ARK billed: tokens × rate × курс × наценка.
-async function rubFromTokens(tokens, rateCny) {
-    const markup = await loadPlatformMarkup();
+async function rubFromTokens(tokens, rateCny, userId = null) {
+    const markup = await loadPlatformMarkup(userId);
     if (!(tokens > 0) || !(rateCny > 0)) return 0;
     return round2((tokens / 1_000_000) * rateCny * CNY_TO_RUB * markup);
 }
 
-async function videoPriceRub(model, durationSec, params) {
-    const markup = await loadPlatformMarkup();
+async function videoPriceRub(model, durationSec, params, userId = null) {
+    const markup = await loadPlatformMarkup(userId);
     // Seedance 2.0 — token-based ARK pricing (matches creator-club).
     if (isSeedance2(model)) {
         const res = params?.resolution || '720p';
@@ -219,7 +238,7 @@ async function videoPriceRub(model, durationSec, params) {
         // generate_audio defaults ON (doubles tokens), как в creator-club.
         const generateAudio = params?.generate_audio !== false;
         const inputVideoSec = params?.inputVideoSec || 0;
-        return seedance2PriceRub(model, durationSec || 5, res, hasVideoInput, generateAudio, inputVideoSec);
+        return seedance2PriceRub(model, durationSec || 5, res, hasVideoInput, generateAudio, inputVideoSec, userId);
     }
     const baseCny = MEMEFAST_VIDEO_CNY[model] ?? 2.0;        // default ¥2
     const dur = durationSec || 5;
@@ -227,14 +246,14 @@ async function videoPriceRub(model, durationSec, params) {
     return round2(baseCny * durMult * CNY_TO_RUB * markup);
 }
 
-async function imagePriceRub(model) {
-    const markup = await loadPlatformMarkup();
+async function imagePriceRub(model, userId = null) {
+    const markup = await loadPlatformMarkup(userId);
     const cny = MEMEFAST_IMAGE_CNY[model] ?? 0.30;          // default ¥0.30
     return round2(cny * CNY_TO_RUB * markup);
 }
 
-async function audioPriceRub(model) {
-    const markup = await loadPlatformMarkup();
+async function audioPriceRub(model, userId = null) {
+    const markup = await loadPlatformMarkup(userId);
     const cny = MEMEFAST_AUDIO_CNY[model] ?? 0.05;          // default ¥0.05
     return round2(cny * CNY_TO_RUB * markup);
 }
@@ -257,24 +276,24 @@ const IMAGE_SET = new Set(Object.keys(MEMEFAST_IMAGE_CNY));
  * 'image' | 'video' | 'audio' | 'text' (from the node-schema category).
  * Returns 0 for free/passthrough models.
  */
-async function priceRub(category, model, params = {}) {
-    const markup = await loadPlatformMarkup();
+async function priceRub(category, model, params = {}, userId = null) {
+    const markup = await loadPlatformMarkup(userId);
     if (!model || FREE_MODELS.has(model)) return 0;
     const real = PRICE_MODEL_ALIAS[model] || model;
 
     if (category === 'video' || VIDEO_SET.has(real)) {
         const dur = parseInt(String(params.duration ?? 5), 10) || 5;
-        return videoPriceRub(real, dur, params);
+        return videoPriceRub(real, dur, params, userId);
     }
     if (category === 'audio' || AUDIO_SET.has(real)) {
-        return audioPriceRub(real);
+        return audioPriceRub(real, userId);
     }
     if (category === 'text') {
         // Flat estimate for LLM/vision calls
         return round2(0.05 * CNY_TO_RUB * markup);
     }
     // default → image
-    return imagePriceRub(real);
+    return imagePriceRub(real, userId);
 }
 
 export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP, loadPlatformMarkup };
