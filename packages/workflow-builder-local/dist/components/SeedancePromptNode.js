@@ -256,7 +256,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
   var insertTag = function insertTag(tag) {
     var _ta$selectionStart, _ta$selectionEnd;
     var ta = ideaRef.current;
-    var insert = "@".concat(tag, " ");
+    var insert = "".concat(tag, " ");
     if (!ta) {
       setIdea((idea || "") + insert);
       return;
@@ -294,7 +294,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
                 "Content-Type": "application/json"
               },
               body: JSON.stringify({
-                idea: idea,
+                idea: idea + "\n\nВАЖНО: Используй в тексте только стандартные теги БЕЗ символа @ (например: 图片1, 图片2, 视频1).",
                 style: style,
                 duration: duration,
                 photoRefs: photoRefs,
@@ -420,7 +420,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
       onClick: function onClick() {
         return insertTag(t.label);
       },
-      title: "\u0412\u0441\u0442\u0430\u0432\u0438\u0442\u044C @".concat(t.label, " \u0432 \u043F\u0440\u043E\u043C\u043F\u0442"),
+      title: "\u0412\u0441\u0442\u0430\u0432\u0438\u0442\u044C ".concat(t.label, " \u0432 \u043F\u0440\u043E\u043C\u043F\u0442"),
       className: "flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
     }, t.url ? t.kind === "video" ? /*#__PURE__*/_react["default"].createElement("video", {
       src: t.url,
@@ -441,7 +441,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
       className: "w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0"
     }, t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"), /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-[10px]"
-    }, "@", t.label));
+    }, t.label));
   })), /*#__PURE__*/_react["default"].createElement("textarea", {
     ref: ideaRef,
     value: idea,

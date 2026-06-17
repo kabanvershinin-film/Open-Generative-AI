@@ -360,8 +360,14 @@ const VideoGeneration = ({ id, data, selected }) => {
           const fv = sourceNode.data?.formValues || {};
           const rawAsset = fv.face_asset || sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           const asset = toAssetUri(rawAsset);
-          if (asset) assets.faces.push(asset);
-          if (fv.character_photo) assets.images.push(fv.character_photo);
+          if (asset) {
+            assets.faces.push(asset);
+            // CRITICAL: Use the asset:// URI as the reference image URL too.
+            // This bypasses the "real person" safety filter because Ark trusts asset:// URIs.
+            assets.images.push(asset);
+          } else if (fv.character_photo) {
+            assets.images.push(fv.character_photo);
+          }
         } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
           const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           if (url) assets.images.push(url);

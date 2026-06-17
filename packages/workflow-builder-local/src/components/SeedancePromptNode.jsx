@@ -116,7 +116,7 @@ const SeedancePromptNode = ({ id, data }) => {
 
   const insertTag = (tag) => {
     const ta = ideaRef.current;
-    const insert = `@${tag} `;
+    const insert = `${tag} `;
     if (!ta) { setIdea((idea || "") + insert); return; }
     const start = ta.selectionStart ?? idea.length;
     const end = ta.selectionEnd ?? idea.length;
@@ -134,7 +134,15 @@ const SeedancePromptNode = ({ id, data }) => {
       const res = await fetch("/api/seedance-prompt", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, style, duration, photoRefs, videoRefs, audioRefs, cameraPrompt }),
+        body: JSON.stringify({
+          idea: idea + "\n\nВАЖНО: Используй в тексте только стандартные теги БЕЗ символа @ (например: 图片1, 图片2, 视频1).",
+          style,
+          duration,
+          photoRefs,
+          videoRefs,
+          audioRefs,
+          cameraPrompt,
+        }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -202,7 +210,7 @@ const SeedancePromptNode = ({ id, data }) => {
                   type="button"
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => insertTag(t.label)}
-                  title={`Вставить @${t.label} в промпт`}
+                  title={`Вставить ${t.label} в промпт`}
                   className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
                 >
                   {t.url ? (
@@ -227,7 +235,7 @@ const SeedancePromptNode = ({ id, data }) => {
                       {t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"}
                     </span>
                   )}
-                  <span className="text-[10px]">@{t.label}</span>
+                  <span className="text-[10px]">{t.label}</span>
                 </button>
               ))}
             </div>

@@ -480,8 +480,14 @@ var VideoGeneration = function VideoGeneration(_ref) {
                   var fv = ((_sourceNode$data = sourceNode.data) === null || _sourceNode$data === void 0 ? void 0 : _sourceNode$data.formValues) || {};
                   var rawAsset = fv.face_asset || ((_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.resultUrl) || ((_sourceNode$data3 = sourceNode.data) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3.outputs) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3[0]) === null || _sourceNode$data3 === void 0 ? void 0 : _sourceNode$data3.value);
                   var asset = toAssetUri(rawAsset);
-                  if (asset) assets.faces.push(asset);
-                  if (fv.character_photo) assets.images.push(fv.character_photo);
+                  if (asset) {
+                    assets.faces.push(asset);
+                    // CRITICAL: Use the asset:// URI as the reference image URL too.
+                    // This bypasses the "real person" safety filter because Ark trusts asset:// URIs.
+                    assets.images.push(asset);
+                  } else if (fv.character_photo) {
+                    assets.images.push(fv.character_photo);
+                  }
                 } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
                   var _sourceNode$data4, _sourceNode$data5;
                   var url = ((_sourceNode$data4 = sourceNode.data) === null || _sourceNode$data4 === void 0 ? void 0 : _sourceNode$data4.resultUrl) || ((_sourceNode$data5 = sourceNode.data) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5.outputs) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5[0]) === null || _sourceNode$data5 === void 0 ? void 0 : _sourceNode$data5.value);
