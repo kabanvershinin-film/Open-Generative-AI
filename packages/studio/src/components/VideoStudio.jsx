@@ -2065,7 +2065,7 @@ export default function VideoStudio({
             <div className="flex flex-wrap gap-2 px-1 pb-1">
               <div
                 className="group relative flex items-center gap-1.5 h-8 pl-2 pr-2 rounded-lg border text-[11px] font-medium border-purple-500/40 bg-purple-500/10 text-purple-200 cursor-pointer hover:border-purple-500/80 transition-all"
-                title={`Лицо «${faceAsset.name}» привязано к Seedance. Кликните, чтобы добавить имя в промпт`}
+                title={`Лицо «${faceAsset.name}» привязано к Seedance. Кликните, чтобы добавить в промпт`}
                 onClick={() => insertRefToken(String(faceAsset.name || "лицо").trim().replace(/\s+/g, "_"))}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
