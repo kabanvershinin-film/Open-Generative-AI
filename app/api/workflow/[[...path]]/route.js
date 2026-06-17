@@ -332,10 +332,15 @@ async function tosLoadIndex() {
         if (r.status === 404) return [];
         if (!r.ok) throw new Error(`Failed to load index: ${r.status}`);
         const data = await r.json();
-        if (!Array.isArray(data)) throw new Error('Index is not an array');
+        if (!Array.isArray(data)) {
+            console.error('[TOS] Index is not an array, returning empty');
+            return [];
+        }
         return data;
     } catch (err) {
         console.error('[TOS] LoadIndex failed:', err.message);
+        // If we can't load the index, we shouldn't return [] as that might lead to overwriting 
+        // the index with a single entry in tosUpdateIndex. Instead, we throw to trigger a retry.
         throw err;
     }
 }
@@ -347,6 +352,8 @@ async function tosUpdateIndex(id, meta) {
         try {
             const index = await tosLoadIndex();
             const existing = index.findIndex(w => w.id === id);
+            
+            // Merge metadata: keep existing fields if not provided in meta
             const nextMeta = existing >= 0 ? { ...index[existing], ...meta } : meta;
             
             let nextIndex = [...index];
@@ -355,13 +362,15 @@ async function tosUpdateIndex(id, meta) {
             
             const ok = await tosUpload(key, Buffer.from(JSON.stringify(nextIndex)), 'application/json');
             if (ok) {
+                // Verify write
+                await new Promise(r => setTimeout(r, 150));
                 const check = await tosLoadIndex();
                 if (Array.isArray(check) && check.some(w => w.id === id)) return;
             }
         } catch (err) {
             console.error(`[TOS] UpdateIndex attempt ${attempt} failed:`, err.message);
         }
-        await new Promise((r) => setTimeout(r, 200 + Math.floor(Math.random() * 300)));
+        await new Promise((r) => setTimeout(r, 300 + Math.floor(Math.random() * 500)));
     }
 }
 
@@ -1494,7 +1503,9 @@ export async function GET(request, { params }) {
             ownerWorkflows = allIndex.filter(Boolean);
             console.log('Admin view: showing all index entries. Total:', ownerWorkflows.length);
         } else {
-            ownerWorkflows = allIndex.filter(e => e && e.owner_id === user.id);
+            // Show user's workflows + any anonymous workflows (owner_id: null) 
+            // This helps find workflows lost during login transitions or index issues.
+            ownerWorkflows = allIndex.filter(e => e && (e.owner_id === user.id || e.owner_id === null));
         }
         console.log('Filtered workflows:', ownerWorkflows.map(i => i.id));
         
@@ -1716,38 +1727,51 @@ export async function GET(request, { params }) {
         if (!isAdminUser(user)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
         
         try {
-            // 1. List all files in workflows/
+            console.log('[TOS] Starting deep scan for missing workflows...');
             const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
             const date = iso.slice(0, 8);
             const datetime = iso;
             const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-            const query = 'list-type=2&prefix=workflows/';
-            const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
-            const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
-            const canonical = `GET\n/\n${query}\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
-            const scope = `${date}/${TOS_REGION}/tos/request`;
-            const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
-            const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
-            const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
-            const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+            
+            // 1. List all files in workflows/ prefix
+            let keys = [];
+            let continuationToken = '';
+            do {
+                const query = `list-type=2&prefix=workflows/&max-keys=1000${continuationToken ? `&continuation-token=${encodeURIComponent(continuationToken)}` : ''}`;
+                const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
+                const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
+                const canonical = `GET\n/\n${query}\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
+                const scope = `${date}/${TOS_REGION}/tos/request`;
+                const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+                const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
+                const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
+                const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
 
-            const r = await fetch(`https://${host}/?${query}`, {
-                headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime }
-            });
-            const xml = await r.text();
-            const keys = xml.match(/<Key>workflows\/wf_[^<]+.json<\/Key>/g)?.map(k => k.replace(/<\/?Key>/g, '')) || [];
+                const r = await fetch(`https://${host}/?${query}`, {
+                    headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime }
+                });
+                const xml = await r.text();
+                const batch = xml.match(/<Key>workflows\/wf_[^<]+.json<\/Key>/g)?.map(k => k.replace(/<\/?Key>/g, '')) || [];
+                keys = [...keys, ...batch];
+                
+                const nextTokenMatch = xml.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/);
+                continuationToken = nextTokenMatch ? nextTokenMatch[1] : '';
+            } while (continuationToken);
+            
+            console.log(`[TOS] Found ${keys.length} workflow files in storage.`);
             
             // 2. Load current index
             const index = await tosLoadIndex();
-            const indexedIds = new Set(index.map(w => w.id));
+            const indexedIds = new Set(index.filter(Boolean).map(w => w.id));
             
             // 3. Find missing workflows
             const missing = [];
             for (const key of keys) {
                 const id = key.replace('workflows/', '').replace('.json', '');
                 if (!indexedIds.has(id)) {
+                    console.log(`[TOS] Found missing workflow in index: ${id}. Loading data...`);
                     const wf = await tosFetchJson(key);
-                    if (wf) {
+                    if (wf && wf.nodes) {
                         missing.push({
                             id,
                             name: wf.name || 'Untitled',
@@ -1761,14 +1785,27 @@ export async function GET(request, { params }) {
             
             // 4. Update index if missing found
             if (missing.length > 0) {
-                const nextIndex = [...missing, ...index];
-                await tosUpload('workflows/index.json', Buffer.from(JSON.stringify(nextIndex)), 'application/json');
-                return NextResponse.json({ restored: missing.length, items: missing });
+                console.log(`[TOS] Restoring ${missing.length} missing workflows to index.`);
+                const nextIndex = [...missing, ...index.filter(Boolean)];
+                // Sort by date desc
+                nextIndex.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+                
+                const ok = await tosUpload('workflows/index.json', Buffer.from(JSON.stringify(nextIndex)), 'application/json');
+                if (ok) {
+                    return NextResponse.json({ 
+                        success: true, 
+                        restored: missing.length, 
+                        total_in_index: nextIndex.length,
+                        items: missing.map(m => ({ id: m.id, name: m.name }))
+                    });
+                }
+                throw new Error('Failed to upload updated index');
             }
             
-            return NextResponse.json({ restored: 0, message: 'Index is up to date' });
+            return NextResponse.json({ success: true, restored: 0, total_in_index: index.length, message: 'Index is up to date' });
         } catch (e) {
-            return NextResponse.json({ error: e.message });
+            console.error('[TOS] Restore failed:', e);
+            return NextResponse.json({ error: e.message }, { status: 500 });
         }
     }
 
