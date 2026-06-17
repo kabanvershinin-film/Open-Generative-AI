@@ -45,22 +45,30 @@ var TextGeneration = function TextGeneration(_ref) {
   var setFormValues = data.setFormValues || function () {};
   var selectedModel = data.selectedModel || {};
   var loading = data.loading || false;
-  var _useState = (0, _react.useState)(data.outputHistory ? data.outputHistory.length - 1 : -1),
+  var currentHistoryIndex = data.currentHistoryIndex !== undefined ? data.currentHistoryIndex : data.outputHistory ? data.outputHistory.length - 1 : -1;
+  var setCurrentHistoryIndex = function setCurrentHistoryIndex(idx) {
+    if (data.updateNodeData) {
+      data.updateNodeData(id, {
+        currentHistoryIndex: idx
+      });
+    }
+  };
+  var currentOutputIndex = data.currentOutputIndex || 0;
+  var setCurrentOutputIndex = function setCurrentOutputIndex(idx) {
+    if (data.updateNodeData) {
+      data.updateNodeData(id, {
+        currentOutputIndex: idx
+      });
+    }
+  };
+  var _useState = (0, _react.useState)(false),
     _useState2 = _slicedToArray(_useState, 2),
-    currentHistoryIndex = _useState2[0],
-    setCurrentHistoryIndex = _useState2[1];
-  var _useState3 = (0, _react.useState)(0),
+    isRefreshingCost = _useState2[0],
+    setIsRefreshingCost = _useState2[1];
+  var _useState3 = (0, _react.useState)(null),
     _useState4 = _slicedToArray(_useState3, 2),
-    currentOutputIndex = _useState4[0],
-    setCurrentOutputIndex = _useState4[1];
-  var _useState5 = (0, _react.useState)(false),
-    _useState6 = _slicedToArray(_useState5, 2),
-    isRefreshingCost = _useState6[0],
-    setIsRefreshingCost = _useState6[1];
-  var _useState7 = (0, _react.useState)(null),
-    _useState8 = _slicedToArray(_useState7, 2),
-    generationCost = _useState8[0],
-    setGenerationCost = _useState8[1];
+    generationCost = _useState4[0],
+    setGenerationCost = _useState4[1];
   var textareaRef = (0, _react.useRef)(null);
   var outputHistory = data.outputHistory || [];
   var connectedInputs = data.connectedInputs || {};
@@ -73,16 +81,14 @@ var TextGeneration = function TextGeneration(_ref) {
   var hasSystemPrompt = data.hasSystemPrompt !== false && !isPassthrough && "system_prompt" in properties;
   var handlePrev = function handlePrev(e) {
     e.stopPropagation();
-    setCurrentHistoryIndex(function (prev) {
-      return prev > 0 ? prev - 1 : prev;
-    });
+    var newIdx = currentHistoryIndex > 0 ? currentHistoryIndex - 1 : currentHistoryIndex;
+    setCurrentHistoryIndex(newIdx);
     setCurrentOutputIndex(0);
   };
   var handleNext = function handleNext(e) {
     e.stopPropagation();
-    setCurrentHistoryIndex(function (prev) {
-      return prev < outputHistory.length - 1 ? prev + 1 : prev;
-    });
+    var newIdx = currentHistoryIndex < outputHistory.length - 1 ? currentHistoryIndex + 1 : currentHistoryIndex;
+    setCurrentHistoryIndex(newIdx);
     setCurrentOutputIndex(0);
   };
   var handleDeleteNode = function handleDeleteNode() {

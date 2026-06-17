@@ -14,10 +14,25 @@ const TextGeneration = ({ id, data, selected }) => {
   const setFormValues = data.setFormValues || (() => {});
   const selectedModel = data.selectedModel || {};
   const loading = data.loading || false;
-  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(
-    data.outputHistory ? data.outputHistory.length - 1 : -1
-  );
-  const [currentOutputIndex, setCurrentOutputIndex] = useState(0);
+  
+  const currentHistoryIndex = data.currentHistoryIndex !== undefined 
+    ? data.currentHistoryIndex 
+    : (data.outputHistory ? data.outputHistory.length - 1 : -1);
+    
+  const setCurrentHistoryIndex = (idx) => {
+    if (data.updateNodeData) {
+      data.updateNodeData(id, { currentHistoryIndex: idx });
+    }
+  };
+  
+  const currentOutputIndex = data.currentOutputIndex || 0;
+  
+  const setCurrentOutputIndex = (idx) => {
+    if (data.updateNodeData) {
+      data.updateNodeData(id, { currentOutputIndex: idx });
+    }
+  };
+  
   const [isRefreshingCost, setIsRefreshingCost] = useState(false);
   const [generationCost, setGenerationCost] = useState(null);
   const textareaRef = useRef(null);
@@ -38,15 +53,15 @@ const TextGeneration = ({ id, data, selected }) => {
 
   const handlePrev = (e) => {
     e.stopPropagation();
-    setCurrentHistoryIndex((prev) => (prev > 0 ? prev - 1 : prev));
+    const newIdx = currentHistoryIndex > 0 ? currentHistoryIndex - 1 : currentHistoryIndex;
+    setCurrentHistoryIndex(newIdx);
     setCurrentOutputIndex(0);
   };
 
   const handleNext = (e) => {
     e.stopPropagation();
-    setCurrentHistoryIndex((prev) =>
-      prev < outputHistory.length - 1 ? prev + 1 : prev
-    );
+    const newIdx = currentHistoryIndex < outputHistory.length - 1 ? currentHistoryIndex + 1 : currentHistoryIndex;
+    setCurrentHistoryIndex(newIdx);
     setCurrentOutputIndex(0);
   };
 
