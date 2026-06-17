@@ -64,7 +64,7 @@ function pickEndpoint(fast) {
   return ep;
 }
 
-function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset }) {
+function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, is_i2v }) {
   const content = [];
   if (prompt) content.push({ type: 'text', text: prompt });
 
@@ -86,12 +86,19 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
   // reference_image face is NOT supported by Seedance and leaves the task stuck
   // in "running" — so when a face asset is present, treat every image as a
   // reference, exactly like the (working) multi-image Studio path.
+  //
+  // NEW: Also treat as reference if:
+  // 1. The prompt explicitly mentions @фото.
+  // 2. The model is a T2V model (is_i2v is false).
   const hasRefMedia = videos.length > 0 || audios.length > 0;
   const multiImage  = images.length > 1;
   const hasFace     = !!face_asset;
+  const promptHasRef = prompt && prompt.includes('@фото');
+  const isT2V = is_i2v === false;
+
   images.forEach((u) => {
     const item = { type: 'image_url', image_url: { url: u } };
-    if (hasRefMedia || multiImage || hasFace) item.role = 'reference_image';
+    if (hasRefMedia || multiImage || hasFace || promptHasRef || isT2V) item.role = 'reference_image';
     content.push(item);
   });
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
@@ -109,6 +116,7 @@ export async function POST(request) {
     const body = await request.json();
     const {
       fast = false,
+      is_i2v = false,
       prompt = '',
       image_url,
       image_urls,
@@ -125,7 +133,7 @@ export async function POST(request) {
 
     console.log('[ARK Seedance POST] face_asset:', face_asset);
 
-    const content = buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset });
+    const content = buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, is_i2v });
     if (content.length === 0) {
       return NextResponse.json({ error: 'Empty content' }, { status: 400 });
     }

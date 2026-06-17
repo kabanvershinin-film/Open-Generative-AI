@@ -572,6 +572,7 @@ async function generateSeedanceArk(modelInfo, params) {
     const fast = /fast/.test(modelInfo?.apiId || '');
     const body = {
         fast,
+        is_i2v: params.is_i2v ?? false,
         prompt: params.prompt || '',
         image_url: params.image_url || undefined,
         image_urls: Array.isArray(params.image_urls) ? params.image_urls : undefined,

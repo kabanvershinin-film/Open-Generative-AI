@@ -1434,10 +1434,15 @@ export default function VideoStudio({
             model: taskModel,
             prompt: taskPrompt,
             aspect_ratio: selectedAr,
+            // Prioritize multimodal refs, but fallback to single uploaders if they exist
+            image_url: uploadedImageUrl || undefined,
+            video_url: uploadedVideoUrl || undefined,
+            audio_url: uploadedAudioUrl || undefined,
             image_urls: readyRefs.filter((f) => f.kind === "image").map((f) => f.url),
             video_urls: readyRefs.filter((f) => f.kind === "video").map((f) => f.url),
             audio_urls: readyRefs.filter((f) => f.kind === "audio").map((f) => f.url),
             face_asset: faceAsset?.uri || undefined,
+            is_i2v: i2vModels.some((m) => m.id === taskModel),
             onTaskId: (arkTaskId, bill) => {
               updateTask(taskId, { arkTaskId, bill });
               try {
