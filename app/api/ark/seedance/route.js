@@ -139,6 +139,7 @@ export async function POST(request) {
     }
 
     const model = pickEndpoint(fast) || (fast ? FAST_MODEL_ID : STD_MODEL_ID);
+    console.log('[ARK Seedance] Using model/endpoint:', model);
 
     let effRes = '720p';
     if (resolution) {
@@ -188,16 +189,23 @@ export async function POST(request) {
       body: JSON.stringify(payload),
     });
     const data = await r.json().catch(() => ({}));
-    console.log('[ARK Seedance POST] Ark response:', JSON.stringify(data, null, 2));
     if (!r.ok) {
+      console.error('[ARK Seedance] Error calling Ark API:', {
+        status: r.status,
+        data: data
+      });
       return NextResponse.json(
         { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
         { status: r.status },
       );
     }
+    console.log('[ARK Seedance] Success response from Ark:', data);
     return NextResponse.json({ taskId: data.id, endpoint: model, bill });
   } catch (e) {
-    console.error('[ARK Seedance POST] error:', e);
+    console.error('[ARK Seedance] Error calling Ark API:', {
+      message: e.message
+    });
+    // 402 → insufficient balance: surface a clear, money-specific message.
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
