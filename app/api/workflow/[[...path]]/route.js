@@ -328,7 +328,7 @@ async function tosLoadIndex() {
     if (!TOS_ENABLED) return [];
     try {
         const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/workflows/index.json`;
-        const r = await fetch(url);
+        const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) return [];
         return await r.json();
     } catch { return []; }
@@ -336,27 +336,49 @@ async function tosLoadIndex() {
 
 async function tosUpdateIndex(id, meta) {
     if (!TOS_ENABLED) return;
-    const index = await tosLoadIndex();
-    const existing = index.findIndex(w => w.id === id);
-    if (existing >= 0) index[existing] = { ...index[existing], ...meta };
-    else index.unshift(meta);
-    const buf = Buffer.from(JSON.stringify(index));
-    await tosUpload('workflows/index.json', buf, 'application/json').catch(() => {});
+    const key = 'workflows/index.json';
+    for (let attempt = 0; attempt < 6; attempt++) {
+        const index = await tosLoadIndex();
+        const existing = index.findIndex(w => w.id === id);
+        const nextMeta = existing >= 0 ? { ...index[existing], ...meta } : meta;
+        
+        let nextIndex = [...index];
+        if (existing >= 0) nextIndex[existing] = nextMeta;
+        else nextIndex.unshift(nextMeta);
+        
+        const ok = await tosUpload(key, Buffer.from(JSON.stringify(nextIndex)), 'application/json');
+        if (ok) {
+            // Verify that our update stuck (or at least someone else's update didn't clobber ours completely)
+            const check = await tosLoadIndex();
+            if (Array.isArray(check) && check.some(w => w.id === id)) return;
+        }
+        // Jittered backoff
+        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+    }
 }
 
 async function tosRemoveFromIndex(id) {
     if (!TOS_ENABLED) return;
-    const index = await tosLoadIndex();
-    const filtered = index.filter(w => w.id !== id);
-    const buf = Buffer.from(JSON.stringify(filtered));
-    await tosUpload('workflows/index.json', buf, 'application/json').catch(() => {});
+    const key = 'workflows/index.json';
+    for (let attempt = 0; attempt < 6; attempt++) {
+        const index = await tosLoadIndex();
+        const filtered = index.filter(w => w.id !== id);
+        if (filtered.length === index.length) return; // already gone
+        
+        const ok = await tosUpload(key, Buffer.from(JSON.stringify(filtered)), 'application/json');
+        if (ok) {
+            const check = await tosLoadIndex();
+            if (Array.isArray(check) && !check.some(w => w.id === id)) return;
+        }
+        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+    }
 }
 
 async function tosLoadCommunity() {
     if (!TOS_ENABLED) return [];
     try {
         const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/workflows/community.json`;
-        const r = await fetch(url);
+        const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) return [];
         return await r.json();
     } catch { return []; }
@@ -364,27 +386,47 @@ async function tosLoadCommunity() {
 
 async function tosUpdateCommunity(id, meta) {
     if (!TOS_ENABLED) return;
-    const list = await tosLoadCommunity();
-    const existing = list.findIndex(w => w.id === id);
-    if (existing >= 0) list[existing] = { ...list[existing], ...meta };
-    else list.unshift(meta);
-    const buf = Buffer.from(JSON.stringify(list));
-    await tosUpload('workflows/community.json', buf, 'application/json').catch(() => {});
+    const key = 'workflows/community.json';
+    for (let attempt = 0; attempt < 6; attempt++) {
+        const list = await tosLoadCommunity();
+        const existing = list.findIndex(w => w.id === id);
+        const nextMeta = existing >= 0 ? { ...list[existing], ...meta } : meta;
+        
+        let nextList = [...list];
+        if (existing >= 0) nextList[existing] = nextMeta;
+        else nextList.unshift(nextMeta);
+        
+        const ok = await tosUpload(key, Buffer.from(JSON.stringify(nextList)), 'application/json');
+        if (ok) {
+            const check = await tosLoadCommunity();
+            if (Array.isArray(check) && check.some(w => w.id === id)) return;
+        }
+        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+    }
 }
 
 async function tosRemoveFromCommunity(id) {
     if (!TOS_ENABLED) return;
-    const list = await tosLoadCommunity();
-    const filtered = list.filter(w => w.id !== id);
-    const buf = Buffer.from(JSON.stringify(filtered));
-    await tosUpload('workflows/community.json', buf, 'application/json').catch(() => {});
+    const key = 'workflows/community.json';
+    for (let attempt = 0; attempt < 6; attempt++) {
+        const list = await tosLoadCommunity();
+        const filtered = list.filter(w => w.id !== id);
+        if (filtered.length === list.length) return;
+        
+        const ok = await tosUpload(key, Buffer.from(JSON.stringify(filtered)), 'application/json');
+        if (ok) {
+            const check = await tosLoadCommunity();
+            if (Array.isArray(check) && !check.some(w => w.id === id)) return;
+        }
+        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+    }
 }
 
 async function tosFetchJson(key) {
     if (!TOS_ENABLED || !key) return null;
     try {
         const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/${key}`;
-        const r = await fetch(url);
+        const r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) return null;
         return await r.json();
     } catch { return null; }
@@ -1419,7 +1461,8 @@ export async function GET(request, { params }) {
             console.error('Failed to load index:', err);
         }
         
-        let ownerWorkflows = allIndex.filter(e => e && e.owner_id === user.id);
+        const admin = isAdminUser(user);
+        let ownerWorkflows = allIndex.filter(e => e && (e.owner_id === user.id || (admin && !e.owner_id)));
         console.log('Owner workflows:', ownerWorkflows.map(i => i.id));
         
         let sharedWorkflows = [];
