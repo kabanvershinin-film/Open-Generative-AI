@@ -1771,6 +1771,9 @@ export async function GET(request, { params }) {
             return NextResponse.json({ error: e.message });
         }
     }
+
+    // Получить список пользователей с доступом: /api/workflow/{id}/shares
+    if (path[1] === 'shares') {
         const wfId = path[0];
         const user = await getUserForGallery(request);
         if (!user?.id) return NextResponse.json([]);
