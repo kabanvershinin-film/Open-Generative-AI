@@ -755,12 +755,13 @@ var NodeFlow = function NodeFlow(_ref) {
 
         // A Character node plugged into a video or text node is a face reference
         if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode" || node.type === "textNode")) {
-          var _newData$formValues, _sourceNode$data2;
-          var freshPhoto = ((_newData$formValues = newData.formValues) === null || _newData$formValues === void 0 ? void 0 : _newData$formValues.character_photo) || (sourceNode === null || sourceNode === void 0 || (_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2.formValues) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.character_photo);
+          var _sourceNode$data2;
+          var charPhoto = sourceNode === null || sourceNode === void 0 || (_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2.formValues) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.character_photo;
           if (node.type !== "textNode") {
             updatedFormValues.face_asset = resultValue;
           }
-          updatedFormValues.face_thumbnail = freshPhoto || updatedFormValues.face_thumbnail || null;
+          // CRITICAL FIX: Update thumbnail from character node data
+          updatedFormValues.face_thumbnail = charPhoto || null;
         } else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(targetHandle)) {
           updatedFormValues.prompt = sourceValue;
         } else if (targetHandle === "textInput4") {
@@ -934,13 +935,16 @@ var NodeFlow = function NodeFlow(_ref) {
           if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode") {
             if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode") {
               var _sourceNode$data6, _sourceNode$data7;
+              var charPhoto = sourceNode === null || sourceNode === void 0 || (_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6.formValues) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.character_photo;
+              var charName = sourceNode === null || sourceNode === void 0 || (_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.formValues) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.character_name;
               if (n.type !== "textNode") {
                 updatedFormValues.face_asset = resultValue || null;
               }
-              updatedFormValues.face_thumbnail = (sourceNode === null || sourceNode === void 0 || (_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6.formValues) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.character_photo) || null;
-              var cname = sourceNode === null || sourceNode === void 0 || (_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.formValues) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.character_name;
-              if (cname && cname.trim()) {
-                var token = "@" + cname.trim().replace(/\s+/g, "_");
+
+              // CRITICAL FIX: Ensure face_thumbnail is set and updated
+              updatedFormValues.face_thumbnail = charPhoto || null;
+              if (charName && charName.trim()) {
+                var token = "@" + charName.trim().replace(/\s+/g, "_");
                 var cur = updatedFormValues.prompt || "";
                 if (!cur.includes(token)) {
                   updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;

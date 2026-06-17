@@ -592,11 +592,12 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
         // A Character node plugged into a video or text node is a face reference
         if (sourceNode?.type === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode" || node.type === "textNode")) {
-          const freshPhoto = newData.formValues?.character_photo || sourceNode?.data?.formValues?.character_photo;
+          const charPhoto = sourceNode?.data?.formValues?.character_photo;
           if (node.type !== "textNode") {
             updatedFormValues.face_asset = resultValue;
           }
-          updatedFormValues.face_thumbnail = freshPhoto || updatedFormValues.face_thumbnail || null;
+          // CRITICAL FIX: Update thumbnail from character node data
+          updatedFormValues.face_thumbnail = charPhoto || null;
         }
 
         else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(targetHandle)) {
@@ -822,13 +823,18 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             // and tag @Name into the prompt (same UX as Video Studio).
             if (sourceNode?.type === "characterNode") {
               if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode") {
+                const charPhoto = sourceNode?.data?.formValues?.character_photo;
+                const charName = sourceNode?.data?.formValues?.character_name;
+                
                 if (n.type !== "textNode") {
                   updatedFormValues.face_asset = resultValue || null;
                 }
-                updatedFormValues.face_thumbnail = sourceNode?.data?.formValues?.character_photo || null;
-                const cname = sourceNode?.data?.formValues?.character_name;
-                if (cname && cname.trim()) {
-                  const token = "@" + cname.trim().replace(/\s+/g, "_");
+                
+                // CRITICAL FIX: Ensure face_thumbnail is set and updated
+                updatedFormValues.face_thumbnail = charPhoto || null;
+                
+                if (charName && charName.trim()) {
+                  const token = "@" + charName.trim().replace(/\s+/g, "_");
                   const cur = updatedFormValues.prompt || "";
                   if (!cur.includes(token)) {
                     updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;

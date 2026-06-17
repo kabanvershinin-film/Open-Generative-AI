@@ -111,7 +111,8 @@ var RenderField = function RenderField(_ref) {
   var isRequired = data.required && data.required.includes(fieldName);
 
   // Custom Character Preview for Video/Agent nodes
-  if (fieldName === 'face_asset' && formValues.face_thumbnail) {
+  var faceThumb = formValues.face_thumbnail || formValues.character_photo;
+  if (fieldName === 'face_asset' && faceThumb) {
     return /*#__PURE__*/_react["default"].createElement("div", {
       key: fieldName,
       className: "flex flex-col gap-2 mt-2"
@@ -120,7 +121,7 @@ var RenderField = function RenderField(_ref) {
     }, "\u041F\u0435\u0440\u0441\u043E\u043D\u0430\u0436"), /*#__PURE__*/_react["default"].createElement("div", {
       className: "relative group/char-preview w-24 h-24 rounded-xl overflow-hidden border border-purple-500/30 bg-black shadow-lg shadow-purple-500/10"
     }, /*#__PURE__*/_react["default"].createElement("img", {
-      src: formValues.face_thumbnail,
+      src: faceThumb,
       alt: "Character",
       className: "w-full h-full object-cover"
     }), /*#__PURE__*/_react["default"].createElement("div", {
@@ -133,14 +134,15 @@ var RenderField = function RenderField(_ref) {
         setFormValues(function (prev) {
           return _objectSpread(_objectSpread({}, prev), {}, {
             face_asset: null,
-            face_thumbnail: null
+            face_thumbnail: null,
+            character_photo: null
           });
         });
       },
       className: "absolute top-1.5 right-1.5 bg-black/80 hover:bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover/char-preview:opacity-100 transition-opacity z-10"
     }, "\xD7")));
   }
-  if (fieldName === 'face_thumbnail') return null;
+  if (fieldName === 'face_thumbnail' || fieldName === 'character_photo') return null;
   var label = /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-[10px] font-bold text-zinc-500 text-start px-1 mb-1"
   }, translateUi(meta.title || fieldName), isRequired && /*#__PURE__*/_react["default"].createElement("span", {
