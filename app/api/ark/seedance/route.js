@@ -82,18 +82,25 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
     const url = typeof u === 'string' ? u : (u.url || u.image_url);
     const face = typeof u === 'object' ? u.face_asset : null;
     
-    const item = { type: 'image_url', image_url: { url } };
-    
-    // If top-level face_asset is a string and this is the first image,
-    // or if this specific image has a face_asset, or if there are multiple images/media.
     const isFirstImage = idx === 0;
     const effectiveFace = face || (isFirstImage && typeof face_asset === 'string' ? face_asset : null);
+
+    const item = { 
+      type: 'image_url', 
+      image_url: { 
+        url,
+        // Some Ark API versions expect face_asset inside image_url
+        ...(effectiveFace ? { face_asset: effectiveFace } : {})
+      } 
+    };
     
+    // Multiple images or image + video/audio → multimodal reference (role: reference_image).
+    // If face_asset is present (either at top level or per-image), any image MUST be a reference_image.
     if (hasRefMedia || multiImage || hasFaceAsset || effectiveFace) {
       item.role = 'reference_image';
     }
     if (effectiveFace) {
-      item.face_asset = effectiveFace;
+      item.face_asset = effectiveFace; // Also keep it at the top level of the item
     }
     content.push(item);
   });

@@ -876,16 +876,23 @@ export default function VideoStudio({
           : null;
 
   // Per-kind label + ordinal for the @reference chip, e.g. 图片1, 视频2, 音频1.
-  // Note: faceAsset is always mapped to 图片1 if present (or 图片2 if uploadedImageUrl exists).
+  // Note: faceAsset is always mapped to 图片1 if present.
   const refLabel = (kind, index) => {
     const word = kind === "image" ? "图片" : kind === "video" ? "视频" : "音频";
     
     let actualIndex = index;
     if (kind === "image") {
-      // Offset by 1 if there's a main image (uploadedImageUrl)
-      if (uploadedImageUrl) actualIndex += 1;
-      // Offset by 1 if there's a character face asset
-      if (faceAsset) actualIndex += 1;
+      // Character is always 图片1 in muapi.js if it exists.
+      if (faceAsset) {
+        actualIndex += 1;
+      }
+      // Main uploaded image is 图片2 (if character exists) or 图片1.
+      if (uploadedImageUrl) {
+        // muapi.js skips uploadedImageUrl if it's the same as faceAsset.thumbnail
+        if (!faceAsset || uploadedImageUrl !== faceAsset.thumbnail) {
+          actualIndex += 1;
+        }
+      }
     }
     
     return `${word}${actualIndex}`;
@@ -1441,11 +1448,10 @@ export default function VideoStudio({
           const readyRefs = refFiles.filter((f) => f.url);
           
           // Ensure the character tag is present in the prompt if a faceAsset is selected.
-          // If the prompt doesn't have 图片1 (or 图片2 if uploadedImageUrl exists), 
-          // we append it or replace the character name with it to avoid "Real Person" safety errors.
+          // In muapi.js, we prioritize character as 图片1.
           let finalPrompt = taskPrompt;
           if (faceAsset) {
-            const tag = uploadedImageUrl ? "图片2" : "图片1";
+            const tag = "图片1";
             const name = faceAsset.name || "";
             
             // 1. If the prompt contains the tag, we're good.
@@ -2868,10 +2874,8 @@ export default function VideoStudio({
         onClose={() => setFacePickOpen(false)}
         onSelect={(assetUri, name, thumb) => {
           setFaceAsset({ uri: assetUri, name, thumbnail: thumb });
-          // If there's already a main image (uploadedImageUrl), the face asset 
-          // becomes 图片2, otherwise it's 图片1.
-          const label = uploadedImageUrl ? "图片2" : "图片1";
-          insertRefToken(label);
+          // Character is always 图片1 in muapi.js.
+          insertRefToken("图片1");
         }}
         onRegisterNew={() => setFaceRegOpen(true)}
       />
@@ -2882,8 +2886,7 @@ export default function VideoStudio({
         onClose={() => setFaceRegOpen(false)}
         onRegistered={(assetUri, displayName, photo) => {
           setFaceAsset({ uri: assetUri, name: displayName, thumbnail: photo || null });
-          const label = uploadedImageUrl ? "图片2" : "图片1";
-          insertRefToken(label);
+          insertRefToken("图片1");
         }}
       />
     </div>

@@ -575,42 +575,42 @@ async function generateSeedanceArk(modelInfo, params) {
     // We pass the face asset URI in face_asset field of each image, 
     // but for image_urls we must use a real HTTP URL (thumbnail) to avoid validation errors.
     const faceAsset = params.face_asset;
+    const faceThumb = params.face_thumbnail;
+    const uploadedUrl = params.image_url;
     const initialImages = Array.isArray(params.image_urls) ? [...params.image_urls] : [];
     
-    // Convert images to objects with face_asset if needed
-    let images = initialImages.map(u => (typeof u === 'string' ? { url: u } : u));
+    // Construct the final images array.
+    // In Seedance 2.0, character (trusted asset) MUST be 图片1 to be reliably recognized.
+    let finalImages = [];
     
-    if (params.face_thumbnail) {
-        const thumb = params.face_thumbnail;
-        const exists = images.some(img => img.url === thumb);
-        if (!exists) {
-            images.unshift({ url: thumb, face_asset: faceAsset || undefined });
-        } else {
-            // Update existing image with face_asset
-            images = images.map(img => img.url === thumb ? { ...img, face_asset: faceAsset || undefined } : img);
+    // 1. Primary character (if exists) -> Always 图片1
+    if (faceThumb) {
+        finalImages.push({ url: faceThumb, face_asset: faceAsset || undefined });
+    }
+    
+    // 2. Main uploaded image (if exists) -> 图片2 (or 图片1 if no character)
+    if (uploadedUrl) {
+        // Skip if same as faceThumb
+        if (uploadedUrl !== faceThumb) {
+            finalImages.push(typeof uploadedUrl === 'string' ? { url: uploadedUrl } : uploadedUrl);
         }
     }
-
-    // Construct the request body. 
-    // We must be careful not to drop images[0] (which often contains the face_asset)
-    // if params.image_url is also provided.
-    let finalImageUrl = params.image_url || images[0] || undefined;
-    let finalImageUrls = params.image_url ? images : (images.length > 1 ? images.slice(1) : undefined);
     
-    // Remove duplication if the main image is also in the references list
-    if (finalImageUrl && Array.isArray(finalImageUrls)) {
-        const mainUrl = typeof finalImageUrl === 'string' ? finalImageUrl : finalImageUrl.url;
-        finalImageUrls = finalImageUrls.filter(img => (typeof img === 'string' ? img : img.url) !== mainUrl);
-        if (finalImageUrls.length === 0) finalImageUrls = undefined;
-    }
+    // 3. Other reference images from refFiles
+    initialImages.forEach(img => {
+        const url = typeof img === 'string' ? img : img.url;
+        if (url && url !== faceThumb && url !== uploadedUrl) {
+            finalImages.push(typeof img === 'string' ? { url: img } : img);
+        }
+    });
 
     const body = {
         fast,
         model: modelInfo?.apiId || modelInfo?.id || undefined,
         is_i2v: params.is_i2v ?? false,
         prompt: params.prompt || '',
-        image_url: finalImageUrl,
-        image_urls: finalImageUrls,
+        image_url: finalImages[0] || undefined,
+        image_urls: finalImages.length > 1 ? finalImages.slice(1) : undefined,
         video_url: params.video_url || undefined,
         video_urls: Array.isArray(params.video_urls) ? params.video_urls : undefined,
         audio_url: params.audio_url || undefined,
