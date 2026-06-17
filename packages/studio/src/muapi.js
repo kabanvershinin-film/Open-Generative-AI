@@ -636,7 +636,12 @@ async function generateSeedanceArk(modelInfo, params) {
         if (submit.status === 402) {
             throw new Error(`Недостаточно средств. Нужно ${submitData.required ?? ''}₽, на балансе ${submitData.balance ?? 0}₽.`);
         }
-        throw new Error(`Ark: ${submitData.error || submit.status}`);
+        
+        let errorMsg = submitData.error || submit.status;
+        if (String(errorMsg).includes('real person')) {
+            errorMsg = "Ошибка безопасности: обнаружен реальный человек. Если вы используете персонажа, убедитесь, что в промпте есть тег 图片1 (или соответствующий номер).";
+        }
+        throw new Error(`Ark: ${errorMsg}`);
     }
     const taskId = submitData.taskId;
     if (!taskId) throw new Error('Ark: задача не создана (нет taskId).');

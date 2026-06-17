@@ -1439,9 +1439,31 @@ export default function VideoStudio({
         // ── Seedance 2.0 (Ark) multimodal path ──
         if (currentModel?.provider === "ark") {
           const readyRefs = refFiles.filter((f) => f.url);
+          
+          // Ensure the character tag is present in the prompt if a faceAsset is selected.
+          // If the prompt doesn't have 图片1 (or 图片2 if uploadedImageUrl exists), 
+          // we append it or replace the character name with it to avoid "Real Person" safety errors.
+          let finalPrompt = taskPrompt;
+          if (faceAsset) {
+            const tag = uploadedImageUrl ? "图片2" : "图片1";
+            const name = faceAsset.name || "";
+            
+            // 1. If the prompt contains the tag, we're good.
+            // 2. If it contains the name (e.g. "Жека"), replace it with the tag.
+            // 3. Otherwise, append the tag.
+            const tagRegex = new RegExp(tag, "i");
+            if (!tagRegex.test(finalPrompt)) {
+              if (name && finalPrompt.includes(name)) {
+                finalPrompt = finalPrompt.replace(new RegExp(name, "gi"), tag);
+              } else {
+                finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
+              }
+            }
+          }
+
           const params = {
             model: taskModel,
-            prompt: taskPrompt,
+            prompt: finalPrompt,
             aspect_ratio: selectedAr,
             // Prioritize multimodal refs, but fallback to single uploaders if they exist
             image_url: uploadedImageUrl || undefined,
