@@ -482,10 +482,10 @@ var VideoGeneration = function VideoGeneration(_ref) {
                   var asset = toAssetUri(rawAsset);
                   if (asset) {
                     assets.faces.push(asset);
-                    // CRITICAL: Use the asset:// URI as the reference image URL too.
-                    // This bypasses the "real person" safety filter because Ark trusts asset:// URIs.
-                    assets.images.push(asset);
-                  } else if (fv.character_photo) {
+                  }
+                  // Always use the character_photo (HTTP URL) as the reference image.
+                  // Using asset:// in image_url causes "invalid_image_url" validation error in Ark.
+                  if (fv.character_photo) {
                     assets.images.push(fv.character_photo);
                   }
                 } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
