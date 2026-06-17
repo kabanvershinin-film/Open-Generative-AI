@@ -329,31 +329,39 @@ async function tosLoadIndex() {
     try {
         const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/workflows/index.json`;
         const r = await fetch(url, { cache: 'no-store' });
-        if (!r.ok) return [];
-        return await r.json();
-    } catch { return []; }
+        if (r.status === 404) return [];
+        if (!r.ok) throw new Error(`Failed to load index: ${r.status}`);
+        const data = await r.json();
+        if (!Array.isArray(data)) throw new Error('Index is not an array');
+        return data;
+    } catch (err) {
+        console.error('[TOS] LoadIndex failed:', err.message);
+        throw err;
+    }
 }
 
 async function tosUpdateIndex(id, meta) {
     if (!TOS_ENABLED) return;
     const key = 'workflows/index.json';
     for (let attempt = 0; attempt < 6; attempt++) {
-        const index = await tosLoadIndex();
-        const existing = index.findIndex(w => w.id === id);
-        const nextMeta = existing >= 0 ? { ...index[existing], ...meta } : meta;
-        
-        let nextIndex = [...index];
-        if (existing >= 0) nextIndex[existing] = nextMeta;
-        else nextIndex.unshift(nextMeta);
-        
-        const ok = await tosUpload(key, Buffer.from(JSON.stringify(nextIndex)), 'application/json');
-        if (ok) {
-            // Verify that our update stuck (or at least someone else's update didn't clobber ours completely)
-            const check = await tosLoadIndex();
-            if (Array.isArray(check) && check.some(w => w.id === id)) return;
+        try {
+            const index = await tosLoadIndex();
+            const existing = index.findIndex(w => w.id === id);
+            const nextMeta = existing >= 0 ? { ...index[existing], ...meta } : meta;
+            
+            let nextIndex = [...index];
+            if (existing >= 0) nextIndex[existing] = nextMeta;
+            else nextIndex.unshift(nextMeta);
+            
+            const ok = await tosUpload(key, Buffer.from(JSON.stringify(nextIndex)), 'application/json');
+            if (ok) {
+                const check = await tosLoadIndex();
+                if (Array.isArray(check) && check.some(w => w.id === id)) return;
+            }
+        } catch (err) {
+            console.error(`[TOS] UpdateIndex attempt ${attempt} failed:`, err.message);
         }
-        // Jittered backoff
-        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+        await new Promise((r) => setTimeout(r, 200 + Math.floor(Math.random() * 300)));
     }
 }
 
@@ -361,16 +369,20 @@ async function tosRemoveFromIndex(id) {
     if (!TOS_ENABLED) return;
     const key = 'workflows/index.json';
     for (let attempt = 0; attempt < 6; attempt++) {
-        const index = await tosLoadIndex();
-        const filtered = index.filter(w => w.id !== id);
-        if (filtered.length === index.length) return; // already gone
-        
-        const ok = await tosUpload(key, Buffer.from(JSON.stringify(filtered)), 'application/json');
-        if (ok) {
-            const check = await tosLoadIndex();
-            if (Array.isArray(check) && !check.some(w => w.id === id)) return;
+        try {
+            const index = await tosLoadIndex();
+            const filtered = index.filter(w => w.id !== id);
+            if (filtered.length === index.length) return; // already gone
+            
+            const ok = await tosUpload(key, Buffer.from(JSON.stringify(filtered)), 'application/json');
+            if (ok) {
+                const check = await tosLoadIndex();
+                if (Array.isArray(check) && !check.some(w => w.id === id)) return;
+            }
+        } catch (err) {
+            console.error(`[TOS] RemoveFromIndex attempt ${attempt} failed:`, err.message);
         }
-        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+        await new Promise((r) => setTimeout(r, 200 + Math.floor(Math.random() * 300)));
     }
 }
 
@@ -379,29 +391,39 @@ async function tosLoadCommunity() {
     try {
         const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/workflows/community.json`;
         const r = await fetch(url, { cache: 'no-store' });
-        if (!r.ok) return [];
-        return await r.json();
-    } catch { return []; }
+        if (r.status === 404) return [];
+        if (!r.ok) throw new Error(`Failed to load community: ${r.status}`);
+        const data = await r.json();
+        if (!Array.isArray(data)) throw new Error('Community list is not an array');
+        return data;
+    } catch (err) {
+        console.error('[TOS] LoadCommunity failed:', err.message);
+        throw err;
+    }
 }
 
 async function tosUpdateCommunity(id, meta) {
     if (!TOS_ENABLED) return;
     const key = 'workflows/community.json';
     for (let attempt = 0; attempt < 6; attempt++) {
-        const list = await tosLoadCommunity();
-        const existing = list.findIndex(w => w.id === id);
-        const nextMeta = existing >= 0 ? { ...list[existing], ...meta } : meta;
-        
-        let nextList = [...list];
-        if (existing >= 0) nextList[existing] = nextMeta;
-        else nextList.unshift(nextMeta);
-        
-        const ok = await tosUpload(key, Buffer.from(JSON.stringify(nextList)), 'application/json');
-        if (ok) {
-            const check = await tosLoadCommunity();
-            if (Array.isArray(check) && check.some(w => w.id === id)) return;
+        try {
+            const list = await tosLoadCommunity();
+            const existing = list.findIndex(w => w.id === id);
+            const nextMeta = existing >= 0 ? { ...list[existing], ...meta } : meta;
+            
+            let nextList = [...list];
+            if (existing >= 0) nextList[existing] = nextMeta;
+            else nextList.unshift(nextMeta);
+            
+            const ok = await tosUpload(key, Buffer.from(JSON.stringify(nextList)), 'application/json');
+            if (ok) {
+                const check = await tosLoadCommunity();
+                if (Array.isArray(check) && check.some(w => w.id === id)) return;
+            }
+        } catch (err) {
+            console.error(`[TOS] UpdateCommunity attempt ${attempt} failed:`, err.message);
         }
-        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+        await new Promise((r) => setTimeout(r, 200 + Math.floor(Math.random() * 300)));
     }
 }
 
@@ -409,16 +431,20 @@ async function tosRemoveFromCommunity(id) {
     if (!TOS_ENABLED) return;
     const key = 'workflows/community.json';
     for (let attempt = 0; attempt < 6; attempt++) {
-        const list = await tosLoadCommunity();
-        const filtered = list.filter(w => w.id !== id);
-        if (filtered.length === list.length) return;
-        
-        const ok = await tosUpload(key, Buffer.from(JSON.stringify(filtered)), 'application/json');
-        if (ok) {
-            const check = await tosLoadCommunity();
-            if (Array.isArray(check) && !check.some(w => w.id === id)) return;
+        try {
+            const list = await tosLoadCommunity();
+            const filtered = list.filter(w => w.id !== id);
+            if (filtered.length === list.length) return;
+            
+            const ok = await tosUpload(key, Buffer.from(JSON.stringify(filtered)), 'application/json');
+            if (ok) {
+                const check = await tosLoadCommunity();
+                if (Array.isArray(check) && !check.some(w => w.id === id)) return;
+            }
+        } catch (err) {
+            console.error(`[TOS] RemoveFromCommunity attempt ${attempt} failed:`, err.message);
         }
-        await new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 200)));
+        await new Promise((r) => setTimeout(r, 200 + Math.floor(Math.random() * 300)));
     }
 }
 
