@@ -53,7 +53,7 @@ async function getWorkflowShares(workflowId) {
     return data || [];
 }
 
-export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generations
+export const maxDuration = 300; // Vercel Pro: allow up to 5min for long generations (Build: 2026-06-17-1710)
 
 const store = global._mf_workflows ?? (global._mf_workflows = new Map());
 const runStore = global._mf_runs ?? (global._mf_runs = new Map());
