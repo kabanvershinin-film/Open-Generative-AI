@@ -1721,6 +1721,66 @@ export async function GET(request, { params }) {
         }
     }
 
+    // GET /api/workflow/debug-admin-all — lists ALL workflows directly from files (bypass index)
+    if (path[0] === 'debug-admin-all') {
+        const user = await getUserForGallery(request);
+        if (!isAdminUser(user)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        
+        try {
+            const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+            const date = iso.slice(0, 8);
+            const datetime = iso;
+            const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+            
+            let keys = [];
+            let continuationToken = '';
+            do {
+                const query = `list-type=2&prefix=workflows/&max-keys=1000${continuationToken ? `&continuation-token=${encodeURIComponent(continuationToken)}` : ''}`;
+                const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
+                const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
+                const canonical = `GET\n/\n${query}\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
+                const scope = `${date}/${TOS_REGION}/tos/request`;
+                const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+                const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
+                const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
+                const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+
+                const r = await fetch(`https://${host}/?${query}`, {
+                    headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime }
+                });
+                const xml = await r.text();
+                const batch = xml.match(/<Key>workflows\/wf_[^<]+.json<\/Key>/g)?.map(k => k.replace(/<\/?Key>/g, '')) || [];
+                keys = [...keys, ...batch];
+                const nextTokenMatch = xml.match(/<NextContinuationToken>([^<]+)<\/NextContinuationToken>/);
+                continuationToken = nextTokenMatch ? nextTokenMatch[1] : '';
+            } while (continuationToken);
+
+            // Fetch metadata for the last 50 workflows (to keep it fast)
+            const recentKeys = keys.slice(-50).reverse();
+            const results = [];
+            for (const key of recentKeys) {
+                const wf = await tosFetchJson(key);
+                if (wf) {
+                    results.push({
+                        id: key.replace('workflows/', '').replace('.json', ''),
+                        name: wf.name || 'Untitled',
+                        owner_id: wf.owner_id || null,
+                        updated_at: wf.updated_at || 'unknown',
+                        nodes_count: wf.nodes?.length || 0
+                    });
+                }
+            }
+
+            return NextResponse.json({ 
+                total_files_in_tos: keys.length,
+                showing_recent: results.length,
+                workflows: results 
+            });
+        } catch (e) {
+            return NextResponse.json({ error: e.message }, { status: 500 });
+        }
+    }
+
     // GET /api/workflow/debug-tos-restore — attempts to re-index all workflows found in TOS
     if (path[0] === 'debug-tos-restore') {
         const user = await getUserForGallery(request);
