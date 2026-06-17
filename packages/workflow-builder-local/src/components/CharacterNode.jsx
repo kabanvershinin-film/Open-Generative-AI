@@ -24,6 +24,14 @@ function saveLibrary(items) {
   } catch {}
 }
 
+const toAssetUri = (val) => {
+  const s = String(val || "").trim();
+  if (!s) return "";
+  if (s.startsWith("asset://")) return s;
+  if (s.startsWith("asset-")) return `asset://${s}`;
+  return s;
+};
+
 // "Персонаж" — an input node that carries a face/character reference (a public
 // image URL or an asset://… URI). Its output feeds the Seedance video node's
 // face_asset, so the generated video keeps the same face.
@@ -70,7 +78,7 @@ const CharacterNode = ({ id, data, selected }) => {
 
   // The reference that actually goes downstream: an asset:// URI takes priority,
   // otherwise the uploaded photo's public URL.
-  const faceValue = (assetUri.trim() || photoUrl || "").trim();
+  const faceValue = toAssetUri(assetUri.trim() || photoUrl || "").trim();
   const isAsset = faceValue.startsWith("asset://");
 
   // Propagate the value to the parent (echo-suppressed to avoid the React #185
@@ -135,12 +143,13 @@ const CharacterNode = ({ id, data, selected }) => {
   };
 
   const pickFromLibrary = (face) => {
-    if (String(face.assetUri || "").startsWith("asset://")) {
-      setAssetUri(face.assetUri);
+    const uri = toAssetUri(face.assetUri || "");
+    if (uri.startsWith("asset://")) {
+      setAssetUri(uri);
       setPhotoUrl(face.thumbnail || "");
       setTab("uri");
     } else {
-      setPhotoUrl(face.assetUri || face.thumbnail || "");
+      setPhotoUrl(uri || face.thumbnail || "");
       setAssetUri("");
       setTab("photo");
     }
@@ -152,14 +161,15 @@ const CharacterNode = ({ id, data, selected }) => {
       toast.error("Сначала выберите фото или Asset URI");
       return;
     }
+    const finalUri = toAssetUri(faceValue);
     const item = {
       id: Date.now().toString(),
-      name: name || faceValue.replace(/^asset:\/\//, "").slice(0, 16),
-      assetUri: faceValue,
+      name: name || finalUri.replace(/^asset:\/\//, "").slice(0, 16),
+      assetUri: finalUri,
       thumbnail: photoUrl || null,
       addedAt: Date.now(),
     };
-    const next = [item, ...library.filter((f) => f.assetUri !== faceValue)];
+    const next = [item, ...library.filter((f) => f.assetUri !== finalUri)];
     saveLibrary(next);
     setLibrary(next);
     toast.success("Сохранено в библиотеку");
