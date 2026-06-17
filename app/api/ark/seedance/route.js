@@ -93,7 +93,7 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
   const hasRefMedia = videos.length > 0 || audios.length > 0;
   const multiImage  = images.length > 1;
   const hasFace     = !!face_asset;
-  const promptHasRef = prompt && prompt.includes('@фото');
+  const promptHasRef = prompt && (prompt.includes('@фото') || prompt.includes('图片') || prompt.includes('视频') || prompt.includes('音频'));
   const isT2V = is_i2v === false;
 
   images.forEach((u) => {

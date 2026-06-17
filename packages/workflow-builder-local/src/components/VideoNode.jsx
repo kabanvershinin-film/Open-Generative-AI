@@ -174,6 +174,12 @@ const VideoGeneration = ({ id, data, selected }) => {
   };
 
   useEffect(() => {
+    if (properties) {
+      addFormValuesInTaskData(properties);
+    }
+  }, [data.formValues, properties]);
+
+  useEffect(() => {
     setLoading(1);
     if (properties) {
       addFormValuesInTaskData(properties);
@@ -338,48 +344,51 @@ const VideoGeneration = ({ id, data, selected }) => {
     const edges = getEdges ? getEdges() : [];
 
     // Gather all character nodes and images connected to this node
-    const findConnectedAssets = (nodeId, visited = new Set()) => {
-      if (visited.has(nodeId)) return { faces: [], images: [], videos: [], audios: [] };
-      visited.add(nodeId);
-      const incoming = edges.filter(e => e.target === nodeId);
-      let assets = { faces: [], images: [], videos: [], audios: [] };
+    // MUST match the order logic in SeedancePromptNode.jsx so 图片1, 图片2, etc. refer to the right things.
+    const findConnectedAssets = () => {
+      const incoming = edges.filter(e => e.target === id);
+      const assets = { faces: [], images: [], videos: [], audios: [] };
+      const seen = new Set();
       
-      incoming.forEach(edge => {
-        const source = nodes.find(n => n.id === edge.source);
-        if (!source) return;
+      const processSource = (sourceId) => {
+        if (seen.has(sourceId)) return;
+        seen.add(sourceId);
+        const sourceNode = nodes.find(n => n.id === sourceId);
+        if (!sourceNode) return;
         
-        if (source.type === "characterNode") {
-          const fv = source.data?.formValues || {};
-          const rawAsset = fv.face_asset || source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+        if (sourceNode.type === "characterNode") {
+          const fv = sourceNode.data?.formValues || {};
+          const rawAsset = fv.face_asset || sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           const asset = toAssetUri(rawAsset);
           if (asset) assets.faces.push(asset);
-          // Add character photo as a reference image so prompt tags like 图片1 work
           if (fv.character_photo) assets.images.push(fv.character_photo);
-        } else if (source.type === "imageNode" || source.type === "uploadNode") {
-          const url = source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+        } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
+          const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           if (url) assets.images.push(url);
-        } else if (source.type === "videoNode") {
-          const url = source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+        } else if (sourceNode.type === "videoNode") {
+          const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           if (url) assets.videos.push(url);
-        } else if (source.type === "audioNode") {
-          const url = source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+        } else if (sourceNode.type === "audioNode") {
+          const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           if (url) assets.audios.push(url);
-        } else if (["concatNode", "seedancePromptNode"].includes(source.type)) {
-          const sub = findConnectedAssets(source.id, visited);
-          assets.faces = [...assets.faces, ...sub.faces];
-          assets.images = [...assets.images, ...sub.images];
-          assets.videos = [...assets.videos, ...sub.videos];
-          assets.audios = [...assets.audios, ...sub.audios];
+        } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
+          // For utility nodes, we look at THEIR incoming edges
+          const subEdges = edges.filter(e => e.target === sourceId);
+          subEdges.forEach(se => processSource(se.source));
         }
-      });
+      };
+
+      incoming.forEach(edge => processSource(edge.source));
       return assets;
     };
 
-    const allAssets = findConnectedAssets(id);
-    const uniqueFaces = Array.from(new Set(allAssets.faces));
+    const allAssets = findConnectedAssets();
+    const uniqueFaces = Array.from(new Set(allAssets.faces)).filter(f => f.startsWith("asset://"));
     const uniqueImages = Array.from(new Set(allAssets.images));
     const uniqueVideos = Array.from(new Set(allAssets.videos));
     const uniqueAudios = Array.from(new Set(allAssets.audios));
+
+    console.log('[VideoNode] Connected assets found:', { uniqueFaces, uniqueImages, uniqueVideos, uniqueAudios });
 
     if (uniqueFaces.length > 0 || uniqueImages.length > 0) {
       toast(`Использую: ${uniqueFaces.length} лиц, ${uniqueImages.length} фото`, { icon: "🎨" });
@@ -388,13 +397,15 @@ const VideoGeneration = ({ id, data, selected }) => {
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
     
-    const faceAssetPayload = uniqueFaces.length > 1 ? uniqueFaces : (uniqueFaces[0] || src.face_asset || undefined);
+    // Ark handles face_asset separately for trusted assets.
+    // Plain images should go in image_url/image_urls.
+    const faceAssetPayload = uniqueFaces.length > 0 ? (uniqueFaces.length > 1 ? uniqueFaces : uniqueFaces[0]) : undefined;
 
     const body = {
       fast,
       prompt: src.prompt || "",
       image_url: uniqueImages[0] || src.image_url || undefined,
-      image_urls: uniqueImages.length > 1 ? uniqueImages.slice(1) : (Array.isArray(src.images_list) ? src.images_list : undefined),
+      image_urls: uniqueImages.length > 1 ? uniqueImages.slice(1) : undefined,
       video_url: uniqueVideos[0] || src.video_url || undefined,
       video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
       audio_url: uniqueAudios[0] || src.audio_url || undefined,
@@ -404,6 +415,8 @@ const VideoGeneration = ({ id, data, selected }) => {
       duration: src.duration || undefined,
       face_asset: faceAssetPayload,
     };
+    
+    console.log('[VideoNode] Submitting to Ark:', body);
 
     // Step 1: submit — fast, just creates the Ark task and returns a taskId.
     let submit;

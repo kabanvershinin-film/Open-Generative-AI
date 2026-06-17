@@ -1943,6 +1943,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       ...node.data,
       nodeSchemas,
       onDataChange,
+      reactFlowInstance: { getNodes, getEdges },
       setFormValues: (updater) => {
         setNodes((nds) => nds.map((n) => {
           if (n.id === node.id) {
