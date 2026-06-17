@@ -1544,6 +1544,8 @@ export default function ImageStudio({
   );
 
   const handleGenerate = () => {
+    if (generating) return;
+
     if (imageMode) {
       if (uploadedImageUrls.length === 0) {
         alert("Пожалуйста, сначала загрузите референсное изображение.");
@@ -2377,7 +2379,12 @@ export default function ImageStudio({
             <button
               type="button"
               onClick={handleGenerate}
-              className="bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10"
+              disabled={generating}
+              className={`bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10 ${
+                generating 
+                  ? "opacity-50 cursor-not-allowed" 
+                  : "hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98]"
+              }`}
             >
               {generating ? (
                 <>
