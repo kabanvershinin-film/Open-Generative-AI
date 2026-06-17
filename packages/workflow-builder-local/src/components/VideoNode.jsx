@@ -343,11 +343,9 @@ const VideoGeneration = ({ id, data, selected }) => {
     const nodes = getNodes ? getNodes() : [];
     const edges = getEdges ? getEdges() : [];
 
-    // Gather all character nodes and images connected to this node
-    // MUST match the order logic in SeedancePromptNode.jsx so 图片1, 图片2, etc. refer to the right things.
     const findConnectedAssets = () => {
       const incoming = edges.filter(e => e.target === id);
-      const assets = { images: [], videos: [], audios: [] };
+      const assets = { images: [], videos: [], audios: [], faceAssets: [] };
       const seen = new Set();
       
       const processSource = (sourceId) => {
@@ -361,19 +359,10 @@ const VideoGeneration = ({ id, data, selected }) => {
           const rawAsset = fv.face_asset || sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           const asset = toAssetUri(rawAsset);
           
-          // Always use the character_photo (HTTP URL) as the reference image.
-          // Using asset:// in image_url causes "invalid_image_url" validation error in Ark.
-          if (fv.character_photo) {
-            assets.images.push({
-              url: fv.character_photo,
-              face_asset: asset || undefined
-            });
-          } else if (asset) {
-            // If no photo, but we have an asset, we still need to pass it.
-            // But Seedance 2.0 requires a visual image for the face_asset to work.
-            assets.images.push({
-              url: "", // This might be an issue, but we don't have a photo
-              face_asset: asset
+          if (asset) {
+            assets.faceAssets.push({
+              uri: asset,
+              thumbnail: fv.character_photo || null
             });
           }
         } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
@@ -386,7 +375,6 @@ const VideoGeneration = ({ id, data, selected }) => {
           const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           if (url) assets.audios.push(url);
         } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
-          // For utility nodes, we look at THEIR incoming edges
           const subEdges = edges.filter(e => e.target === sourceId);
           subEdges.forEach(se => processSource(se.source));
         }
@@ -397,54 +385,75 @@ const VideoGeneration = ({ id, data, selected }) => {
     };
 
     const allAssets = findConnectedAssets();
-    const uniqueImages = allAssets.images;
+    const connectedImages = allAssets.images;
+    const connectedFaceAssets = allAssets.faceAssets;
     const uniqueVideos = Array.from(new Set(allAssets.videos));
     const uniqueAudios = Array.from(new Set(allAssets.audios));
-    const facesFound = uniqueImages.filter(img => img.face_asset).length;
 
-    console.log('[VideoNode] Connected assets found:', { facesFound, imageCount: uniqueImages.length, uniqueVideos, uniqueAudios });
-
-    if (facesFound > 0 || uniqueImages.length > 0) {
-      toast(`Использую: ${facesFound} лиц, ${uniqueImages.length} фото`, { icon: "🎨" });
-    }
+    console.log('[VideoNode] Connected assets found:', { 
+      faceCount: connectedFaceAssets.length, 
+      imageCount: connectedImages.length, 
+      uniqueVideos, 
+      uniqueAudios 
+    });
 
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
     
-    // In Seedance 2.0, character (trusted asset) MUST be 图片1 to be reliably recognized.
-    // We prioritize uniqueImages that have a face_asset.
+    // Construct final images list for Seedance 2.0
     let finalImages = [];
-    const characterImages = uniqueImages.filter(img => img.face_asset);
-    const nonCharacterImages = uniqueImages.filter(img => !img.face_asset);
     
-    // 1. Characters first (图片1, 图片2...)
-    finalImages.push(...characterImages);
+    // If we have a face asset, we want to apply it to an image.
+    if (connectedFaceAssets.length > 0) {
+      const primaryFace = connectedFaceAssets[0];
+      
+      // If there's a connected image (e.g. from an uploadNode), use it as 图片1 and attach the face.
+      if (connectedImages.length > 0) {
+        finalImages.push({
+          ...connectedImages[0],
+          face_asset: primaryFace.uri
+        });
+        // Add other connected images
+        finalImages.push(...connectedImages.slice(1));
+      } 
+      // Otherwise, use the character's own reference photo (thumbnail) as 图片1.
+      else if (primaryFace.thumbnail) {
+        finalImages.push({
+          url: primaryFace.thumbnail,
+          face_asset: primaryFace.uri
+        });
+      }
+      // Last resort: just the asset URI (might fail if Ark needs a visual URL)
+      else {
+        finalImages.push({
+          url: primaryFace.uri,
+          face_asset: primaryFace.uri
+        });
+      }
+    } else {
+      // No face assets, just use connected images
+      finalImages.push(...connectedImages);
+    }
     
-    // 2. Main node image_url (if not already added)
+    // Add main node image_url if not already present
     if (src.image_url) {
       const url = typeof src.image_url === 'string' ? src.image_url : src.image_url.url;
       if (url && !finalImages.some(img => (typeof img === 'string' ? img : img.url) === url)) {
         finalImages.push(typeof src.image_url === 'string' ? { url } : src.image_url);
       }
     }
-    
-    // 3. Other reference images
-    nonCharacterImages.forEach(img => {
-      const url = typeof img === 'string' ? img : img.url;
-      if (url && !finalImages.some(img2 => (typeof img2 === 'string' ? img2 : img2.url) === url)) {
-        finalImages.push(img);
-      }
-    });
+
+    if (finalImages.length > 0) {
+      const facesFound = finalImages.filter(img => img.face_asset).length;
+      toast(`Использую: ${facesFound} лиц, ${finalImages.length} фото`, { icon: "🎨" });
+    }
 
     // Ensure the character tag is present in the prompt if a character is connected.
-    // This avoids "Real Person" safety errors in Ark.
     let finalPrompt = src.prompt || "";
-    if (characterImages.length > 0) {
+    if (finalImages.some(img => img.face_asset)) {
       const tag = "图片1";
       const tagRegex = new RegExp(tag, "i");
       if (!tagRegex.test(finalPrompt)) {
-        // If the prompt contains character names from nodes, we could replace them, 
-        // but for now just appending tag is safer and simpler.
         finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
       }
     }
@@ -461,7 +470,7 @@ const VideoGeneration = ({ id, data, selected }) => {
       resolution: src.resolution || undefined,
       ratio: src.aspect_ratio || src.ratio || undefined,
       duration: src.duration || undefined,
-      face_asset: characterImages[0]?.face_asset || undefined,
+      face_asset: connectedFaceAssets[0]?.uri || undefined,
     };
     
     console.log('[VideoNode] Submitting to Ark:', body);

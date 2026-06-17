@@ -71,9 +71,8 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
   if (audio_url) audios.push(audio_url);
   if (Array.isArray(audio_urls)) audios.push(...audio_urls.filter(Boolean));
 
-  // Single image with no other media → first-frame I2V (no role, per Ark docs).
   // Multiple images or image + video/audio → multimodal reference (role: reference_image).
-  // If face_asset is present (either at top level or per-image), any image MUST be a reference_image.
+  // If face_asset is present, any image MUST be a reference_image.
   const hasRefMedia = videos.length > 0 || audios.length > 0;
   const multiImage  = images.length > 1;
   const hasFaceAsset = !!face_asset;
@@ -83,25 +82,23 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
     const face = typeof u === 'object' ? u.face_asset : null;
     
     const isFirstImage = idx === 0;
+    // face_asset takes priority if provided in the object, otherwise use the global one for the first image.
     const effectiveFace = face || (isFirstImage && typeof face_asset === 'string' ? face_asset : null);
 
     const item = { 
       type: 'image_url', 
-      image_url: { 
-        url,
-        // Some Ark API versions expect face_asset inside image_url
-        ...(effectiveFace ? { face_asset: effectiveFace } : {})
-      } 
+      image_url: { url }
     };
     
-    // Multiple images or image + video/audio → multimodal reference (role: reference_image).
-    // If face_asset is present (either at top level or per-image), any image MUST be a reference_image.
-    if (hasRefMedia || multiImage || hasFaceAsset || effectiveFace) {
+    if (effectiveFace) {
+      // For Trusted Assets in Seedance 2.0, face_asset MUST be at the item level.
+      item.face_asset = effectiveFace;
+      // Mark as reference_image to ensure face_asset is processed.
+      item.role = 'reference_image';
+    } else if (hasRefMedia || multiImage || hasFaceAsset) {
       item.role = 'reference_image';
     }
-    if (effectiveFace) {
-      item.face_asset = effectiveFace; // Also keep it at the top level of the item
-    }
+    
     content.push(item);
   });
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
