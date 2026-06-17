@@ -83,8 +83,8 @@ function FaceThumb({ face, onSelect, onDelete, onUpdateThumb, isAvatar }) {
       )}
       <button
         type="button"
-        onClick={() => onDelete(face.id)}
-        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500/80 text-white text-[9px] hidden group-hover:flex items-center justify-center"
+        onClick={(e) => { e.stopPropagation(); onDelete(face.id); }}
+        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center shadow-sm hover:bg-red-600 transition-all z-10"
         title="Удалить"
       >
         ×

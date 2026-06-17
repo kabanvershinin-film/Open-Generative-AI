@@ -327,8 +327,9 @@ const CharacterNode = ({ id, data, selected }) => {
                   <span className="text-[8px] text-zinc-500 truncate w-12 text-center">{face.name}</span>
                   <button
                     type="button"
-                    onClick={() => deleteFromLibrary(face.id)}
-                    className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] hidden group-hover/lib:flex items-center justify-center"
+                    onClick={(e) => { e.stopPropagation(); deleteFromLibrary(face.id); }}
+                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center shadow-sm hover:bg-red-600 transition-all z-10"
+                    title="Удалить из библиотеки"
                   >
                     ×
                   </button>
