@@ -875,10 +875,10 @@ export default function VideoStudio({
           ? "audio"
           : null;
 
-  // Per-kind label + ordinal for the @reference chip, e.g. @фото1, @видео2, @аудио1.
+  // Per-kind label + ordinal for the @reference chip, e.g. 图片1, 视频2, 音频1.
   const refLabel = (kind, index) => {
-    const word = kind === "image" ? "фото" : kind === "video" ? "видео" : "аудио";
-    return `@${word}${index}`;
+    const word = kind === "image" ? "图片" : kind === "video" ? "视频" : "音频";
+    return `${word}${index}`;
   };
 
   // Compress image before upload to reduce file size and speed up upload
@@ -1801,7 +1801,7 @@ export default function VideoStudio({
   }, [selectedModel, selectedDuration, selectedResolution, refFiles, imageMode, v2vMode, getCurrentModel]);
 
   const promptPlaceholder = isSeedanceArk
-    ? "Используйте @, чтобы ссылаться на загруженные файлы. Напр.: возьми движение из @видео1, создай видео с персонажами из @фото2 и @фото3."
+    ? "Используйте теги, чтобы ссылаться на файлы. Напр.: возьми движение из 视频1, создай видео с персонажами из 图片2 и 图片3."
     : v2vMode
     ? currentModelObj?.imageField
       ? currentModelObj?.promptRequired
@@ -2064,8 +2064,9 @@ export default function VideoStudio({
           {isSeedanceArk && faceAsset && (
             <div className="flex flex-wrap gap-2 px-1 pb-1">
               <div
-                className="group relative flex items-center gap-1.5 h-8 pl-2 pr-2 rounded-lg border text-[11px] font-medium border-purple-500/40 bg-purple-500/10 text-purple-200"
-                title={`Лицо «${faceAsset.name}» привязано к Seedance`}
+                className="group relative flex items-center gap-1.5 h-8 pl-2 pr-2 rounded-lg border text-[11px] font-medium border-purple-500/40 bg-purple-500/10 text-purple-200 cursor-pointer hover:border-purple-500/80 transition-all"
+                title={`Лицо «${faceAsset.name}» привязано к Seedance. Кликните, чтобы добавить имя в промпт`}
+                onClick={() => insertRefToken(String(faceAsset.name || "лицо").trim().replace(/\s+/g, "_"))}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -2074,7 +2075,7 @@ export default function VideoStudio({
                 <span className="whitespace-nowrap max-w-[140px] truncate">{faceAsset.name}</span>
                 <button
                   type="button"
-                  onClick={() => setFaceAsset(null)}
+                  onClick={(e) => { e.stopPropagation(); setFaceAsset(null); }}
                   className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
                   title="Убрать лицо"
                 >
@@ -2098,7 +2099,7 @@ export default function VideoStudio({
                     <div
                       key={f.id}
                       className={`group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border text-[11px] font-medium transition-all ${f.uploading ? "border-white/10 bg-white/5 text-white/40" : "border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer"}`}
-                      title={f.uploading ? `${f.name} — загрузка ${f.progress}%` : `${f.name} — вставить ${label} в запрос`}
+                      title={f.uploading ? `${f.name} — загрузка ${f.progress}%` : `${f.name} — вставить ${label} в промпт`}
                       onClick={() => !f.uploading && insertRefToken(label)}
                     >
                       {f.kind === "image" && f.url ? (
@@ -2831,7 +2832,7 @@ export default function VideoStudio({
         onClose={() => setFacePickOpen(false)}
         onSelect={(assetUri, name) => {
           setFaceAsset({ uri: assetUri, name });
-          insertRefToken("@" + String(name || "лицо").trim().replace(/\s+/g, "_"));
+          insertRefToken(String(name || "лицо").trim().replace(/\s+/g, "_"));
         }}
         onRegisterNew={() => setFaceRegOpen(true)}
       />
@@ -2842,7 +2843,7 @@ export default function VideoStudio({
         onClose={() => setFaceRegOpen(false)}
         onRegistered={(assetUri, displayName, photo) => {
           setFaceAsset({ uri: assetUri, name: displayName, thumbnail: photo || null });
-          insertRefToken("@" + String(displayName || "лицо").trim().replace(/\s+/g, "_"));
+          insertRefToken(String(displayName || "лицо").trim().replace(/\s+/g, "_"));
         }}
       />
     </div>
