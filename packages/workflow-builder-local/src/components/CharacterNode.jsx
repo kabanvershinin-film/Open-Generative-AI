@@ -205,14 +205,6 @@ const CharacterNode = ({ id, data, selected }) => {
       </div>
 
       <div className="flex flex-col gap-2.5 p-3">
-        {/* Name */}
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Имя персонажа…"
-          className="h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
-        />
-
         {/* Tabs */}
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -247,7 +239,14 @@ const CharacterNode = ({ id, data, selected }) => {
 
         {/* Tab content */}
         {tab === "photo" ? (
-          uploading ? (
+          <div className="flex flex-col gap-2.5">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Имя персонажа…"
+              className="h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+            />
+            {uploading ? (
             <div className="flex flex-col gap-1.5 py-2">
               <span className="text-[11px] text-zinc-400">Загрузка… {progress}%</span>
               <div className="w-full bg-zinc-800 rounded h-1 overflow-hidden">
@@ -271,9 +270,16 @@ const CharacterNode = ({ id, data, selected }) => {
               <span className="text-[11px]">Загрузить фото лица</span>
               <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
             </label>
-          )
+          )}
+        </div>
         ) : (
           <div className="flex flex-col gap-2.5">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Имя персонажа…"
+              className="h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+            />
             <input
               value={assetUri}
               onChange={(e) => setAssetUri(e.target.value)}
