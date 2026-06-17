@@ -876,9 +876,13 @@ export default function VideoStudio({
           : null;
 
   // Per-kind label + ordinal for the @reference chip, e.g. 图片1, 视频2, 音频1.
+  // Note: faceAsset is always mapped to 图片1 if present.
   const refLabel = (kind, index) => {
     const word = kind === "image" ? "图片" : kind === "video" ? "视频" : "音频";
-    return `${word}${index}`;
+    // If we have a faceAsset, it will be the first image in the payload.
+    // So images from refFiles start from index + (faceAsset ? 1 : 0).
+    const actualIndex = kind === "image" && faceAsset ? index + 1 : index;
+    return `${word}${actualIndex}`;
   };
 
   // Compress image before upload to reduce file size and speed up upload
@@ -2066,7 +2070,7 @@ export default function VideoStudio({
               <div
                 className="group relative flex items-center gap-1.5 h-8 pl-2 pr-2 rounded-lg border text-[11px] font-medium border-purple-500/40 bg-purple-500/10 text-purple-200 cursor-pointer hover:border-purple-500/80 transition-all"
                 title={`Лицо «${faceAsset.name}» привязано к Seedance. Кликните, чтобы добавить в промпт`}
-                onClick={() => insertRefToken("@" + String(faceAsset.name || "лицо").trim().replace(/\s+/g, "_"))}
+                onClick={() => insertRefToken("图片1")}
               >
                 {faceAsset.thumbnail ? (
                   <img src={faceAsset.thumbnail} alt="" className="w-5 h-5 rounded-full object-cover border border-purple-500/30" />
@@ -2836,7 +2840,7 @@ export default function VideoStudio({
         onClose={() => setFacePickOpen(false)}
         onSelect={(assetUri, name, thumb) => {
           setFaceAsset({ uri: assetUri, name, thumbnail: thumb });
-          insertRefToken("@" + String(name || "лицо").trim().replace(/\s+/g, "_"));
+          insertRefToken("图片1");
         }}
         onRegisterNew={() => setFaceRegOpen(true)}
       />
