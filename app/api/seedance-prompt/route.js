@@ -62,7 +62,7 @@ export async function POST(request) {
         try {
             // Проверим, доступен ли MEMEFAST
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // Увеличили таймаут до 30 секунд
             const res = await fetch(`${MEMEFAST}/v1/chat/completions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
