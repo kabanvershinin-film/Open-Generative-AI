@@ -16,11 +16,6 @@ var _utility = require("./utility");
 var _FaceRegistrationDialog = _interopRequireDefault(require("./FaceRegistrationDialog"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
-function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
-function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
@@ -216,7 +211,7 @@ var CharacterNode = function CharacterNode(_ref) {
       setAssetUri("");
       setTab("photo");
     }
-    if (face.name && !name) setName(face.name);
+    if (face.name) setName(face.name);
   };
   var saveToLibrary = function saveToLibrary() {
     if (!faceValue) {
@@ -240,15 +235,6 @@ var CharacterNode = function CharacterNode(_ref) {
   var deleteFromLibrary = function deleteFromLibrary(libId) {
     var next = library.filter(function (f) {
       return f.id !== libId;
-    });
-    saveLibrary(next);
-    setLibrary(next);
-  };
-  var updateLibraryThumb = function updateLibraryThumb(id, thumb) {
-    var next = library.map(function (f) {
-      return f.id === id ? _objectSpread(_objectSpread({}, f), {}, {
-        thumbnail: thumb
-      }) : f;
     });
     saveLibrary(next);
     setLibrary(next);
@@ -377,28 +363,13 @@ var CharacterNode = function CharacterNode(_ref) {
     return /*#__PURE__*/_react["default"].createElement("div", {
       key: face.id,
       className: "relative group/lib flex flex-col items-center gap-0.5"
-    }, /*#__PURE__*/_react["default"].createElement("input", {
-      id: "thumb-upload-".concat(face.id),
-      type: "file",
-      accept: "image/*",
-      className: "hidden",
-      onChange: function onChange(e) {
-        var _e$target$files2;
-        var file = (_e$target$files2 = e.target.files) === null || _e$target$files2 === void 0 ? void 0 : _e$target$files2[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function (ev) {
-          return updateLibraryThumb(face.id, ev.target.result);
-        };
-        reader.readAsDataURL(file);
-      }
-    }), /*#__PURE__*/_react["default"].createElement("button", {
+    }, /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
       onClick: function onClick() {
         return pickFromLibrary(face);
       },
       title: face.name,
-      className: "w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-zinc-800 relative ".concat(faceValue && faceValue === face.assetUri ? "border-purple-500" : "border-zinc-800 hover:border-purple-500/50")
+      className: "w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-zinc-800 relative ".concat(faceValue && faceValue === face.assetUri ? "border-purple-500 ring-1 ring-purple-500/30" : "border-zinc-800 hover:border-purple-500/50")
     }, face.thumbnail ? /*#__PURE__*/_react["default"].createElement("img", {
       src: face.thumbnail,
       alt: face.name,
@@ -406,18 +377,7 @@ var CharacterNode = function CharacterNode(_ref) {
     }) : /*#__PURE__*/_react["default"].createElement(_io.IoPersonCircleOutline, {
       size: 22,
       className: "text-purple-300"
-    }), /*#__PURE__*/_react["default"].createElement("div", {
-      onClick: function onClick(e) {
-        var _document$getElementB;
-        e.stopPropagation();
-        (_document$getElementB = document.getElementById("thumb-upload-".concat(face.id))) === null || _document$getElementB === void 0 || _document$getElementB.click();
-      },
-      className: "absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/lib:opacity-100 transition-opacity cursor-pointer",
-      title: "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u043F\u0440\u0435\u0432\u044C\u044E"
-    }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
-      size: 14,
-      className: "text-white"
-    }))), /*#__PURE__*/_react["default"].createElement("span", {
+    })), /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-[8px] text-zinc-500 truncate w-12 text-center"
     }, face.name), /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
