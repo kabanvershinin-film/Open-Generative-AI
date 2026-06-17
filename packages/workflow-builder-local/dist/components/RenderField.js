@@ -15,15 +15,15 @@ var _AudioPlayer = _interopRequireDefault(require("./AudioPlayer"));
 var _io = require("react-icons/io5");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
-function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -109,6 +109,38 @@ var RenderField = function RenderField(_ref) {
   var isAudioField = meta.field === 'audio';
   var value = (_ref2 = (_formValues$fieldName = formValues[fieldName]) !== null && _formValues$fieldName !== void 0 ? _formValues$fieldName : meta["default"]) !== null && _ref2 !== void 0 ? _ref2 : "";
   var isRequired = data.required && data.required.includes(fieldName);
+
+  // Custom Character Preview for Video/Agent nodes
+  if (fieldName === 'face_asset' && formValues.face_thumbnail) {
+    return /*#__PURE__*/_react["default"].createElement("div", {
+      key: fieldName,
+      className: "flex flex-col gap-2 mt-2"
+    }, /*#__PURE__*/_react["default"].createElement("label", {
+      className: "text-[10px] font-bold text-zinc-500 text-start px-1 mb-1 uppercase tracking-wider"
+    }, "\u041F\u0435\u0440\u0441\u043E\u043D\u0430\u0436"), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "relative group/char-preview w-24 h-24 rounded-xl overflow-hidden border border-purple-500/30 bg-black shadow-lg shadow-purple-500/10"
+    }, /*#__PURE__*/_react["default"].createElement("img", {
+      src: formValues.face_thumbnail,
+      alt: "Character",
+      className: "w-full h-full object-cover"
+    }), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent pointer-events-none"
+    }), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "absolute bottom-1 left-0 right-0 text-[8px] text-white font-bold text-center uppercase tracking-tighter"
+    }, "\u0410\u043A\u0442\u0438\u0432\u0435\u043D"), /*#__PURE__*/_react["default"].createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        setFormValues(function (prev) {
+          return _objectSpread(_objectSpread({}, prev), {}, {
+            face_asset: null,
+            face_thumbnail: null
+          });
+        });
+      },
+      className: "absolute top-1.5 right-1.5 bg-black/80 hover:bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover/char-preview:opacity-100 transition-opacity z-10"
+    }, "\xD7")));
+  }
+  if (fieldName === 'face_thumbnail') return null;
   var label = /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-[10px] font-bold text-zinc-500 text-start px-1 mb-1"
   }, translateUi(meta.title || fieldName), isRequired && /*#__PURE__*/_react["default"].createElement("span", {

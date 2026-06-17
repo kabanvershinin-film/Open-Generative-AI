@@ -62,6 +62,35 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
   const isAudioField = meta.field === 'audio';
   const value = formValues[fieldName] ?? meta.default ?? "";
   const isRequired = data.required && data.required.includes(fieldName);
+  
+  // Custom Character Preview for Video/Agent nodes
+  if (fieldName === 'face_asset' && formValues.face_thumbnail) {
+    return (
+      <div key={fieldName} className="flex flex-col gap-2 mt-2">
+        <label className="text-[10px] font-bold text-zinc-500 text-start px-1 mb-1 uppercase tracking-wider">
+          Персонаж
+        </label>
+        <div className="relative group/char-preview w-24 h-24 rounded-xl overflow-hidden border border-purple-500/30 bg-black shadow-lg shadow-purple-500/10">
+          <img src={formValues.face_thumbnail} alt="Character" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent pointer-events-none" />
+          <div className="absolute bottom-1 left-0 right-0 text-[8px] text-white font-bold text-center uppercase tracking-tighter">
+            Активен
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setFormValues(prev => ({ ...prev, face_asset: null, face_thumbnail: null }));
+            }}
+            className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover/char-preview:opacity-100 transition-opacity z-10"
+          >
+            ×
+          </button>
+        </div>
+      </div>
+    );
+  }
+  if (fieldName === 'face_thumbnail') return null;
+
   const label = (
     <label className="text-[10px] font-bold text-zinc-500 text-start px-1 mb-1">
       {translateUi(meta.title || fieldName)}
