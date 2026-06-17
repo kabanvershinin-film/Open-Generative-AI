@@ -254,7 +254,7 @@ const CharacterNode = ({ id, data, selected }) => {
                 <div className="bg-purple-500 h-full transition-all" style={{ width: `${progress}%` }} />
               </div>
             </div>
-          ) : photoUrl && !isAsset ? (
+          ) : photoUrl ? (
             <div className="relative group/photo rounded-lg overflow-hidden border border-zinc-800">
               <img src={photoUrl} alt="face" className="w-full h-32 object-cover" />
               <button
