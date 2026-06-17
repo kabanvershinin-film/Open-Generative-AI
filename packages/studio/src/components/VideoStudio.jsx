@@ -2066,7 +2066,7 @@ export default function VideoStudio({
               <div
                 className="group relative flex items-center gap-1.5 h-8 pl-2 pr-2 rounded-lg border text-[11px] font-medium border-purple-500/40 bg-purple-500/10 text-purple-200 cursor-pointer hover:border-purple-500/80 transition-all"
                 title={`Лицо «${faceAsset.name}» привязано к Seedance. Кликните, чтобы добавить в промпт`}
-                onClick={() => insertRefToken(String(faceAsset.name || "лицо").trim().replace(/\s+/g, "_"))}
+                onClick={() => insertRefToken("@" + String(faceAsset.name || "лицо").trim().replace(/\s+/g, "_"))}
               >
                 {faceAsset.thumbnail ? (
                   <img src={faceAsset.thumbnail} alt="" className="w-5 h-5 rounded-full object-cover border border-purple-500/30" />
@@ -2836,7 +2836,7 @@ export default function VideoStudio({
         onClose={() => setFacePickOpen(false)}
         onSelect={(assetUri, name, thumb) => {
           setFaceAsset({ uri: assetUri, name, thumbnail: thumb });
-          insertRefToken(String(name || "лицо").trim().replace(/\s+/g, "_"));
+          insertRefToken("@" + String(name || "лицо").trim().replace(/\s+/g, "_"));
         }}
         onRegisterNew={() => setFaceRegOpen(true)}
       />
