@@ -20,7 +20,7 @@ import { MdLockOutline, MdOutlineZoomOutMap, MdSave } from "react-icons/md";
 import { LuLayoutTemplate, LuMousePointer2 } from "react-icons/lu";
 import { FaAngleDown, FaAngleLeft, FaCheck, FaPlay, FaPlus, FaRegHand, FaToolbox, FaUpload } from "react-icons/fa6";
 import { FaRegEdit, FaTelegramPlane } from "react-icons/fa";
-import { IoDuplicateOutline, IoImageOutline, IoVideocamOutline } from "react-icons/io5";
+import { IoDuplicateOutline, IoImageOutline, IoVideocamOutline, IoPersonCircleOutline } from "react-icons/io5";
 import { Toaster, toast } from "react-hot-toast";
 import { FiSun, FiMoon } from "react-icons/fi";
 import axios from "axios";
@@ -2924,38 +2924,86 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 </div>
               );
             })()}
-            {/* Face reference badge — shown when a CharacterNode feeds this video node */}
-            {(selectedNode?.type === "videoNode" || selectedNode?.type === "skylarkNode") && selectedNode?.data?.formValues?.face_asset && (() => {
-              const fa = String(selectedNode.data.formValues.face_asset);
-              const isAsset = fa.startsWith("asset://");
-              const thumb = selectedNode.data.formValues.face_thumbnail;
-              // Prefer the stored thumbnail; fall back to the asset value itself
-              // when it's a plain image URL.
-              const photo = thumb || (!isAsset ? fa : null);
+            {/* Face reference gallery — show all CharacterNodes feeding into this node */}
+            {(selectedNode?.type === "videoNode" || selectedNode?.type === "skylarkNode" || selectedNode?.type === "seedancePromptNode") && (() => {
+              // Gather all character nodes that are connected to this node (directly or through utility nodes)
+              const findCharacters = (nodeId, visited = new Set()) => {
+                if (visited.has(nodeId)) return [];
+                visited.add(nodeId);
+                
+                const incomingEdges = edges.filter(e => e.target === nodeId);
+                let chars = [];
+                
+                incomingEdges.forEach(edge => {
+                  const sourceNode = nodes.find(n => n.id === edge.source);
+                  if (sourceNode) {
+                    if (sourceNode.type === "characterNode") {
+                      chars.push(sourceNode);
+                    } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
+                      chars = [...chars, ...findCharacters(sourceNode.id, visited)];
+                    }
+                  }
+                });
+                return chars;
+              };
+
+              const connectedChars = findCharacters(selectedNode.id);
+              if (!connectedChars.length) return null;
+
+              // Deduplicate by asset/photo to avoid showing the same character twice if multiple paths exist
+              const uniqueChars = [];
+              const seen = new Set();
+              connectedChars.forEach(c => {
+                const fv = c.data?.formValues || {};
+                const id = fv.face_asset || fv.character_photo || c.id;
+                if (!seen.has(id)) {
+                  seen.add(id);
+                  uniqueChars.push({
+                    nodeId: c.id,
+                    name: fv.character_name || "Персонаж",
+                    asset: fv.face_asset,
+                    photo: fv.character_photo || fv.face_thumbnail || (!String(fv.face_asset).startsWith("asset://") ? fv.face_asset : null)
+                  });
+                }
+              });
+
               return (
                 <div className="px-4 pb-3">
                   <p className="text-[10px] font-semibold text-purple-300 uppercase tracking-wider mb-1.5">
-                    Референс лица
+                    Референсы лиц ({uniqueChars.length})
                   </p>
-                  {photo && (
-                    <div className="rounded-xl overflow-hidden border border-purple-500/30 relative mb-1.5">
-                      <img
-                        src={photo}
-                        alt="face reference"
-                        className="w-full h-28 object-cover object-top"
-                        onError={(e) => { e.target.style.display = 'none'; }}
-                      />
-                      <div className="absolute top-1.5 right-1.5 bg-purple-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">
-                        Face
+                  <div className="grid grid-cols-2 gap-2">
+                    {uniqueChars.map((char, i) => (
+                      <div key={`${char.nodeId}-${i}`} className="flex flex-col gap-1">
+                        <div className="rounded-xl overflow-hidden border border-purple-500/30 relative aspect-[4/3] bg-zinc-900">
+                          {char.photo ? (
+                            <img
+                              src={char.photo}
+                              alt={char.name}
+                              className="w-full h-full object-cover object-top"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-purple-500/50">
+                              <IoPersonCircleOutline size={32} />
+                            </div>
+                          )}
+                          <div className="absolute top-1 right-1 bg-purple-600 text-white text-[7px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">
+                            Face
+                          </div>
+                          <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-sm px-1.5 py-0.5">
+                            <p className="text-[8px] text-white font-medium truncate">{char.name}</p>
+                          </div>
+                        </div>
+                        {char.asset && String(char.asset).startsWith("asset://") && (
+                          <div className="flex items-center gap-1 rounded-md bg-purple-900/50 border border-purple-500/20 px-1.5 py-1">
+                            <div className="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0" />
+                            <span className="text-[7px] font-mono text-purple-200 truncate">{char.asset}</span>
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  )}
-                  {isAsset && (
-                    <div className="flex items-center gap-2 rounded-lg bg-purple-900 border border-purple-500/30 px-2.5 py-2">
-                      <div className="w-4 h-4 rounded-full bg-purple-600 flex-shrink-0" />
-                      <span className="text-[10px] font-mono text-purple-200 truncate">{fa}</span>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
               );
             })()}
