@@ -411,11 +411,49 @@ const VideoGeneration = ({ id, data, selected }) => {
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
     
+    // In Seedance 2.0, character (trusted asset) MUST be 图片1 to be reliably recognized.
+    // We prioritize uniqueImages that have a face_asset.
+    let finalImages = [];
+    const characterImages = uniqueImages.filter(img => img.face_asset);
+    const nonCharacterImages = uniqueImages.filter(img => !img.face_asset);
+    
+    // 1. Characters first (图片1, 图片2...)
+    finalImages.push(...characterImages);
+    
+    // 2. Main node image_url (if not already added)
+    if (src.image_url) {
+      const url = typeof src.image_url === 'string' ? src.image_url : src.image_url.url;
+      if (url && !finalImages.some(img => (typeof img === 'string' ? img : img.url) === url)) {
+        finalImages.push(typeof src.image_url === 'string' ? { url } : src.image_url);
+      }
+    }
+    
+    // 3. Other reference images
+    nonCharacterImages.forEach(img => {
+      const url = typeof img === 'string' ? img : img.url;
+      if (url && !finalImages.some(img2 => (typeof img2 === 'string' ? img2 : img2.url) === url)) {
+        finalImages.push(img);
+      }
+    });
+
+    // Ensure the character tag is present in the prompt if a character is connected.
+    // This avoids "Real Person" safety errors in Ark.
+    let finalPrompt = src.prompt || "";
+    if (characterImages.length > 0) {
+      const tag = "图片1";
+      const tagRegex = new RegExp(tag, "i");
+      if (!tagRegex.test(finalPrompt)) {
+        // If the prompt contains character names from nodes, we could replace them, 
+        // but for now just appending tag is safer and simpler.
+        finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
+      }
+    }
+    
     const body = {
       fast,
-      prompt: src.prompt || "",
-      image_url: uniqueImages[0] || src.image_url || undefined,
-      image_urls: uniqueImages.length > 1 ? uniqueImages.slice(1) : undefined,
+      prompt: finalPrompt,
+      image_url: finalImages[0] || undefined,
+      image_urls: finalImages.length > 1 ? finalImages.slice(1) : undefined,
       video_url: uniqueVideos[0] || src.video_url || undefined,
       video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
       audio_url: uniqueAudios[0] || src.audio_url || undefined,
@@ -423,6 +461,7 @@ const VideoGeneration = ({ id, data, selected }) => {
       resolution: src.resolution || undefined,
       ratio: src.aspect_ratio || src.ratio || undefined,
       duration: src.duration || undefined,
+      face_asset: characterImages[0]?.face_asset || undefined,
     };
     
     console.log('[VideoNode] Submitting to Ark:', body);
