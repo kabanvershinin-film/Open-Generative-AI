@@ -584,12 +584,11 @@ async function generateSeedanceArk(modelInfo, params) {
     let finalImages = [];
     
     // 1. Primary character (if exists) -> Always 图片1
-    // We prioritize the asset URI (asset://) over the thumbnail.
+    // Ark requires a valid HTTP URL in the 'url' field.
+    // We use the uploaded image as base, or the character's thumbnail if no upload.
     if (faceAsset) {
         finalImages.push({ 
-            // Use the uploaded image as visual base if provided, 
-            // otherwise use the asset URI itself.
-            url: uploadedUrl || faceAsset, 
+            url: uploadedUrl || faceThumb || faceAsset, 
             face_asset: faceAsset 
         });
     } else if (uploadedUrl) {
