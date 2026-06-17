@@ -569,7 +569,7 @@ export async function generateI2I(apiKey, params) {
 // After the video is ready, calls /api/upload-file to mirror the Ark CDN URL
 // to TOS for permanent storage (fire-and-forget — falls back to Ark URL).
 async function generateSeedanceArk(modelInfo, params) {
-    const fast = /fast/.test(modelInfo?.apiId || '');
+    const fast = /fast/.test(modelInfo?.apiId || modelInfo?.id || '');
     
     // Ark handles face_asset for trusted assets.
     // We pass the face asset URI in face_asset field, 
@@ -582,6 +582,7 @@ async function generateSeedanceArk(modelInfo, params) {
 
     const body = {
         fast,
+        model: modelInfo?.apiId || modelInfo?.id || undefined,
         is_i2v: params.is_i2v ?? false,
         prompt: params.prompt || '',
         image_url: params.image_url || initialImages[0] || undefined,
