@@ -509,7 +509,19 @@ export default function AdminPanel() {
                             </div>
                         )}
                         <div className="space-y-1">
-                            <div className="text-xs text-white/40">Наценка (коэффициент, напр. 1.5)</div>
+                            <div className="text-xs text-white/40 flex justify-between items-center">
+                                <span>Наценка (коэффициент)</span>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setUserMarkup('1.0')}
+                                        className="text-[10px] bg-white/5 hover:bg-white/10 px-1.5 py-0.5 rounded border border-white/10 transition-colors"
+                                    >1.0 (Без наценки)</button>
+                                    <button 
+                                        onClick={() => setUserMarkup('')}
+                                        className="text-[10px] bg-white/5 hover:bg-white/10 px-1.5 py-0.5 rounded border border-white/10 transition-colors"
+                                    >Сброс</button>
+                                </div>
+                            </div>
                             <input
                                 value={userMarkup}
                                 onChange={e => setUserMarkup(e.target.value)}
