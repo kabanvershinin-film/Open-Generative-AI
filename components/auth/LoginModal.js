@@ -271,9 +271,27 @@ export default function LoginModal() {
                     {/* Legal Footer */}
                     <div className="mt-8 pt-6 border-t border-white/5 space-y-4">
                         <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-[10px] text-white/30">
-                            <a href="/terms" className="hover:text-purple-300 transition-colors">Условия использования</a>
+                            <a 
+                                href="/terms" 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    window.open('/terms', '_blank');
+                                }}
+                                className="hover:text-purple-300 transition-colors cursor-pointer"
+                            >
+                                Условия использования
+                            </a>
                             <span>·</span>
-                            <a href="/privacy" className="hover:text-purple-300 transition-colors">Политика конфиденциальности</a>
+                            <a 
+                                href="/privacy" 
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    window.open('/privacy', '_blank');
+                                }}
+                                className="hover:text-purple-300 transition-colors cursor-pointer"
+                            >
+                                Политика конфиденциальности
+                            </a>
                         </div>
                         
                         <div className="p-3 rounded-2xl bg-white/[0.02] border border-white/5">
