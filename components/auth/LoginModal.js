@@ -85,19 +85,17 @@ export default function LoginModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center p-4">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 overflow-y-auto bg-black/40 backdrop-blur-[1px]">
             {/* Background Image */}
-            <div className="absolute inset-0 overflow-hidden">
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <img
                     src="/auth-bg.png"
-                    className="absolute min-w-full min-h-full object-cover"
+                    className="absolute min-w-full min-h-full object-cover opacity-60"
                     alt="Background"
                 />
             </div>
-            {/* Darker overlay for readability */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px]" />
             
-            <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/40 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 fade-in duration-200 md:translate-x-32">
+            <div className="relative my-auto w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/60 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)] animate-in zoom-in-95 fade-in duration-200 md:translate-x-32 z-10">
                 {/* glow */}
                 <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
@@ -273,10 +271,8 @@ export default function LoginModal() {
                         <div className="flex flex-wrap justify-center gap-x-2 gap-y-1 text-[10px] text-white/30">
                             <a 
                                 href="/terms" 
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    window.open('/terms', '_blank');
-                                }}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="hover:text-purple-300 transition-colors cursor-pointer"
                             >
                                 Условия использования
@@ -284,10 +280,8 @@ export default function LoginModal() {
                             <span>·</span>
                             <a 
                                 href="/privacy" 
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    window.open('/privacy', '_blank');
-                                }}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="hover:text-purple-300 transition-colors cursor-pointer"
                             >
                                 Политика конфиденциальности
