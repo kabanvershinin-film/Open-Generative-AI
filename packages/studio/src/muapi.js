@@ -584,11 +584,11 @@ async function generateSeedanceArk(modelInfo, params) {
     let finalImages = [];
     
     // 1. Primary character (if exists) -> Always 图片1
-    // Ark requires a valid HTTP URL in the 'url' field.
-    // We use the uploaded image as base, or the character's thumbnail if no upload.
+    // The user wants to pass the ASSET URI directly as the URL for Trusted Assets.
     if (faceAsset) {
         finalImages.push({ 
-            url: uploadedUrl || faceThumb || faceAsset, 
+            // Use the asset URI (asset://) as the primary URL if no manual upload is provided.
+            url: uploadedUrl || faceAsset, 
             face_asset: faceAsset 
         });
     } else if (uploadedUrl) {
