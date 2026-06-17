@@ -322,8 +322,21 @@ export default function VideoStudio({
   const [faceAsset, setFaceAsset] = useState(null); // { uri, name } | null
 
   // ── generation / canvas ──
-  const [generating, setGenerating] = useState(false);
-  const [generatingPrompt, setGeneratingPrompt] = useState("");
+  const [activeTasks, setActiveTasks] = useState([]); // Array of { id, prompt, model, bill, status: 'generating'|'done'|'error', url, error }
+  const generating = activeTasks.some(t => t.status === 'generating');
+
+  const addTask = useCallback((task) => {
+    setActiveTasks(prev => [{ ...task, status: 'generating', timestamp: new Date().toISOString() }, ...prev]);
+  }, []);
+
+  const updateTask = useCallback((id, updates) => {
+    setActiveTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  }, []);
+
+  const removeTask = useCallback((id) => {
+    setActiveTasks(prev => prev.filter(t => t.id !== id));
+  }, []);
+
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
   const [copiedPromptId, setCopiedPromptId] = useState(null);
@@ -1268,20 +1281,27 @@ export default function VideoStudio({
     }
 
     // Task still in progress — resume polling.
-    setGenerating(true);
-    setGeneratingPrompt(stored.prompt || "");
+    const tempId = stored.taskId || `recovered_${Date.now()}`;
+    addTask({ id: tempId, prompt: stored.prompt, model: stored.model });
+
     pollArkTask(stored.taskId, stored.bill)
       .then((res) => showResult(res.url, res.id || stored.taskId))
       .catch((e) => {
         if (cancelled) return;
         localStorage.removeItem(ARK_TASK_KEY);
         setGenerateError(e.message?.slice(0, 80) || "Ошибка генерации");
-        setTimeout(() => setGenerateError(null), 4000);
+        updateTask(tempId, { status: 'error', error: e.message });
+        setTimeout(() => {
+          setGenerateError(null);
+          removeTask(tempId);
+        }, 4000);
       })
-      .finally(() => { if (!cancelled) setGenerating(false); });
+      .finally(() => { 
+        if (!cancelled) removeTask(tempId); 
+      });
 
     return () => { cancelled = true; };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addTask, updateTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, persistVideoToGallery, fetchRemoteHistory]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── resume a non-ARK Memefast generation after a tab switch ───────────────
   useEffect(() => {
@@ -1320,8 +1340,8 @@ export default function VideoStudio({
     const alreadyDone = findResult();
     if (alreadyDone) { restore(alreadyDone); return; }
 
-    setGeneratingPrompt(snap.prompt || '');
-    setGenerating(true);
+    const tempId = snap.requestId || `pending_${Date.now()}`;
+    addTask({ id: tempId, prompt: snap.prompt, model: snap.model });
 
     let cancelled = false;
     const intervalId = setInterval(() => {
@@ -1330,28 +1350,26 @@ export default function VideoStudio({
         clearInterval(intervalId);
         const entry = findResult();
         if (entry) restore(entry);
-        if (!cancelled) setGenerating(false);
+        if (!cancelled) removeTask(tempId);
         return;
       }
       if (Date.now() - snap.ts > 10 * 60 * 1000) {
         clearInterval(intervalId);
         try { localStorage.removeItem(PENDING_KEY); } catch {}
-        if (!cancelled) setGenerating(false);
+        if (!cancelled) removeTask(tempId);
       }
     }, 2000);
 
     return () => { cancelled = true; clearInterval(intervalId); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addTask, removeTask, showVideoInCanvas]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── generate ──────────────────────────────────────────────────────────────
   const handleGenerate = useCallback(async () => {
-    if (generating) return;
-
     const currentModel = getCurrentModel();
     const isExtendMode = currentModel?.requiresRequestId;
     const trimmedPrompt = prompt.trim();
 
-    // ── Seedance 2.0 (Ark) multimodal path — isolated from the t2v/i2v/v2v flow ──
+    // Validations
     if (currentModel?.provider === "ark") {
       if (refFiles.some((f) => f.uploading)) {
         alert("Подождите, файлы ещё загружаются.");
@@ -1362,84 +1380,7 @@ export default function VideoStudio({
         alert("Введите запрос или загрузите хотя бы один файл.");
         return;
       }
-      setGenerating(true);
-      setGeneratingPrompt(trimmedPrompt);
-      setGenerateError(null);
-      try {
-        console.log("VideoStudio handleGenerate: faceAsset =", faceAsset);
-        const params = {
-          model: selectedModel,
-          prompt: trimmedPrompt,
-          aspect_ratio: selectedAr,
-          image_urls: readyRefs.filter((f) => f.kind === "image").map((f) => f.url),
-          video_urls: readyRefs.filter((f) => f.kind === "video").map((f) => f.url),
-          audio_urls: readyRefs.filter((f) => f.kind === "audio").map((f) => f.url),
-          face_asset: faceAsset?.uri || undefined,
-          // Persist taskId to localStorage as soon as the ARK task is submitted so
-          // we can resume polling if the user navigates away before it finishes.
-          onTaskId: (taskId, bill) => {
-            try {
-              localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
-                taskId,
-                bill,
-                model: selectedModel,
-                prompt: trimmedPrompt,
-                aspect_ratio: selectedAr,
-                duration: selectedDuration,
-              }));
-            } catch {}
-          },
-        };
-        const durations = getCurrentDurations(selectedModel);
-        if (durations.length > 0) params.duration = selectedDuration;
-        const resolutions = getCurrentResolutions(selectedModel);
-        if (resolutions.length > 0) params.resolution = selectedResolution;
-
-        const isI2V = i2vModels.some((m) => m.id === selectedModel);
-        const res = isI2V
-          ? await generateI2V(apiKey, params)
-          : await generateVideo(apiKey, params);
-        if (!res?.url) throw new Error("No video URL returned by API");
-
-        const genId = res.id || Date.now().toString();
-        if (isMountedRef.current) {
-          // Normal path: component still mounted — update state and clear localStorage.
-          localStorage.removeItem(ARK_TASK_KEY);
-          setLastGenerationId(genId);
-          setLastGenerationModel(selectedModel);
-          const entry = {
-            id: genId, url: res.url, prompt: trimmedPrompt,
-            model: selectedModel, aspect_ratio: selectedAr,
-            duration: selectedDuration, timestamp: new Date().toISOString(),
-          };
-          addToLocalHistory(entry);
-          persistVideoEntryToStorage(entry);
-          showVideoInCanvas(res.url, selectedModel);
-          persistVideoToGallery(entry);
-          if (onGenerationComplete)
-            onGenerationComplete({ url: res.url, model: selectedModel, prompt: trimmedPrompt, type: "video" });
-        } else {
-          // Component unmounted while polling — write result back to localStorage so
-          // the resume effect can show it when the user navigates back.
-          try {
-            const stored = JSON.parse(localStorage.getItem(ARK_TASK_KEY) || '{}');
-            localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
-              ...stored, status: 'done', resultUrl: res.url, genId,
-            }));
-          } catch {}
-        }
-      } catch (e) {
-        localStorage.removeItem(ARK_TASK_KEY);
-        console.error("[VideoStudio]", e);
-        setGenerateError(e.message?.slice(0, 80) || "Ошибка генерации");
-        setTimeout(() => setGenerateError(null), 4000);
-      } finally {
-        setGenerating(false);
-      }
-      return;
-    }
-
-    if (v2vMode) {
+    } else if (v2vMode) {
       if (!uploadedVideoUrl) {
         alert("Пожалуйста, сначала загрузите видео.");
         return;
@@ -1454,9 +1395,7 @@ export default function VideoStudio({
       }
     } else if (isExtendMode) {
       if (!lastGenerationId) {
-        alert(
-          "Генерация Seedance 2.0 не найдена. Сначала создайте видео.",
-        );
+        alert("Генерация Seedance 2.0 не найдена. Сначала создайте видео.");
         return;
       }
     } else if (imageMode) {
@@ -1471,194 +1410,217 @@ export default function VideoStudio({
       }
     }
 
-    setGenerating(true);
-    setGeneratingPrompt(trimmedPrompt);
+    const taskId = `gen_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const taskModel = selectedModel;
+    const taskPrompt = trimmedPrompt;
+    
+    addTask({ 
+      id: taskId, 
+      prompt: taskPrompt, 
+      model: taskModel,
+      aspect_ratio: selectedAr,
+      duration: selectedDuration
+    });
+
     setGenerateError(null);
 
-    const pendingSnap = {
-      requestId: Math.random().toString(36).slice(2, 11),
-      model: selectedModel,
-      prompt: trimmedPrompt,
-      ts: Date.now(),
-    };
-    try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
-    try { localStorage.setItem(PENDING_KEY, JSON.stringify(pendingSnap)); } catch {}
+    // ── Internal async executor ──
+    const execute = async () => {
+      try {
+        // ── Seedance 2.0 (Ark) multimodal path ──
+        if (currentModel?.provider === "ark") {
+          const readyRefs = refFiles.filter((f) => f.url);
+          const params = {
+            model: taskModel,
+            prompt: taskPrompt,
+            aspect_ratio: selectedAr,
+            image_urls: readyRefs.filter((f) => f.kind === "image").map((f) => f.url),
+            video_urls: readyRefs.filter((f) => f.kind === "video").map((f) => f.url),
+            audio_urls: readyRefs.filter((f) => f.kind === "audio").map((f) => f.url),
+            face_asset: faceAsset?.uri || undefined,
+            onTaskId: (arkTaskId, bill) => {
+              updateTask(taskId, { arkTaskId, bill });
+              try {
+                localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
+                  taskId: arkTaskId,
+                  bill,
+                  model: taskModel,
+                  prompt: taskPrompt,
+                  aspect_ratio: selectedAr,
+                  duration: selectedDuration,
+                }));
+              } catch {}
+            },
+          };
+          const durations = getCurrentDurations(taskModel);
+          if (durations.length > 0) params.duration = selectedDuration;
+          const resolutions = getCurrentResolutions(taskModel);
+          if (resolutions.length > 0) params.resolution = selectedResolution;
 
-    let hadError = false;
+          const isI2V = i2vModels.some((m) => m.id === taskModel);
+          const res = isI2V
+            ? await generateI2V(apiKey, params)
+            : await generateVideo(apiKey, params);
+          
+          if (!res?.url) throw new Error("No video URL returned by API");
 
-    try {
-      let res;
+          const genId = res.id || Date.now().toString();
+          localStorage.removeItem(ARK_TASK_KEY);
+          
+          const entry = {
+            id: genId, url: res.url, prompt: taskPrompt,
+            model: taskModel, aspect_ratio: selectedAr,
+            duration: selectedDuration, timestamp: new Date().toISOString(),
+          };
+          
+          if (isMountedRef.current) {
+            setLastGenerationId(genId);
+            setLastGenerationModel(taskModel);
+            addToLocalHistory(entry);
+            persistVideoEntryToStorage(entry);
+            showVideoInCanvas(res.url, taskModel);
+            persistVideoToGallery(entry);
+            if (onGenerationComplete)
+              onGenerationComplete({ url: res.url, model: taskModel, prompt: taskPrompt, type: "video" });
+          }
+          removeTask(taskId);
+          return;
+        }
 
-      if (v2vMode) {
-        // V2V: dedicated processV2V handles single-input tools (e.g. watermark
-        // remover) and motion-control models (which take video + image + prompt)
-        const v2vParams = {
-          model: selectedModel,
-          video_url: uploadedVideoUrl,
+        // ── Non-Ark path ──
+        const pendingSnap = {
+          requestId: taskId,
+          model: taskModel,
+          prompt: taskPrompt,
+          ts: Date.now(),
         };
-        if (currentModel?.imageField && uploadedImageUrl) {
-          v2vParams.image_url = uploadedImageUrl;
-        }
-        if (currentModel?.hasPrompt && trimmedPrompt) {
-          v2vParams.prompt = trimmedPrompt;
-        }
-        res = await processV2V(apiKey, v2vParams);
-        if (!res?.url) throw new Error("No video URL returned by API");
+        try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
+        try { localStorage.setItem(PENDING_KEY, JSON.stringify(pendingSnap)); } catch {}
 
-        const genId = res.id || Date.now().toString();
-        setLastGenerationId(null);
-        setLastGenerationModel(null);
-        const entry = {
-          id: genId,
-          url: res.url,
-          prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
-          model: selectedModel,
-          timestamp: new Date().toISOString(),
-        };
-        addToLocalHistory(entry);
-        persistVideoEntryToStorage(entry);
-        persistVideoToGallery(entry).then(() => {
-          fetchRemoteHistory(); // Refresh remote history after saving to gallery
-        });
-        try {
-          localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
-          localStorage.removeItem(PENDING_KEY);
-        } catch {}
-        showVideoInCanvas(res.url, selectedModel);
-        if (onGenerationComplete)
-          onGenerationComplete({
-            url: res.url,
-            model: selectedModel,
-            prompt: currentModel?.hasPrompt ? trimmedPrompt : "",
-            type: "video",
-          });
-      } else if (imageMode) {
-        const i2vParams = { model: selectedModel, image_url: uploadedImageUrl };
-        if (trimmedPrompt) i2vParams.prompt = trimmedPrompt;
-        i2vParams.aspect_ratio = selectedAr;
-        const i2vModel = i2vModels.find((m) => m.id === selectedModel);
-        if (uploadedEndImageUrl && i2vModel?.lastImageField) {
-          i2vParams.last_image = uploadedEndImageUrl;
-        }
-        const durations = getDurationsForI2VModel(selectedModel);
-        if (durations.length > 0) i2vParams.duration = selectedDuration;
-        const resolutions = getResolutionsForI2VModel(selectedModel);
-        if (resolutions.length > 0) i2vParams.resolution = selectedResolution;
-        if (selectedQuality) i2vParams.quality = selectedQuality;
-        if (selectedMode) i2vParams.mode = selectedMode;
-        if (showEffect && selectedEffect) i2vParams.name = selectedEffect;
-        const i2vModelObj = i2vModels.find((m) => m.id === selectedModel);
-        if (i2vModelObj?.acceptsVideo && uploadedVideoUrl) i2vParams.video_url = uploadedVideoUrl;
-        if (i2vModelObj?.acceptsAudio && uploadedAudioUrl) i2vParams.audio_url = uploadedAudioUrl;
+        let res;
+        if (v2vMode) {
+          const v2vParams = {
+            model: taskModel,
+            video_url: uploadedVideoUrl,
+          };
+          if (currentModel?.imageField && uploadedImageUrl) {
+            v2vParams.image_url = uploadedImageUrl;
+          }
+          if (currentModel?.hasPrompt && taskPrompt) {
+            v2vParams.prompt = taskPrompt;
+          }
+          res = await processV2V(apiKey, v2vParams);
+        } else if (imageMode) {
+          const i2vParams = { model: taskModel, image_url: uploadedImageUrl };
+          if (taskPrompt) i2vParams.prompt = taskPrompt;
+          i2vParams.aspect_ratio = selectedAr;
+          const i2vModel = i2vModels.find((m) => m.id === taskModel);
+          if (uploadedEndImageUrl && i2vModel?.lastImageField) {
+            i2vParams.last_image = uploadedEndImageUrl;
+          }
+          const durations = getDurationsForI2VModel(taskModel);
+          if (durations.length > 0) i2vParams.duration = selectedDuration;
+          const resolutions = getResolutionsForI2VModel(taskModel);
+          if (resolutions.length > 0) i2vParams.resolution = selectedResolution;
+          if (selectedQuality) i2vParams.quality = selectedQuality;
+          if (selectedMode) i2vParams.mode = selectedMode;
+          if (showEffect && selectedEffect) i2vParams.name = selectedEffect;
+          const i2vModelObj = i2vModels.find((m) => m.id === taskModel);
+          if (i2vModelObj?.acceptsVideo && uploadedVideoUrl) i2vParams.video_url = uploadedVideoUrl;
+          if (i2vModelObj?.acceptsAudio && uploadedAudioUrl) i2vParams.audio_url = uploadedAudioUrl;
 
-        res = await generateI2V(apiKey, i2vParams);
-        if (!res?.url) throw new Error("No video URL returned by API");
-
-        const genId = res.id || Date.now().toString();
-        if (selectedModel === "seedance-v2.0-i2v") {
-          setLastGenerationId(genId);
-          setLastGenerationModel(selectedModel);
+          res = await generateI2V(apiKey, i2vParams);
         } else {
-          setLastGenerationId(null);
-          setLastGenerationModel(null);
+          const params = { model: taskModel };
+          if (taskPrompt) params.prompt = taskPrompt;
+          if (isExtendMode) {
+            params.request_id = lastGenerationId;
+          } else {
+            params.aspect_ratio = selectedAr;
+          }
+          const durations = getDurationsForModel(taskModel);
+          if (durations.length > 0) params.duration = selectedDuration;
+          const resolutions = getResolutionsForVideoModel(taskModel);
+          if (resolutions.length > 0) params.resolution = selectedResolution;
+          if (selectedQuality) params.quality = selectedQuality;
+          if (selectedMode) params.mode = selectedMode;
+          if (selectedCharacterOrientation) params.character_orientation = selectedCharacterOrientation;
+          if (selectedKeepOriginalSound) params.keep_original_sound = selectedKeepOriginalSound;
+          const t2vModelObj = t2vModels.find((m) => m.id === taskModel);
+          if (t2vModelObj?.acceptsImage && uploadedImageUrl) params.image_url = uploadedImageUrl;
+          if (t2vModelObj?.acceptsVideo && uploadedVideoUrl) params.video_url = uploadedVideoUrl;
+          if (t2vModelObj?.acceptsAudio && uploadedAudioUrl) params.audio_url = uploadedAudioUrl;
+
+          res = await generateVideo(apiKey, params);
         }
+
+        if (!res?.url) throw new Error("No video URL returned by API");
+
+        const genId = res.id || Date.now().toString();
         const entry = {
           id: genId,
           url: res.url,
-          prompt: trimmedPrompt,
-          model: selectedModel,
+          prompt: (v2vMode && !currentModel?.hasPrompt) ? "" : taskPrompt,
+          model: taskModel,
           aspect_ratio: selectedAr,
           duration: selectedDuration,
           timestamp: new Date().toISOString(),
         };
-        addToLocalHistory(entry);
-        persistVideoEntryToStorage(entry);
-        persistVideoToGallery(entry).then(() => {
-          fetchRemoteHistory(); // Refresh remote history after saving to gallery
-        });
-        try {
-          localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
-          localStorage.removeItem(PENDING_KEY);
-        } catch {}
-        showVideoInCanvas(res.url, selectedModel);
-        if (onGenerationComplete)
-          onGenerationComplete({
-            url: res.url,
-            model: selectedModel,
-            prompt: trimmedPrompt,
-            type: "video",
+
+        if (isMountedRef.current) {
+          if (taskModel.startsWith("seedance-v2.0")) {
+            setLastGenerationId(genId);
+            setLastGenerationModel(taskModel);
+          } else {
+            setLastGenerationId(null);
+            setLastGenerationModel(null);
+          }
+          addToLocalHistory(entry);
+          persistVideoEntryToStorage(entry);
+          persistVideoToGallery(entry).then(() => {
+            fetchRemoteHistory();
           });
-      } else {
-        // T2V (including extend mode)
-        const params = { model: selectedModel };
-        if (trimmedPrompt) params.prompt = trimmedPrompt;
-
-        if (isExtendMode) {
-          params.request_id = lastGenerationId;
-        } else {
-          params.aspect_ratio = selectedAr;
+          try {
+            localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: taskId, entry }));
+            localStorage.removeItem(PENDING_KEY);
+          } catch {}
+          showVideoInCanvas(res.url, taskModel);
+          if (onGenerationComplete)
+            onGenerationComplete({
+              url: res.url,
+              model: taskModel,
+              prompt: entry.prompt,
+              type: "video",
+            });
         }
-
-        const durations = getDurationsForModel(selectedModel);
-        if (durations.length > 0) params.duration = selectedDuration;
-        const resolutions = getResolutionsForVideoModel(selectedModel);
-        if (resolutions.length > 0) params.resolution = selectedResolution;
-        if (selectedQuality) params.quality = selectedQuality;
-        if (selectedMode) params.mode = selectedMode;
-        if (selectedCharacterOrientation) params.character_orientation = selectedCharacterOrientation;
-        if (selectedKeepOriginalSound) params.keep_original_sound = selectedKeepOriginalSound;
-        const t2vModelObj = t2vModels.find((m) => m.id === selectedModel);
-        if (t2vModelObj?.acceptsImage && uploadedImageUrl) params.image_url = uploadedImageUrl;
-        if (t2vModelObj?.acceptsVideo && uploadedVideoUrl) params.video_url = uploadedVideoUrl;
-        if (t2vModelObj?.acceptsAudio && uploadedAudioUrl) params.audio_url = uploadedAudioUrl;
-
-        res = await generateVideo(apiKey, params);
-        if (!res?.url) throw new Error("No video URL returned by API");
-
-        const genId = res.id || Date.now().toString();
-        if (
-          selectedModel === "seedance-v2.0-t2v" ||
-          selectedModel === "seedance-v2.0-i2v"
-        ) {
-          setLastGenerationId(genId);
-          setLastGenerationModel(selectedModel);
-        } else {
-          setLastGenerationId(null);
-          setLastGenerationModel(null);
-        }
-        const entry = {
-          id: genId,
-          url: res.url,
-          prompt: trimmedPrompt,
-          model: selectedModel,
-          aspect_ratio: selectedAr,
-          duration: selectedDuration,
-          timestamp: new Date().toISOString(),
-        };
-        addToLocalHistory(entry);
-        persistVideoEntryToStorage(entry);
-        try {
-          localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: pendingSnap.requestId, entry }));
-          localStorage.removeItem(PENDING_KEY);
-        } catch {}
-        showVideoInCanvas(res.url, selectedModel);
-        if (onGenerationComplete)
-          onGenerationComplete({
-            url: res.url,
-            model: selectedModel,
-            prompt: trimmedPrompt,
-            type: "video",
-          });
+        removeTask(taskId);
+      } catch (e) {
+        console.error("[VideoStudio]", e);
+        setGenerateError(e.message?.slice(0, 80) || "Ошибка генерации");
+        updateTask(taskId, { status: 'error', error: e.message });
+        setTimeout(() => {
+          setGenerateError(null);
+          removeTask(taskId);
+        }, 4000);
+        try { localStorage.removeItem(PENDING_KEY); } catch {}
       }
-    } catch (e) {
-      hadError = true;
-      console.error("[VideoStudio]", e);
-      setGenerateError(e.message?.slice(0, 80) || "Ошибка генерации");
-      setTimeout(() => setGenerateError(null), 4000);
-      try { localStorage.removeItem(PENDING_KEY); } catch {}
-    } finally {
-      setGenerating(false);
+    };
+
+    execute();
+
+    // Clear inputs for next generation
+    setPrompt("");
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
     }
+    setUploadedImageUrl(null);
+    setUploadedEndImageUrl(null);
+    setUploadedVideoUrl(null);
+    setUploadedVideoName(null);
+    setUploadedAudioUrl(null);
+    setUploadedAudioName(null);
+    setRefFiles([]);
+    // Keep the current model and modes as is for convenience
   }, [
     apiKey,
     prompt,
@@ -1675,6 +1637,7 @@ export default function VideoStudio({
     uploadedImageUrl,
     uploadedVideoUrl,
     uploadedAudioUrl,
+    uploadedEndImageUrl,
     refFiles,
     faceAsset,
     lastGenerationId,
@@ -1686,6 +1649,14 @@ export default function VideoStudio({
     persistVideoToGallery,
     showVideoInCanvas,
     onGenerationComplete,
+    addTask,
+    updateTask,
+    removeTask,
+    fetchRemoteHistory,
+    i2vModels,
+    t2vModels,
+    selectedCharacterOrientation,
+    selectedKeepOriginalSound
   ]);
 
   // ── reset to prompt bar ───────────────────────────────────────────────────
@@ -1871,46 +1842,62 @@ export default function VideoStudio({
     >
       {/* ── CENTRAL GALLERY AREA ── */}
       <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
-        {(generating || history.length > 0 || isLoadingRemoteHistory) ? (
+        {(activeTasks.length > 0 || history.length > 0 || isLoadingRemoteHistory) ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
-            {/* Generating card — appears first while a video is being created */}
-            {generating && (
-              <div className="relative rounded-lg overflow-hidden border border-primary/40 bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
+            {/* Active generation cards */}
+            {activeTasks.map((task) => (
+              <div key={task.id} className={`relative rounded-lg overflow-hidden border ${task.status === 'error' ? 'border-red-500/40' : 'border-primary/40'} bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up`}>
                 {/* Shimmer thumbnail area */}
                 <div className="w-full aspect-video bg-gradient-to-br from-black via-primary/5 to-black relative flex items-center justify-center overflow-hidden">
                   {/* Animated glow */}
-                  <div className="absolute inset-0 bg-primary/5 animate-pulse" />
-                  <div className="absolute inset-0"
-                    style={{
-                      background: "linear-gradient(105deg, transparent 40%, rgba(34,211,238,0.06) 50%, transparent 60%)",
-                      backgroundSize: "200% 100%",
-                      animation: "shimmer 2s infinite linear",
-                    }}
-                  />
-                  {/* Spinner */}
+                  <div className={`absolute inset-0 ${task.status === 'error' ? 'bg-red-500/5' : 'bg-primary/5 animate-pulse'}`} />
+                  {task.status !== 'error' && (
+                    <div className="absolute inset-0"
+                      style={{
+                        background: "linear-gradient(105deg, transparent 40%, rgba(34,211,238,0.06) 50%, transparent 60%)",
+                        backgroundSize: "200% 100%",
+                        animation: "shimmer 2s infinite linear",
+                      }}
+                    />
+                  )}
+                  {/* Status Indicator */}
                   <div className="relative z-10 flex flex-col items-center gap-3">
-                    <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
-                      <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                    <span className="text-[11px] font-semibold text-primary/80 tracking-widest uppercase">Генерация…</span>
+                    {task.status === 'error' ? (
+                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-red-500">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                    ) : (
+                      <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
+                        <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                      </svg>
+                    )}
+                    <span className={`text-[11px] font-semibold ${task.status === 'error' ? 'text-red-500' : 'text-primary/80'} tracking-widest uppercase`}>
+                      {task.status === 'error' ? 'Ошибка' : 'Генерация…'}
+                    </span>
                   </div>
                 </div>
                 {/* Card footer */}
                 <div className="p-3 bg-black/80 border-t border-primary/10 flex flex-col gap-2">
                   <p className="text-white/50 text-xs line-clamp-2 leading-relaxed italic">
-                    {generatingPrompt || "Создаётся видео…"}
+                    {task.prompt || "Создаётся видео…"}
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20">
-                      {selectedModel?.replace(/-/g, " ")}
+                      {task.model?.replace(/-/g, " ")}
                     </span>
-                    <span className="text-[10px] text-white/30 animate-pulse">● обработка</span>
+                    {task.status === 'error' ? (
+                      <span className="text-[10px] text-red-400 truncate max-w-[100px]">{task.error || 'Сбой'}</span>
+                    ) : (
+                      <span className="text-[10px] text-white/30 animate-pulse">● обработка</span>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
-            {isLoadingRemoteHistory && !generating && (
+            ))}
+            {isLoadingRemoteHistory && activeTasks.length === 0 && (
               <div className="relative rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl flex flex-col items-center justify-center aspect-video">
                 <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
@@ -2788,17 +2775,9 @@ export default function VideoStudio({
               <button
                 type="button"
                 onClick={handleGenerate}
-                disabled={generating}
                 className="bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {generating ? (
-                  <>
-                    <span className="animate-spin inline-block text-black">
-                      ◌
-                    </span>{" "}
-                    Создание...
-                  </>
-                ) : generateError ? (
+                {generateError ? (
                   `Error: ${generateError}`
                 ) : (
                   <>
