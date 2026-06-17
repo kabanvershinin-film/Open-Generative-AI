@@ -319,7 +319,7 @@ export default function VideoStudio({
   // ── Registered face/character for Seedance (asset://… + display name) ──
   const [faceRegOpen, setFaceRegOpen] = useState(false);   // register a new face
   const [facePickOpen, setFacePickOpen] = useState(false); // pick an existing asset
-  const [faceAsset, setFaceAsset] = useState(null); // { uri, name } | null
+  const [faceAsset, setFaceAsset] = useState(null); // { uri, name, thumbnail } | null
 
   // ── generation / canvas ──
   const [activeTasks, setActiveTasks] = useState([]); // Array of { id, prompt, model, bill, status: 'generating'|'done'|'error', url, error }
@@ -1003,7 +1003,6 @@ export default function VideoStudio({
           };
           xhr.send(processedFile);
         });
-
         if (uploadAborted) return;
         setRefFiles((prev) => prev.map((f) => (f.id === id ? { ...f, url: publicUrl, uploading: false, progress: 100 } : f)));
       } catch (err) {
@@ -2771,7 +2770,7 @@ export default function VideoStudio({
                 className={`h-9 px-3 rounded-md font-medium text-sm transition-all border flex items-center gap-2 ${faceAsset ? "bg-purple-600/30 border-purple-500/50 text-purple-100" : "bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/40 hover:to-pink-600/40 text-purple-300 border-purple-500/30"}`}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
                 </svg>
                 {faceAsset ? faceAsset.name : "Лицо"}
