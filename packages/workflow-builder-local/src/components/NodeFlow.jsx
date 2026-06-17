@@ -819,14 +819,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               }
             }
 
-            // CharacterNode → VideoNode or TextNode: carry the thumbnail for display
+            // CharacterNode → VideoNode or TextNode or SeedancePromptNode: carry the thumbnail for display
             // and tag @Name into the prompt (same UX as Video Studio).
             if (sourceNode?.type === "characterNode") {
-              if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode") {
+              if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode" || n.type === "seedancePromptNode") {
                 const charPhoto = sourceNode?.data?.formValues?.character_photo;
                 const charName = sourceNode?.data?.formValues?.character_name;
                 
-                if (n.type !== "textNode") {
+                if (n.type !== "textNode" && n.type !== "seedancePromptNode") {
                   updatedFormValues.face_asset = resultValue || null;
                 }
                 
@@ -835,9 +835,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 
                 if (charName && charName.trim()) {
                   const token = "@" + charName.trim().replace(/\s+/g, "_");
-                  const cur = updatedFormValues.prompt || "";
+                  const cur = updatedFormValues.prompt || updatedFormValues.idea || "";
                   if (!cur.includes(token)) {
-                    updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+                    // If it's a seedancePromptNode, we might want to update 'idea' instead of 'prompt'
+                    if (n.type === "seedancePromptNode") {
+                      updatedFormValues.idea = (cur ? cur.trimEnd() + " " : "") + token;
+                    } else {
+                      updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+                    }
                   }
                 }
               }

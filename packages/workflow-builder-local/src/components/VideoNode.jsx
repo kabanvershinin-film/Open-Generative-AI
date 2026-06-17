@@ -325,6 +325,31 @@ const VideoGeneration = ({ id, data, selected }) => {
   // one HTTP connection up to ~290s (Vercel drops it → node stuck on
   // "GENERATING…"); the short submit + poll requests here never hang.
   const runArkSeedanceBrowser = async () => {
+    const { getNodes, getEdges } = data.reactFlowInstance || {};
+    const nodes = getNodes ? getNodes() : [];
+    const edges = getEdges ? getEdges() : [];
+
+    // Gather all character nodes connected to this node, directly or via intermediate nodes (like prompt nodes)
+    const findConnectedFaces = (nodeId, visited = new Set()) => {
+      if (visited.has(nodeId)) return [];
+      visited.add(nodeId);
+      const incoming = edges.filter(e => e.target === nodeId);
+      let assets = [];
+      incoming.forEach(edge => {
+        const source = nodes.find(n => n.id === edge.source);
+        if (!source) return;
+        if (source.type === "characterNode") {
+          const fv = source.data?.formValues || {};
+          const asset = fv.face_asset || source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+          if (asset) assets.push(asset);
+        } else if (["concatNode", "seedancePromptNode"].includes(source.type)) {
+          assets = [...assets, ...findConnectedFaces(source.id, visited)];
+        }
+      });
+      return assets;
+    };
+
+    const allFaces = Array.from(new Set(findConnectedFaces(id)));
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
     const body = {
@@ -337,7 +362,7 @@ const VideoGeneration = ({ id, data, selected }) => {
       resolution: src.resolution || undefined,
       ratio: src.aspect_ratio || src.ratio || undefined,
       duration: src.duration || undefined,
-      face_asset: src.face_asset || undefined,
+      face_asset: allFaces.length > 1 ? allFaces : (allFaces[0] || src.face_asset || undefined),
     };
 
     // Step 1: submit — fast, just creates the Ark task and returns a taskId.
@@ -350,7 +375,8 @@ const VideoGeneration = ({ id, data, selected }) => {
         const d = e.response.data || {};
         throw new Error(`Недостаточно средств. Нужно ${d.required ?? ""}₽, на балансе ${d.balance ?? 0}₽.`);
       }
-      throw new Error(e.response?.data?.error || `ARK submit ${e.response?.status || ""}: ${e.message}`);
+      const apiError = e.response?.data?.error || e.response?.data?.message;
+      throw new Error(apiError ? `API Error: ${apiError}` : `ARK submit ${e.response?.status || ""}: ${e.message}`);
     }
     const taskId = submit.data?.taskId;
     if (!taskId) throw new Error(submit.data?.error || "ARK: задача не создана (нет taskId).");
