@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { callVolcServiceAPI } from '../../../_lib/volc-sign.js';
 
-const VOLC_AK = process.env.VOLC_ACCESS_KEY;
-const VOLC_SK = process.env.VOLC_SECRET_KEY;
+const VOLC_AK = process.env.VOLC_ACCESS_KEY_AGENT || process.env.VOLC_ACCESS_KEY;
+const VOLC_SK = process.env.VOLC_SECRET_KEY_AGENT || process.env.VOLC_SECRET_KEY;
 
 const VISUAL_API_CONFIG = {
   host: 'visual.volcengineapi.com',

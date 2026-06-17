@@ -30,6 +30,14 @@ const outputHandles = [
   "videoOutput",
 ];
 
+const toAssetUri = (val) => {
+  const s = String(val || "").trim();
+  if (!s) return "";
+  if (s.startsWith("asset://")) return s;
+  if (s.startsWith("asset-")) return `asset://${s}`;
+  return s;
+};
+
 const VideoGeneration = ({ id, data, selected }) => {
   const models = useMemo(() => {
     return data.nodeSchemas?.categories?.video?.models 
@@ -340,7 +348,8 @@ const VideoGeneration = ({ id, data, selected }) => {
         if (!source) return;
         if (source.type === "characterNode") {
           const fv = source.data?.formValues || {};
-          const asset = fv.face_asset || source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+          const rawAsset = fv.face_asset || source.data?.resultUrl || source.data?.outputs?.[0]?.value;
+          const asset = toAssetUri(rawAsset);
           if (asset) assets.push(asset);
         } else if (["concatNode", "seedancePromptNode"].includes(source.type)) {
           assets = [...assets, ...findConnectedFaces(source.id, visited)];
@@ -350,6 +359,10 @@ const VideoGeneration = ({ id, data, selected }) => {
     };
 
     const allFaces = Array.from(new Set(findConnectedFaces(id)));
+    if (allFaces.length > 0) {
+      toast(`Использую ${allFaces.length} референса лиц`, { icon: "🧑" });
+    }
+
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
     const body = {
