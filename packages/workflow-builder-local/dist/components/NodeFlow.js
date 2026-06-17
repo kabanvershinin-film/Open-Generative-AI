@@ -286,7 +286,7 @@ var processWorkflowData = function processWorkflowData(workflowData, nodeSchemas
   };
 };
 var NodeFlow = function NodeFlow(_ref) {
-  var _initialState$metadat, _initialState$metadat2, _initialState$metadat4, _initialState$metadat7, _initialState$metadat8, _initialState$metadat9, _nodeSchemas$categori3, _selectedNode$data, _selectedNode$data2, _selectedNode$data3, _selectedNode$data4, _selectedNode$data16, _selectedNode$data17, _selectedNode$data18, _selectedNode$data19, _selectedNode$data20;
+  var _initialState$metadat, _initialState$metadat2, _initialState$metadat4, _initialState$metadat7, _initialState$metadat8, _initialState$metadat9, _nodeSchemas$categori3, _selectedNode$data, _selectedNode$data2, _selectedNode$data3, _selectedNode$data4, _selectedNode$data16, _selectedNode$data17, _selectedNode$data18, _selectedNode$data19;
   var initialNodeSchemas = _ref.initialNodeSchemas,
     initialWorkflowData = _ref.initialWorkflowData;
   var params = (0, _navigation.useParams)();
@@ -494,7 +494,11 @@ var NodeFlow = function NodeFlow(_ref) {
     zoomOut = _useReactFlow.zoomOut,
     _fitView = _useReactFlow.fitView,
     getNodes = _useReactFlow.getNodes,
-    screenToFlowPosition = _useReactFlow.screenToFlowPosition;
+    getEdges = _useReactFlow.getEdges,
+    screenToFlowPosition = _useReactFlow.screenToFlowPosition,
+    rfSetNodes = _useReactFlow.setNodes,
+    rfSetEdges = _useReactFlow.setEdges,
+    setViewport = _useReactFlow.setViewport;
   var apiModelsFromBackend = nodeSchemas !== null && nodeSchemas !== void 0 && (_nodeSchemas$categori3 = nodeSchemas.categories) !== null && _nodeSchemas$categori3 !== void 0 && (_nodeSchemas$categori3 = _nodeSchemas$categori3.api) !== null && _nodeSchemas$categori3 !== void 0 && _nodeSchemas$categori3.models ? Object.keys(nodeSchemas.categories.api.models) : [];
   var filteredApiNodeModels = _utility.apiNodeModels.filter(function (model) {
     return apiModelsFromBackend.includes(model.id);
@@ -930,14 +934,14 @@ var NodeFlow = function NodeFlow(_ref) {
             }
           }
 
-          // CharacterNode → VideoNode or TextNode: carry the thumbnail for display
+          // CharacterNode → VideoNode or TextNode or SeedancePromptNode: carry the thumbnail for display
           // and tag @Name into the prompt (same UX as Video Studio).
           if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode") {
-            if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode") {
+            if (n.type === "videoNode" || n.type === "skylarkNode" || n.type === "textNode" || n.type === "seedancePromptNode") {
               var _sourceNode$data6, _sourceNode$data7;
               var charPhoto = sourceNode === null || sourceNode === void 0 || (_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6.formValues) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.character_photo;
               var charName = sourceNode === null || sourceNode === void 0 || (_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.formValues) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.character_name;
-              if (n.type !== "textNode") {
+              if (n.type !== "textNode" && n.type !== "seedancePromptNode") {
                 updatedFormValues.face_asset = resultValue || null;
               }
 
@@ -945,9 +949,14 @@ var NodeFlow = function NodeFlow(_ref) {
               updatedFormValues.face_thumbnail = charPhoto || null;
               if (charName && charName.trim()) {
                 var token = "@" + charName.trim().replace(/\s+/g, "_");
-                var cur = updatedFormValues.prompt || "";
+                var cur = updatedFormValues.prompt || updatedFormValues.idea || "";
                 if (!cur.includes(token)) {
-                  updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+                  // If it's a seedancePromptNode, we might want to update 'idea' instead of 'prompt'
+                  if (n.type === "seedancePromptNode") {
+                    updatedFormValues.idea = (cur ? cur.trimEnd() + " " : "") + token;
+                  } else {
+                    updatedFormValues.prompt = (cur ? cur.trimEnd() + " " : "") + token;
+                  }
                 }
               }
             }
@@ -2236,6 +2245,10 @@ var NodeFlow = function NodeFlow(_ref) {
       data: _objectSpread(_objectSpread({}, node.data), {}, {
         nodeSchemas: nodeSchemas,
         onDataChange: onDataChange,
+        reactFlowInstance: {
+          getNodes: getNodes,
+          getEdges: getEdges
+        },
         setFormValues: function setFormValues(updater) {
           setNodes(function (nds) {
             return nds.map(function (n) {
@@ -3258,35 +3271,87 @@ var NodeFlow = function NodeFlow(_ref) {
         className: "absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refvid:opacity-100 transition-opacity z-10"
       }, "\xD7"));
     })));
-  }(), ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "skylarkNode") && (selectedNode === null || selectedNode === void 0 || (_selectedNode$data16 = selectedNode.data) === null || _selectedNode$data16 === void 0 || (_selectedNode$data16 = _selectedNode$data16.formValues) === null || _selectedNode$data16 === void 0 ? void 0 : _selectedNode$data16.face_asset) && function () {
-    var fa = String(selectedNode.data.formValues.face_asset);
-    var isAsset = fa.startsWith("asset://");
-    var thumb = selectedNode.data.formValues.face_thumbnail;
-    // Prefer the stored thumbnail; fall back to the asset value itself
-    // when it's a plain image URL.
-    var photo = thumb || (!isAsset ? fa : null);
+  }(), ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "skylarkNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "seedancePromptNode") && function () {
+    // Gather all character nodes that are connected to this node (directly or through utility nodes)
+    var _findCharacters = function findCharacters(nodeId) {
+      var visited = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Set();
+      if (visited.has(nodeId)) return [];
+      visited.add(nodeId);
+      var incomingEdges = edges.filter(function (e) {
+        return e.target === nodeId;
+      });
+      var chars = [];
+      incomingEdges.forEach(function (edge) {
+        var sourceNode = nodes.find(function (n) {
+          return n.id === edge.source;
+        });
+        if (sourceNode) {
+          if (sourceNode.type === "characterNode") {
+            chars.push(sourceNode);
+          } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
+            chars = [].concat(_toConsumableArray(chars), _toConsumableArray(_findCharacters(sourceNode.id, visited)));
+          }
+        }
+      });
+      return chars;
+    };
+    var connectedChars = _findCharacters(selectedNode.id);
+    if (!connectedChars.length) return null;
+
+    // Deduplicate by asset/photo to avoid showing the same character twice if multiple paths exist
+    var uniqueChars = [];
+    var seen = new Set();
+    connectedChars.forEach(function (c) {
+      var _c$data;
+      var fv = ((_c$data = c.data) === null || _c$data === void 0 ? void 0 : _c$data.formValues) || {};
+      var id = fv.face_asset || fv.character_photo || c.id;
+      if (!seen.has(id)) {
+        seen.add(id);
+        uniqueChars.push({
+          nodeId: c.id,
+          name: fv.character_name || "Персонаж",
+          asset: fv.face_asset,
+          photo: fv.character_photo || fv.face_thumbnail || (!String(fv.face_asset).startsWith("asset://") ? fv.face_asset : null)
+        });
+      }
+    });
     return /*#__PURE__*/_react["default"].createElement("div", {
       className: "px-4 pb-3"
     }, /*#__PURE__*/_react["default"].createElement("p", {
       className: "text-[10px] font-semibold text-purple-300 uppercase tracking-wider mb-1.5"
-    }, "\u0420\u0435\u0444\u0435\u0440\u0435\u043D\u0441 \u043B\u0438\u0446\u0430"), photo && /*#__PURE__*/_react["default"].createElement("div", {
-      className: "rounded-xl overflow-hidden border border-purple-500/30 relative mb-1.5"
-    }, /*#__PURE__*/_react["default"].createElement("img", {
-      src: photo,
-      alt: "face reference",
-      className: "w-full h-28 object-cover object-top",
-      onError: function onError(e) {
-        e.target.style.display = 'none';
-      }
-    }), /*#__PURE__*/_react["default"].createElement("div", {
-      className: "absolute top-1.5 right-1.5 bg-purple-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
-    }, "Face")), isAsset && /*#__PURE__*/_react["default"].createElement("div", {
-      className: "flex items-center gap-2 rounded-lg bg-purple-900 border border-purple-500/30 px-2.5 py-2"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "w-4 h-4 rounded-full bg-purple-600 flex-shrink-0"
-    }), /*#__PURE__*/_react["default"].createElement("span", {
-      className: "text-[10px] font-mono text-purple-200 truncate"
-    }, fa)));
+    }, "\u0420\u0435\u0444\u0435\u0440\u0435\u043D\u0441\u044B \u043B\u0438\u0446 (", uniqueChars.length, ")"), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "grid grid-cols-2 gap-2"
+    }, uniqueChars.map(function (_char, i) {
+      return /*#__PURE__*/_react["default"].createElement("div", {
+        key: "".concat(_char.nodeId, "-").concat(i),
+        className: "flex flex-col gap-1"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "rounded-xl overflow-hidden border border-purple-500/30 relative aspect-[4/3] bg-zinc-900"
+      }, _char.photo ? /*#__PURE__*/_react["default"].createElement("img", {
+        src: _char.photo,
+        alt: _char.name,
+        className: "w-full h-full object-cover object-top",
+        onError: function onError(e) {
+          e.target.style.display = 'none';
+        }
+      }) : /*#__PURE__*/_react["default"].createElement("div", {
+        className: "w-full h-full flex items-center justify-center text-purple-500/50"
+      }, /*#__PURE__*/_react["default"].createElement(_io.IoPersonCircleOutline, {
+        size: 32
+      })), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "absolute top-1 right-1 bg-purple-600 text-white text-[7px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
+      }, "Face"), /*#__PURE__*/_react["default"].createElement("div", {
+        className: "absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-sm px-1.5 py-0.5"
+      }, /*#__PURE__*/_react["default"].createElement("p", {
+        className: "text-[8px] text-white font-medium truncate"
+      }, _char.name))), _char.asset && String(_char.asset).startsWith("asset://") && /*#__PURE__*/_react["default"].createElement("div", {
+        className: "flex items-center gap-1 rounded-md bg-purple-900/50 border border-purple-500/20 px-1.5 py-1"
+      }, /*#__PURE__*/_react["default"].createElement("div", {
+        className: "w-2 h-2 rounded-full bg-purple-600 flex-shrink-0"
+      }), /*#__PURE__*/_react["default"].createElement("span", {
+        className: "text-[7px] font-mono text-purple-200 truncate"
+      }, _char.asset)));
+    })));
   }(), /*#__PURE__*/_react["default"].createElement("div", {
     className: "p-4 flex flex-col gap-3"
   }, /*#__PURE__*/_react["default"].createElement("label", {
@@ -3298,7 +3363,7 @@ var NodeFlow = function NodeFlow(_ref) {
   }, /*#__PURE__*/_react["default"].createElement("input", {
     type: "checkbox",
     className: "sr-only peer",
-    checked: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data17 = selectedNode.data) === null || _selectedNode$data17 === void 0 || (_selectedNode$data17 = _selectedNode$data17.formValues) === null || _selectedNode$data17 === void 0 ? void 0 : _selectedNode$data17.make_output) === true,
+    checked: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data16 = selectedNode.data) === null || _selectedNode$data16 === void 0 || (_selectedNode$data16 = _selectedNode$data16.formValues) === null || _selectedNode$data16 === void 0 ? void 0 : _selectedNode$data16.make_output) === true,
     onChange: function onChange(e) {
       var checked = e.target.checked;
       setNodes(function (nds) {
@@ -3317,15 +3382,15 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-4 transition-transform"
-  }))), !(selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data18 = selectedNode.data) !== null && _selectedNode$data18 !== void 0 && (_selectedNode$data18 = _selectedNode$data18.selectedModel) !== null && _selectedNode$data18 !== void 0 && (_selectedNode$data18 = _selectedNode$data18.id) !== null && _selectedNode$data18 !== void 0 && _selectedNode$data18.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("button", {
+  }))), !(selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data17 = selectedNode.data) !== null && _selectedNode$data17 !== void 0 && (_selectedNode$data17 = _selectedNode$data17.selectedModel) !== null && _selectedNode$data17 !== void 0 && (_selectedNode$data17 = _selectedNode$data17.id) !== null && _selectedNode$data17 !== void 0 && _selectedNode$data17.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: function onClick() {
       return selectedNode && runNodeFromFlow(selectedNode.id);
     },
-    disabled: loadingNodes[selectedNode.id] || (selectedNode === null || selectedNode === void 0 || (_selectedNode$data19 = selectedNode.data) === null || _selectedNode$data19 === void 0 ? void 0 : _selectedNode$data19.isLoading),
+    disabled: loadingNodes[selectedNode.id] || (selectedNode === null || selectedNode === void 0 || (_selectedNode$data18 = selectedNode.data) === null || _selectedNode$data18 === void 0 ? void 0 : _selectedNode$data18.isLoading),
     className: "text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 group disabled:cursor-not-allowed rounded-lg text-white bg-blue-500 px-4 py-2 border border-blue-500/50 hover:bg-blue-600 w-full transition-all shadow-lg shadow-blue-900/20 active:scale-[0.98]"
-  }, loadingNodes[selectedNode.id] || selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data20 = selectedNode.data) !== null && _selectedNode$data20 !== void 0 && _selectedNode$data20.isLoading ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
+  }, loadingNodes[selectedNode.id] || selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data19 = selectedNode.data) !== null && _selectedNode$data19 !== void 0 && _selectedNode$data19.isLoading ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin"
   }), "Generating...") : /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-3"

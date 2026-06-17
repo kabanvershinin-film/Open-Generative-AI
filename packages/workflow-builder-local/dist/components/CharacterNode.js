@@ -40,6 +40,13 @@ function saveLibrary(items) {
     localStorage.setItem(LIBRARY_KEY, JSON.stringify(items));
   } catch (_unused2) {}
 }
+var toAssetUri = function toAssetUri(val) {
+  var s = String(val || "").trim();
+  if (!s) return "";
+  if (s.startsWith("asset://")) return s;
+  if (s.startsWith("asset-")) return "asset://".concat(s);
+  return s;
+};
 
 // "Персонаж" — an input node that carries a face/character reference (a public
 // image URL or an asset://… URI). Its output feeds the Seedance video node's
@@ -118,7 +125,7 @@ var CharacterNode = function CharacterNode(_ref) {
 
   // The reference that actually goes downstream: an asset:// URI takes priority,
   // otherwise the uploaded photo's public URL.
-  var faceValue = (assetUri.trim() || photoUrl || "").trim();
+  var faceValue = toAssetUri(assetUri.trim() || photoUrl || "").trim();
   var isAsset = faceValue.startsWith("asset://");
 
   // Propagate the value to the parent (echo-suppressed to avoid the React #185
@@ -190,8 +197,10 @@ var CharacterNode = function CharacterNode(_ref) {
         }
       }).then(function () {
         setPhotoUrl(publicUrl);
-        setAssetUri("");
-        setTab("photo");
+        // Если мы во вкладке "фото", очищаем URI. Если в "uri", оставляем его.
+        if (tab === "photo") {
+          setAssetUri("");
+        }
       });
     })["catch"](function (err) {
       console.error("Upload failed", err);
@@ -202,12 +211,13 @@ var CharacterNode = function CharacterNode(_ref) {
     });
   };
   var pickFromLibrary = function pickFromLibrary(face) {
-    if (String(face.assetUri || "").startsWith("asset://")) {
-      setAssetUri(face.assetUri);
+    var uri = toAssetUri(face.assetUri || "");
+    if (uri.startsWith("asset://")) {
+      setAssetUri(uri);
       setPhotoUrl(face.thumbnail || "");
       setTab("uri");
     } else {
-      setPhotoUrl(face.assetUri || face.thumbnail || "");
+      setPhotoUrl(uri || face.thumbnail || "");
       setAssetUri("");
       setTab("photo");
     }
@@ -218,15 +228,16 @@ var CharacterNode = function CharacterNode(_ref) {
       _reactHotToast.toast.error("Сначала выберите фото или Asset URI");
       return;
     }
+    var finalUri = toAssetUri(faceValue);
     var item = {
       id: Date.now().toString(),
-      name: name || faceValue.replace(/^asset:\/\//, "").slice(0, 16),
-      assetUri: faceValue,
+      name: name || finalUri.replace(/^asset:\/\//, "").slice(0, 16),
+      assetUri: finalUri,
       thumbnail: photoUrl || null,
       addedAt: Date.now()
     };
     var next = [item].concat(_toConsumableArray(library.filter(function (f) {
-      return f.assetUri !== faceValue;
+      return f.assetUri !== finalUri;
     })));
     saveLibrary(next);
     setLibrary(next);
@@ -268,14 +279,7 @@ var CharacterNode = function CharacterNode(_ref) {
     size: 15
   }))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-2.5 p-3"
-  }, /*#__PURE__*/_react["default"].createElement("input", {
-    value: name,
-    onChange: function onChange(e) {
-      return setName(e.target.value);
-    },
-    placeholder: "\u0418\u043C\u044F \u043F\u0435\u0440\u0441\u043E\u043D\u0430\u0436\u0430\u2026",
-    className: "h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
-  }), /*#__PURE__*/_react["default"].createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
@@ -300,7 +304,7 @@ var CharacterNode = function CharacterNode(_ref) {
     },
     className: "h-9 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 text-white bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-lg shadow-purple-600/20",
     title: "\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044F \u043B\u0438\u0446\u0430 \u0434\u043B\u044F Seedance 2.0"
-  }, "\u2728 \u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043B\u0438\u0446\u043E"), tab === "photo" ? uploading ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u2728 \u0417\u0430\u0440\u0435\u0433\u0438\u0441\u0442\u0440\u0438\u0440\u043E\u0432\u0430\u0442\u044C \u043B\u0438\u0446\u043E"), uploading ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1.5 py-2"
   }, /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[11px] text-zinc-400"
@@ -311,19 +315,28 @@ var CharacterNode = function CharacterNode(_ref) {
     style: {
       width: "".concat(progress, "%")
     }
-  }))) : photoUrl && !isAsset ? /*#__PURE__*/_react["default"].createElement("div", {
+  }))) : photoUrl ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "relative group/photo rounded-lg overflow-hidden border border-zinc-800"
   }, /*#__PURE__*/_react["default"].createElement("img", {
     src: photoUrl,
     alt: "face",
-    className: "w-full h-32 object-cover"
+    className: "w-full h-40 object-cover"
   }), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     onClick: function onClick() {
       return setPhotoUrl("");
     },
     className: "absolute top-2 right-2 bg-black hover:bg-black text-white rounded px-1.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
-  }, "\u2715")) : /*#__PURE__*/_react["default"].createElement("label", {
+  }, "\u2715")) : null, tab === "photo" ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col gap-2.5"
+  }, /*#__PURE__*/_react["default"].createElement("input", {
+    value: name,
+    onChange: function onChange(e) {
+      return setName(e.target.value);
+    },
+    placeholder: "\u0418\u043C\u044F \u043F\u0435\u0440\u0441\u043E\u043D\u0430\u0436\u0430\u2026",
+    className: "h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+  }), !photoUrl && !uploading && /*#__PURE__*/_react["default"].createElement("label", {
     className: "cursor-pointer flex flex-col items-center justify-center gap-1.5 text-zinc-500 border border-dashed border-zinc-700 rounded-lg p-4 hover:bg-zinc-800"
   }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
     size: 18
@@ -334,15 +347,34 @@ var CharacterNode = function CharacterNode(_ref) {
     accept: "image/*",
     className: "hidden",
     onChange: handlePhotoUpload
-  })) : /*#__PURE__*/_react["default"].createElement("input", {
+  }))) : /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col gap-2.5"
+  }, /*#__PURE__*/_react["default"].createElement("input", {
+    value: name,
+    onChange: function onChange(e) {
+      return setName(e.target.value);
+    },
+    placeholder: "\u0418\u043C\u044F \u043F\u0435\u0440\u0441\u043E\u043D\u0430\u0436\u0430\u2026",
+    className: "h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+  }), /*#__PURE__*/_react["default"].createElement("input", {
     value: assetUri,
     onChange: function onChange(e) {
-      setAssetUri(e.target.value);
-      setPhotoUrl("");
+      return setAssetUri(e.target.value);
     },
     placeholder: "asset://asset-\u2026",
     className: "h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50 font-mono"
-  }), faceValue && /*#__PURE__*/_react["default"].createElement("div", {
+  }), !photoUrl && !uploading && /*#__PURE__*/_react["default"].createElement("label", {
+    className: "cursor-pointer flex flex-col items-center justify-center gap-1.5 text-zinc-500 border border-dashed border-zinc-700 rounded-lg p-4 hover:bg-zinc-800"
+  }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
+    size: 18
+  }), /*#__PURE__*/_react["default"].createElement("span", {
+    className: "text-[11px]"
+  }, "\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0444\u043E\u0442\u043E (\u043F\u0440\u0435\u0432\u044C\u044E)"), /*#__PURE__*/_react["default"].createElement("input", {
+    type: "file",
+    accept: "image/*",
+    className: "hidden",
+    onChange: handlePhotoUpload
+  }))), faceValue && /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-[10px] font-mono text-zinc-500 truncate bg-black rounded px-2 py-1 border border-zinc-800"
@@ -381,10 +413,12 @@ var CharacterNode = function CharacterNode(_ref) {
       className: "text-[8px] text-zinc-500 truncate w-12 text-center"
     }, face.name), /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
-      onClick: function onClick() {
-        return deleteFromLibrary(face.id);
+      onClick: function onClick(e) {
+        e.stopPropagation();
+        deleteFromLibrary(face.id);
       },
-      className: "absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] hidden group-hover/lib:flex items-center justify-center"
+      className: "absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center shadow-sm hover:bg-red-600 transition-all z-10",
+      title: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0438\u0437 \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A\u0438"
     }, "\xD7"));
   })))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "source",

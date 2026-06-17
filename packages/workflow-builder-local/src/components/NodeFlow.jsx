@@ -342,7 +342,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   const [isModelDropdownUp, setIsModelDropdownUp] = useState(false);
   const modelDropdownTriggerRef = useRef(null);
 
-  const { zoomIn, zoomOut, fitView, getNodes, screenToFlowPosition } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, getNodes, getEdges, screenToFlowPosition, setNodes: rfSetNodes, setEdges: rfSetEdges, setViewport } = useReactFlow();
 
   const apiModelsFromBackend =
     nodeSchemas?.categories?.api?.models

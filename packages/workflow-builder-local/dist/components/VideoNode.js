@@ -59,6 +59,13 @@ var inputHandles = ["videoInput",
 "videoInput8" // audios_list, audio_files
 ];
 var outputHandles = ["videoOutput"];
+var toAssetUri = function toAssetUri(val) {
+  var s = String(val || "").trim();
+  if (!s) return "";
+  if (s.startsWith("asset://")) return s;
+  if (s.startsWith("asset-")) return "asset://".concat(s);
+  return s;
+};
 var VideoGeneration = function VideoGeneration(_ref) {
   var _data$runId, _nodeSchemas$categori, _data$selectedModel6, _data$selectedModel7, _data$selectedModel8, _data$selectedModel9, _data$selectedModel0, _data$selectedModel1, _data$selectedModel10, _data$selectedModel11, _outputHistory$curren, _currentOutputList$cu, _currentOutputList$, _data$selectedModel12;
   var id = _ref.id,
@@ -253,6 +260,11 @@ var VideoGeneration = function VideoGeneration(_ref) {
     setFormValues(merged);
   };
   (0, _react.useEffect)(function () {
+    if (properties) {
+      addFormValuesInTaskData(properties);
+    }
+  }, [data.formValues, properties]);
+  (0, _react.useEffect)(function () {
     setLoading(1);
     if (properties) {
       addFormValuesInTaskData(properties);
@@ -437,24 +449,105 @@ var VideoGeneration = function VideoGeneration(_ref) {
   var runArkSeedanceBrowser = /*#__PURE__*/function () {
     var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
       var _submit$data, _submit$data2, _submit$data3, _data$selectedModel3;
-      var fast, src, body, submit, _e$response, _e$response2, _e$response3, _d$required, _d$balance, d, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response4, status, histId, output, newHistory, _t2, _t3;
+      var _ref11, getNodes, getEdges, nodes, edges, findConnectedAssets, allAssets, uniqueFaces, uniqueImages, uniqueVideos, uniqueAudios, fast, src, faceAssetPayload, body, submit, _e$response, _e$response2, _e$response3, _e$response4, _d$required, _d$balance, d, apiError, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response5, status, histId, output, newHistory, _t2, _t3;
       return _regenerator().w(function (_context3) {
         while (1) switch (_context3.p = _context3.n) {
           case 0:
+            _ref11 = data.reactFlowInstance || {}, getNodes = _ref11.getNodes, getEdges = _ref11.getEdges;
+            nodes = getNodes ? getNodes() : [];
+            edges = getEdges ? getEdges() : []; // Gather all character nodes and images connected to this node
+            // MUST match the order logic in SeedancePromptNode.jsx so 图片1, 图片2, etc. refer to the right things.
+            findConnectedAssets = function findConnectedAssets() {
+              var incoming = edges.filter(function (e) {
+                return e.target === id;
+              });
+              var assets = {
+                faces: [],
+                images: [],
+                videos: [],
+                audios: []
+              };
+              var seen = new Set();
+              var _processSource = function processSource(sourceId) {
+                if (seen.has(sourceId)) return;
+                seen.add(sourceId);
+                var sourceNode = nodes.find(function (n) {
+                  return n.id === sourceId;
+                });
+                if (!sourceNode) return;
+                if (sourceNode.type === "characterNode") {
+                  var _sourceNode$data, _sourceNode$data2, _sourceNode$data3;
+                  var fv = ((_sourceNode$data = sourceNode.data) === null || _sourceNode$data === void 0 ? void 0 : _sourceNode$data.formValues) || {};
+                  var rawAsset = fv.face_asset || ((_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.resultUrl) || ((_sourceNode$data3 = sourceNode.data) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3.outputs) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3[0]) === null || _sourceNode$data3 === void 0 ? void 0 : _sourceNode$data3.value);
+                  var asset = toAssetUri(rawAsset);
+                  if (asset) assets.faces.push(asset);
+                  if (fv.character_photo) assets.images.push(fv.character_photo);
+                } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
+                  var _sourceNode$data4, _sourceNode$data5;
+                  var url = ((_sourceNode$data4 = sourceNode.data) === null || _sourceNode$data4 === void 0 ? void 0 : _sourceNode$data4.resultUrl) || ((_sourceNode$data5 = sourceNode.data) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5.outputs) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5[0]) === null || _sourceNode$data5 === void 0 ? void 0 : _sourceNode$data5.value);
+                  if (url) assets.images.push(url);
+                } else if (sourceNode.type === "videoNode") {
+                  var _sourceNode$data6, _sourceNode$data7;
+                  var _url = ((_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.resultUrl) || ((_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.outputs) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7[0]) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.value);
+                  if (_url) assets.videos.push(_url);
+                } else if (sourceNode.type === "audioNode") {
+                  var _sourceNode$data8, _sourceNode$data9;
+                  var _url2 = ((_sourceNode$data8 = sourceNode.data) === null || _sourceNode$data8 === void 0 ? void 0 : _sourceNode$data8.resultUrl) || ((_sourceNode$data9 = sourceNode.data) === null || _sourceNode$data9 === void 0 || (_sourceNode$data9 = _sourceNode$data9.outputs) === null || _sourceNode$data9 === void 0 || (_sourceNode$data9 = _sourceNode$data9[0]) === null || _sourceNode$data9 === void 0 ? void 0 : _sourceNode$data9.value);
+                  if (_url2) assets.audios.push(_url2);
+                } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
+                  // For utility nodes, we look at THEIR incoming edges
+                  var subEdges = edges.filter(function (e) {
+                    return e.target === sourceId;
+                  });
+                  subEdges.forEach(function (se) {
+                    return _processSource(se.source);
+                  });
+                }
+              };
+              incoming.forEach(function (edge) {
+                return _processSource(edge.source);
+              });
+              return assets;
+            };
+            allAssets = findConnectedAssets();
+            uniqueFaces = Array.from(new Set(allAssets.faces)).filter(function (f) {
+              return f.startsWith("asset://");
+            });
+            uniqueImages = Array.from(new Set(allAssets.images));
+            uniqueVideos = Array.from(new Set(allAssets.videos));
+            uniqueAudios = Array.from(new Set(allAssets.audios));
+            console.log('[VideoNode] Connected assets found:', {
+              uniqueFaces: uniqueFaces,
+              uniqueImages: uniqueImages,
+              uniqueVideos: uniqueVideos,
+              uniqueAudios: uniqueAudios
+            });
+            if (uniqueFaces.length > 0 || uniqueImages.length > 0) {
+              (0, _reactHotToast.toast)("\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E: ".concat(uniqueFaces.length, " \u043B\u0438\u0446, ").concat(uniqueImages.length, " \u0444\u043E\u0442\u043E"), {
+                icon: "🎨"
+              });
+            }
             fast = /fast/.test("".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "").toLowerCase());
-            src = formValues || {};
+            src = formValues || {}; // Ark handles face_asset separately for trusted assets.
+            // Plain images should go in image_url/image_urls.
+            faceAssetPayload = uniqueFaces.length > 0 ? uniqueFaces.length > 1 ? uniqueFaces : uniqueFaces[0] : undefined;
             body = {
               fast: fast,
               prompt: src.prompt || "",
-              image_url: src.image_url || undefined,
-              image_urls: Array.isArray(src.images_list) ? src.images_list.filter(Boolean) : undefined,
-              video_url: src.video_url || undefined,
-              audio_url: src.audio_url || undefined,
+              image_url: uniqueImages[0] || src.image_url || undefined,
+              image_urls: uniqueImages.length > 1 ? uniqueImages.slice(1) : undefined,
+              video_url: uniqueVideos[0] || src.video_url || undefined,
+              video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
+              audio_url: uniqueAudios[0] || src.audio_url || undefined,
+              audio_urls: uniqueAudios.length > 1 ? uniqueAudios.slice(1) : undefined,
               resolution: src.resolution || undefined,
               ratio: src.aspect_ratio || src.ratio || undefined,
               duration: src.duration || undefined,
-              face_asset: src.face_asset || undefined
-            }; // Step 1: submit — fast, just creates the Ark task and returns a taskId.
+              face_asset: faceAssetPayload
+            };
+            console.log('[VideoNode] Submitting to Ark:', body);
+
+            // Step 1: submit — fast, just creates the Ark task and returns a taskId.
             _context3.p = 1;
             _context3.n = 2;
             return _axios["default"].post("/api/ark/seedance", body);
@@ -472,7 +565,8 @@ var VideoGeneration = function VideoGeneration(_ref) {
             d = _t2.response.data || {};
             throw new Error("\u041D\u0435\u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E \u0441\u0440\u0435\u0434\u0441\u0442\u0432. \u041D\u0443\u0436\u043D\u043E ".concat((_d$required = d.required) !== null && _d$required !== void 0 ? _d$required : "", "\u20BD, \u043D\u0430 \u0431\u0430\u043B\u0430\u043D\u0441\u0435 ").concat((_d$balance = d.balance) !== null && _d$balance !== void 0 ? _d$balance : 0, "\u20BD."));
           case 4:
-            throw new Error(((_e$response2 = _t2.response) === null || _e$response2 === void 0 || (_e$response2 = _e$response2.data) === null || _e$response2 === void 0 ? void 0 : _e$response2.error) || "ARK submit ".concat(((_e$response3 = _t2.response) === null || _e$response3 === void 0 ? void 0 : _e$response3.status) || "", ": ").concat(_t2.message));
+            apiError = ((_e$response2 = _t2.response) === null || _e$response2 === void 0 || (_e$response2 = _e$response2.data) === null || _e$response2 === void 0 ? void 0 : _e$response2.error) || ((_e$response3 = _t2.response) === null || _e$response3 === void 0 || (_e$response3 = _e$response3.data) === null || _e$response3 === void 0 ? void 0 : _e$response3.message);
+            throw new Error(apiError ? "API Error: ".concat(apiError) : "ARK submit ".concat(((_e$response4 = _t2.response) === null || _e$response4 === void 0 ? void 0 : _e$response4.status) || "", ": ").concat(_t2.message));
           case 5:
             taskId = (_submit$data = submit.data) === null || _submit$data === void 0 ? void 0 : _submit$data.taskId;
             if (taskId) {
@@ -528,7 +622,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
               _context3.n = 14;
               break;
             }
-            throw new Error(((_e$response4 = _t3.response) === null || _e$response4 === void 0 || (_e$response4 = _e$response4.data) === null || _e$response4 === void 0 ? void 0 : _e$response4.error) || "ARK: опрос статуса не отвечает.");
+            throw new Error(((_e$response5 = _t3.response) === null || _e$response5 === void 0 || (_e$response5 = _e$response5.data) === null || _e$response5 === void 0 ? void 0 : _e$response5.error) || "ARK: опрос статуса не отвечает.");
           case 14:
             return _context3.a(3, 18);
           case 15:
@@ -605,7 +699,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
                 prompt: src.prompt || ""
               })
             }).then(/*#__PURE__*/function () {
-              var _ref11 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(r) {
+              var _ref12 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(r) {
                 var err;
                 return _regenerator().w(function (_context2) {
                   while (1) switch (_context2.n) {
@@ -629,7 +723,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
                 }, _callee2);
               }));
               return function (_x2) {
-                return _ref11.apply(this, arguments);
+                return _ref12.apply(this, arguments);
               };
             }())["catch"](function (e) {
               _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), {
@@ -678,7 +772,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
     };
   }();
   var handleRunSingleNode = /*#__PURE__*/function () {
-    var _ref12 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+    var _ref13 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
       var _data$selectedModel4, _data$selectedModel5, _nodeSchemas$categori2, modelHay, isSeedance, _data$handleSaveWorkF2, _e$message, _e$message2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, videoUrl, _error$response2, _t4, _t5;
       return _regenerator().w(function (_context4) {
         while (1) switch (_context4.p = _context4.n) {
@@ -832,7 +926,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
       }, _callee4, null, [[4, 6], [3, 13, 14, 15]]);
     }));
     return function handleRunSingleNode() {
-      return _ref12.apply(this, arguments);
+      return _ref13.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
@@ -934,7 +1028,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
     }
   };
   var handleDeleteHistory = /*#__PURE__*/function () {
-    var _ref13 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(e) {
+    var _ref14 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(e) {
       var currentHistory, _data$onDataChange2, newHistory, _error$response3, _t6;
       return _regenerator().w(function (_context5) {
         while (1) switch (_context5.p = _context5.n) {
@@ -983,7 +1077,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
       }, _callee5, null, [[2, 4]]);
     }));
     return function handleDeleteHistory(_x3) {
-      return _ref13.apply(this, arguments);
+      return _ref14.apply(this, arguments);
     };
   }();
   var currentOutputList = currentHistoryIndex !== -1 && outputHistory[currentHistoryIndex] ? ((_outputHistory$curren = outputHistory[currentHistoryIndex]) === null || _outputHistory$curren === void 0 || (_outputHistory$curren = _outputHistory$curren.result) === null || _outputHistory$curren === void 0 ? void 0 : _outputHistory$curren.outputs) || [] : data.outputs || [];

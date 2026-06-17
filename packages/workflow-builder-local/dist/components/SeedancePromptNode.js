@@ -117,17 +117,19 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
           var rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl || Array.isArray(d.outputs) && ((_d$outputs$ = d.outputs[0]) === null || _d$outputs$ === void 0 ? void 0 : _d$outputs$.value) || fvN.image_url;
           var url = typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg") ? rawThumb : undefined;
           if (n.type === "characterNode") {
+            counters.images += 1;
             out.push({
               id: n.id,
-              label: (fvN.character_name || "Персонаж").trim() || "Персонаж",
+              label: "\u56FE\u7247".concat(counters.images),
               kind: "character",
-              url: url
+              url: url,
+              name: (fvN.character_name || "角色").trim()
             });
           } else if (n.type === "videoNode") {
             counters.video += 1;
             out.push({
               id: n.id,
-              label: "\u0432\u0438\u0434\u0435\u043E".concat(counters.video),
+              label: "\u89C6\u9891".concat(counters.video),
               kind: "video",
               url: url
             });
@@ -135,7 +137,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
             counters.audio += 1;
             out.push({
               id: n.id,
-              label: "\u0430\u0443\u0434\u0438\u043E".concat(counters.audio),
+              label: "\u97F3\u9891".concat(counters.audio),
               kind: "audio",
               url: url
             });
@@ -143,7 +145,7 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
             counters.images += 1;
             out.push({
               id: n.id,
-              label: "\u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435".concat(counters.images),
+              label: "\u56FE\u7247".concat(counters.images),
               kind: "images",
               url: url
             });
