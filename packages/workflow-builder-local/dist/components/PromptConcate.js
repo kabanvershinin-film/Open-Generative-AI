@@ -175,7 +175,7 @@ var PromptConcate = function PromptConcate(_ref) {
     });
   }, [formValues, data.formValues]);
   var handleDeleteNode = function handleDeleteNode() {
-    if (window.confirm("Are you sure you want to delete this ".concat(id, " node?"))) {
+    if (window.confirm("\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B, \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u043D\u043E\u0434\u0443 ".concat(id, "?"))) {
       setNodes(function (nds) {
         return nds.filter(function (n) {
           return n.id !== id;
@@ -186,7 +186,7 @@ var PromptConcate = function PromptConcate(_ref) {
           return e.source !== id && e.target !== id;
         });
       });
-      _reactHotToast.toast.success("Deleted node ".concat(id));
+      _reactHotToast.toast.success("\u041D\u043E\u0434\u0430 ".concat(id, " \u0443\u0434\u0430\u043B\u0435\u043D\u0430"));
     }
     ;
   };
@@ -234,10 +234,10 @@ var PromptConcate = function PromptConcate(_ref) {
       minHeight: 280,
       '--loader-color': '#2563eb'
     },
-    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]/95 backdrop-blur-sm\n      ")
+    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
   }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "absolute -top-5 left-0 text-zinc-400 text-[10px] font-medium tracking-wider uppercase"
-  }, "Prompt Concatenator ", id.replace(/^\D+/g, "")), /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0438\u0442\u0435\u043B\u044C \u043F\u0440\u043E\u043C\u043F\u0442\u043E\u0432 ", id.replace(/^\D+/g, "")), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3"
@@ -276,7 +276,7 @@ var PromptConcate = function PromptConcate(_ref) {
     "data-type": "blue"
   }), /*#__PURE__*/_react["default"].createElement("p", {
     className: "absolute -left-7 top-[100px] text-xs text-blue-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "blue" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Text")), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+  }, "\u0422\u0435\u043A\u0441\u0442")), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "source",
     position: _reactflow.Position.Right,
     id: "concatOutput",
@@ -290,6 +290,6 @@ var PromptConcate = function PromptConcate(_ref) {
     "data-type": "blue"
   }), /*#__PURE__*/_react["default"].createElement("p", {
     className: "absolute -right-7 top-[100px] text-xs text-blue-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "blue" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Text"));
+  }, "\u0422\u0435\u043A\u0441\u0442"));
 };
 var _default = exports["default"] = PromptConcate;

@@ -32,6 +32,42 @@ function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) 
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+var UI_TRANSLATIONS = {
+  "Prompt": "Промпт",
+  "Reference Images": "Референсные изображения",
+  "Aspect Ratio": "Соотношение сторон",
+  "Resolution": "Разрешение",
+  "Routing": "Маршрутизация",
+  "Size": "Размер",
+  "Quality": "Качество",
+  "Format": "Формат",
+  "Background": "Фон",
+  "Moderation": "Модерация",
+  "default": "По умолчанию",
+  "nitro": "Нитро",
+  "floor": "Флор",
+  "stable": "Стабильный",
+  "auto": "Авто",
+  "high": "Высокое",
+  "medium": "Среднее",
+  "low": "Низкое",
+  "transparent": "Прозрачный",
+  "opaque": "Непрозрачный",
+  "Add a file or provide an URL": "Добавьте файл или укажите URL",
+  "Unsupported file type": "Неподдерживаемый тип файла",
+  "Upload failed": "Не удалось загрузить файл",
+  "Upload failed.": "Не удалось загрузить файл",
+  "Preview": "Предпросмотр",
+  "* required": "* обязательно",
+  "Remove input": "Удалить вход",
+  "Set as input": "Сделать входом",
+  "Select or type...": "Выберите или введите...",
+  "No options found": "Ничего не найдено"
+};
+var translateUi = function translateUi(value) {
+  if (typeof value !== "string") return value;
+  return UI_TRANSLATIONS[value] || value;
+};
 var RenderApiField = function RenderApiField(_ref) {
   var _ref2, _formValues$fieldName;
   var fieldName = _ref.fieldName,
@@ -65,7 +101,13 @@ var RenderApiField = function RenderApiField(_ref) {
     _useState0 = _slicedToArray(_useState9, 2),
     dropdownStyle = _useState0[0],
     setDropdownStyle = _useState0[1];
+  var _useState1 = (0, _react.useState)(false),
+    _useState10 = _slicedToArray(_useState1, 2),
+    isMobileUploadUi = _useState10[0],
+    setIsMobileUploadUi = _useState10[1];
   var containerRef = (0, _react.useRef)(null);
+  var fileInputRef = (0, _react.useRef)(null);
+  var cameraInputRef = (0, _react.useRef)(null);
   var isImageUrl = function isImageUrl(url) {
     if (typeof url !== 'string') return false;
     return url.match(/\.(jpeg|jpg|gif|png|webp|avif|HEIC)(\?.*)?$/i) !== null || url.startsWith('https://cdn.muapi.ai/');
@@ -81,9 +123,9 @@ var RenderApiField = function RenderApiField(_ref) {
   }, /*#__PURE__*/_react["default"].createElement("label", {
     htmlFor: fieldName,
     className: "text-xs font-bold text-zinc-500 text-start flex-grow cursor-pointer"
-  }, fieldName, isRequired && /*#__PURE__*/_react["default"].createElement("span", {
+  }, translateUi(fieldName), isRequired && /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-blue-500 text-[9px] ml-1"
-  }, "* required")), onToggleHandle && /*#__PURE__*/_react["default"].createElement("button", {
+  }, translateUi("* required"))), onToggleHandle && /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: function onClick(e) {
@@ -91,10 +133,24 @@ var RenderApiField = function RenderApiField(_ref) {
       onToggleHandle(fieldName);
     },
     className: "p-1 rounded-lg transition-all group-hover/label:opacity-100 h-6 w-6 flex items-center justify-center ".concat(exposedHandles.includes(fieldName) ? "text-blue-500 bg-blue-500/10 opacity-100" : "text-zinc-500 hover:text-white hover:bg-white/5 opacity-0"),
-    title: exposedHandles.includes(fieldName) ? "Remove input" : "Set as input"
+    title: translateUi(exposedHandles.includes(fieldName) ? "Remove input" : "Set as input")
   }, /*#__PURE__*/_react["default"].createElement(_tb.TbExternalLink, {
     size: 14
   })));
+  (0, _react.useEffect)(function () {
+    var _mediaQuery$addEventL;
+    if (typeof window === "undefined") return;
+    var mediaQuery = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+    var applyMatch = function applyMatch() {
+      return setIsMobileUploadUi(mediaQuery.matches);
+    };
+    applyMatch();
+    (_mediaQuery$addEventL = mediaQuery.addEventListener) === null || _mediaQuery$addEventL === void 0 || _mediaQuery$addEventL.call(mediaQuery, "change", applyMatch);
+    return function () {
+      var _mediaQuery$removeEve;
+      return (_mediaQuery$removeEve = mediaQuery.removeEventListener) === null || _mediaQuery$removeEve === void 0 ? void 0 : _mediaQuery$removeEve.call(mediaQuery, "change", applyMatch);
+    };
+  }, []);
   (0, _react.useLayoutEffect)(function () {
     if (dropDown === idx + 1 && containerRef.current) {
       var rect = containerRef.current.getBoundingClientRect();
@@ -113,9 +169,10 @@ var RenderApiField = function RenderApiField(_ref) {
     } else {
       return;
     }
-    var acceptedTypes = isImageField ? ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"] : isVideoField ? ["video/mp4", "video/webm"] : isAudioField ? ["audio/mpeg", "audio/wav", "audio/webm", "audio/mp3"] : ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "video/mp4", "video/webm"];
-    if (!acceptedTypes.includes(file.type)) {
-      _reactHotToast.toast.error("Unsupported file type");
+    var fileName = (file.name || "").toLowerCase();
+    var isAcceptedType = isImageField ? file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|avif|heic|heif)$/i.test(fileName) : isVideoField ? file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(fileName) : isAudioField ? file.type.startsWith("audio/") || /\.(mp3|wav|webm|m4a|ogg)$/i.test(fileName) : file.type.startsWith("image/") || file.type.startsWith("video/");
+    if (!isAcceptedType) {
+      _reactHotToast.toast.error(translateUi("Unsupported file type"));
       return;
     }
     ;
@@ -151,7 +208,7 @@ var RenderApiField = function RenderApiField(_ref) {
     })["catch"](function (error) {
       var _error$response;
       console.error("Upload failed", error);
-      _reactHotToast.toast.error("Upload failed.", error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
+      _reactHotToast.toast.error(translateUi("Upload failed."), error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
       setUploading(false);
       setUploadProgress(0);
     });
@@ -165,6 +222,7 @@ var RenderApiField = function RenderApiField(_ref) {
     zIndex: 10,
     boxShadow: '0 0 10px rgba(59, 130, 246, 0.5)'
   };
+  var fileAcceptAttr = isImageField ? "image/*,.heic,.heif" : isVideoField ? "video/*,.mov,.m4v" : isAudioField ? "audio/*,.m4a,.ogg" : "image/*,video/*,.heic,.heif,.mov,.m4v";
   if (meta["enum"]) {
     var isManual = meta.allowManual || false;
     var filteredOptions = isManual && value ? meta["enum"].filter(function (opt) {
@@ -195,7 +253,7 @@ var RenderApiField = function RenderApiField(_ref) {
       className: "flex flex-col gap-1 relative w-full"
     }, /*#__PURE__*/_react["default"].createElement("div", {
       ref: containerRef,
-      className: "flex items-center gap-1 border border-white/10 rounded-lg bg-zinc-900/50 hover:border-white/20 transition-all relative overflow-hidden"
+      className: "flex items-center gap-1 border border-white/10 rounded-lg bg-zinc-900 hover:border-white/20 transition-all relative overflow-hidden"
     }, isManual ? /*#__PURE__*/_react["default"].createElement("input", {
       type: "text",
       value: value,
@@ -205,7 +263,7 @@ var RenderApiField = function RenderApiField(_ref) {
       onFocus: function onFocus() {
         return setDropDown(idx + 1);
       },
-      placeholder: "Select or type...",
+      placeholder: translateUi("Select or type..."),
       className: "flex-grow text-xs text-white bg-transparent outline-none px-2 py-[5px] w-full"
     }) : /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
@@ -221,11 +279,11 @@ var RenderApiField = function RenderApiField(_ref) {
     }, /*#__PURE__*/_react["default"].createElement("span", {
       className: "truncate"
     }, function (_meta$enum) {
-      if (_typeof(value) === 'object') return value.label || value.value;
+      if (_typeof(value) === 'object') return translateUi(value.label || value.value);
       var option = (_meta$enum = meta["enum"]) === null || _meta$enum === void 0 ? void 0 : _meta$enum.find(function (opt) {
         return (_typeof(opt) === 'object' ? opt.value : opt) === value;
       });
-      return _typeof(option) === 'object' ? option.label : value;
+      return _typeof(option) === 'object' ? translateUi(option.label) : translateUi(value);
     }()))), /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
       suppressHydrationWarning: true,
@@ -241,7 +299,7 @@ var RenderApiField = function RenderApiField(_ref) {
     }))), /*#__PURE__*/_react["default"].createElement("div", {
       tabIndex: -1,
       style: dropdownStyle,
-      className: "absolute left-0 ".concat(isOpeningUp ? "bottom-full mb-2" : "top-full mt-2", " border border-white/10 p-2 rounded-lg flex flex-col overflow-y-auto bg-zinc-900/95 backdrop-blur-3xl shadow-2xl z-50 transition-all duration-200 w-full max-h-60 custom-scrollbar-thin ").concat(dropDown === idx + 1 ? "opacity-100 scale-100 visible translate-y-0" : "opacity-0 scale-95 invisible ".concat(isOpeningUp ? "translate-y-2" : "-translate-y-2"))
+      className: "absolute left-0 ".concat(isOpeningUp ? "bottom-full mb-2" : "top-full mt-2", " border border-white/10 p-2 rounded-lg flex flex-col overflow-y-auto bg-zinc-900 shadow-2xl z-50 transition-all duration-200 w-full max-h-60 custom-scrollbar-thin ").concat(dropDown === idx + 1 ? "opacity-100 scale-100 visible translate-y-0" : "opacity-0 scale-95 invisible ".concat(isOpeningUp ? "translate-y-2" : "-translate-y-2"))
     }, filteredOptions.length > 0 ? filteredOptions.map(function (option, i) {
       return /*#__PURE__*/_react["default"].createElement("button", {
         type: "button",
@@ -254,12 +312,12 @@ var RenderApiField = function RenderApiField(_ref) {
         }
       }, /*#__PURE__*/_react["default"].createElement("span", {
         className: "truncate"
-      }, _typeof(option) === "object" ? option.label || option.value : option), (_typeof(option) === "object" ? formValues[fieldName] === option.value : formValues[fieldName] === option) && /*#__PURE__*/_react["default"].createElement("span", {
+      }, _typeof(option) === "object" ? translateUi(option.label || option.value) : translateUi(option)), (_typeof(option) === "object" ? formValues[fieldName] === option.value : formValues[fieldName] === option) && /*#__PURE__*/_react["default"].createElement("span", {
         className: "ml-auto text-blue-400 font-bold"
       }, "\u2713"));
     }) : /*#__PURE__*/_react["default"].createElement("div", {
       className: "text-gray-500 text-xs p-2 text-center"
-    }, "No options found"))));
+    }, translateUi("No options found")))));
   }
   ;
   if (isImageField || isVideoField || isAudioField) {
@@ -282,14 +340,49 @@ var RenderApiField = function RenderApiField(_ref) {
       readOnly: true
       // onChange={(e) => handleChange(fieldName, e.target.value)} 
       ,
-      className: "bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50",
-      placeholder: "Add a file or provide an URL"
+      className: "bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50",
+      placeholder: translateUi("Add a file or provide an URL")
     })), uploading && /*#__PURE__*/_react["default"].createElement("div", {
-      className: "w-full bg-gray-700/70 rounded h-1 overflow-hidden"
+      className: "w-full bg-gray-700 rounded h-1 overflow-hidden"
     }, /*#__PURE__*/_react["default"].createElement("div", {
       className: "bg-blue-500 h-full",
       style: {
         width: "".concat(uploadProgress, "%")
+      }
+    })), isMobileUploadUi && /*#__PURE__*/_react["default"].createElement("div", {
+      className: "flex flex-col sm:flex-row gap-2"
+    }, /*#__PURE__*/_react["default"].createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        var _fileInputRef$current;
+        return (_fileInputRef$current = fileInputRef.current) === null || _fileInputRef$current === void 0 ? void 0 : _fileInputRef$current.click();
+      },
+      className: "min-h-11 px-4 rounded-lg bg-cyan-500/50 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/60 transition-colors"
+    }, "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0444\u0430\u0439\u043B"), isImageField && /*#__PURE__*/_react["default"].createElement("button", {
+      type: "button",
+      onClick: function onClick() {
+        var _cameraInputRef$curre;
+        return (_cameraInputRef$curre = cameraInputRef.current) === null || _cameraInputRef$curre === void 0 ? void 0 : _cameraInputRef$curre.click();
+      },
+      className: "min-h-11 px-4 rounded-lg bg-purple-500/50 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/60 transition-colors"
+    }, "\u041A\u0430\u043C\u0435\u0440\u0430"), /*#__PURE__*/_react["default"].createElement("input", {
+      ref: fileInputRef,
+      type: "file",
+      accept: fileAcceptAttr,
+      className: "hidden",
+      disabled: uploading,
+      onChange: function onChange(e) {
+        return handleFileUpload(fieldName, meta, e);
+      }
+    }), isImageField && /*#__PURE__*/_react["default"].createElement("input", {
+      ref: cameraInputRef,
+      type: "file",
+      accept: fileAcceptAttr,
+      capture: "environment",
+      className: "hidden",
+      disabled: uploading,
+      onChange: function onChange(e) {
+        return handleFileUpload(fieldName, meta, e);
       }
     })), formValues[fieldName] && /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex items-center gap-2 relative group overflow-hidden self-start w-full"
@@ -333,7 +426,7 @@ var RenderApiField = function RenderApiField(_ref) {
       className: "flex items-center justify-between"
     }, label, meta.maxItems && /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-xs text-gray-400"
-    }, "max items: ", meta.maxItems)), /*#__PURE__*/_react["default"].createElement("div", {
+    }, translateUi("max items:"), " ", meta.maxItems)), /*#__PURE__*/_react["default"].createElement("div", {
       className: "grid grid-cols-3 gap-2"
     }, imageList.map(function (url, idx) {
       return /*#__PURE__*/_react["default"].createElement("div", {
@@ -347,7 +440,7 @@ var RenderApiField = function RenderApiField(_ref) {
         src: url,
         className: "w-full h-full aspect-[1/1] object-cover border border-gray-500 rounded"
       }), /*#__PURE__*/_react["default"].createElement("div", {
-        className: "inset-0 group-hover:bg-gray-600/40 absolute rounded"
+        className: "inset-0 group-hover:bg-gray-600 absolute rounded"
       }, /*#__PURE__*/_react["default"].createElement("button", {
         type: "button",
         suppressHydrationWarning: true,
@@ -417,7 +510,7 @@ var RenderApiField = function RenderApiField(_ref) {
         return handleChange(fieldName, parseFloat(e.target.value || 0));
       },
       placeholder: meta.description || "",
-      className: "bg-zinc-900/50 text-white text-xs p-2 rounded-lg border border-white/10 hover:border-white/20 transition-all outline-none focus:border-blue-500/50"
+      className: "bg-zinc-900 text-white text-xs p-2 rounded-lg border border-white/10 hover:border-white/20 transition-all outline-none focus:border-blue-500/50"
     }));
   }
   ;
@@ -439,11 +532,11 @@ var RenderApiField = function RenderApiField(_ref) {
       type: "text",
       id: fieldName,
       value: value,
-      placeholder: meta.placeholder || meta.description || fieldName,
+      placeholder: translateUi(meta.placeholder || meta.description || fieldName),
       onChange: function onChange(e) {
         return handleChange(fieldName, e.target.value);
       },
-      className: "bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
+      className: "bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
     }));
   }
   ;
@@ -501,7 +594,7 @@ var RenderApiField = function RenderApiField(_ref) {
     // onChange={(e) => handleChange(fieldName, e.target.value)}
     ,
     placeholder: meta.description || "",
-    className: "bg-zinc-900/50 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50",
+    className: "bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50",
     rows: 6
   }));
   // }

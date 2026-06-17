@@ -227,6 +227,16 @@ var NodesNavbar = function NodesNavbar(_ref) {
           name: "Seedance Промпт"
         });
       }
+    }, {
+      label: "Агент Гена",
+      id: "skylark-agent",
+      icon: /*#__PURE__*/_react["default"].createElement(_ri.RiRobot2Line, {
+        className: "text-purple-400",
+        size: 18
+      }),
+      description: "Умный видео-агент для генерации контента",
+      isSoon: true,
+      action: function action() {}
     }]
   }
   // Audio (Generate Audio) and API Models (Api Node) sections removed.
@@ -377,7 +387,16 @@ var NodesNavbar = function NodesNavbar(_ref) {
       return _objectSpread(_objectSpread({}, m), {}, {
         type: "apiNode"
       });
-    })));
+    })), [{
+      id: "seedance-prompt",
+      name: "Seedance Промпт",
+      type: "seedancePromptNode"
+    }, {
+      id: "skylark-agent",
+      name: "Агент Гена",
+      type: "skylarkNode",
+      isSoon: true
+    }]);
     var filtered = allModels.filter(function (m) {
       return m && m.name && m.name.toLowerCase().includes(searchQuery.toLowerCase());
     });
@@ -388,13 +407,15 @@ var NodesNavbar = function NodesNavbar(_ref) {
         type: "button",
         suppressHydrationWarning: true,
         key: idx,
-        className: "flex items-center gap-2 px-3 py-2 text-xs text-white hover:bg-[#2c3037] rounded cursor-pointer transition text-left",
+        className: "flex items-center gap-2 px-3 py-2 text-xs text-white rounded transition text-left ".concat(item.isSoon ? "opacity-50 cursor-not-allowed" : "hover:bg-[#2c3037] cursor-pointer"),
         onClick: function onClick() {
-          return handleAddNode(item.type, item);
+          return !item.isSoon && handleAddNode(item.type, item);
         }
       }, item.type === "imageNode" && /*#__PURE__*/_react["default"].createElement(_io.IoImageOutline, null), item.type === "videoNode" && /*#__PURE__*/_react["default"].createElement(_io.IoVideocamOutline, null), item.type === "textNode" && /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, null), item.type === "audioNode" && /*#__PURE__*/_react["default"].createElement(_ai.AiOutlineAudio, null), item.type === "concatNode" && /*#__PURE__*/_react["default"].createElement(_tb.TbArrowMerge, {
         className: "rotate-90"
-      }), item.type === "apiNode" && /*#__PURE__*/_react["default"].createElement(_ri.RiInputMethodLine, null), /*#__PURE__*/_react["default"].createElement("span", null, item.name));
+      }), item.type === "apiNode" && /*#__PURE__*/_react["default"].createElement(_ri.RiInputMethodLine, null), item.type === "skylarkNode" && /*#__PURE__*/_react["default"].createElement(_ri.RiRobot2Line, null), item.type === "seedancePromptNode" && /*#__PURE__*/_react["default"].createElement(_md.MdAutoFixHigh, null), /*#__PURE__*/_react["default"].createElement("span", null, item.name), item.isSoon && /*#__PURE__*/_react["default"].createElement("span", {
+        className: "ml-auto text-[8px] bg-purple-500/20 text-purple-400 px-1 py-0.5 rounded font-bold uppercase"
+      }, "\u0421\u043A\u043E\u0440\u043E"));
     }) : /*#__PURE__*/_react["default"].createElement("div", {
       className: "px-3 py-2 text-xs text-gray-500"
     }, "\u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E"));
@@ -459,10 +480,10 @@ var NodesNavbar = function NodesNavbar(_ref) {
     className: "flex flex-col gap-2 relative z-50"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     ref: menuRef,
-    className: "flex flex-col gap-2 bg-[#151618] border border-gray-700 p-2 rounded-xl w-60 shadow-xl",
+    className: "flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl opacity-100",
     style: menuStyle
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center relative w-full pl-2 bg-[#1c1e21] border border-gray-600 rounded-lg shrink-0"
+    className: "flex items-center relative w-full pl-2 bg-[#161719] border border-gray-600 rounded-lg shrink-0"
   }, /*#__PURE__*/_react["default"].createElement(_ai.AiOutlineSearch, {
     className: "text-gray-400"
   }), /*#__PURE__*/_react["default"].createElement("input", {
@@ -480,14 +501,15 @@ var NodesNavbar = function NodesNavbar(_ref) {
       key: idx,
       className: "flex flex-col gap-1"
     }, /*#__PURE__*/_react["default"].createElement("h3", {
-      className: "text-[10px] text-gray-500 text-left px-2 font-medium sticky top-0 bg-[#151618] z-10"
+      className: "text-[10px] text-gray-500 text-left px-2 font-medium sticky top-0 bg-[#0c0d0f] z-10"
     }, section.label), /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col gap-0.5"
     }, section.items.map(function (item, i) {
       return /*#__PURE__*/_react["default"].createElement("div", {
         key: i,
-        className: "flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer group transition-colors relative ".concat(activeSubMenu === item.id ? "bg-[#2c3037] text-white" : "text-gray-300 hover:bg-[#212326] hover:text-white"),
+        className: "flex items-center justify-between px-2 py-2 rounded-lg transition-colors relative ".concat(item.isSoon ? "opacity-50 cursor-not-allowed" : "cursor-pointer group hover:bg-[#212326] hover:text-white", " ").concat(activeSubMenu === item.id ? "bg-[#2c3037] text-white" : "text-gray-300"),
         onMouseEnter: function onMouseEnter() {
+          if (item.isSoon) return;
           if (item.hasSubmenu) {
             setActiveSubMenu(item.id);
           } else {
@@ -495,6 +517,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
           }
         },
         onClick: function onClick() {
+          if (item.isSoon) return;
           if (item.hasSubmenu) {
             setActiveSubMenu(item.id);
           } else if (item.action) {
@@ -504,14 +527,16 @@ var NodesNavbar = function NodesNavbar(_ref) {
       }, /*#__PURE__*/_react["default"].createElement("div", {
         className: "flex items-center gap-3"
       }, /*#__PURE__*/_react["default"].createElement("span", {
-        className: "text-gray-400 group-hover:text-white"
+        className: "".concat(item.isSoon ? "text-gray-500" : "text-gray-400 group-hover:text-white")
       }, item.icon), /*#__PURE__*/_react["default"].createElement("span", {
         className: "text-xs font-medium"
-      }, item.label)), /*#__PURE__*/_react["default"].createElement("div", {
+      }, item.label), item.isSoon && /*#__PURE__*/_react["default"].createElement("span", {
+        className: "text-[9px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
+      }, "\u0421\u043A\u043E\u0440\u043E")), /*#__PURE__*/_react["default"].createElement("div", {
         className: "flex items-center gap-2"
       }, item.shortcut && /*#__PURE__*/_react["default"].createElement("span", {
         className: "text-[10px] text-gray-600"
-      }, item.shortcut), item.hasSubmenu && /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
+      }, item.shortcut), item.hasSubmenu && !item.isSoon && /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
         size: 10,
         className: "text-gray-500"
       })));
@@ -615,7 +640,7 @@ var Submenu = function Submenu(_ref4) {
     style: {
       top: position.side === "overlay" ? 0 : "".concat(position.top, "px")
     },
-    className: "absolute flex flex-col gap-2 bg-[#151618] border border-gray-700 p-2 rounded-xl w-60 shadow-xl overflow-hidden z-50 ".concat(position.side === "overlay" ? "h-full" : "h-fit max-h-[80vh]", " ").concat(getOverlayClass())
+    className: "absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ".concat(position.side === "overlay" ? "h-full" : "h-fit max-h-[80vh]", " ").concat(getOverlayClass())
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors",
     onClick: function onClick() {
@@ -648,6 +673,6 @@ var Submenu = function Submenu(_ref4) {
     }, item.label));
   }) : /*#__PURE__*/_react["default"].createElement("div", {
     className: "px-2 py-4 text-xs text-gray-500 text-center"
-  }, "No items available")));
+  }, "\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u044D\u043B\u0435\u043C\u0435\u043D\u0442\u043E\u0432")));
 };
 var _default = exports["default"] = NodesNavbar;

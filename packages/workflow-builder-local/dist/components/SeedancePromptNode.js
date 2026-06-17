@@ -423,11 +423,18 @@ var SeedancePromptNode = function SeedancePromptNode(_ref) {
     }, t.url ? t.kind === "video" ? /*#__PURE__*/_react["default"].createElement("video", {
       src: t.url,
       className: "w-6 h-6 rounded object-cover flex-shrink-0",
-      muted: true
+      muted: true,
+      preload: "none",
+      onError: function onError(e) {
+        e.target.style.display = 'none';
+      }
     }) : /*#__PURE__*/_react["default"].createElement("img", {
       src: t.url,
       alt: t.label,
-      className: "w-6 h-6 rounded object-cover flex-shrink-0"
+      className: "w-6 h-6 rounded object-cover flex-shrink-0",
+      onError: function onError(e) {
+        e.target.style.display = 'none';
+      }
     }) : /*#__PURE__*/_react["default"].createElement("span", {
       className: "w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0"
     }, t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"), /*#__PURE__*/_react["default"].createElement("span", {

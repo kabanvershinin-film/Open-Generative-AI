@@ -22,11 +22,7 @@ var _NodeOptionsMenu = _interopRequireDefault(require("./NodeOptionsMenu"));
 var _useGenerationCost2 = require("./useGenerationCost");
 var _VideoPlayer = _interopRequireDefault(require("./VideoPlayer"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
-function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t6 in e) "default" !== _t6 && {}.hasOwnProperty.call(e, _t6) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t6)) && (i.get || i.set) ? o(f, _t6, i) : f[_t6] = e[_t6]); return f; })(e, t); }
-function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
-function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
-function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
-function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
+function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t7 in e) "default" !== _t7 && {}.hasOwnProperty.call(e, _t7) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t7)) && (i.get || i.set) ? o(f, _t7, i) : f[_t7] = e[_t7]); return f; })(e, t); }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
@@ -36,6 +32,10 @@ function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t =
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
@@ -120,6 +120,53 @@ var VideoGeneration = function VideoGeneration(_ref) {
   var _useGenerationCost = (0, _useGenerationCost2.useGenerationCost)(selectedModel, formValues),
     generationCost = _useGenerationCost.generationCost,
     isRefreshingCost = _useGenerationCost.isRefreshingCost;
+  var updateWorkflowThumbnail = /*#__PURE__*/function () {
+    var _ref2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(thumbnail) {
+      var workflow_id, response, _error$response, _t;
+      return _regenerator().w(function (_context) {
+        while (1) switch (_context.p = _context.n) {
+          case 0:
+            workflow_id = (0, _WorkflowStore.getWorkflowId)();
+            if (workflow_id) {
+              _context.n = 1;
+              break;
+            }
+            _reactHotToast.toast.error("Workflow id not found");
+            return _context.a(2);
+          case 1:
+            if (thumbnail) {
+              _context.n = 2;
+              break;
+            }
+            _reactHotToast.toast.error("Thumbnail URL is required");
+            return _context.a(2);
+          case 2:
+            _context.p = 2;
+            _context.n = 3;
+            return _axios["default"].post("/api/workflow/".concat(workflow_id, "/thumbnail"), {
+              thumbnail: thumbnail
+            });
+          case 3:
+            response = _context.v;
+            if (response.data.success) _reactHotToast.toast.success("Обложка успешно обновлена");
+            _context.n = 5;
+            break;
+          case 4:
+            _context.p = 4;
+            _t = _context.v;
+            _reactHotToast.toast.error(((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Не удалось сохранить обложку");
+            console.error(_t);
+          case 5:
+            ;
+          case 6:
+            return _context.a(2);
+        }
+      }, _callee, null, [[2, 4]]);
+    }));
+    return function updateWorkflowThumbnail(_x) {
+      return _ref2.apply(this, arguments);
+    };
+  }();
   (0, _react.useEffect)(function () {
     if (data.cost !== generationCost) {
       data.onDataChange(id, {
@@ -130,10 +177,10 @@ var VideoGeneration = function VideoGeneration(_ref) {
   var _initializeFormData = function initializeFormData(schemaProperties) {
     var initialData = {};
     var fieldEntries = Object.entries(schemaProperties || {});
-    fieldEntries.forEach(function (_ref2) {
-      var _ref3 = _slicedToArray(_ref2, 2),
-        fieldName = _ref3[0],
-        fieldSchema = _ref3[1];
+    fieldEntries.forEach(function (_ref3) {
+      var _ref4 = _slicedToArray(_ref3, 2),
+        fieldName = _ref4[0],
+        fieldSchema = _ref4[1];
       if (fieldSchema.type === "array") {
         var _fieldSchema$items;
         if (((_fieldSchema$items = fieldSchema.items) === null || _fieldSchema$items === void 0 ? void 0 : _fieldSchema$items.type) === "object") {
@@ -174,23 +221,23 @@ var VideoGeneration = function VideoGeneration(_ref) {
   var addFormValuesInTaskData = function addFormValuesInTaskData(properties) {
     var defaults = _initializeFormData(properties);
     var validKeys = Object.keys(properties);
-    var filteredFormValues = Object.entries(data.formValues || {}).reduce(function (acc, _ref4) {
-      var _ref5 = _slicedToArray(_ref4, 2),
-        key = _ref5[0],
-        val = _ref5[1];
+    var filteredFormValues = Object.entries(data.formValues || {}).reduce(function (acc, _ref5) {
+      var _ref6 = _slicedToArray(_ref5, 2),
+        key = _ref6[0],
+        val = _ref6[1];
       if (validKeys.includes(key)) acc[key] = val;
       return acc;
     }, {});
 
     // const merged = { ...defaults, ...filteredFormValues };
-    var merged = Object.entries(_objectSpread(_objectSpread({}, defaults), filteredFormValues)).reduce(function (acc, _ref6) {
-      var _ref7 = _slicedToArray(_ref6, 2),
-        key = _ref7[0],
-        val = _ref7[1];
+    var merged = Object.entries(_objectSpread(_objectSpread({}, defaults), filteredFormValues)).reduce(function (acc, _ref7) {
+      var _ref8 = _slicedToArray(_ref7, 2),
+        key = _ref8[0],
+        val = _ref8[1];
       var meta = properties[key];
       if (meta !== null && meta !== void 0 && meta["enum"] && !meta["enum"].includes(val)) {
-        var _ref8, _meta$default;
-        acc[key] = (_ref8 = (_meta$default = meta["default"]) !== null && _meta$default !== void 0 ? _meta$default : meta["enum"][0]) !== null && _ref8 !== void 0 ? _ref8 : "";
+        var _ref9, _meta$default;
+        acc[key] = (_ref9 = (_meta$default = meta["default"]) !== null && _meta$default !== void 0 ? _meta$default : meta["enum"][0]) !== null && _ref9 !== void 0 ? _ref9 : "";
       } else {
         acc[key] = val;
       }
@@ -300,17 +347,17 @@ var VideoGeneration = function VideoGeneration(_ref) {
         stopPoll();
         data.onDataChange(id, {
           isLoading: false,
-          errorMsg: "Generation timed out"
+          errorMsg: "Превышено время ожидания генерации"
         });
-        _reactHotToast.toast.error("Video generation timed out");
+        _reactHotToast.toast.error("\u0412\u0440\u0435\u043C\u044F \u043E\u0436\u0438\u0434\u0430\u043D\u0438\u044F \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u0438 \u0432\u0438\u0434\u0435\u043E \u0438\u0441\u0442\u0435\u043A\u043B\u043E");
         return;
       }
       _axios["default"].get("/api/workflow/run/".concat(run_id, "/status")).then(function (response) {
         var _Object$entries$find;
         var nodesInRes = response.data.nodes || {};
-        var nodeData = nodesInRes[id] || ((_Object$entries$find = Object.entries(nodesInRes).find(function (_ref9) {
-          var _ref0 = _slicedToArray(_ref9, 1),
-            key = _ref0[0];
+        var nodeData = nodesInRes[id] || ((_Object$entries$find = Object.entries(nodesInRes).find(function (_ref0) {
+          var _ref1 = _slicedToArray(_ref0, 1),
+            key = _ref1[0];
           return key.toLowerCase().replace(/\s+/g, '') === id.toLowerCase().replace(/\s+/g, '');
         })) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[1]);
         if (!nodeData || nodeData.length === 0) return;
@@ -343,11 +390,11 @@ var VideoGeneration = function VideoGeneration(_ref) {
         if (latest.status === "failed") {
           var _latest$result, _outputs$;
           var outputs = latest === null || latest === void 0 || (_latest$result = latest.result) === null || _latest$result === void 0 ? void 0 : _latest$result.outputs;
-          var errorMsg = "Generation failed";
+          var errorMsg = "Ошибка генерации";
           if (outputs && (_outputs$ = outputs[0]) !== null && _outputs$ !== void 0 && (_outputs$ = _outputs$.value) !== null && _outputs$ !== void 0 && _outputs$.error) {
             errorMsg = outputs[0].value.error;
           }
-          _reactHotToast.toast.error("Node ".concat(id, " failed"));
+          _reactHotToast.toast.error("\u041D\u043E\u0434\u0430 ".concat(id, " \u043E\u0448\u0438\u0431\u043A\u0430"));
           var _currentHistory = data.outputHistory || [];
           data.onDataChange(id, {
             isLoading: false,
@@ -362,7 +409,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
         data.onDataChange(id, {
           isLoading: false
         });
-        _reactHotToast.toast.error("Failed to get workflow status Video ".concat(id.replace(/^\D+/g, "")));
+        _reactHotToast.toast.error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0441\u0442\u0430\u0442\u0443\u0441 \u0432\u0438\u0434\u0435\u043E ".concat(id.replace(/^\D+/g, "")));
       });
     };
     _check();
@@ -388,11 +435,11 @@ var VideoGeneration = function VideoGeneration(_ref) {
   // one HTTP connection up to ~290s (Vercel drops it → node stuck on
   // "GENERATING…"); the short submit + poll requests here never hang.
   var runArkSeedanceBrowser = /*#__PURE__*/function () {
-    var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
+    var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
       var _submit$data, _submit$data2, _submit$data3, _data$selectedModel3;
-      var fast, src, body, submit, _e$response, _e$response2, _e$response3, _d$required, _d$balance, d, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response4, status, histId, output, newHistory, _t, _t2;
-      return _regenerator().w(function (_context2) {
-        while (1) switch (_context2.p = _context2.n) {
+      var fast, src, body, submit, _e$response, _e$response2, _e$response3, _d$required, _d$balance, d, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response4, status, histId, output, newHistory, _t2, _t3;
+      return _regenerator().w(function (_context3) {
+        while (1) switch (_context3.p = _context3.n) {
           case 0:
             fast = /fast/.test("".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "").toLowerCase());
             src = formValues || {};
@@ -408,28 +455,28 @@ var VideoGeneration = function VideoGeneration(_ref) {
               duration: src.duration || undefined,
               face_asset: src.face_asset || undefined
             }; // Step 1: submit — fast, just creates the Ark task and returns a taskId.
-            _context2.p = 1;
-            _context2.n = 2;
+            _context3.p = 1;
+            _context3.n = 2;
             return _axios["default"].post("/api/ark/seedance", body);
           case 2:
-            submit = _context2.v;
-            _context2.n = 5;
+            submit = _context3.v;
+            _context3.n = 5;
             break;
           case 3:
-            _context2.p = 3;
-            _t = _context2.v;
-            if (!(((_e$response = _t.response) === null || _e$response === void 0 ? void 0 : _e$response.status) === 402)) {
-              _context2.n = 4;
+            _context3.p = 3;
+            _t2 = _context3.v;
+            if (!(((_e$response = _t2.response) === null || _e$response === void 0 ? void 0 : _e$response.status) === 402)) {
+              _context3.n = 4;
               break;
             }
-            d = _t.response.data || {};
+            d = _t2.response.data || {};
             throw new Error("\u041D\u0435\u0434\u043E\u0441\u0442\u0430\u0442\u043E\u0447\u043D\u043E \u0441\u0440\u0435\u0434\u0441\u0442\u0432. \u041D\u0443\u0436\u043D\u043E ".concat((_d$required = d.required) !== null && _d$required !== void 0 ? _d$required : "", "\u20BD, \u043D\u0430 \u0431\u0430\u043B\u0430\u043D\u0441\u0435 ").concat((_d$balance = d.balance) !== null && _d$balance !== void 0 ? _d$balance : 0, "\u20BD."));
           case 4:
-            throw new Error(((_e$response2 = _t.response) === null || _e$response2 === void 0 || (_e$response2 = _e$response2.data) === null || _e$response2 === void 0 ? void 0 : _e$response2.error) || "ARK submit ".concat(((_e$response3 = _t.response) === null || _e$response3 === void 0 ? void 0 : _e$response3.status) || "", ": ").concat(_t.message));
+            throw new Error(((_e$response2 = _t2.response) === null || _e$response2 === void 0 || (_e$response2 = _e$response2.data) === null || _e$response2 === void 0 ? void 0 : _e$response2.error) || "ARK submit ".concat(((_e$response3 = _t2.response) === null || _e$response3 === void 0 ? void 0 : _e$response3.status) || "", ": ").concat(_t2.message));
           case 5:
             taskId = (_submit$data = submit.data) === null || _submit$data === void 0 ? void 0 : _submit$data.taskId;
             if (taskId) {
-              _context2.n = 6;
+              _context3.n = 6;
               break;
             }
             throw new Error(((_submit$data2 = submit.data) === null || _submit$data2 === void 0 ? void 0 : _submit$data2.error) || "ARK: задача не создана (нет taskId).");
@@ -442,75 +489,75 @@ var VideoGeneration = function VideoGeneration(_ref) {
             attempt = 0;
           case 7:
             if (!(attempt < 300)) {
-              _context2.n = 19;
+              _context3.n = 19;
               break;
             }
             if (!arkCancelRef.current) {
-              _context2.n = 8;
+              _context3.n = 8;
               break;
             }
             arkCancelRef.current = false;
-            return _context2.a(2);
+            return _context3.a(2);
           case 8:
-            _context2.n = 9;
+            _context3.n = 9;
             return new Promise(function (r) {
               return setTimeout(r, 5000);
             });
           case 9:
             if (!arkCancelRef.current) {
-              _context2.n = 10;
+              _context3.n = 10;
               break;
             }
             arkCancelRef.current = false;
-            return _context2.a(2);
+            return _context3.a(2);
           case 10:
             pd = void 0;
-            _context2.p = 11;
-            _context2.n = 12;
+            _context3.p = 11;
+            _context3.n = 12;
             return _axios["default"].get("/api/ark/seedance?taskId=".concat(encodeURIComponent(taskId)).concat(billQs));
           case 12:
-            poll = _context2.v;
+            poll = _context3.v;
             pd = poll.data;
             pollErrors = 0;
-            _context2.n = 15;
+            _context3.n = 15;
             break;
           case 13:
-            _context2.p = 13;
-            _t2 = _context2.v;
+            _context3.p = 13;
+            _t3 = _context3.v;
             if (!(++pollErrors >= 12)) {
-              _context2.n = 14;
+              _context3.n = 14;
               break;
             }
-            throw new Error(((_e$response4 = _t2.response) === null || _e$response4 === void 0 || (_e$response4 = _e$response4.data) === null || _e$response4 === void 0 ? void 0 : _e$response4.error) || "ARK: опрос статуса не отвечает.");
+            throw new Error(((_e$response4 = _t3.response) === null || _e$response4 === void 0 || (_e$response4 = _e$response4.data) === null || _e$response4 === void 0 ? void 0 : _e$response4.error) || "ARK: опрос статуса не отвечает.");
           case 14:
-            return _context2.a(3, 18);
+            return _context3.a(3, 18);
           case 15:
             status = String(((_pd = pd) === null || _pd === void 0 ? void 0 : _pd.status) || "").toLowerCase();
             if (!(status === "succeeded" || status === "success" || status === "completed")) {
-              _context2.n = 17;
+              _context3.n = 17;
               break;
             }
             if (pd.url) {
-              _context2.n = 16;
+              _context3.n = 16;
               break;
             }
             throw new Error("ARK: видео готово, но URL не получен.");
           case 16:
             finishedUrl = pd.url;
-            return _context2.a(3, 19);
+            return _context3.a(3, 19);
           case 17:
             if (!["failed", "error", "expired", "cancelled"].includes(status)) {
-              _context2.n = 18;
+              _context3.n = 18;
               break;
             }
             throw new Error("ARK: \u0433\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F \u043D\u0435 \u0443\u0434\u0430\u043B\u0430\u0441\u044C (".concat(pd.error || status, ")."));
           case 18:
             attempt++;
-            _context2.n = 7;
+            _context3.n = 7;
             break;
           case 19:
             if (finishedUrl) {
-              _context2.n = 20;
+              _context3.n = 20;
               break;
             }
             throw new Error("ARK: превышено время ожидания генерации.");
@@ -537,6 +584,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
             });
             setCurrentHistoryIndex(newHistory.length - 1);
             setCurrentVideoIndex(0);
+            updateWorkflowThumbnail(finishedUrl);
 
             // Сохраняем в Галерею (как Студия) — /api/gallery сам зеркалирует в TOS и
             // добавляет запись в gallery/{userId}/entries.json. Браузерный ARK-путь
@@ -557,31 +605,31 @@ var VideoGeneration = function VideoGeneration(_ref) {
                 prompt: src.prompt || ""
               })
             }).then(/*#__PURE__*/function () {
-              var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(r) {
+              var _ref11 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(r) {
                 var err;
-                return _regenerator().w(function (_context) {
-                  while (1) switch (_context.n) {
+                return _regenerator().w(function (_context2) {
+                  while (1) switch (_context2.n) {
                     case 0:
                       if (r.ok) {
-                        _context.n = 2;
+                        _context2.n = 2;
                         break;
                       }
-                      _context.n = 1;
+                      _context2.n = 1;
                       return r.json()["catch"](function () {
                         return {};
                       });
                     case 1:
-                      err = _context.v;
+                      err = _context2.v;
                       _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (err.error || r.status), {
                         duration: 4000
                       });
                     case 2:
-                      return _context.a(2);
+                      return _context2.a(2);
                   }
-                }, _callee);
+                }, _callee2);
               }));
-              return function (_x) {
-                return _ref10.apply(this, arguments);
+              return function (_x2) {
+                return _ref11.apply(this, arguments);
               };
             }())["catch"](function (e) {
               _reactHotToast.toast.error("Не удалось сохранить в галерею: " + (e.message || "ошибка"), {
@@ -621,40 +669,40 @@ var VideoGeneration = function VideoGeneration(_ref) {
               (_data$handleSaveWorkF = data.handleSaveWorkFlow) === null || _data$handleSaveWorkF === void 0 || _data$handleSaveWorkF.call(data);
             })["catch"](function () {/* ARK URL остаётся */});
           case 21:
-            return _context2.a(2);
+            return _context3.a(2);
         }
-      }, _callee2, null, [[11, 13], [1, 3]]);
+      }, _callee3, null, [[11, 13], [1, 3]]);
     }));
     return function runArkSeedanceBrowser() {
-      return _ref1.apply(this, arguments);
+      return _ref10.apply(this, arguments);
     };
   }();
   var handleRunSingleNode = /*#__PURE__*/function () {
-    var _ref11 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
-      var _data$selectedModel4, _data$selectedModel5, _nodeSchemas$categori2, modelHay, isSeedance, _data$handleSaveWorkF2, _e$message, _e$message2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _error$response, _t3, _t4;
-      return _regenerator().w(function (_context3) {
-        while (1) switch (_context3.p = _context3.n) {
+    var _ref12 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4() {
+      var _data$selectedModel4, _data$selectedModel5, _nodeSchemas$categori2, modelHay, isSeedance, _data$handleSaveWorkF2, _e$message, _e$message2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, videoUrl, _error$response2, _t4, _t5;
+      return _regenerator().w(function (_context4) {
+        while (1) switch (_context4.p = _context4.n) {
           case 0:
             if (!inFlightRef.current) {
-              _context3.n = 2;
+              _context4.n = 2;
               break;
             }
             if (data.isLoading) {
-              _context3.n = 1;
+              _context4.n = 1;
               break;
             }
             inFlightRef.current = false;
-            _context3.n = 2;
+            _context4.n = 2;
             break;
           case 1:
             (0, _reactHotToast.toast)("Генерация уже идёт — подождите завершения", {
               icon: "⏳"
             });
-            return _context3.a(2);
+            return _context4.a(2);
           case 2:
             inFlightRef.current = true;
             arkCancelRef.current = false;
-            _context3.p = 3;
+            _context4.p = 3;
             data.onDataChange(id, {
               isLoading: true
             });
@@ -667,11 +715,11 @@ var VideoGeneration = function VideoGeneration(_ref) {
             modelHay = "".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "", " ").concat(((_data$selectedModel4 = data.selectedModel) === null || _data$selectedModel4 === void 0 ? void 0 : _data$selectedModel4.id) || "", " ").concat(((_data$selectedModel5 = data.selectedModel) === null || _data$selectedModel5 === void 0 ? void 0 : _data$selectedModel5.name) || "").toLowerCase();
             isSeedance = /seedance[\s-]*2/.test(modelHay);
             if (!isSeedance) {
-              _context3.n = 8;
+              _context4.n = 8;
               break;
             }
-            _context3.p = 4;
-            _context3.n = 5;
+            _context4.p = 4;
+            _context4.n = 5;
             return runArkSeedanceBrowser();
           case 5:
             // Save immediately so the result survives SPA navigation.
@@ -679,43 +727,43 @@ var VideoGeneration = function VideoGeneration(_ref) {
             // onDataChange, so buildWorkflowPayload captures the correct resultUrl
             // even if the React setNodes update was cancelled by concurrent mode.
             (_data$handleSaveWorkF2 = data.handleSaveWorkFlow) === null || _data$handleSaveWorkF2 === void 0 || _data$handleSaveWorkF2.call(data);
-            _context3.n = 7;
+            _context4.n = 7;
             break;
           case 6:
-            _context3.p = 6;
-            _t3 = _context3.v;
+            _context4.p = 6;
+            _t4 = _context4.v;
             data.onDataChange(id, {
               isLoading: false,
-              errorMsg: ((_e$message = _t3.message) === null || _e$message === void 0 ? void 0 : _e$message.slice(0, 120)) || "Ошибка генерации"
+              errorMsg: ((_e$message = _t4.message) === null || _e$message === void 0 ? void 0 : _e$message.slice(0, 120)) || "Ошибка генерации"
             });
-            _reactHotToast.toast.error(((_e$message2 = _t3.message) === null || _e$message2 === void 0 ? void 0 : _e$message2.slice(0, 80)) || "Ошибка генерации");
+            _reactHotToast.toast.error(((_e$message2 = _t4.message) === null || _e$message2 === void 0 ? void 0 : _e$message2.slice(0, 80)) || "Ошибка генерации");
           case 7:
-            return _context3.a(2);
+            return _context4.a(2);
           case 8:
-            _context3.n = 9;
+            _context4.n = 9;
             return data.handleSaveWorkFlow();
           case 9:
-            workflow_id = _context3.v;
+            workflow_id = _context4.v;
             if (workflow_id) {
-              _context3.n = 10;
+              _context4.n = 10;
               break;
             }
-            _reactHotToast.toast.error("Failed to save workflow before running node");
+            _reactHotToast.toast.error("Не удалось сохранить воркфлоу перед запуском ноды");
             data.onDataChange(id, {
               isLoading: false
             });
-            return _context3.a(2);
+            return _context4.a(2);
           case 10:
             modelSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori2 = nodeSchemas.categories) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.video) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.models[selectedModel.id]) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.input_schema) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.schemas) === null || _nodeSchemas$categori2 === void 0 ? void 0 : _nodeSchemas$categori2.input_data;
             if (!(!modelSchema || !modelSchema.properties)) {
-              _context3.n = 11;
+              _context4.n = 11;
               break;
             }
-            _reactHotToast.toast.error("No input schema found for this model");
+            _reactHotToast.toast.error("Схема входных данных для этой модели не найдена");
             data.onDataChange(id, {
               isLoading: false
             });
-            return _context3.a(2);
+            return _context4.a(2);
           case 11:
             params = {};
             inputSchema = modelSchema.properties;
@@ -730,7 +778,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
             }
             // face_asset isn't in the schema — carry it through when present.
             if (localSources.face_asset) params.face_asset = localSources.face_asset;
-            _context3.n = 12;
+            _context4.n = 12;
             return _axios["default"].post("/api/workflow/".concat(workflow_id, "/node/").concat(id, "/run"), {
               run_id: runId,
               model: selectedModel.id,
@@ -739,56 +787,56 @@ var VideoGeneration = function VideoGeneration(_ref) {
               node_id: "AI Video"
             });
           case 12:
-            response = _context3.v;
+            response = _context4.v;
             _r = response.data;
             _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]);
             _lt = _nd && _nd[_nd.length - 1];
             if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) {
               _o = _lt.result.outputs;
+              videoUrl = _o[0] && _o[0].value || "";
               data && data.onDataChange && data.onDataChange(id, {
                 outputs: _o,
-                resultUrl: _o[0] && _o[0].value || "",
+                resultUrl: videoUrl,
                 isLoading: false,
                 errorMsg: null,
                 outputHistory: (data.outputHistory || []).concat([_lt])
               });
+              updateWorkflowThumbnail(videoUrl);
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,
-                errorMsg: "Generation failed"
+                errorMsg: "Ошибка генерации"
               });
             } else {
               pollNodeStatus(_r.run_id);
             }
-            _context3.n = 14;
+            _context4.n = 14;
             break;
           case 13:
-            _context3.p = 13;
-            _t4 = _context3.v;
+            _context4.p = 13;
+            _t5 = _context4.v;
             data.onDataChange(id, {
               isLoading: false
             });
-            _reactHotToast.toast.error(((_error$response = _t4.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Error running node");
-            console.error(_t4);
+            _reactHotToast.toast.error(((_error$response2 = _t5.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Ошибка при запуске ноды");
+            console.error(_t5);
           case 14:
-            _context3.p = 14;
+            _context4.p = 14;
             inFlightRef.current = false;
-            return _context3.f(14);
+            return _context4.f(14);
           case 15:
             ;
           case 16:
-            return _context3.a(2);
+            return _context4.a(2);
         }
-      }, _callee3, null, [[4, 6], [3, 13, 14, 15]]);
+      }, _callee4, null, [[4, 6], [3, 13, 14, 15]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref11.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref12.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
-    if (window.confirm("Are you sure you want to delete this ".concat(id, " node?"))) {
+    if (window.confirm("\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B, \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u043D\u043E\u0434\u0443 ".concat(id, "?"))) {
       setNodes(function (nds) {
         return nds.filter(function (n) {
           return n.id !== id;
@@ -799,7 +847,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
           return e.source !== id && e.target !== id;
         });
       });
-      _reactHotToast.toast.success("Deleted node ".concat(id));
+      _reactHotToast.toast.success("\u041D\u043E\u0434\u0430 ".concat(id, " \u0443\u0434\u0430\u043B\u0435\u043D\u0430"));
     }
     ;
   };
@@ -886,25 +934,25 @@ var VideoGeneration = function VideoGeneration(_ref) {
     }
   };
   var handleDeleteHistory = /*#__PURE__*/function () {
-    var _ref12 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4(e) {
-      var currentHistory, _data$onDataChange2, newHistory, _error$response2, _t5;
-      return _regenerator().w(function (_context4) {
-        while (1) switch (_context4.p = _context4.n) {
+    var _ref13 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(e) {
+      var currentHistory, _data$onDataChange2, newHistory, _error$response3, _t6;
+      return _regenerator().w(function (_context5) {
+        while (1) switch (_context5.p = _context5.n) {
           case 0:
             e.stopPropagation();
             currentHistory = outputHistory[currentHistoryIndex];
             if (!(!currentHistory || !currentHistory.node_run_id)) {
-              _context4.n = 1;
+              _context5.n = 1;
               break;
             }
-            return _context4.a(2);
+            return _context5.a(2);
           case 1:
-            if (!window.confirm("Are you sure you want to delete this history entry?")) {
-              _context4.n = 5;
+            if (!window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
+              _context5.n = 5;
               break;
             }
-            _context4.p = 2;
-            _context4.n = 3;
+            _context5.p = 2;
+            _context5.n = 3;
             return _axios["default"]["delete"]("/api/workflow/node-run/".concat(currentHistory.node_run_id));
           case 3:
             newHistory = outputHistory.filter(function (_, i) {
@@ -921,21 +969,21 @@ var VideoGeneration = function VideoGeneration(_ref) {
             } else {
               setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
             }
-            _reactHotToast.toast.success("History entry deleted");
-            _context4.n = 5;
+            _reactHotToast.toast.success("Запись удалена");
+            _context5.n = 5;
             break;
           case 4:
-            _context4.p = 4;
-            _t5 = _context4.v;
-            _reactHotToast.toast.error(((_error$response2 = _t5.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Failed to delete history entry");
-            console.error(_t5);
+            _context5.p = 4;
+            _t6 = _context5.v;
+            _reactHotToast.toast.error(((_error$response3 = _t6.response) === null || _error$response3 === void 0 || (_error$response3 = _error$response3.data) === null || _error$response3 === void 0 ? void 0 : _error$response3.detail) || "Не удалось удалить запись");
+            console.error(_t6);
           case 5:
-            return _context4.a(2);
+            return _context5.a(2);
         }
-      }, _callee4, null, [[2, 4]]);
+      }, _callee5, null, [[2, 4]]);
     }));
-    return function handleDeleteHistory(_x2) {
-      return _ref12.apply(this, arguments);
+    return function handleDeleteHistory(_x3) {
+      return _ref13.apply(this, arguments);
     };
   }();
   var currentOutputList = currentHistoryIndex !== -1 && outputHistory[currentHistoryIndex] ? ((_outputHistory$curren = outputHistory[currentHistoryIndex]) === null || _outputHistory$curren === void 0 || (_outputHistory$curren = _outputHistory$curren.result) === null || _outputHistory$curren === void 0 ? void 0 : _outputHistory$curren.outputs) || [] : data.outputs || [];
@@ -945,23 +993,23 @@ var VideoGeneration = function VideoGeneration(_ref) {
       minHeight: 220,
       '--loader-color': '#f97316'
     },
-    className: "\n        nowheel group flex flex-col w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-orange-600 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]/95 backdrop-blur-sm\n      ")
+    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-orange-500 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
   }, data.isLoading && /*#__PURE__*/_react["default"].createElement("div", {
     className: "loader-border"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 absolute -top-5 left-0"
-  }, /*#__PURE__*/_react["default"].createElement("h4", {
+  }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-zinc-400 text-[10px] font-medium tracking-wider uppercase"
-  }, "Video ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
+  }, "\u0412\u0438\u0434\u0435\u043E ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-orange-500 -mt-0.5 font-medium flex items-center gap-1 opacity-80"
   }, isRefreshingCost ? /*#__PURE__*/_react["default"].createElement("span", {
     className: "flex items-center gap-1 italic text-orange-200"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-2 h-2 border-[1.5px] border-orange-200/30 border-t-orange-400 rounded-full animate-spin"
-  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Free' : "$".concat(generationCost)))), /*#__PURE__*/_react["default"].createElement("div", {
+  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Бесплатно' : "\u2248 ".concat(generationCost.toFixed(2), " \u20BD")))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col"
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 p-3"
+    className: "flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2.5"
   }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -971,14 +1019,14 @@ var VideoGeneration = function VideoGeneration(_ref) {
   })), /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-xs font-bold text-zinc-100"
   }, selectedModel.name)), outputHistory.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
+    className: "absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handlePrev,
     disabled: currentHistoryIndex <= 0,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Previous"
+    title: "\u041D\u0430\u0437\u0430\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -992,7 +1040,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
     suppressHydrationWarning: true,
     onClick: handleDeleteHistory,
     className: "p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center",
-    title: "Delete history"
+    title: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoTrashOutline, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -1009,7 +1057,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
     onClick: handleNext,
     disabled: currentHistoryIndex >= outputHistory.length - 1,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Next"
+    title: "\u0412\u043F\u0435\u0440\u0435\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 10
   }))), /*#__PURE__*/_react["default"].createElement(_NodeOptionsMenu["default"], {
@@ -1029,26 +1077,26 @@ var VideoGeneration = function VideoGeneration(_ref) {
     uploadType: "upload",
     acceptType: "video"
   })) : /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center flex-grow justify-center w-full h-full rounded transition-all duration-500"
+    className: "flex flex-col flex-grow w-full rounded-b-none overflow-hidden transition-all duration-500"
   }, data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-2xl"
+    className: "flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-gray-800 animate-pulse rounded-b-none"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-center gap-3"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] font-bold text-orange-500 tracking-wider uppercase"
-  }, "Generating..."), /*#__PURE__*/_react["default"].createElement("button", {
+  }, "\u0413\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F..."), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     onClick: function onClick(e) {
       e.stopPropagation();
       handleCancelGeneration();
     },
-    className: "text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-3 py-1 rounded-md border border-zinc-700 hover:border-red-500/50 bg-zinc-900/80"
+    className: "text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-3 py-1 rounded-md border border-zinc-700 hover:border-red-500/50 bg-zinc-900"
   }, "\u041E\u0442\u043C\u0435\u043D\u0430"))) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 m-3 w-full"
-  }, data.errorMsg || "Generation failed") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "h-full w-full relative"
+    className: "text-red-400 text-xs font-medium p-3 bg-red-500/30 rounded-xl border border-red-500/20 m-3 w-full"
+  }, data.errorMsg || "Ошибка генерации") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "h-full w-full relative overflow-hidden rounded-b-none"
   }, /*#__PURE__*/_react["default"].createElement(_VideoPlayer["default"], {
     key: currentOutput,
     src: currentOutput,
@@ -1062,7 +1110,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
         return prev > 0 ? prev - 1 : currentOutputList.length - 1;
       });
     },
-    className: "absolute left-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+    className: "absolute left-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-800"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, {
     size: 16
   })), /*#__PURE__*/_react["default"].createElement("button", {
@@ -1074,7 +1122,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
         return prev < currentOutputList.length - 1 ? prev + 1 : 0;
       });
     },
-    className: "absolute right-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70"
+    className: "absolute right-2 top-1/2 -translate-y-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-800"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 16
   }))), currentOutputList.length > 1 && /*#__PURE__*/_react["default"].createElement("div", {
@@ -1082,7 +1130,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
   }, currentOutputList.map(function (_, idx) {
     return /*#__PURE__*/_react["default"].createElement("div", {
       key: idx,
-      className: "w-1.5 h-1.5 rounded-full transition-all ".concat(idx === currentVideoIndex ? "bg-white scale-125" : "bg-white/40")
+      className: "w-1.5 h-1.5 rounded-full transition-all ".concat(idx === currentVideoIndex ? "bg-white scale-125" : "bg-gray-600")
     });
   }))) : /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-center justify-center text-zinc-400 gap-2"
@@ -1090,7 +1138,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
     size: 32
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] italic"
-  }, "Result appeared here..."))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+  }, "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C..."))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput",
@@ -1105,8 +1153,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput ? '!bg-blue-600 !border-zinc-900 shadow-[0_0_15px_rgba(37,99,235,0.8)]' : '!bg-zinc-900 !border-blue-600/50 hover:!border-blue-600 shadow-sm', "\n        "),
     "data-type": "blue"
   }), hasPrompt && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-8 top-[70px] text-xs text-blue-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "blue" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Text"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-blue-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "blue" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 70,
+      left: -40
+    }
+  }, "\u0422\u0435\u043A\u0441\u0442"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput2",
@@ -1121,8 +1173,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput2 ? '!bg-emerald-600 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]' : '!bg-zinc-900 !border-emerald-600/50 hover:!border-emerald-600 shadow-sm', "\n        "),
     "data-type": "green"
   }), hasImageUrl && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[100px] text-xs text-green-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Image"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 100,
+      left: -50
+    }
+  }, "\u0418\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput6",
@@ -1137,8 +1193,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput6 ? '!bg-emerald-600 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]' : '!bg-zinc-900 !border-emerald-600/50 hover:!border-emerald-600 shadow-sm', "\n        "),
     "data-type": "green"
   }), hasImagesList && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[100px] text-xs text-green-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Images"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 100,
+      left: -55
+    }
+  }, "\u0418\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u044F"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput3",
@@ -1153,8 +1213,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput3 ? '!bg-emerald-600 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]' : '!bg-zinc-900 !border-emerald-600/50 hover:!border-emerald-600 shadow-sm', "\n        "),
     "data-type": "green"
   }), hasLastImage && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-16 top-[130px] text-xs text-green-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Last Frame"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 130,
+      left: -75
+    }
+  }, "\u041F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u043A\u0430\u0434\u0440"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput4",
@@ -1169,8 +1233,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput4 ? '!bg-orange-600 !border-zinc-900 shadow-[0_0_15px_rgba(249,115,22,0.8)]' : '!bg-zinc-900 !border-orange-600/50 hover:!border-orange-600 shadow-sm', "\n        "),
     "data-type": "orange"
   }), hasVideoUrl && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[160px] text-xs text-orange-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Video"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 160,
+      left: -45
+    }
+  }, "\u0412\u0438\u0434\u0435\u043E"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput7",
@@ -1185,8 +1253,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput7 ? '!bg-orange-600 !border-zinc-900 shadow-[0_0_15px_rgba(249,115,22,0.8)]' : '!bg-zinc-900 !border-orange-600/50 hover:!border-orange-600 shadow-sm', "\n        "),
     "data-type": "orange"
   }), hasVideosList && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[160px] text-xs text-orange-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Videos"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 160,
+      left: -50
+    }
+  }, "\u0412\u0438\u0434\u0435\u043E"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput8",
@@ -1201,8 +1273,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput8 ? '!bg-yellow-500 !border-zinc-900 shadow-[0_0_15px_rgba(234,179,8,0.8)]' : '!bg-zinc-900 !border-yellow-500/50 hover:!border-yellow-500 shadow-sm', "\n        "),
     "data-type": "yellow"
   }), hasAudiosList && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[190px] text-xs text-yellow-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Audios"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 190,
+      left: -55
+    }
+  }, "\u0410\u0443\u0434\u0438\u043E"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput5",
@@ -1217,8 +1293,12 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.videoInput5 ? '!bg-yellow-500 !border-zinc-900 shadow-[0_0_15px_rgba(234,179,8,0.8)]' : '!bg-zinc-900 !border-yellow-500/50 hover:!border-yellow-500 shadow-sm', "\n        "),
     "data-type": "yellow"
   }), hasAudioUrl && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[190px] text-xs text-yellow-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Audio"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 190,
+      left: -45
+    }
+  }, "\u0410\u0443\u0434\u0438\u043E"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "source",
     position: _reactflow.Position.Right,
     id: "videoOutput",
@@ -1231,7 +1311,11 @@ var VideoGeneration = function VideoGeneration(_ref) {
     className: "!rounded-full !border-[3px] !right-[-8px] transition-all\n          ".concat(connectedOutputs.videoOutput ? '!bg-orange-600 !border-zinc-900 shadow-[0_0_15px_rgba(249,115,22,0.8)]' : '!bg-zinc-900 !border-orange-600/50 hover:!border-orange-600 shadow-sm', "\n        "),
     "data-type": "orange"
   }), /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -right-10 top-[100px] text-xs text-orange-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Video"));
+    className: "absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 100,
+      right: -45
+    }
+  }, "\u0412\u0438\u0434\u0435\u043E"));
 };
 var _default = exports["default"] = VideoGeneration;

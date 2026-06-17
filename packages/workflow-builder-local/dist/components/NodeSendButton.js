@@ -54,7 +54,7 @@ var NodeSendButton = function NodeSendButton(_ref) {
       }
     },
     className: "group/btn relative flex items-center justify-center w-5 h-5 rounded-full transition-all duration-300 bg-blue-600 hover:bg-blue-500 text-white shadow-lg",
-    title: "Send to Connected Node"
+    title: "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0432 \u0441\u0432\u044F\u0437\u0430\u043D\u043D\u0443\u044E \u043D\u043E\u0434\u0443"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-1.5 h-1.5 rounded-full bg-current"
   })), showMenu && /*#__PURE__*/_react["default"].createElement("div", {
@@ -75,7 +75,7 @@ var NodeSendButton = function NodeSendButton(_ref) {
           handleSend(edge.target);
           setShowMenu(false);
         }
-      }, "Send to ", edge.target, " ", targetCounts[edge.target] > 1 ? "(".concat(edge.targetHandle, ")") : "");
+      }, "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C \u0432 ", edge.target, " ", targetCounts[edge.target] > 1 ? "(".concat(edge.targetHandle, ")") : "");
     });
   }()), showMenu && /*#__PURE__*/_react["default"].createElement("div", {
     className: "fixed inset-0 z-40",

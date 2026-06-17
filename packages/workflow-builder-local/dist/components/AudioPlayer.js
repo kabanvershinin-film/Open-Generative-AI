@@ -178,7 +178,7 @@ var AudioPlayer = function AudioPlayer(_ref) {
   })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "absolute bottom-full left-1/2 -translate-x-1/2 pb-4 opacity-0 group-hover/volume:opacity-100 pointer-events-none group-hover/volume:pointer-events-auto transition-all duration-300 translate-y-2 group-hover/volume:translate-y-0 z-30"
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "bg-[#1a1b1e] border border-white/10 p-3 rounded-lg shadow-2xl backdrop-blur-xl flex flex-col items-center gap-2 h-24"
+    className: "bg-[#1a1b1e] border border-white/10 p-3 rounded-lg shadow-2xl flex flex-col items-center gap-2 h-24"
   }, /*#__PURE__*/_react["default"].createElement("input", {
     type: "range",
     min: "0",

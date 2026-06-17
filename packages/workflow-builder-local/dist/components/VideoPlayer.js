@@ -72,7 +72,7 @@ var VideoPlayer = function VideoPlayer(_ref) {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen()["catch"](function (err) {
-        _reactHotToast.toast.error("Error attempting to enable full-screen mode: ".concat(err.message));
+        _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u043F\u0440\u0438 \u043F\u0435\u0440\u0435\u0445\u043E\u0434\u0435 \u0432 \u043F\u043E\u043B\u043D\u043E\u044D\u043A\u0440\u0430\u043D\u043D\u044B\u0439 \u0440\u0435\u0436\u0438\u043C: ".concat(err.message));
       });
     } else {
       document.exitFullscreen();
@@ -94,7 +94,10 @@ var VideoPlayer = function VideoPlayer(_ref) {
   };
   return /*#__PURE__*/_react["default"].createElement("div", {
     ref: containerRef,
-    className: "relative group/video w-full h-full bg-black/90 overflow-hidden flex items-center justify-center ".concat(isFullscreen ? '' : 'rounded-b-2xl')
+    style: {
+      "--accent-color": accentColor
+    },
+    className: "relative group/video w-full h-full bg-black overflow-hidden flex items-center justify-center ".concat(isFullscreen ? '' : 'rounded-b-none')
   }, /*#__PURE__*/_react["default"].createElement("video", {
     ref: videoRef,
     src: src,
@@ -123,12 +126,12 @@ var VideoPlayer = function VideoPlayer(_ref) {
     className: "absolute inset-0 flex items-center justify-center pointer-events-none group-hover/video:opacity-100 transition-opacity duration-300",
     onClick: togglePlay
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-16 h-16 bg-black/20 backdrop-blur-md rounded-full flex items-center justify-center text-white border border-white/20 shadow-2xl transform group-hover/video:scale-110 transition-transform pointer-events-auto cursor-pointer"
+    className: "w-16 h-16 bg-[#0c0d0f] rounded-full flex items-center justify-center text-white border border-white/20 shadow-2xl transform group-hover/video:scale-110 transition-transform pointer-events-auto cursor-pointer"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoPlay, {
     size: 32,
     className: "ml-1"
   }))), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/video:opacity-100 transition-opacity duration-300 rounded-b-xl flex flex-col gap-2 z-20"
+    className: "absolute inset-x-0 bottom-0 p-3 bg-[#0c0d0f] transition-opacity duration-300 rounded-b-none flex flex-col gap-2 z-20 ".concat(!isPlaying ? 'opacity-100' : 'opacity-0 group-hover/video:opacity-100')
   }, /*#__PURE__*/_react["default"].createElement("input", {
     type: "range",
     min: "0",

@@ -37,6 +37,7 @@ var _ai = require("react-icons/ai");
 var _VideoCombiner = _interopRequireDefault(require("./VideoCombiner"));
 var _CharacterNode = _interopRequireDefault(require("./CharacterNode"));
 var _SeedancePromptNode = _interopRequireDefault(require("./SeedancePromptNode"));
+var _SkylarkNode = _interopRequireDefault(require("./SkylarkNode"));
 var _useGenerationCost2 = require("./useGenerationCost");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t0 in e) "default" !== _t0 && {}.hasOwnProperty.call(e, _t0) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t0)) && (i.get || i.set) ? o(f, _t0, i) : f[_t0] = e[_t0]); return f; })(e, t); }
@@ -69,7 +70,8 @@ var nodeTypes = {
   vidConcatNode: _VideoCombiner["default"],
   apiNode: _ApiNode["default"],
   characterNode: _CharacterNode["default"],
-  seedancePromptNode: _SeedancePromptNode["default"]
+  seedancePromptNode: _SeedancePromptNode["default"],
+  skylarkNode: _SkylarkNode["default"]
 };
 var initialNodes = [{
   id: "text1",
@@ -142,12 +144,12 @@ var getEdgeColor = function getEdgeColor(sourceHandle, targetHandle) {
   }
   if (["textOutput", "concatOutput"].includes(sourceHandle)) return "blue";
   if (["imageOutput"].includes(sourceHandle)) return "green";
-  if (["videoOutput"].includes(sourceHandle)) return "orange";
+  if (["videoOutput", "videoOutput"].includes(sourceHandle)) return "orange";
   if (["audioOutput"].includes(sourceHandle)) return "yellow";
   if (["characterOutput"].includes(sourceHandle)) return "purple";
-  if (["textInput", "textInput4", "imageInput", "videoInput", "audioInput2", "concatInput", "apiInput"].includes(targetHandle)) return "blue";
-  if (["textInput2", "textInput3", "imageInput2", "imageInput3", "videoInput2", "videoInput3", "videoInput6", "audioInput3", "apiInput2", "apiInput3"].includes(targetHandle)) return "green";
-  if (["videoInput4", "audioInput4", "videoInput7"].includes(targetHandle)) return "orange";
+  if (["textInput", "textInput4", "imageInput", "videoInput", "audioInput2", "concatInput", "apiInput", "prompt"].includes(targetHandle)) return "blue";
+  if (["textInput2", "textInput3", "imageInput2", "imageInput3", "videoInput2", "videoInput3", "videoInput6", "audioInput3", "apiInput2", "apiInput3", "images"].includes(targetHandle)) return "green";
+  if (["videoInput4", "audioInput4", "videoInput7", "videos"].includes(targetHandle)) return "orange";
   if (["audioInput", "videoInput5", "videoInput8"].includes(targetHandle)) return "yellow";
   if (sourceNode) {
     var type = sourceNode.type;
@@ -189,7 +191,7 @@ var formatName = function formatName(id) {
   }).join(' ');
 };
 var formatNodeTitle = function formatNodeTitle(id) {
-  return id.replace(/(\D+)(\d+)/, "$1 $2").replace(/^text/i, "Текст").replace(/^image/i, "Изображение").replace(/^video/i, "Видео").replace(/^audio/i, "Аудио").replace(/^api/i, "API").replace(/^character/i, "Персонаж").replace(/^concat/i, "Объединение").replace(/^vidConcat/i, "Видеообъединение");
+  return id.replace(/(\D+)(\d+)/, "$1 $2").replace(/^text/i, "Текст").replace(/^image/i, "Изображение").replace(/^video/i, "Видео").replace(/^audio/i, "Аудио").replace(/^api/i, "API").replace(/^character/i, "Персонаж").replace(/^concat/i, "Объединение").replace(/^skylark/i, "Агент Гена").replace(/^vidConcat/i, "Видеообъединение");
 };
 var getModelObjStatic = function getModelObjStatic(category, modelId, nodeSchemas) {
   var _nodeSchemas$categori2;
@@ -223,6 +225,7 @@ var getModelObjStatic = function getModelObjStatic(category, modelId, nodeSchema
   });
 };
 var processWorkflowData = function processWorkflowData(workflowData, nodeSchemas, id) {
+  var _workflowData$can_edi;
   if (!workflowData || !(nodeSchemas !== null && nodeSchemas !== void 0 && nodeSchemas.categories)) return null;
   var workflow = workflowData === null || workflowData === void 0 ? void 0 : workflowData.data;
   if (!(workflow !== null && workflow !== void 0 && workflow.nodes)) return null;
@@ -272,7 +275,7 @@ var processWorkflowData = function processWorkflowData(workflowData, nodeSchemas
       workflowId: id,
       runId: workflowData === null || workflowData === void 0 ? void 0 : workflowData.run_id,
       workflowName: workflowData.name,
-      interactionMode: workflowData.is_owner,
+      interactionMode: (_workflowData$can_edi = workflowData.can_edit) !== null && _workflowData$can_edi !== void 0 ? _workflowData$can_edi : workflowData.is_owner,
       publishWorkflow: workflowData.is_published,
       template: {
         showTemplateBtn: workflowData.show_temp_button,
@@ -283,7 +286,7 @@ var processWorkflowData = function processWorkflowData(workflowData, nodeSchemas
   };
 };
 var NodeFlow = function NodeFlow(_ref) {
-  var _initialState$metadat, _initialState$metadat2, _initialState$metadat3, _initialState$metadat4, _initialState$metadat5, _initialState$metadat6, _initialState$metadat7, _nodeSchemas$categori3, _selectedNode$data, _selectedNode$data2, _selectedNode$data3, _selectedNode$data6, _selectedNode$data17, _selectedNode$data18, _selectedNode$data19, _selectedNode$data20, _selectedNode$data21;
+  var _initialState$metadat, _initialState$metadat2, _initialState$metadat4, _initialState$metadat7, _initialState$metadat8, _initialState$metadat9, _nodeSchemas$categori3, _selectedNode$data, _selectedNode$data2, _selectedNode$data3, _selectedNode$data4, _selectedNode$data16, _selectedNode$data17, _selectedNode$data18, _selectedNode$data19, _selectedNode$data20;
   var initialNodeSchemas = _ref.initialNodeSchemas,
     initialWorkflowData = _ref.initialWorkflowData;
   var params = (0, _navigation.useParams)();
@@ -364,7 +367,12 @@ var NodeFlow = function NodeFlow(_ref) {
   // up-to-date data even when React 18 concurrent mode cancels a setNodes call
   // during SPA navigation (which would otherwise lose a freshly-generated result).
   var currentNodesRef = (0, _react.useRef)((initialState === null || initialState === void 0 ? void 0 : initialState.nodes) || []);
-  var _useState25 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat3 = initialState.metadata) === null || _initialState$metadat3 === void 0 ? void 0 : _initialState$metadat3.interactionMode) || false),
+  var _useState25 = (0, _react.useState)(function () {
+      var _initialState$metadat3;
+      var initial = initialState === null || initialState === void 0 || (_initialState$metadat3 = initialState.metadata) === null || _initialState$metadat3 === void 0 ? void 0 : _initialState$metadat3.interactionMode;
+      console.log("Initial interactionMode calculation:", initial);
+      return initial !== null && initial !== void 0 ? initial : true; // Default to true if missing, consistent with Studio
+    }),
     _useState26 = _slicedToArray(_useState25, 2),
     interactionMode = _useState26[0],
     setInteractionMode = _useState26[1];
@@ -372,7 +380,19 @@ var NodeFlow = function NodeFlow(_ref) {
     _useState28 = _slicedToArray(_useState27, 2),
     publishWorkflow = _useState28[0],
     setPublishWorkflow = _useState28[1];
-  var _useState29 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat5 = initialState.metadata) === null || _initialState$metadat5 === void 0 ? void 0 : _initialState$metadat5.template) || {
+
+  // Sync state with initialState metadata when it changes
+  (0, _react.useEffect)(function () {
+    if (initialState !== null && initialState !== void 0 && initialState.metadata) {
+      var _initialState$metadat5, _initialState$metadat6;
+      console.log("Syncing NodeFlow state with initialState metadata:", initialState.metadata);
+      setInteractionMode((_initialState$metadat5 = initialState.metadata.interactionMode) !== null && _initialState$metadat5 !== void 0 ? _initialState$metadat5 : true);
+      setPublishWorkflow((_initialState$metadat6 = initialState.metadata.publishWorkflow) !== null && _initialState$metadat6 !== void 0 ? _initialState$metadat6 : false);
+      setWorkflowName(initialState.metadata.workflowName || "Untitled");
+      setWorkflowCategory(initialState.metadata.category || "General");
+    }
+  }, [initialState]);
+  var _useState29 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat7 = initialState.metadata) === null || _initialState$metadat7 === void 0 ? void 0 : _initialState$metadat7.template) || {
       showTemplateBtn: false,
       isPublishedTemplate: false
     }),
@@ -403,6 +423,14 @@ var NodeFlow = function NodeFlow(_ref) {
     _useState42 = _slicedToArray(_useState41, 2),
     publishModal = _useState42[0],
     setPublishModal = _useState42[1];
+  var _useState43 = (0, _react.useState)(false),
+    _useState44 = _slicedToArray(_useState43, 2),
+    isPanelOpen = _useState44[0],
+    setIsPanelOpen = _useState44[1];
+  var _useState45 = (0, _react.useState)(false),
+    _useState46 = _slicedToArray(_useState45, 2),
+    isMobile = _useState46[0],
+    setIsMobile = _useState46[1];
   (0, _react.useEffect)(function () {
     var total = nodes.reduce(function (sum, node) {
       var _node$data;
@@ -411,6 +439,16 @@ var NodeFlow = function NodeFlow(_ref) {
     }, 0);
     setTotalWorkflowCost(total.toFixed(3));
   }, [nodes]);
+  (0, _react.useEffect)(function () {
+    var checkMobile = function checkMobile() {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return function () {
+      return window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
 
   // Sync global store with initial data if provided
   (0, _react.useEffect)(function () {
@@ -418,38 +456,38 @@ var NodeFlow = function NodeFlow(_ref) {
       (0, _WorkflowStore.setWorkflowIds)(id, initialState.metadata.runId);
     }
   }, [id, initialState]);
-  var _useState43 = (0, _react.useState)(false),
-    _useState44 = _slicedToArray(_useState43, 2),
-    isChatOpen = _useState44[0],
-    setIsChatOpen = _useState44[1];
-  var _useState45 = (0, _react.useState)([]),
-    _useState46 = _slicedToArray(_useState45, 2),
-    chatMessages = _useState46[0],
-    setChatMessages = _useState46[1];
   var _useState47 = (0, _react.useState)(false),
     _useState48 = _slicedToArray(_useState47, 2),
-    isChatLoading = _useState48[0],
-    setIsChatLoading = _useState48[1];
-  var _useState49 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat6 = initialState.metadata) === null || _initialState$metadat6 === void 0 ? void 0 : _initialState$metadat6.category) || "General"),
+    isChatOpen = _useState48[0],
+    setIsChatOpen = _useState48[1];
+  var _useState49 = (0, _react.useState)([]),
     _useState50 = _slicedToArray(_useState49, 2),
-    workflowCategory = _useState50[0],
-    setWorkflowCategory = _useState50[1];
-  var _useState51 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat7 = initialState.metadata) === null || _initialState$metadat7 === void 0 ? void 0 : _initialState$metadat7.category) || "General"),
+    chatMessages = _useState50[0],
+    setChatMessages = _useState50[1];
+  var _useState51 = (0, _react.useState)(false),
     _useState52 = _slicedToArray(_useState51, 2),
-    categoryInput = _useState52[0],
-    setCategoryInput = _useState52[1];
-  var _useState53 = (0, _react.useState)(false),
+    isChatLoading = _useState52[0],
+    setIsChatLoading = _useState52[1];
+  var _useState53 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat8 = initialState.metadata) === null || _initialState$metadat8 === void 0 ? void 0 : _initialState$metadat8.category) || "General"),
     _useState54 = _slicedToArray(_useState53, 2),
-    isCategoryPopupOpen = _useState54[0],
-    setIsCategoryPopupOpen = _useState54[1];
-  var _useState55 = (0, _react.useState)(false),
+    workflowCategory = _useState54[0],
+    setWorkflowCategory = _useState54[1];
+  var _useState55 = (0, _react.useState)((initialState === null || initialState === void 0 || (_initialState$metadat9 = initialState.metadata) === null || _initialState$metadat9 === void 0 ? void 0 : _initialState$metadat9.category) || "General"),
     _useState56 = _slicedToArray(_useState55, 2),
-    isSettingsOpen = _useState56[0],
-    setIsSettingsOpen = _useState56[1];
+    categoryInput = _useState56[0],
+    setCategoryInput = _useState56[1];
   var _useState57 = (0, _react.useState)(false),
     _useState58 = _slicedToArray(_useState57, 2),
-    isModelDropdownUp = _useState58[0],
-    setIsModelDropdownUp = _useState58[1];
+    isCategoryPopupOpen = _useState58[0],
+    setIsCategoryPopupOpen = _useState58[1];
+  var _useState59 = (0, _react.useState)(false),
+    _useState60 = _slicedToArray(_useState59, 2),
+    isSettingsOpen = _useState60[0],
+    setIsSettingsOpen = _useState60[1];
+  var _useState61 = (0, _react.useState)(false),
+    _useState62 = _slicedToArray(_useState61, 2),
+    isModelDropdownUp = _useState62[0],
+    setIsModelDropdownUp = _useState62[1];
   var modelDropdownTriggerRef = (0, _react.useRef)(null);
   var _useReactFlow = (0, _reactflow.useReactFlow)(),
     zoomIn = _useReactFlow.zoomIn,
@@ -700,16 +738,16 @@ var NodeFlow = function NodeFlow(_ref) {
       }
       if (!connectedEdges.length) return updatedNodes;
       var resultValue = newData.resultUrl || ((_newData$outputs = newData.outputs) === null || _newData$outputs === void 0 || (_newData$outputs = _newData$outputs[0]) === null || _newData$outputs === void 0 ? void 0 : _newData$outputs.value);
-      if (!resultValue) return updatedNodes;
+      // if (!resultValue) return updatedNodes;
 
       updatedNodes = updatedNodes.map(function (node) {
-        var _sourceNode$data;
+        var _node$data2, _sourceNode$data;
         var edge = connectedEdges.find(function (e) {
           return e.target === node.id;
         });
         if (!edge) return node;
         var targetHandle = edge.targetHandle;
-        var updatedFormValues = _objectSpread({}, node.data.formValues);
+        var updatedFormValues = _objectSpread({}, ((_node$data2 = node.data) === null || _node$data2 === void 0 ? void 0 : _node$data2.formValues) || {});
         var sourceNode = updatedNodes.find(function (n) {
           return n.id === edge.source;
         });
@@ -718,23 +756,25 @@ var NodeFlow = function NodeFlow(_ref) {
         // A Character node plugged into a video node is a face reference — route
         // it to face_asset (reference_image) regardless of which image handle it
         // lands on, instead of treating it as a first-frame image.
-        if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && node.type === "videoNode") {
+        if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && (node.type === "videoNode" || node.type === "skylarkNode")) {
           var _sourceNode$data2;
           updatedFormValues.face_asset = resultValue;
           updatedFormValues.face_thumbnail = (sourceNode === null || sourceNode === void 0 || (_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2.formValues) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.character_photo) || updatedFormValues.face_thumbnail || null;
-        } else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput"].includes(targetHandle)) {
+        } else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(targetHandle)) {
           updatedFormValues.prompt = sourceValue;
         } else if (targetHandle === "textInput4") {
           updatedFormValues.system_prompt = sourceValue;
-        } else if (["textInput3", "imageInput2", "videoInput6"].includes(targetHandle)) {
+        } else if (["textInput3", "imageInput2", "videoInput6", "images"].includes(targetHandle)) {
           var _resultValue$trim;
-          var existing = Array.isArray(updatedFormValues.images_list) ? updatedFormValues.images_list : [];
-          // Only assign a new array when the value is actually added — otherwise we
-          // churn the reference every pass and feed an infinite update loop.
+          var existing = Array.isArray(updatedFormValues.images_list || updatedFormValues.img_url_list) ? updatedFormValues.images_list || updatedFormValues.img_url_list : [];
+          // Only assign a new array when the value is actually added
           if (resultValue && ((_resultValue$trim = resultValue.trim) === null || _resultValue$trim === void 0 ? void 0 : _resultValue$trim.call(resultValue)) !== "" && !existing.includes(resultValue)) {
-            updatedFormValues.images_list = [].concat(_toConsumableArray(existing), [resultValue]);
-          } else {
-            updatedFormValues.images_list = existing;
+            var newList = [].concat(_toConsumableArray(existing), [resultValue]);
+            if (node.type === "skylarkNode") {
+              updatedFormValues.img_url_list = newList;
+            } else {
+              updatedFormValues.images_list = newList;
+            }
           }
         } else if (targetHandle === "apiInput2") {
           var list = Array.isArray(updatedFormValues.images) ? _toConsumableArray(updatedFormValues.images) : [];
@@ -754,8 +794,8 @@ var NodeFlow = function NodeFlow(_ref) {
           updatedFormValues.last_image = resultValue;
         } else if (["videoInput4", "audioInput4"].includes(targetHandle)) {
           updatedFormValues.video_url = resultValue;
-        } else if (targetHandle === "videoInput7") {
-          var key = updatedFormValues.video_files ? "video_files" : "videos_list";
+        } else if (["videoInput7", "videos"].includes(targetHandle)) {
+          var key = node.type === "skylarkNode" ? "video_url_list" : updatedFormValues.video_files ? "video_files" : "videos_list";
           var _list2 = Array.isArray(updatedFormValues[key]) ? _toConsumableArray(updatedFormValues[key]) : [];
           if (!_list2.includes(resultValue) && resultValue && resultValue.trim() !== "") _list2.push(resultValue);
           updatedFormValues[key] = _list2;
@@ -870,8 +910,9 @@ var NodeFlow = function NodeFlow(_ref) {
       var sourceValue = (sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "concatNode" ? sourceNode === null || sourceNode === void 0 || (_sourceNode$data5 = sourceNode.data) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5.formValues) === null || _sourceNode$data5 === void 0 ? void 0 : _sourceNode$data5.prompt : resultValue;
       setNodes(function (prev) {
         return prev.map(function (n) {
+          var _n$data;
           if (n.id !== targetNode.id) return n;
-          var updatedFormValues = _objectSpread({}, n.data.formValues);
+          var updatedFormValues = _objectSpread({}, ((_n$data = n.data) === null || _n$data === void 0 ? void 0 : _n$data.formValues) || {});
           if (n.id === params.target && n.type === "apiNode") {
             var _n$data$taskData;
             var listFields = ["images", "image_urls", "images_list"];
@@ -890,7 +931,7 @@ var NodeFlow = function NodeFlow(_ref) {
           // CharacterNode → VideoNode: treat the face reference as face_asset,
           // carry the thumbnail for display, and tag @Name into the prompt
           // (same UX as Video Studio).
-          if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && n.type === "videoNode") {
+          if ((sourceNode === null || sourceNode === void 0 ? void 0 : sourceNode.type) === "characterNode" && (n.type === "videoNode" || n.type === "skylarkNode")) {
             var _sourceNode$data6, _sourceNode$data7;
             updatedFormValues.face_asset = resultValue || null;
             updatedFormValues.face_thumbnail = (sourceNode === null || sourceNode === void 0 || (_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6.formValues) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.character_photo) || null;
@@ -919,7 +960,7 @@ var NodeFlow = function NodeFlow(_ref) {
                 return v;
               });
               updatedFormValues.prompt = concatValues.join(" ");
-            } else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput"].includes(params.targetHandle)) {
+            } else if (["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(params.targetHandle)) {
               updatedFormValues.prompt = sourceValue || "";
             } else if (params.targetHandle === "textInput4") {
               updatedFormValues.system_prompt = sourceValue || "";
@@ -938,12 +979,13 @@ var NodeFlow = function NodeFlow(_ref) {
               } else {
                 updatedFormValues.image_url = resultValue || null;
               }
-            } else if (["textInput3", "imageInput2", "videoInput6"].includes(params.targetHandle)) {
-              var _list6 = Array.isArray(updatedFormValues.images_list) ? _toConsumableArray(updatedFormValues.images_list) : [];
+            } else if (["textInput3", "imageInput2", "videoInput6", "images"].includes(params.targetHandle)) {
+              var listKey = n.type === "skylarkNode" ? "img_url_list" : "images_list";
+              var _list6 = Array.isArray(updatedFormValues[listKey]) ? _toConsumableArray(updatedFormValues[listKey]) : [];
               if (!_list6.includes(resultValue) && resultValue && resultValue.trim() !== "") {
                 _list6.push(resultValue);
               }
-              updatedFormValues.images_list = _list6;
+              updatedFormValues[listKey] = _list6;
             } else if (params.targetHandle === "apiInput2") {
               var _list7 = Array.isArray(updatedFormValues.images) ? _toConsumableArray(updatedFormValues.images) : [];
               if (!_list7.includes(resultValue) && resultValue && resultValue.trim() !== "") {
@@ -959,8 +1001,8 @@ var NodeFlow = function NodeFlow(_ref) {
           if (color === "orange") {
             if (["videoInput4", "audioInput4"].includes(params.targetHandle)) {
               updatedFormValues.video_url = resultValue || null;
-            } else if (params.targetHandle === "videoInput7") {
-              var key = updatedFormValues.video_files ? "video_files" : "videos_list";
+            } else if (["videoInput7", "videos"].includes(params.targetHandle)) {
+              var key = n.type === "skylarkNode" ? "video_url_list" : updatedFormValues.video_files ? "video_files" : "videos_list";
               var _list8 = Array.isArray(updatedFormValues[key]) ? _toConsumableArray(updatedFormValues[key]) : [];
               if (!_list8.includes(resultValue) && resultValue && resultValue.trim() !== "") {
                 _list8.push(resultValue);
@@ -1209,14 +1251,15 @@ var NodeFlow = function NodeFlow(_ref) {
       var removedSource = nodes.find(function (n) {
         return n.id === edge.source;
       });
-      if ((removedSource === null || removedSource === void 0 ? void 0 : removedSource.type) === "characterNode" && (targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "videoNode") {
+      if ((removedSource === null || removedSource === void 0 ? void 0 : removedSource.type) === "characterNode" && ((targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "videoNode" || (targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "skylarkNode")) {
         var _removedSource$data;
         var cname = removedSource === null || removedSource === void 0 || (_removedSource$data = removedSource.data) === null || _removedSource$data === void 0 || (_removedSource$data = _removedSource$data.formValues) === null || _removedSource$data === void 0 ? void 0 : _removedSource$data.character_name;
         var token = cname && cname.trim() ? "@" + cname.trim().replace(/\s+/g, "_") : null;
         setNodes(function (prev) {
           return prev.map(function (n) {
+            var _n$data2;
             if (n.id !== targetNode.id) return n;
-            var updatedFormValues = _objectSpread({}, n.data.formValues);
+            var updatedFormValues = _objectSpread({}, ((_n$data2 = n.data) === null || _n$data2 === void 0 ? void 0 : _n$data2.formValues) || {});
             updatedFormValues.face_asset = null;
             updatedFormValues.face_thumbnail = null;
             if (token && typeof updatedFormValues.prompt === "string") {
@@ -1233,11 +1276,12 @@ var NodeFlow = function NodeFlow(_ref) {
       if ((targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "concatNode" && edge.targetHandle === "concatInput") {
         setNodes(function (prev) {
           return prev.map(function (n) {
+            var _n$data3;
             if (n.id !== targetNode.id) return n;
             var remainingConcatEdges = updatedEdges.filter(function (e) {
               return e.target === targetNode.id && e.targetHandle === "concatInput";
             });
-            var updatedFormValues = _objectSpread({}, n.data.formValues);
+            var updatedFormValues = _objectSpread({}, ((_n$data3 = n.data) === null || _n$data3 === void 0 ? void 0 : _n$data3.formValues) || {});
             if (remainingConcatEdges.length > 0) {
               var concatValues = remainingConcatEdges.map(function (e) {
                 var _sourceNode$data0, _sourceNode$data1;
@@ -1263,7 +1307,7 @@ var NodeFlow = function NodeFlow(_ref) {
       if ((targetNode === null || targetNode === void 0 ? void 0 : targetNode.type) === "vidConcatNode" && edge.targetHandle === "videoInput7") {
         setNodes(function (prev) {
           return prev.map(function (n) {
-            var _removedSourceNode$da, _removedSourceNode$da2;
+            var _removedSourceNode$da, _removedSourceNode$da2, _n$data4;
             if (n.id !== targetNode.id) return n;
             var removedSourceNode = prev.find(function (node) {
               return node.id === edge.source;
@@ -1281,7 +1325,7 @@ var NodeFlow = function NodeFlow(_ref) {
             }).filter(function (v) {
               return v;
             });
-            var updatedFormValues = _objectSpread({}, n.data.formValues);
+            var updatedFormValues = _objectSpread({}, ((_n$data4 = n.data) === null || _n$data4 === void 0 ? void 0 : _n$data4.formValues) || {});
             if (remainingUrls.length > 0) {
               var key = updatedFormValues.video_files ? "video_files" : "videos_list";
               updatedFormValues[key] = remainingUrls;
@@ -1317,22 +1361,22 @@ var NodeFlow = function NodeFlow(_ref) {
   };
   var buildWorkflowPayload = function buildWorkflowPayload() {
     var nodeData = currentNodesRef.current.map(function (node) {
-      var _node$data2, _node$data3, _nodeSchemas$categori4, _nodeSchemas$categori5, _nodeSchemas$categori6, _nodeSchemas$categori7, _node$data4;
+      var _node$data3, _node$data4, _nodeSchemas$categori4, _nodeSchemas$categori5, _nodeSchemas$categori6, _nodeSchemas$categori7, _node$data5;
       var connectedEdges = edges.filter(function (e) {
         return e.target === node.id;
       });
       var inputNodes = connectedEdges.map(function (e) {
         return e.source;
       });
-      var category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : node.type === "seedancePromptNode" ? "seedancePrompt" : "utility";
+      var category = node.type === "textNode" ? "text" : node.type === "imageNode" ? "image" : node.type === "videoNode" ? "video" : node.type === "apiNode" ? "api" : node.type === "audioNode" ? "audio" : node.type === "characterNode" ? "character" : node.type === "seedancePromptNode" ? "seedancePrompt" : node.type === "skylarkNode" ? "agent" : "utility";
       var isVideoCombiner = node.type === "vidConcatNode";
-      var model = (_node$data2 = node.data) !== null && _node$data2 !== void 0 && (_node$data2 = _node$data2.selectedModel) !== null && _node$data2 !== void 0 && _node$data2.id ? (_node$data3 = node.data) === null || _node$data3 === void 0 || (_node$data3 = _node$data3.selectedModel) === null || _node$data3 === void 0 ? void 0 : _node$data3.id : category === "utility" ? isVideoCombiner ? "video-combiner" : "prompt-concatenator" : category === "character" ? "character-passthrough" : "".concat(category, "-passthrough");
+      var model = (_node$data3 = node.data) !== null && _node$data3 !== void 0 && (_node$data3 = _node$data3.selectedModel) !== null && _node$data3 !== void 0 && _node$data3.id ? (_node$data4 = node.data) === null || _node$data4 === void 0 || (_node$data4 = _node$data4.selectedModel) === null || _node$data4 === void 0 ? void 0 : _node$data4.id : category === "utility" ? isVideoCombiner ? "video-combiner" : "prompt-concatenator" : category === "character" ? "character-passthrough" : "".concat(category, "-passthrough");
       var modelSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori4 = nodeSchemas.categories) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4[category]) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.models) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4[model]) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.input_schema) === null || _nodeSchemas$categori4 === void 0 || (_nodeSchemas$categori4 = _nodeSchemas$categori4.schemas) === null || _nodeSchemas$categori4 === void 0 ? void 0 : _nodeSchemas$categori4.input_data;
       var inputSchema = (modelSchema === null || modelSchema === void 0 ? void 0 : modelSchema.properties) || {};
       var wavespeedSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori5 = nodeSchemas.categories) === null || _nodeSchemas$categori5 === void 0 || (_nodeSchemas$categori5 = _nodeSchemas$categori5.api) === null || _nodeSchemas$categori5 === void 0 || (_nodeSchemas$categori5 = _nodeSchemas$categori5.models) === null || _nodeSchemas$categori5 === void 0 || (_nodeSchemas$categori5 = _nodeSchemas$categori5[model]) === null || _nodeSchemas$categori5 === void 0 ? void 0 : _nodeSchemas$categori5.input_schema;
       var concatSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori6 = nodeSchemas.categories) === null || _nodeSchemas$categori6 === void 0 || (_nodeSchemas$categori6 = _nodeSchemas$categori6.utility) === null || _nodeSchemas$categori6 === void 0 || (_nodeSchemas$categori6 = _nodeSchemas$categori6.models) === null || _nodeSchemas$categori6 === void 0 || (_nodeSchemas$categori6 = _nodeSchemas$categori6["prompt-concatenator"]) === null || _nodeSchemas$categori6 === void 0 ? void 0 : _nodeSchemas$categori6.input_schema;
       var videoCombinerSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori7 = nodeSchemas.categories) === null || _nodeSchemas$categori7 === void 0 || (_nodeSchemas$categori7 = _nodeSchemas$categori7.utility) === null || _nodeSchemas$categori7 === void 0 || (_nodeSchemas$categori7 = _nodeSchemas$categori7.models) === null || _nodeSchemas$categori7 === void 0 || (_nodeSchemas$categori7 = _nodeSchemas$categori7["video-combiner"]) === null || _nodeSchemas$categori7 === void 0 || (_nodeSchemas$categori7 = _nodeSchemas$categori7.input_schema) === null || _nodeSchemas$categori7 === void 0 || (_nodeSchemas$categori7 = _nodeSchemas$categori7.schemas) === null || _nodeSchemas$categori7 === void 0 || (_nodeSchemas$categori7 = _nodeSchemas$categori7.input_data) === null || _nodeSchemas$categori7 === void 0 ? void 0 : _nodeSchemas$categori7.properties;
-      var formValues = ((_node$data4 = node.data) === null || _node$data4 === void 0 ? void 0 : _node$data4.formValues) || {};
+      var formValues = ((_node$data5 = node.data) === null || _node$data5 === void 0 ? void 0 : _node$data5.formValues) || {};
       var dynamicPrompt = "";
       if (node.type === "concatNode") {
         var promptConnections = connectedEdges.filter(function (e) {
@@ -1343,7 +1387,7 @@ var NodeFlow = function NodeFlow(_ref) {
         }) : [];
       } else {
         var _promptConnections = connectedEdges.filter(function (e) {
-          return ["textInput", "imageInput", "videoInput", "audioInput2", "apiInput"].includes(e.targetHandle);
+          return ["textInput", "imageInput", "videoInput", "audioInput2", "apiInput", "prompt"].includes(e.targetHandle);
         });
         dynamicPrompt = _promptConnections.length > 0 ? "{{ ".concat(_promptConnections[0].source, ".outputs[0].value }}") : "";
       }
@@ -1360,11 +1404,11 @@ var NodeFlow = function NodeFlow(_ref) {
         })) === null || _currentNodesRef$curr === void 0 ? void 0 : _currentNodesRef$curr.type) === "characterNode";
       };
       var imageListConnections = connectedEdges.filter(function (e) {
-        return ["textInput3", "imageInput2", "videoInput6", "apiInput2"].includes(e.targetHandle) && !isCharSource(e.source);
+        return ["textInput3", "imageInput2", "videoInput6", "apiInput2", "images"].includes(e.targetHandle) && !isCharSource(e.source);
       });
       var dynamicImagesList = imageListConnections.length > 0 ? imageListConnections.map(function (conn) {
         return "{{ ".concat(conn.source, ".outputs[0].value }}");
-      }) : (formValues === null || formValues === void 0 ? void 0 : formValues.images_list) || []; // || [node.data?.outputs?.[0]?.value]
+      }) : (formValues === null || formValues === void 0 ? void 0 : formValues.images_list) || (formValues === null || formValues === void 0 ? void 0 : formValues.img_url_list) || []; // || [node.data?.outputs?.[0]?.value]
 
       var imageUrlConnections = connectedEdges.filter(function (e) {
         return ["textInput2", "videoInput2", "imageInput3", "audioInput3", "apiInput3"].includes(e.targetHandle) && !isCharSource(e.source);
@@ -1373,7 +1417,7 @@ var NodeFlow = function NodeFlow(_ref) {
         return ["videoInput4", "audioInput4"].includes(e.targetHandle);
       });
       var videoListConnections = connectedEdges.filter(function (e) {
-        return e.targetHandle === "videoInput7";
+        return ["videoInput7", "videos"].includes(e.targetHandle);
       });
       var audioListConnections = connectedEdges.filter(function (e) {
         return e.targetHandle === "videoInput8";
@@ -1416,7 +1460,9 @@ var NodeFlow = function NodeFlow(_ref) {
         videos_list: dynamicVideosList,
         video_files: dynamicVideosList,
         audios_list: dynamicAudiosList,
-        audio_files: dynamicAudiosList
+        audio_files: dynamicAudiosList,
+        img_url_list: dynamicImagesList,
+        video_url_list: dynamicVideosList
       }, dynamicFaceAsset ? {
         face_asset: dynamicFaceAsset
       } : {});
@@ -1444,7 +1490,7 @@ var NodeFlow = function NodeFlow(_ref) {
       var input_params = formValues || {};
       var output_params = {};
       if (node.type === "apiNode") {
-        for (var _i = 0, _Object$entries = Object.entries(wavespeedSchema); _i < _Object$entries.length; _i++) {
+        for (var _i = 0, _Object$entries = Object.entries(wavespeedSchema || {}); _i < _Object$entries.length; _i++) {
           var _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2),
             key = _Object$entries$_i[0],
             meta = _Object$entries$_i[1];
@@ -1452,16 +1498,16 @@ var NodeFlow = function NodeFlow(_ref) {
             params[key] = localSources[key];
           } else {
             var _meta$default;
-            params[key] = (_meta$default = meta["default"]) !== null && _meta$default !== void 0 ? _meta$default : null;
+            params[key] = (_meta$default = meta === null || meta === void 0 ? void 0 : meta["default"]) !== null && _meta$default !== void 0 ? _meta$default : null;
           }
         }
-        var filteredInputParams = Object.fromEntries(Object.entries(input_params).filter(function (_ref4) {
+        var filteredInputParams = Object.fromEntries(Object.entries(input_params || {}).filter(function (_ref4) {
           var _ref5 = _slicedToArray(_ref4, 1),
             key = _ref5[0];
           return key !== "model_url" && key !== "api_key" && key !== "model_name" && key !== "model_type";
         }));
         params["params"] = filteredInputParams;
-        for (var _i2 = 0, _Object$entries2 = Object.entries(filteredInputParams); _i2 < _Object$entries2.length; _i2++) {
+        for (var _i2 = 0, _Object$entries2 = Object.entries(filteredInputParams || {}); _i2 < _Object$entries2.length; _i2++) {
           var _Object$entries2$_i = _slicedToArray(_Object$entries2[_i2], 2),
             _key4 = _Object$entries2$_i[0],
             _meta = _Object$entries2$_i[1];
@@ -1481,7 +1527,7 @@ var NodeFlow = function NodeFlow(_ref) {
             "default": "auto"
           }
         };
-        for (var _i3 = 0, _Object$entries3 = Object.entries(vcSchema); _i3 < _Object$entries3.length; _i3++) {
+        for (var _i3 = 0, _Object$entries3 = Object.entries(vcSchema || {}); _i3 < _Object$entries3.length; _i3++) {
           var _Object$entries3$_i = _slicedToArray(_Object$entries3[_i3], 2),
             _key5 = _Object$entries3$_i[0],
             _meta2 = _Object$entries3$_i[1];
@@ -1489,11 +1535,11 @@ var NodeFlow = function NodeFlow(_ref) {
             params[_key5] = localSources[_key5];
           } else {
             var _meta2$default;
-            params[_key5] = (_meta2$default = _meta2["default"]) !== null && _meta2$default !== void 0 ? _meta2$default : null;
+            params[_key5] = (_meta2$default = _meta2 === null || _meta2 === void 0 ? void 0 : _meta2["default"]) !== null && _meta2$default !== void 0 ? _meta2$default : null;
           }
         }
       } else if (node.type === "concatNode") {
-        for (var _i4 = 0, _Object$entries4 = Object.entries(concatSchema); _i4 < _Object$entries4.length; _i4++) {
+        for (var _i4 = 0, _Object$entries4 = Object.entries(concatSchema || {}); _i4 < _Object$entries4.length; _i4++) {
           var _Object$entries4$_i = _slicedToArray(_Object$entries4[_i4], 2),
             _key6 = _Object$entries4$_i[0],
             _meta3 = _Object$entries4$_i[1];
@@ -1501,11 +1547,11 @@ var NodeFlow = function NodeFlow(_ref) {
             params[_key6] = localSources[_key6];
           } else {
             var _meta3$default;
-            params[_key6] = (_meta3$default = _meta3["default"]) !== null && _meta3$default !== void 0 ? _meta3$default : null;
+            params[_key6] = (_meta3$default = _meta3 === null || _meta3 === void 0 ? void 0 : _meta3["default"]) !== null && _meta3$default !== void 0 ? _meta3$default : null;
           }
         }
       } else {
-        for (var _i5 = 0, _Object$entries5 = Object.entries(inputSchema); _i5 < _Object$entries5.length; _i5++) {
+        for (var _i5 = 0, _Object$entries5 = Object.entries(inputSchema || {}); _i5 < _Object$entries5.length; _i5++) {
           var _Object$entries5$_i = _slicedToArray(_Object$entries5[_i5], 2),
             _key7 = _Object$entries5$_i[0],
             _meta4 = _Object$entries5$_i[1];
@@ -1513,7 +1559,7 @@ var NodeFlow = function NodeFlow(_ref) {
             params[_key7] = localSources[_key7];
           } else {
             var _meta4$default;
-            params[_key7] = (_meta4$default = _meta4["default"]) !== null && _meta4$default !== void 0 ? _meta4$default : null;
+            params[_key7] = (_meta4$default = _meta4 === null || _meta4 === void 0 ? void 0 : _meta4["default"]) !== null && _meta4$default !== void 0 ? _meta4$default : null;
           }
         }
         // face_asset isn't in the model schema, so carry it through explicitly
@@ -1523,16 +1569,16 @@ var NodeFlow = function NodeFlow(_ref) {
         }
       }
       if (node.type === "textNode") {
-        var _node$data5, _node$data6;
+        var _node$data6, _node$data7;
         output_params = {
-          resultUrl: ((_node$data5 = node.data) === null || _node$data5 === void 0 ? void 0 : _node$data5.resultUrl) || "",
-          outputs: ((_node$data6 = node.data) === null || _node$data6 === void 0 ? void 0 : _node$data6.outputs) || []
+          resultUrl: ((_node$data6 = node.data) === null || _node$data6 === void 0 ? void 0 : _node$data6.resultUrl) || "",
+          outputs: ((_node$data7 = node.data) === null || _node$data7 === void 0 ? void 0 : _node$data7.outputs) || []
         };
       } else if (["imageNode", "videoNode", "audioNode", "apiNode", "concatNode", "vidConcatNode", "characterNode"].includes(node.type)) {
-        var _node$data7, _node$data8;
+        var _node$data8, _node$data9;
         output_params = {
-          resultUrl: ((_node$data7 = node.data) === null || _node$data7 === void 0 ? void 0 : _node$data7.resultUrl) || null,
-          outputs: ((_node$data8 = node.data) === null || _node$data8 === void 0 ? void 0 : _node$data8.outputs) || []
+          resultUrl: ((_node$data8 = node.data) === null || _node$data8 === void 0 ? void 0 : _node$data8.resultUrl) || null,
+          outputs: ((_node$data9 = node.data) === null || _node$data9 === void 0 ? void 0 : _node$data9.outputs) || []
         };
       }
       return _objectSpread({
@@ -1559,47 +1605,46 @@ var NodeFlow = function NodeFlow(_ref) {
       category: workflowCategory
     };
   };
-  var handleSaveWorkFlow = /*#__PURE__*/function () {
-    var _ref6 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
-      var workflowPayload, response, _t3;
-      return _regenerator().w(function (_context3) {
-        while (1) switch (_context3.p = _context3.n) {
-          case 0:
-            if (interactionMode) {
-              _context3.n = 1;
-              break;
-            }
-            return _context3.a(2);
-          case 1:
-            workflowPayload = buildWorkflowPayload();
-            _context3.p = 2;
-            _context3.n = 3;
-            return _axios["default"].post("/api/workflow/create", workflowPayload);
-          case 3:
-            response = _context3.v;
-            console.log("Workflow created:", response.data);
-            setDropDown(0);
-            (0, _WorkflowStore.setWorkflowIds)(response.data.workflow_id, runId);
-            setWorkflowId(response.data.workflow_id);
-            return _context3.a(2, response.data.workflow_id);
-          case 4:
-            _context3.p = 4;
-            _t3 = _context3.v;
-            console.log(_t3);
-            if (_t3.response) {
-              _reactHotToast.toast.error("Failed: ".concat(_t3.response.data.detail || "Server error"));
-            } else {
-              _reactHotToast.toast.error("Error: ".concat(_t3.message));
-            }
-          case 5:
-            return _context3.a(2);
-        }
-      }, _callee3, null, [[2, 4]]);
-    }));
-    return function handleSaveWorkFlow() {
-      return _ref6.apply(this, arguments);
-    };
-  }();
+  var handleSaveWorkFlow = (0, _react.useCallback)(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
+    var workflowPayload, response, newId, _t3;
+    return _regenerator().w(function (_context3) {
+      while (1) switch (_context3.p = _context3.n) {
+        case 0:
+          console.log("handleSaveWorkFlow triggered, interactionMode:", interactionMode);
+          if (interactionMode) {
+            _context3.n = 1;
+            break;
+          }
+          console.log("handleSaveWorkFlow: interactionMode is false, skipping save");
+          _reactHotToast.toast.error("У вас нет прав для сохранения этого воркфлоу");
+          return _context3.a(2);
+        case 1:
+          workflowPayload = buildWorkflowPayload();
+          console.log("Built workflow payload for save:", workflowPayload);
+          _context3.p = 2;
+          _context3.n = 3;
+          return _axios["default"].post("/api/workflow/create", workflowPayload);
+        case 3:
+          response = _context3.v;
+          console.log("Workflow created/saved successfully:", response.data);
+          setDropDown(0);
+          newId = response.data.workflow_id;
+          (0, _WorkflowStore.setWorkflowIds)(newId, runId);
+          setWorkflowId(newId);
+          return _context3.a(2, newId);
+        case 4:
+          _context3.p = 4;
+          _t3 = _context3.v;
+          console.error("Save workflow error:", _t3);
+          if (_t3.response) {
+            _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F: ".concat(_t3.response.data.detail || "Ошибка сервера"));
+          } else {
+            _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u0441\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u0438\u044F: ".concat(_t3.message));
+          }
+          return _context3.a(2, null);
+      }
+    }, _callee3, null, [[2, 4]]);
+  })), [interactionMode, runId, edges, workflowName, workflowCategory, workflowId]); // removed workflowPayload, added necessary dependencies for buildWorkflowPayload indirectly
 
   // Auto-save whenever any node's generation result changes, so generated
   // videos/images persist with the workflow. The browser Seedance path updates
@@ -1614,8 +1659,8 @@ var NodeFlow = function NodeFlow(_ref) {
   (0, _react.useEffect)(function () {
     if (isRestoring || !interactionMode) return;
     var sig = nodes.map(function (n) {
-      var _n$data;
-      return "".concat(n.id, ":").concat(((_n$data = n.data) === null || _n$data === void 0 ? void 0 : _n$data.resultUrl) || "");
+      var _n$data5;
+      return "".concat(n.id, ":").concat(((_n$data5 = n.data) === null || _n$data5 === void 0 ? void 0 : _n$data5.resultUrl) || "");
     }).join("|");
     if (sig === lastSavedResultsSig.current) return;
     // Establish the baseline on first run so we don't save immediately on load.
@@ -1626,7 +1671,7 @@ var NodeFlow = function NodeFlow(_ref) {
     lastSavedResultsSig.current = sig;
     handleSaveWorkFlow();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodes, interactionMode, isRestoring]);
+  }, [nodes, interactionMode, isRestoring, handleSaveWorkFlow]);
 
   // Keep currentNodesRef in sync with React state for all normal updates.
   (0, _react.useEffect)(function () {
@@ -1651,7 +1696,7 @@ var NodeFlow = function NodeFlow(_ref) {
             return _axios["default"].post("/api/workflow/create", workflowPayload);
           case 3:
             response = _context4.v;
-            console.log("Workflow created:", response.data);
+            console.log("Workflow duplicated:", response.data);
             window.location.href = "/workflow/".concat(response.data.workflow_id);
             _context4.n = 5;
             break;
@@ -1661,9 +1706,9 @@ var NodeFlow = function NodeFlow(_ref) {
             console.log(_t4);
             setIsRunning(0);
             if (_t4.response) {
-              _reactHotToast.toast.error("Failed: ".concat(_t4.response.data.detail || "Server error"));
+              _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u0434\u0443\u0431\u043B\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F: ".concat(_t4.response.data.detail || "Ошибка сервера"));
             } else {
-              _reactHotToast.toast.error("Error: ".concat(_t4.message));
+              _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u0434\u0443\u0431\u043B\u0438\u0440\u043E\u0432\u0430\u043D\u0438\u044F: ".concat(_t4.message));
             }
           case 5:
             return _context4.a(2);
@@ -1819,6 +1864,7 @@ var NodeFlow = function NodeFlow(_ref) {
               _context5.n = 1;
               break;
             }
+            _reactHotToast.toast.error("У вас нет прав для запуска этого воркфлоу");
             return _context5.a(2);
           case 1:
             _context5.p = 1;
@@ -1846,9 +1892,9 @@ var NodeFlow = function NodeFlow(_ref) {
             _t5 = _context5.v;
             console.log(_t5);
             if (_t5.response) {
-              _reactHotToast.toast.error("Failed: ".concat(_t5.response.data.detail || "Server error"));
+              _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u0437\u0430\u043F\u0443\u0441\u043A\u0430: ".concat(_t5.response.data.detail || "Ошибка сервера"));
             } else {
-              _reactHotToast.toast.error("Error: ".concat(_t5.message));
+              _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u0437\u0430\u043F\u0443\u0441\u043A\u0430: ".concat(_t5.message));
             }
             setLoadingNodes({});
             setIsRunning(0);
@@ -1861,168 +1907,218 @@ var NodeFlow = function NodeFlow(_ref) {
       return _ref0.apply(this, arguments);
     };
   }();
-  var handlePublishWorkflow = /*#__PURE__*/function () {
-    var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
-      var savedWorkflowId, response, _t6;
-      return _regenerator().w(function (_context6) {
-        while (1) switch (_context6.p = _context6.n) {
-          case 0:
-            if (interactionMode) {
-              _context6.n = 1;
-              break;
-            }
-            return _context6.a(2);
-          case 1:
-            _context6.p = 1;
-            setIsRunning(2);
-            _context6.n = 2;
-            return handleSaveWorkFlow();
-          case 2:
-            savedWorkflowId = _context6.v;
-            _context6.n = 3;
-            return _axios["default"].post("/api/workflow/workflow/".concat(savedWorkflowId, "/publish"), {
-              publish: !publishWorkflow
-            });
-          case 3:
-            response = _context6.v;
-            setIsRunning(0);
-            _reactHotToast.toast.success(response.data.publish ? "Published successfully" : "Unpublished successfully");
-            setPublishWorkflow(response.data.publish);
-            _context6.n = 5;
+  var handlePublishWorkflow = (0, _react.useCallback)(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6() {
+    var savedWorkflowId, candidates, response, _error$response, _t6;
+    return _regenerator().w(function (_context6) {
+      while (1) switch (_context6.p = _context6.n) {
+        case 0:
+          console.log("handlePublishWorkflow triggered, interactionMode:", interactionMode);
+          if (interactionMode) {
+            _context6.n = 1;
             break;
-          case 4:
-            _context6.p = 4;
-            _t6 = _context6.v;
-            console.log(_t6);
-            if (_t6.response) {
-              _reactHotToast.toast.error("Failed: ".concat(_t6.response.data.detail || "Server error"));
-            } else {
-              _reactHotToast.toast.error("Error: ".concat(_t6.message));
+          }
+          _reactHotToast.toast.error("У вас нет прав для публикации этого воркфлоу");
+          return _context6.a(2);
+        case 1:
+          _context6.p = 1;
+          setIsRunning(2);
+
+          // 1. First save the workflow to ensure the backend has the latest state.
+          _context6.n = 2;
+          return handleSaveWorkFlow();
+        case 2:
+          savedWorkflowId = _context6.v;
+          console.log("Workflow saved before publish, id:", savedWorkflowId);
+          if (savedWorkflowId) {
+            _context6.n = 3;
+            break;
+          }
+          throw new Error("Не удалось сохранить воркфлоу перед публикацией");
+        case 3:
+          if (publishWorkflow) {
+            _context6.n = 4;
+            break;
+          }
+          console.log("Workflow not published yet, showing modal");
+          candidates = nodes.map(function (n) {
+            var _n$data6, _n$data7;
+            return ((_n$data6 = n.data) === null || _n$data6 === void 0 ? void 0 : _n$data6.resultUrl) || ((_n$data7 = n.data) === null || _n$data7 === void 0 || (_n$data7 = _n$data7.outputs) === null || _n$data7 === void 0 || (_n$data7 = _n$data7[0]) === null || _n$data7 === void 0 ? void 0 : _n$data7.value);
+          }).filter(function (url) {
+            return url && typeof url === 'string' && (url.startsWith('http') || url.startsWith('/'));
+          });
+          setPublishModal({
+            name: workflowName || "",
+            thumbnail: candidates[0] || "",
+            candidates: Array.from(new Set(candidates))
+          });
+          setIsRunning(0);
+          return _context6.a(2);
+        case 4:
+          // 3. If already published, toggle it OFF.
+          console.log("Workflow already published, unpublishing...");
+          _context6.n = 5;
+          return _axios["default"].post("/api/workflow/".concat(savedWorkflowId, "/publish"), {
+            publish: false
+          });
+        case 5:
+          response = _context6.v;
+          setIsRunning(0);
+          _reactHotToast.toast.success("Воркфлоу снят с публикации");
+          setPublishWorkflow(false);
+          window.dispatchEvent(new CustomEvent('workflow-publish-changed', {
+            detail: {
+              id: savedWorkflowId,
+              isPublished: false
             }
-            setLoadingNodes({});
-            setIsRunning(0);
-          case 5:
-            return _context6.a(2);
-        }
-      }, _callee6, null, [[1, 4]]);
-    }));
-    return function handlePublishWorkflow() {
-      return _ref1.apply(this, arguments);
+          }));
+          _context6.n = 7;
+          break;
+        case 6:
+          _context6.p = 6;
+          _t6 = _context6.v;
+          console.error("Publish toggle error:", _t6);
+          _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430: ".concat(((_error$response = _t6.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || _t6.message));
+          setIsRunning(0);
+        case 7:
+          return _context6.a(2);
+      }
+    }, _callee6, null, [[1, 6]]);
+  })), [interactionMode, handleSaveWorkFlow, publishWorkflow, nodes, workflowName]);
+
+  // Use a ref to keep handlePublishWorkflow stable for the event listener
+  var publishRef = (0, _react.useRef)(handlePublishWorkflow);
+  (0, _react.useEffect)(function () {
+    publishRef.current = handlePublishWorkflow;
+  }, [handlePublishWorkflow]);
+  (0, _react.useEffect)(function () {
+    var handleTriggerPublish = function handleTriggerPublish(e) {
+      console.log("Received trigger-workflow-publish event via window.");
+      if (publishRef.current) {
+        console.log("Calling handlePublishWorkflow from event listener...");
+        publishRef.current();
+      } else {
+        console.error("publishRef.current is null, cannot trigger publish!");
+      }
     };
-  }();
-  var handlePublishWithForm = /*#__PURE__*/function () {
-    var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
-      var formName, formThumbnail, workflowPayload, saveRes, savedWorkflowId, response, _t7;
-      return _regenerator().w(function (_context7) {
-        while (1) switch (_context7.p = _context7.n) {
-          case 0:
-            if (interactionMode) {
-              _context7.n = 1;
-              break;
-            }
-            return _context7.a(2);
-          case 1:
-            _context7.p = 1;
-            setIsRunning(2);
-            formName = publishModal.name.trim() || workflowName;
-            formThumbnail = publishModal.thumbnail.trim() || null;
-            setPublishModal(null);
-            setWorkflowName(formName);
-            workflowPayload = _objectSpread(_objectSpread({}, buildWorkflowPayload()), {}, {
-              name: formName
-            });
-            _context7.n = 2;
-            return _axios["default"].post("/api/workflow/create", workflowPayload);
-          case 2:
-            saveRes = _context7.v;
-            savedWorkflowId = saveRes.data.workflow_id;
-            (0, _WorkflowStore.setWorkflowIds)(savedWorkflowId, runId);
-            setWorkflowId(savedWorkflowId);
-            _context7.n = 3;
-            return _axios["default"].post("/api/workflow/workflow/".concat(savedWorkflowId, "/publish"), {
-              publish: true,
+    console.log("Registering trigger-workflow-publish listener on window object");
+    window.addEventListener('trigger-workflow-publish', handleTriggerPublish);
+    return function () {
+      console.log("Removing trigger-workflow-publish event listener from window");
+      window.removeEventListener('trigger-workflow-publish', handleTriggerPublish);
+    };
+  }, []); // Stable listener
+
+  var handlePublishWithForm = (0, _react.useCallback)(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
+    var formName, formThumbnail, workflowPayload, saveRes, savedWorkflowId, response, _t7;
+    return _regenerator().w(function (_context7) {
+      while (1) switch (_context7.p = _context7.n) {
+        case 0:
+          if (interactionMode) {
+            _context7.n = 1;
+            break;
+          }
+          return _context7.a(2);
+        case 1:
+          _context7.p = 1;
+          setIsRunning(2);
+          formName = publishModal.name.trim() || workflowName;
+          formThumbnail = publishModal.thumbnail.trim() || null;
+          setPublishModal(null);
+          setWorkflowName(formName);
+          workflowPayload = _objectSpread(_objectSpread({}, buildWorkflowPayload()), {}, {
+            name: formName
+          });
+          _context7.n = 2;
+          return _axios["default"].post("/api/workflow/create", workflowPayload);
+        case 2:
+          saveRes = _context7.v;
+          savedWorkflowId = saveRes.data.workflow_id;
+          (0, _WorkflowStore.setWorkflowIds)(savedWorkflowId, runId);
+          setWorkflowId(savedWorkflowId);
+          _context7.n = 3;
+          return _axios["default"].post("/api/workflow/".concat(savedWorkflowId, "/publish"), {
+            publish: true,
+            name: formName,
+            thumbnail: formThumbnail
+          });
+        case 3:
+          response = _context7.v;
+          setIsRunning(0);
+          _reactHotToast.toast.success("Воркфлоу успешно опубликован");
+          setPublishWorkflow(response.data.publish);
+          window.dispatchEvent(new CustomEvent('workflow-publish-changed', {
+            detail: {
+              id: savedWorkflowId,
+              isPublished: true,
               name: formName,
               thumbnail: formThumbnail
-            });
-          case 3:
-            response = _context7.v;
-            setIsRunning(0);
-            _reactHotToast.toast.success("Published successfully");
-            setPublishWorkflow(response.data.publish);
-            _context7.n = 5;
+            }
+          }));
+          _context7.n = 5;
+          break;
+        case 4:
+          _context7.p = 4;
+          _t7 = _context7.v;
+          console.error("Publish with form error:", _t7);
+          if (_t7.response) {
+            _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430: ".concat(_t7.response.data.detail || "Ошибка сервера"));
+          } else {
+            _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430: ".concat(_t7.message));
+          }
+          setIsRunning(0);
+        case 5:
+          return _context7.a(2);
+      }
+    }, _callee7, null, [[1, 4]]);
+  })), [interactionMode, publishModal, workflowName, runId]);
+  var handleTemplatePublish = (0, _react.useCallback)(/*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
+    var savedWorkflowId, response, is_template, _t8;
+    return _regenerator().w(function (_context8) {
+      while (1) switch (_context8.p = _context8.n) {
+        case 0:
+          if (interactionMode) {
+            _context8.n = 1;
             break;
-          case 4:
-            _context7.p = 4;
-            _t7 = _context7.v;
-            console.log(_t7);
-            if (_t7.response) {
-              _reactHotToast.toast.error("Failed: ".concat(_t7.response.data.detail || "Server error"));
-            } else {
-              _reactHotToast.toast.error("Error: ".concat(_t7.message));
-            }
-            setIsRunning(0);
-          case 5:
-            return _context7.a(2);
-        }
-      }, _callee7, null, [[1, 4]]);
-    }));
-    return function handlePublishWithForm() {
-      return _ref10.apply(this, arguments);
-    };
-  }();
-  var handleTemplatePublish = /*#__PURE__*/function () {
-    var _ref11 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
-      var savedWorkflowId, response, is_template, _t8;
-      return _regenerator().w(function (_context8) {
-        while (1) switch (_context8.p = _context8.n) {
-          case 0:
-            if (interactionMode) {
-              _context8.n = 1;
-              break;
-            }
-            return _context8.a(2);
-          case 1:
-            _context8.p = 1;
-            setIsRunning(4);
-            _context8.n = 2;
-            return handleSaveWorkFlow();
-          case 2:
-            savedWorkflowId = _context8.v;
-            _context8.n = 3;
-            return _axios["default"].post("/api/workflow/workflow/".concat(savedWorkflowId, "/template"), {
-              is_template: !template.isPublishedTemplate
+          }
+          return _context8.a(2);
+        case 1:
+          _context8.p = 1;
+          setIsRunning(4);
+          _context8.n = 2;
+          return handleSaveWorkFlow();
+        case 2:
+          savedWorkflowId = _context8.v;
+          _context8.n = 3;
+          return _axios["default"].post("/api/workflow/".concat(savedWorkflowId, "/template"), {
+            is_template: !template.isPublishedTemplate
+          });
+        case 3:
+          response = _context8.v;
+          is_template = response.data.is_template;
+          setIsRunning(0);
+          _reactHotToast.toast.success(is_template ? "Опубликовано как шаблон" : "Снято с публикации как шаблон");
+          setTemplate(function (prev) {
+            return _objectSpread(_objectSpread({}, prev), {}, {
+              isPublishedTemplate: is_template
             });
-          case 3:
-            response = _context8.v;
-            is_template = response.data.is_template;
-            setIsRunning(0);
-            _reactHotToast.toast.success(is_template ? "Published successfully" : "Unpublished successfully");
-            setTemplate(function (prev) {
-              return _objectSpread(_objectSpread({}, prev), {}, {
-                isPublishedTemplate: is_template
-              });
-            });
-            _context8.n = 5;
-            break;
-          case 4:
-            _context8.p = 4;
-            _t8 = _context8.v;
-            console.log(_t8);
-            if (_t8.response) {
-              _reactHotToast.toast.error("Failed: ".concat(_t8.response.data.detail || "Server error"));
-            } else {
-              _reactHotToast.toast.error("Error: ".concat(_t8.message));
-            }
-            setIsRunning(0);
-          case 5:
-            return _context8.a(2);
-        }
-      }, _callee8, null, [[1, 4]]);
-    }));
-    return function handleTemplatePublish() {
-      return _ref11.apply(this, arguments);
-    };
-  }();
+          });
+          _context8.n = 5;
+          break;
+        case 4:
+          _context8.p = 4;
+          _t8 = _context8.v;
+          console.error("Template publish error:", _t8);
+          if (_t8.response) {
+            _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430: ".concat(_t8.response.data.detail || "Ошибка сервера"));
+          } else {
+            _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430: ".concat(_t8.message));
+          }
+          setIsRunning(0);
+        case 5:
+          return _context8.a(2);
+      }
+    }, _callee8, null, [[1, 4]]);
+  })), [interactionMode, handleSaveWorkFlow, template]);
   var handleCategorySave = /*#__PURE__*/function () {
     var _ref12 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9() {
       var response, _t9;
@@ -2125,11 +2221,26 @@ var NodeFlow = function NodeFlow(_ref) {
     _reactHotToast.toast.success("Duplicated node ".concat(nodeId, " to ").concat(newNodeId));
   }, [nodes, setNodes]);
   var nodesWithHandlers = nodes.map(function (node) {
-    var _node$data9;
+    var _node$data0;
     return _objectSpread(_objectSpread({}, node), {}, {
       data: _objectSpread(_objectSpread({}, node.data), {}, {
         nodeSchemas: nodeSchemas,
         onDataChange: onDataChange,
+        setFormValues: function setFormValues(updater) {
+          setNodes(function (nds) {
+            return nds.map(function (n) {
+              if (n.id === node.id) {
+                var nextFormValues = typeof updater === 'function' ? updater(n.data.formValues || {}) : updater;
+                return _objectSpread(_objectSpread({}, n), {}, {
+                  data: _objectSpread(_objectSpread({}, n.data), {}, {
+                    formValues: nextFormValues
+                  })
+                });
+              }
+              return n;
+            });
+          });
+        },
         handleSaveWorkFlow: handleSaveWorkFlow,
         isLoading: loadingNodes[node.id] || false,
         activeHandleColor: activeHandleColor,
@@ -2141,18 +2252,18 @@ var NodeFlow = function NodeFlow(_ref) {
         duplicateNode: duplicateNode,
         setNodes: setNodes,
         setEdges: setEdges,
-        handleTypes: _objectSpread(_objectSpread({}, node.type === 'apiNode' ? Object.keys(((_node$data9 = node.data) === null || _node$data9 === void 0 ? void 0 : _node$data9.formValues) || {}).reduce(function (acc, key) {
+        handleTypes: _objectSpread(_objectSpread({}, node.type === 'apiNode' ? Object.keys(((_node$data0 = node.data) === null || _node$data0 === void 0 ? void 0 : _node$data0.formValues) || {}).reduce(function (acc, key) {
           return _objectSpread(_objectSpread({}, acc), {}, _defineProperty({}, key, 'white'));
-        }, {}) : {}), {}, {
+        }, {}) : {}), {}, _defineProperty({
           concatInput: "blue",
           concatOutput: "blue",
           apiInput: "blue",
           apiInput2: "green",
           apiInput3: "green",
-          apiOutput: function (_node$data0, _node$data1) {
+          apiOutput: function (_node$data1, _node$data10) {
             if (node.type !== 'apiNode') return "green";
-            var output = (_node$data0 = node.data) === null || _node$data0 === void 0 || (_node$data0 = _node$data0.outputs) === null || _node$data0 === void 0 ? void 0 : _node$data0[0];
-            var modelType = (_node$data1 = node.data) === null || _node$data1 === void 0 || (_node$data1 = _node$data1.formValues) === null || _node$data1 === void 0 ? void 0 : _node$data1.model_type;
+            var output = (_node$data1 = node.data) === null || _node$data1 === void 0 || (_node$data1 = _node$data1.outputs) === null || _node$data1 === void 0 ? void 0 : _node$data1[0];
+            var modelType = (_node$data10 = node.data) === null || _node$data10 === void 0 || (_node$data10 = _node$data10.formValues) === null || _node$data10 === void 0 ? void 0 : _node$data10.model_type;
             if ((output === null || output === void 0 ? void 0 : output.type) === 'text' || modelType === 'chat') return "blue";
             if ((output === null || output === void 0 ? void 0 : output.type) === 'video_url' || modelType === 'video') return "orange";
             if ((output === null || output === void 0 ? void 0 : output.type) === 'audio_url' || modelType === 'audio') return "yellow";
@@ -2181,8 +2292,11 @@ var NodeFlow = function NodeFlow(_ref) {
           audioInput3: "green",
           audioInput4: "orange",
           audioOutput: "yellow",
-          characterOutput: "green"
-        })
+          characterOutput: "green",
+          prompt: "blue",
+          images: "green",
+          videos: "orange"
+        }, "videoOutput", "orange"))
       })
     });
   });
@@ -2201,15 +2315,15 @@ var NodeFlow = function NodeFlow(_ref) {
     });
     if (!sourceNode || !targetNode) return false;
 
-    // CharacterNode feeds face_asset — allow it to land on any green image handle of a video node.
-    if (sourceNode.type === "characterNode" && targetNode.type === "videoNode") {
-      return ["videoInput2", "videoInput3", "videoInput6"].includes(targetHandle);
+    // CharacterNode feeds face_asset — allow it to land on any green image handle of a video node or agent.
+    if (sourceNode.type === "characterNode" && (targetNode.type === "videoNode" || targetNode.type === "skylarkNode")) {
+      return ["videoInput2", "videoInput3", "videoInput6", "images"].includes(targetHandle);
     }
     var sourceType = sourceNode === null || sourceNode === void 0 || (_sourceNode$data10 = sourceNode.data) === null || _sourceNode$data10 === void 0 || (_sourceNode$data10 = _sourceNode$data10.handleTypes) === null || _sourceNode$data10 === void 0 ? void 0 : _sourceNode$data10[sourceHandle];
     var targetType = targetNode === null || targetNode === void 0 || (_targetNode$data = targetNode.data) === null || _targetNode$data === void 0 || (_targetNode$data = _targetNode$data.handleTypes) === null || _targetNode$data === void 0 ? void 0 : _targetNode$data[targetHandle];
     if (!sourceType || !targetType || sourceType !== targetType && targetType !== 'white') return false;
     var isSourceOutput = sourceHandle.toLowerCase().includes("output");
-    var isTargetInput = targetHandle.toLowerCase().includes("input") || targetNode.type === "apiNode" && targetHandle !== "apiOutput";
+    var isTargetInput = targetHandle.toLowerCase().includes("input") || ["prompt", "images", "videos"].includes(targetHandle) || targetNode.type === "apiNode" && targetHandle !== "apiOutput";
     if (!isSourceOutput || !isTargetInput) return false;
     var formValues = ((_targetNode$data2 = targetNode.data) === null || _targetNode$data2 === void 0 ? void 0 : _targetNode$data2.formValues) || {};
     var validHandles = [];
@@ -2252,6 +2366,9 @@ var NodeFlow = function NodeFlow(_ref) {
           return k !== 'apiOutput' && exposedHandles.includes(k);
         });
         break;
+      case "skylarkNode":
+        validHandles = ["prompt", "images", "videos"];
+        break;
       case "vidConcatNode":
         validHandles = ["videoInput7"];
         break;
@@ -2264,11 +2381,11 @@ var NodeFlow = function NodeFlow(_ref) {
     return true;
   };
   var onConnectStart = function onConnectStart(event, params) {
-    var _node$data10;
+    var _node$data11;
     var node = nodesWithHandlers.find(function (n) {
       return n.id === params.nodeId;
     });
-    var handleColor = node === null || node === void 0 || (_node$data10 = node.data) === null || _node$data10 === void 0 || (_node$data10 = _node$data10.handleTypes) === null || _node$data10 === void 0 ? void 0 : _node$data10[params.handleId];
+    var handleColor = node === null || node === void 0 || (_node$data11 = node.data) === null || _node$data11 === void 0 || (_node$data11 = _node$data11.handleTypes) === null || _node$data11 === void 0 ? void 0 : _node$data11[params.handleId];
     setActiveHandleColor(handleColor);
     var isOutput = params.handleId.toLowerCase().includes("output");
     setDraggedEdgeInfo({
@@ -2333,7 +2450,10 @@ var NodeFlow = function NodeFlow(_ref) {
       audioInput2: "blue",
       audioInput3: "green",
       audioInput4: "orange",
-      audioOutput: "yellow"
+      audioOutput: "yellow",
+      prompt: "blue",
+      images: "green",
+      videos: "orange"
     };
     var flowPosition = screenToFlowPosition({
       x: edgePicker.cursorPos.x,
@@ -2360,6 +2480,7 @@ var NodeFlow = function NodeFlow(_ref) {
         audioNode: ["audioInput", "audioInput2", "audioInput3", "audioInput4"],
         apiNode: ["apiInput", "apiInput2", "apiInput3"],
         concatNode: ["concatInput"],
+        skylarkNode: ["prompt", "images", "videos"],
         vidConcatNode: ["videoInput7"]
       };
       var sourceHandleColor = handleTypesMap[edgePicker.sourceHandleId];
@@ -2383,6 +2504,7 @@ var NodeFlow = function NodeFlow(_ref) {
         audioNode: ["audioOutput"],
         apiNode: ["apiOutput"],
         concatNode: ["concatOutput"],
+        skylarkNode: ["videoOutput"],
         vidConcatNode: ["videoOutput"]
       };
       var targetHandleColor = handleTypesMap[edgePicker.targetHandleId];
@@ -2411,17 +2533,17 @@ var NodeFlow = function NodeFlow(_ref) {
   var getCompatibleNodeTypes = function getCompatibleNodeTypes(handleColor, isOutput) {
     if (isOutput) {
       var compatibilityMap = {
-        blue: ['textNode', 'imageNode', 'videoNode', 'audioNode', 'apiNode', 'concatNode'],
-        green: ['imageNode', 'videoNode', 'apiNode'],
-        orange: ['videoNode', 'vidConcatNode'],
+        blue: ['textNode', 'imageNode', 'videoNode', 'audioNode', 'apiNode', 'concatNode', 'skylarkNode'],
+        green: ['imageNode', 'videoNode', 'apiNode', 'skylarkNode'],
+        orange: ['videoNode', 'vidConcatNode', 'skylarkNode'],
         yellow: ['audioNode', 'videoNode']
       };
       return compatibilityMap[handleColor] || [];
     } else {
       var _compatibilityMap = {
-        blue: ['textNode', 'concatNode', 'apiNode'],
-        green: ['imageNode', 'apiNode'],
-        orange: ['videoNode', 'vidConcatNode'],
+        blue: ['textNode', 'concatNode', 'apiNode', 'skylarkNode'],
+        green: ['imageNode', 'apiNode', 'skylarkNode'],
+        orange: ['videoNode', 'vidConcatNode', 'skylarkNode'],
         yellow: ['audioNode']
       };
       return _compatibilityMap[handleColor] || [];
@@ -2548,17 +2670,12 @@ var NodeFlow = function NodeFlow(_ref) {
   }, [selectedNode, setNodes]);
   var updateModel = (0, _react.useCallback)(function (model) {
     if (!selectedNode) return;
-    if ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.data) && (selectedNode.data.selectedModel && selectedNode.data.selectedModel.id) === model.id) {
-      setDropDown(0);
-      return;
-    }
     setNodes(function (nds) {
       return nds.map(function (node) {
         if (node.id === selectedNode.id) {
           return _objectSpread(_objectSpread({}, node), {}, {
             data: _objectSpread(_objectSpread({}, node.data), {}, {
-              selectedModel: model,
-              modelId: model.id
+              selectedModel: model
             })
           });
         }
@@ -2617,131 +2734,14 @@ var NodeFlow = function NodeFlow(_ref) {
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-white text-xl font-bold"
   }, "Loading...")), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-center absolute top-0 z-20 bg-[#151618] w-full py-3 border-b border-gray-800"
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-between w-full max-w-[95%] sm:max-w-[90%] lg:max-w-[80%] overflow-x-auto"
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center gap-2 w-[35%]"
-  }, /*#__PURE__*/_react["default"].createElement(_link["default"], {
-    href: "/studio/workflows",
-    className: "text-white"
-  }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, null)), /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    onClick: function onClick() {
-      return setDropDown(function (prev) {
-        return prev === 2 ? 0 : 2;
-      });
-    },
-    disabled: !interactionMode,
-    className: "flex items-center gap-2 text-base outline-none text-[#adacaa] hover:text-white cursor-pointer bg-transparent max-w-[90%]"
-  }, /*#__PURE__*/_react["default"].createElement("span", {
-    className: "truncate block w-full"
-  }, workflowName ? workflowName : "Untitled"), " ", /*#__PURE__*/_react["default"].createElement(_fa2.FaRegEdit, {
-    size: 14
-  }))), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center gap-2"
-  }, template.showTemplateBtn && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "relative",
-    onBlur: function onBlur(e) {
-      var currentTarget = e.currentTarget;
-      setTimeout(function () {
-        if (currentTarget && !currentTarget.contains(document.activeElement)) {
-          setIsSettingsOpen(false);
-        }
-      }, 150);
-    },
-    tabIndex: 0
-  }, /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    onClick: function onClick() {
-      return setIsSettingsOpen(!isSettingsOpen);
-    },
-    className: "flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full hover:bg-black hover:text-white transition-colors"
-  }, /*#__PURE__*/_react["default"].createElement(_fa.FaToolbox, {
-    size: 14
-  }), " Settings ", /*#__PURE__*/_react["default"].createElement(_fa.FaAngleDown, {
-    size: 12,
-    className: "transition-transform duration-300 ".concat(isSettingsOpen ? "rotate-180" : "")
-  })), isSettingsOpen && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute right-0 mt-2 w-48 bg-[#1b1e23] border border-gray-700 rounded-lg shadow-xl z-50 overflow-hidden"
-  }, /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    disabled: isRunning === 4,
-    onClick: function onClick() {
-      handleTemplatePublish();
-      setIsSettingsOpen(false);
-    },
-    className: "w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-[#2c3037] hover:text-white transition-colors border-b border-gray-700/50 disabled:opacity-50"
-  }, isRunning === 4 ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-4 h-4 border-2 border-t-transparent border-gray-300 rounded-full animate-spin"
-  }) : /*#__PURE__*/_react["default"].createElement(_lu.LuLayoutTemplate, {
-    size: 16
-  }), /*#__PURE__*/_react["default"].createElement("span", null, template.isPublishedTemplate ? "Undo Template" : "Make Template")), /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    onClick: function onClick() {
-      setIsCategoryPopupOpen(true);
-      setIsSettingsOpen(false);
-    },
-    className: "w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-[#2c3037] hover:text-white transition-colors"
-  }, /*#__PURE__*/_react["default"].createElement(_ri.RiInputMethodLine, {
-    size: 16
-  }), /*#__PURE__*/_react["default"].createElement("span", null, "Category")))), interactionMode ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    disabled: isRunning === 2 || !interactionMode,
-    onClick: function onClick() {
-      if (publishWorkflow) {
-        handlePublishWorkflow();
-      } else {
-        var isImg = function isImg(u) {
-          return u && !u.startsWith('asset://') && !/\.(mp4|webm|mov|avi|mkv|m3u8|mp3|wav|ogg|flac|aac)(\?|$)/i.test(u);
-        };
-        var candidates = _toConsumableArray(new Set(nodes.flatMap(function (n) {
-          var _n$data2, _n$data3;
-          var arr = [];
-          if (isImg((_n$data2 = n.data) === null || _n$data2 === void 0 ? void 0 : _n$data2.resultUrl)) arr.push(n.data.resultUrl);
-          (((_n$data3 = n.data) === null || _n$data3 === void 0 ? void 0 : _n$data3.outputHistory) || []).forEach(function (h) {
-            var _h$result3;
-            var v = (_h$result3 = h.result) === null || _h$result3 === void 0 || (_h$result3 = _h$result3.outputs) === null || _h$result3 === void 0 || (_h$result3 = _h$result3[0]) === null || _h$result3 === void 0 ? void 0 : _h$result3.value;
-            if (isImg(v)) arr.push(v);
-          });
-          return arr;
-        })));
-        setPublishModal({
-          name: workflowName,
-          thumbnail: candidates[0] || '',
-          candidates: candidates
-        });
-      }
-    },
-    className: "flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white"
-  }, isRunning === 2 ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-4 h-4 border-2 border-t-transparent border-black group-hover:border-white group-hover:border-t-transparent rounded-full animate-spin"
-  }), " Publishing...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement(_fa2.FaTelegramPlane, {
-    size: 16
-  }), " ", publishWorkflow ? "Unpublish" : "Publish"))) : /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    disabled: interactionMode,
-    onClick: handleDuplicateWorkflow,
-    className: "flex items-center gap-2 px-4 py-1.5 border border-gray-600/70 bg-white text-black text-sm rounded-full group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed hover:bg-black hover:text-white"
-  }, isRunning === 3 ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-4 h-4 border-2 border-t-transparent border-black group-hover:border-white group-hover:border-t-transparent rounded-full animate-spin"
-  }), " Duplicating...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement(_io.IoDuplicateOutline, {
-    size: 16
-  }), " Duplicate"))))), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#151618] p-1 rounded-full border border-gray-700 shadow-xl ".concat(isRestoring && "hidden")
+    className: "absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#0c0d0f] p-1 rounded-full border border-gray-700 shadow-xl ".concat(isRestoring && "hidden")
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: function onClick() {
       return _reactHotToast.toast.error("This workflow can't be edited.");
     },
-    className: "p-3 rounded-full bg-white hover:bg-[#1b1e23] cursor-pointer outline-none text-black active:bg-gray-600 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed ".concat(interactionMode && "hidden")
+    className: "p-3 rounded-full bg-purple-600 hover:bg-fuchsia-500 cursor-pointer outline-none text-white active:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-900/20 ".concat(interactionMode && "hidden")
   }, /*#__PURE__*/_react["default"].createElement(_md.MdLockOutline, {
     size: 18
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -2764,7 +2764,7 @@ var NodeFlow = function NodeFlow(_ref) {
         return prev === 1 ? 0 : 1;
       });
     },
-    className: "p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ".concat(dropDown === 1 ? "bg-white text-black" : "text-gray-300 active:bg-gray-600 hover:text-white hover:bg-[#1b1e23]")
+    className: "p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ".concat(dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600")
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaPlus, {
     size: 18
   })), dropDown === 1 && /*#__PURE__*/_react["default"].createElement("div", {
@@ -2776,15 +2776,34 @@ var NodeFlow = function NodeFlow(_ref) {
   }))), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
+    onClick: handleSaveWorkFlow,
+    className: "p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition ".concat(!interactionMode && "hidden"),
+    title: "\u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C"
+  }, /*#__PURE__*/_react["default"].createElement(_md.MdSave, {
+    size: 18
+  })), /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    suppressHydrationWarning: true,
+    onClick: handlePublishWorkflow,
+    disabled: isRunning === 2,
+    className: "p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 ".concat(!interactionMode && "hidden", " ").concat(publishWorkflow ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"),
+    title: publishWorkflow ? "Снять с публикации" : "Опубликовать"
+  }, isRunning === 2 ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "w-[18px] h-[18px] rounded-full border-2 border-t-transparent border-current animate-spin"
+  }) : /*#__PURE__*/_react["default"].createElement(_fa2.FaTelegramPlane, {
+    size: 18
+  })), /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    suppressHydrationWarning: true,
     onClick: zoomIn,
-    className: "p-3 rounded-full hover:bg-[#1b1e23] cursor-pointer outline-none text-gray-300 active:bg-gray-600 hover:text-white transition"
+    className: "p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
   }, /*#__PURE__*/_react["default"].createElement(_fi.FiZoomIn, {
     size: 18
   })), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: zoomOut,
-    className: "p-3 rounded-full hover:bg-[#1b1e23] cursor-pointer outline-none text-gray-300 active:bg-gray-600 hover:text-white transition"
+    className: "p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
   }, /*#__PURE__*/_react["default"].createElement(_fi.FiZoomOut, {
     size: 18
   })), /*#__PURE__*/_react["default"].createElement("button", {
@@ -2797,7 +2816,7 @@ var NodeFlow = function NodeFlow(_ref) {
         minZoom: 0.2
       });
     },
-    className: "p-3 rounded-full hover:bg-[#1b1e23] cursor-pointer outline-none text-gray-300 active:bg-blue-600 hover:text-white transition"
+    className: "p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
   }, /*#__PURE__*/_react["default"].createElement(_md.MdOutlineZoomOutMap, {
     size: 18
   })), /*#__PURE__*/_react["default"].createElement("button", {
@@ -2806,7 +2825,7 @@ var NodeFlow = function NodeFlow(_ref) {
     onClick: function onClick() {
       return setIsDragging(!isDragging);
     },
-    className: "p-3 rounded-full cursor-pointer outline-none active:bg-gray-600 transition ".concat(!isDragging ? "bg-white text-black" : "text-gray-300 hover:bg-[#1b1e23] hover:text-white")
+    className: "p-3 rounded-full cursor-pointer outline-none active:bg-purple-700 transition ".concat(!isDragging ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 hover:bg-purple-600 hover:text-white")
   }, /*#__PURE__*/_react["default"].createElement(_lu.LuMousePointer2, {
     size: 18
   }))), /*#__PURE__*/_react["default"].createElement("div", {
@@ -2871,8 +2890,15 @@ var NodeFlow = function NodeFlow(_ref) {
       nodeSchemas: nodeSchemas
     })));
   }())), selectedNode && !["concatNode"].includes(selectedNode.type) && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute right-2 top-16 z-50 w-80 h-full max-h-[90%] bg-[#09090b]/80 backdrop-blur-xl border border-white/20 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl"
-  }, /*#__PURE__*/_react["default"].createElement("button", {
+    className: "".concat(isMobile ? isPanelOpen ? "fixed inset-0 z-50" : "hidden" : "absolute right-2 top-16 z-50", " w-80 h-full max-h-[90%] bg-[#0c0d0f] border border-white/10 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-black/50")
+  }, isMobile && /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    suppressHydrationWarning: true,
+    className: "absolute top-2 left-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200 z-10",
+    onClick: function onClick() {
+      return setIsPanelOpen(false);
+    }
+  }, "\u2190"), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     className: "absolute top-2 right-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200",
@@ -2884,13 +2910,14 @@ var NodeFlow = function NodeFlow(_ref) {
           });
         });
       });
+      setIsPanelOpen(false);
     }
   }, "\u2715"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-4 h-full w-full"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-base font-semibold text-center text-white mt-6 tracking-tight"
-  }, "Свойства"), /*#__PURE__*/_react["default"].createElement("h1", {
-    className: "flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800/50 border border-white/5 rounded-xl px-3 py-2 transition-all"
+  }, "\u0421\u0432\u043E\u0439\u0441\u0442\u0432\u0430"), /*#__PURE__*/_react["default"].createElement("h1", {
+    className: "flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800 border border-white/5 rounded-xl px-3 py-2 transition-all"
   }, selectedNode.id.startsWith("text") ? /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, {
     className: "text-blue-400"
   }) : selectedNode.id.startsWith("image") ? /*#__PURE__*/_react["default"].createElement(_io.IoImageOutline, {
@@ -2909,19 +2936,75 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex flex-col gap-1 relative w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-[10px] font-bold text-zinc-500 text-start px-1"
-  }, "Модель"), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900/50 border border-white/10 rounded-lg"
-  }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data3 = selectedNode.data) === null || _selectedNode$data3 === void 0 || (_selectedNode$data3 = _selectedNode$data3.selectedModel) === null || _selectedNode$data3 === void 0 ? void 0 : _selectedNode$data3.name) || "")), selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data6 = selectedNode.data) !== null && _selectedNode$data6 !== void 0 && _selectedNode$data6.selectedModel ? function (_nodeSchemas$categori10, _selectedNode$data7, _fullSchema$schemas, _selectedNode$data8, _selectedNode$data9, _selectedNode$data0, _selectedNode$data1) {
+  }, "\u041C\u043E\u0434\u0435\u043B\u044C"), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-lg"
+  }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data3 = selectedNode.data) === null || _selectedNode$data3 === void 0 || (_selectedNode$data3 = _selectedNode$data3.selectedModel) === null || _selectedNode$data3 === void 0 ? void 0 : _selectedNode$data3.name) || "")), selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data4 = selectedNode.data) !== null && _selectedNode$data4 !== void 0 && _selectedNode$data4.selectedModel ? function (_nodeSchemas$categori10, _selectedNode$data5, _fullSchema$schemas, _selectedNode$data6, _selectedNode$data$fo, _selectedNode$data$fo2, _selectedNode$data$fo3, _selectedNode$data7, _selectedNode$data8, _selectedNode$data9) {
     var nodeType = selectedNode.id.startsWith("text") ? "text" : selectedNode.id.startsWith("image") ? "image" : selectedNode.id.startsWith("video") ? "video" : selectedNode.id.startsWith("audio") ? "audio" : "utility";
-    var fullSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori10 = nodeSchemas.categories) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10[nodeType]) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10.models[selectedNode === null || selectedNode === void 0 || (_selectedNode$data7 = selectedNode.data) === null || _selectedNode$data7 === void 0 || (_selectedNode$data7 = _selectedNode$data7.selectedModel) === null || _selectedNode$data7 === void 0 ? void 0 : _selectedNode$data7.id]) === null || _nodeSchemas$categori10 === void 0 ? void 0 : _nodeSchemas$categori10.input_schema;
+    var fullSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori10 = nodeSchemas.categories) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10[nodeType]) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10.models[selectedNode === null || selectedNode === void 0 || (_selectedNode$data5 = selectedNode.data) === null || _selectedNode$data5 === void 0 || (_selectedNode$data5 = _selectedNode$data5.selectedModel) === null || _selectedNode$data5 === void 0 ? void 0 : _selectedNode$data5.id]) === null || _nodeSchemas$categori10 === void 0 ? void 0 : _nodeSchemas$categori10.input_schema;
     var inputSchema = (fullSchema === null || fullSchema === void 0 || (_fullSchema$schemas = fullSchema.schemas) === null || _fullSchema$schemas === void 0 ? void 0 : _fullSchema$schemas.input_data) || fullSchema || {};
-    return (selectedNode === null || selectedNode === void 0 || (_selectedNode$data8 = selectedNode.data) === null || _selectedNode$data8 === void 0 ? void 0 : _selectedNode$data8.loading) === 1 ? /*#__PURE__*/_react["default"].createElement("div", {
+    return (selectedNode === null || selectedNode === void 0 || (_selectedNode$data6 = selectedNode.data) === null || _selectedNode$data6 === void 0 ? void 0 : _selectedNode$data6.loading) === 1 ? /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col items-center justify-center gap-2 h-full w-full"
     }, /*#__PURE__*/_react["default"].createElement("div", {
       className: "w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"
     }), /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-xs text-white"
-    }, "Загрузка модели...")) : selectedNode.type === "apiNode" ? /*#__PURE__*/_react["default"].createElement("div", {
+    }, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u043C\u043E\u0434\u0435\u043B\u0438...")) : selectedNode.type === "skylarkNode" ? /*#__PURE__*/_react["default"].createElement("div", {
+      className: "flex flex-col gap-4 w-full"
+    }, /*#__PURE__*/_react["default"].createElement("div", {
+      className: "flex flex-col gap-1.5"
+    }, /*#__PURE__*/_react["default"].createElement("div", {
+      className: "flex items-center justify-between px-1"
+    }, /*#__PURE__*/_react["default"].createElement("label", {
+      className: "text-[10px] font-bold text-zinc-500 uppercase"
+    }, "\u041F\u0440\u043E\u043C\u043F\u0442"), edges.some(function (e) {
+      return e.target === selectedNode.id && e.targetHandle === "prompt";
+    }) && /*#__PURE__*/_react["default"].createElement("span", {
+      className: "text-[9px] text-blue-400 font-bold bg-blue-500/10 px-1.5 py-0.5 rounded uppercase"
+    }, "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043E")), /*#__PURE__*/_react["default"].createElement("textarea", {
+      value: ((_selectedNode$data$fo = selectedNode.data.formValues) === null || _selectedNode$data$fo === void 0 ? void 0 : _selectedNode$data$fo.prompt) || "",
+      onChange: function onChange(e) {
+        return updateNodeFromPanel("prompt", e.target.value);
+      },
+      placeholder: edges.some(function (e) {
+        return e.target === selectedNode.id && e.targetHandle === "prompt";
+      }) ? "Промпт поступает из другого узла..." : "Опишите, что должен сделать агент...",
+      readOnly: edges.some(function (e) {
+        return e.target === selectedNode.id && e.targetHandle === "prompt";
+      }),
+      className: "w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white min-h-[100px] outline-none transition-all resize-none ".concat(edges.some(function (e) {
+        return e.target === selectedNode.id && e.targetHandle === "prompt";
+      }) ? "opacity-60 cursor-not-allowed border-blue-500/30" : "focus:border-blue-500/50")
+    })), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "flex flex-col gap-1.5"
+    }, /*#__PURE__*/_react["default"].createElement("label", {
+      className: "text-[10px] font-bold text-zinc-500 uppercase px-1"
+    }, "\u0421\u043E\u043E\u0442\u043D\u043E\u0448\u0435\u043D\u0438\u0435 \u0441\u0442\u043E\u0440\u043E\u043D"), /*#__PURE__*/_react["default"].createElement("select", {
+      value: ((_selectedNode$data$fo2 = selectedNode.data.formValues) === null || _selectedNode$data$fo2 === void 0 ? void 0 : _selectedNode$data$fo2.ratio) || "auto",
+      onChange: function onChange(e) {
+        return updateNodeFromPanel("ratio", e.target.value);
+      },
+      className: "w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+    }, ["auto", "16:9", "9:16", "4:3", "3:4"].map(function (r) {
+      return /*#__PURE__*/_react["default"].createElement("option", {
+        key: r,
+        value: r
+      }, r);
+    }))), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "flex flex-col gap-1.5"
+    }, /*#__PURE__*/_react["default"].createElement("label", {
+      className: "text-[10px] font-bold text-zinc-500 uppercase px-1"
+    }, "\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C"), /*#__PURE__*/_react["default"].createElement("select", {
+      value: ((_selectedNode$data$fo3 = selectedNode.data.formValues) === null || _selectedNode$data$fo3 === void 0 ? void 0 : _selectedNode$data$fo3.duration) || "auto",
+      onChange: function onChange(e) {
+        return updateNodeFromPanel("duration", e.target.value);
+      },
+      className: "w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+    }, ["auto", "～15s", "～30s", "40～60s"].map(function (d) {
+      return /*#__PURE__*/_react["default"].createElement("option", {
+        key: d,
+        value: d
+      }, d);
+    })))) : selectedNode.type === "apiNode" ? /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col gap-2 w-full h-full relative pt-2"
     }, /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
@@ -2929,29 +3012,29 @@ var NodeFlow = function NodeFlow(_ref) {
       onClick: function onClick() {
         return selectedNode && runNodeInputsFromFlow(selectedNode.id);
       },
-      disabled: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data9 = selectedNode.data) === null || _selectedNode$data9 === void 0 ? void 0 : _selectedNode$data9.loading) === 1,
+      disabled: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data7 = selectedNode.data) === null || _selectedNode$data7 === void 0 ? void 0 : _selectedNode$data7.loading) === 1,
       className: "absolute top-0 z-10 text-[10px] font-bold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 group disabled:cursor-not-allowed rounded-full text-white bg-blue-600 px-3 py-1 border border-blue-500/50 hover:bg-blue-500 transition-all self-end shadow-lg shadow-blue-900/20"
-    }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data0 = selectedNode.data) === null || _selectedNode$data0 === void 0 ? void 0 : _selectedNode$data0.loading) === 1 ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
+    }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data8 = selectedNode.data) === null || _selectedNode$data8 === void 0 ? void 0 : _selectedNode$data8.loading) === 1 ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
       className: "w-3 h-3 rounded-full border border-t-transparent group-hover:border-t-transparent border-black group-hover:border-white animate-spin"
-    }), "Загрузка...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, "Получить модель")), Object.entries((selectedNode === null || selectedNode === void 0 || (_selectedNode$data1 = selectedNode.data) === null || _selectedNode$data1 === void 0 ? void 0 : _selectedNode$data1.taskData) || {}).map(function (_ref15, idx) {
-      var _selectedNode$data10, _selectedNode$data11, _selectedNode$data12;
+    }), "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, "\u041F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u043C\u043E\u0434\u0435\u043B\u044C")), Object.entries((selectedNode === null || selectedNode === void 0 || (_selectedNode$data9 = selectedNode.data) === null || _selectedNode$data9 === void 0 ? void 0 : _selectedNode$data9.taskData) || {}).map(function (_ref15, idx) {
+      var _selectedNode$data0, _selectedNode$data1, _selectedNode$data10;
       var _ref16 = _slicedToArray(_ref15, 2),
         key = _ref16[0],
         meta = _ref16[1];
-      var hardcodedKeys = Object.keys((selectedNode === null || selectedNode === void 0 || (_selectedNode$data10 = selectedNode.data) === null || _selectedNode$data10 === void 0 || (_selectedNode$data10 = _selectedNode$data10.selectedModel) === null || _selectedNode$data10 === void 0 || (_selectedNode$data10 = _selectedNode$data10.input_params) === null || _selectedNode$data10 === void 0 ? void 0 : _selectedNode$data10.properties) || {});
+      var hardcodedKeys = Object.keys((selectedNode === null || selectedNode === void 0 || (_selectedNode$data0 = selectedNode.data) === null || _selectedNode$data0 === void 0 || (_selectedNode$data0 = _selectedNode$data0.selectedModel) === null || _selectedNode$data0 === void 0 || (_selectedNode$data0 = _selectedNode$data0.input_params) === null || _selectedNode$data0 === void 0 ? void 0 : _selectedNode$data0.properties) || {});
       var isHardcoded = hardcodedKeys === null || hardcodedKeys === void 0 ? void 0 : hardcodedKeys.includes(key);
       return /*#__PURE__*/_react["default"].createElement(_RenderApiField["default"], {
         key: key,
         fieldName: key,
         meta: meta,
         idx: idx,
-        formValues: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data11 = selectedNode.data) === null || _selectedNode$data11 === void 0 ? void 0 : _selectedNode$data11.formValues) || {},
+        formValues: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data1 = selectedNode.data) === null || _selectedNode$data1 === void 0 ? void 0 : _selectedNode$data1.formValues) || {},
         setFormValues: function setFormValues(newValues) {
           setNodes(function (nds) {
             return nds.map(function (node) {
               if (node.id === (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.id)) {
-                var _node$data11;
-                var updatedFormValues = typeof newValues === 'function' ? newValues(((_node$data11 = node.data) === null || _node$data11 === void 0 ? void 0 : _node$data11.formValues) || {}) : newValues;
+                var _node$data12;
+                var updatedFormValues = typeof newValues === 'function' ? newValues(((_node$data12 = node.data) === null || _node$data12 === void 0 ? void 0 : _node$data12.formValues) || {}) : newValues;
                 if (key === 'model_name' && node.data.dynamicSchemas) {
                   var modelNameValue = updatedFormValues.model_name;
                   var matchedModel = Object.values(node.data.dynamicSchemas).find(function (m) {
@@ -2973,10 +3056,10 @@ var NodeFlow = function NodeFlow(_ref) {
             });
           });
         },
-        exposedHandles: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data12 = selectedNode.data) === null || _selectedNode$data12 === void 0 ? void 0 : _selectedNode$data12.exposedHandles) || [],
+        exposedHandles: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data10 = selectedNode.data) === null || _selectedNode$data10 === void 0 ? void 0 : _selectedNode$data10.exposedHandles) || [],
         onToggleHandle: isHardcoded ? null : function (field) {
-          var _selectedNode$data13;
-          var current = (selectedNode === null || selectedNode === void 0 || (_selectedNode$data13 = selectedNode.data) === null || _selectedNode$data13 === void 0 ? void 0 : _selectedNode$data13.exposedHandles) || [];
+          var _selectedNode$data11;
+          var current = (selectedNode === null || selectedNode === void 0 || (_selectedNode$data11 = selectedNode.data) === null || _selectedNode$data11 === void 0 ? void 0 : _selectedNode$data11.exposedHandles) || [];
           var isRemoving = current === null || current === void 0 ? void 0 : current.includes(field);
           if (isRemoving) {
             setEdges(function (eds) {
@@ -3013,8 +3096,8 @@ var NodeFlow = function NodeFlow(_ref) {
           }
         }
       });
-    })) : inputSchema !== null && inputSchema !== void 0 && inputSchema.properties || inputSchema && Object.keys(inputSchema).length > 0 ? Object.entries((inputSchema === null || inputSchema === void 0 ? void 0 : inputSchema.properties) || inputSchema).map(function (_ref17, idx) {
-      var _selectedNode$data14, _selectedNode$data15;
+    })) : inputSchema !== null && inputSchema !== void 0 && inputSchema.properties || inputSchema && Object.keys(inputSchema).length > 0 ? Object.entries((inputSchema === null || inputSchema === void 0 ? void 0 : inputSchema.properties) || inputSchema || {}).map(function (_ref17, idx) {
+      var _selectedNode$data12, _selectedNode$data13;
       var _ref18 = _slicedToArray(_ref17, 2),
         key = _ref18[0],
         meta = _ref18[1];
@@ -3027,15 +3110,15 @@ var NodeFlow = function NodeFlow(_ref) {
         fieldName: key,
         meta: meta,
         idx: idx,
-        formValues: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data14 = selectedNode.data) === null || _selectedNode$data14 === void 0 ? void 0 : _selectedNode$data14.formValues) || {},
+        formValues: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data12 = selectedNode.data) === null || _selectedNode$data12 === void 0 ? void 0 : _selectedNode$data12.formValues) || {},
         setFormValues: function setFormValues(newValues) {
           setNodes(function (nds) {
             return nds.map(function (node) {
               if (node.id === (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.id)) {
-                var _node$data12;
+                var _node$data13;
                 return _objectSpread(_objectSpread({}, node), {}, {
                   data: _objectSpread(_objectSpread({}, node.data), {}, {
-                    formValues: typeof newValues === 'function' ? newValues(((_node$data12 = node.data) === null || _node$data12 === void 0 ? void 0 : _node$data12.formValues) || {}) : newValues
+                    formValues: typeof newValues === 'function' ? newValues(((_node$data13 = node.data) === null || _node$data13 === void 0 ? void 0 : _node$data13.formValues) || {}) : newValues
                   })
                 });
               }
@@ -3045,20 +3128,20 @@ var NodeFlow = function NodeFlow(_ref) {
         },
         handleChange: updateNodeFromPanel,
         data: inputSchema,
-        modelName: selectedNode === null || selectedNode === void 0 || (_selectedNode$data15 = selectedNode.data) === null || _selectedNode$data15 === void 0 || (_selectedNode$data15 = _selectedNode$data15.selectedModel) === null || _selectedNode$data15 === void 0 ? void 0 : _selectedNode$data15.name
+        modelName: selectedNode === null || selectedNode === void 0 || (_selectedNode$data13 = selectedNode.data) === null || _selectedNode$data13 === void 0 || (_selectedNode$data13 = _selectedNode$data13.selectedModel) === null || _selectedNode$data13 === void 0 ? void 0 : _selectedNode$data13.name
       });
     }).filter(Boolean) : /*#__PURE__*/_react["default"].createElement("div", {
       className: "text-center py-8"
     }, /*#__PURE__*/_react["default"].createElement("p", {
       className: "text-sm text-gray-400"
-    }, "Нет доступных свойств"));
+    }, "\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u0441\u0432\u043E\u0439\u0441\u0442\u0432"));
   }() : /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-center py-8"
   }, /*#__PURE__*/_react["default"].createElement("p", {
     className: "text-sm text-gray-400"
-  }, "Сначала выберите модель")))), (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" && function (_selectedNode$data16) {
-    var fv = (selectedNode === null || selectedNode === void 0 || (_selectedNode$data16 = selectedNode.data) === null || _selectedNode$data16 === void 0 ? void 0 : _selectedNode$data16.formValues) || {};
-    var extra = Array.isArray(fv.images_list) ? fv.images_list.filter(Boolean) : [];
+  }, "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043C\u043E\u0434\u0435\u043B\u044C")))), ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "skylarkNode") && function (_selectedNode$data14) {
+    var fv = (selectedNode === null || selectedNode === void 0 || (_selectedNode$data14 = selectedNode.data) === null || _selectedNode$data14 === void 0 ? void 0 : _selectedNode$data14.formValues) || {};
+    var extra = Array.isArray(fv.images_list || fv.img_url_list) ? (fv.images_list || fv.img_url_list).filter(Boolean) : [];
     var all = [].concat(_toConsumableArray(fv.image_url ? [{
       url: fv.image_url,
       primary: true
@@ -3074,13 +3157,14 @@ var NodeFlow = function NodeFlow(_ref) {
         return nds.map(function (n) {
           if (n.id !== selectedNode.id) return n;
           var cfv = _objectSpread({}, n.data.formValues);
+          var listKey = n.type === "skylarkNode" ? "img_url_list" : "images_list";
           if (item.primary) {
             // Promote the first extra image to be the new first-frame.
-            var rest = Array.isArray(cfv.images_list) ? cfv.images_list.filter(Boolean) : [];
+            var rest = Array.isArray(cfv[listKey]) ? cfv[listKey].filter(Boolean) : [];
             cfv.image_url = rest.length ? rest[0] : null;
-            cfv.images_list = rest.slice(1);
+            cfv[listKey] = rest.slice(1);
           } else {
-            cfv.images_list = (Array.isArray(cfv.images_list) ? cfv.images_list.filter(Boolean) : []).filter(function (u) {
+            cfv[listKey] = (Array.isArray(cfv[listKey]) ? cfv[listKey].filter(Boolean) : []).filter(function (u) {
               return u !== item.url;
             });
           }
@@ -3114,10 +3198,51 @@ var NodeFlow = function NodeFlow(_ref) {
         onClick: function onClick() {
           return removeAt(item);
         },
-        className: "absolute top-0.5 right-0.5 bg-black/60 hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity"
+        className: "absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity"
       }, "\xD7"));
     })));
-  }(), (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" && (selectedNode === null || selectedNode === void 0 || (_selectedNode$data17 = selectedNode.data) === null || _selectedNode$data17 === void 0 || (_selectedNode$data17 = _selectedNode$data17.formValues) === null || _selectedNode$data17 === void 0 ? void 0 : _selectedNode$data17.face_asset) && function () {
+  }(), (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "skylarkNode" && function (_selectedNode$data15) {
+    var fv = (selectedNode === null || selectedNode === void 0 || (_selectedNode$data15 = selectedNode.data) === null || _selectedNode$data15 === void 0 ? void 0 : _selectedNode$data15.formValues) || {};
+    var all = Array.isArray(fv.video_url_list) ? fv.video_url_list.filter(Boolean) : [];
+    if (!all.length) return null;
+    var removeAt = function removeAt(url) {
+      setNodes(function (nds) {
+        return nds.map(function (n) {
+          if (n.id !== selectedNode.id) return n;
+          var cfv = _objectSpread({}, n.data.formValues);
+          cfv.video_url_list = (Array.isArray(cfv.video_url_list) ? cfv.video_url_list.filter(Boolean) : []).filter(function (u) {
+            return u !== url;
+          });
+          return _objectSpread(_objectSpread({}, n), {}, {
+            data: _objectSpread(_objectSpread({}, n.data), {}, {
+              formValues: cfv
+            })
+          });
+        });
+      });
+    };
+    return /*#__PURE__*/_react["default"].createElement("div", {
+      className: "px-4 pb-3"
+    }, /*#__PURE__*/_react["default"].createElement("p", {
+      className: "text-[10px] font-semibold text-orange-300 uppercase tracking-wider mb-1.5"
+    }, "\u0412\u0438\u0434\u0435\u043E (", all.length, ")"), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "grid grid-cols-3 gap-1.5"
+    }, all.map(function (url, i) {
+      return /*#__PURE__*/_react["default"].createElement("div", {
+        key: "".concat(url, "-").concat(i),
+        className: "relative group/refvid rounded-lg overflow-hidden border border-orange-500/30 bg-black aspect-video flex items-center justify-center"
+      }, /*#__PURE__*/_react["default"].createElement(_io.IoVideocamOutline, {
+        className: "text-orange-500/50",
+        size: 20
+      }), /*#__PURE__*/_react["default"].createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          return removeAt(url);
+        },
+        className: "absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refvid:opacity-100 transition-opacity z-10"
+      }, "\xD7"));
+    })));
+  }(), ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "skylarkNode") && (selectedNode === null || selectedNode === void 0 || (_selectedNode$data16 = selectedNode.data) === null || _selectedNode$data16 === void 0 || (_selectedNode$data16 = _selectedNode$data16.formValues) === null || _selectedNode$data16 === void 0 ? void 0 : _selectedNode$data16.face_asset) && function () {
     var fa = String(selectedNode.data.formValues.face_asset);
     var isAsset = fa.startsWith("asset://");
     var thumb = selectedNode.data.formValues.face_thumbnail;
@@ -3140,7 +3265,7 @@ var NodeFlow = function NodeFlow(_ref) {
     }), /*#__PURE__*/_react["default"].createElement("div", {
       className: "absolute top-1.5 right-1.5 bg-purple-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide"
     }, "Face")), isAsset && /*#__PURE__*/_react["default"].createElement("div", {
-      className: "flex items-center gap-2 rounded-lg bg-purple-900/20 border border-purple-500/30 px-2.5 py-2"
+      className: "flex items-center gap-2 rounded-lg bg-purple-900 border border-purple-500/30 px-2.5 py-2"
     }, /*#__PURE__*/_react["default"].createElement("div", {
       className: "w-4 h-4 rounded-full bg-purple-600 flex-shrink-0"
     }), /*#__PURE__*/_react["default"].createElement("span", {
@@ -3152,12 +3277,12 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex items-center justify-between cursor-pointer group"
   }, /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-gray-300 font-medium"
-  }, "Сделать выходом"), /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u0421\u0434\u0435\u043B\u0430\u0442\u044C \u0432\u044B\u0445\u043E\u0434\u043E\u043C"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "relative"
   }, /*#__PURE__*/_react["default"].createElement("input", {
     type: "checkbox",
     className: "sr-only peer",
-    checked: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data18 = selectedNode.data) === null || _selectedNode$data18 === void 0 || (_selectedNode$data18 = _selectedNode$data18.formValues) === null || _selectedNode$data18 === void 0 ? void 0 : _selectedNode$data18.make_output) === true,
+    checked: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data17 = selectedNode.data) === null || _selectedNode$data17 === void 0 || (_selectedNode$data17 = _selectedNode$data17.formValues) === null || _selectedNode$data17 === void 0 ? void 0 : _selectedNode$data17.make_output) === true,
     onChange: function onChange(e) {
       var checked = e.target.checked;
       setNodes(function (nds) {
@@ -3176,23 +3301,27 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-4 transition-transform"
-  }))), !(selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data19 = selectedNode.data) !== null && _selectedNode$data19 !== void 0 && (_selectedNode$data19 = _selectedNode$data19.selectedModel) !== null && _selectedNode$data19 !== void 0 && (_selectedNode$data19 = _selectedNode$data19.id) !== null && _selectedNode$data19 !== void 0 && _selectedNode$data19.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("button", {
+  }))), !(selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data18 = selectedNode.data) !== null && _selectedNode$data18 !== void 0 && (_selectedNode$data18 = _selectedNode$data18.selectedModel) !== null && _selectedNode$data18 !== void 0 && (_selectedNode$data18 = _selectedNode$data18.id) !== null && _selectedNode$data18 !== void 0 && _selectedNode$data18.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: function onClick() {
       return selectedNode && runNodeFromFlow(selectedNode.id);
     },
-    disabled: loadingNodes[selectedNode.id] || (selectedNode === null || selectedNode === void 0 || (_selectedNode$data20 = selectedNode.data) === null || _selectedNode$data20 === void 0 ? void 0 : _selectedNode$data20.isLoading),
+    disabled: loadingNodes[selectedNode.id] || (selectedNode === null || selectedNode === void 0 || (_selectedNode$data19 = selectedNode.data) === null || _selectedNode$data19 === void 0 ? void 0 : _selectedNode$data19.isLoading),
     className: "text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 group disabled:cursor-not-allowed rounded-lg text-white bg-blue-500 px-4 py-2 border border-blue-500/50 hover:bg-blue-600 w-full transition-all shadow-lg shadow-blue-900/20 active:scale-[0.98]"
-  }, loadingNodes[selectedNode.id] || selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data21 = selectedNode.data) !== null && _selectedNode$data21 !== void 0 && _selectedNode$data21.isLoading ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
+  }, loadingNodes[selectedNode.id] || selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data20 = selectedNode.data) !== null && _selectedNode$data20 !== void 0 && _selectedNode$data20.isLoading ? /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-4 h-4 rounded-full border-2 border-white/20 border-t-white animate-spin"
-  }), "Generating...") : /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement(_fa.FaPlay, {
-    size: 16
-  }), "Generate", generationCost !== null && /*#__PURE__*/_react["default"].createElement("span", {
-    className: "text-xs font-medium"
+  }), "Generating...") : /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center gap-3"
+  }, generationCost !== null && generationCost > 0 && /*#__PURE__*/_react["default"].createElement("span", {
+    className: "text-[#22d3ee] font-medium text-xs"
   }, isRefreshingCost ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block align-middle"
-  }) : generationCost === 0 ? 'Free' : "$".concat(generationCost))))))), contextMenu && /*#__PURE__*/_react["default"].createElement("div", {
+  }) : "\u2248 ".concat(generationCost.toFixed(2), " \u20BD")), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center gap-2"
+  }, /*#__PURE__*/_react["default"].createElement(_fa.FaPlay, {
+    size: 14
+  }), "Generate")))))), contextMenu && /*#__PURE__*/_react["default"].createElement("div", {
     className: "fixed z-40",
     style: {
       top: contextMenu.y,
@@ -3208,7 +3337,7 @@ var NodeFlow = function NodeFlow(_ref) {
     apiNodeModels: filteredApiNodeModels,
     nodeSchemas: nodeSchemas
   })), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black/30 backdrop-blur transition-all duration-200 ease-in-out ".concat(dropDown === 2 ? "opacity-100 scale-100 visible" : "opacity-0 scale-80 invisible"),
+    className: "fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black transition-all duration-200 ease-in-out ".concat(dropDown === 2 ? "opacity-100 scale-100 visible" : "opacity-0 scale-80 invisible"),
     onClick: function onClick() {
       return setDropDown(0);
     }
@@ -3240,77 +3369,14 @@ var NodeFlow = function NodeFlow(_ref) {
     onClick: function onClick() {
       return setDropDown(0);
     },
-    className: "px-4 py-2 bg-gray-700/50 text-white rounded-full text-sm hover:bg-gray-600/50 transition w-full cursor-pointer"
+    className: "px-4 py-2 bg-gray-700 text-white rounded-full text-sm hover:bg-gray-600 transition w-full cursor-pointer"
   }, "Cancel"), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handleSaveWorkFlow,
     className: "px-4 py-2 bg-white text-black rounded-full hover:bg-blue-500 hover:text-white transition w-full text-sm cursor-pointer"
-  }, "Save")))), nodes.length === 0 && !isPresetsDismissed && interactionMode && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute inset-0 z-10 flex items-center justify-center pointer-events-none"
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "pointer-events-auto flex flex-col items-center gap-6 animate-in fade-in zoom-in duration-300 transform scale-90 md:scale-100 overflow-y-auto custom-scrollbar max-w-[90%] max-h-[80%] p-10"
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col items-center gap-2 bg-black/40 backdrop-blur-md px-6 py-3 rounded-lg border border-white/10 shadow-xl"
-  }, /*#__PURE__*/_react["default"].createElement("h2", {
-    className: "text-xl font-semibold text-white tracking-tight"
-  }, "Select a Workflow"), /*#__PURE__*/_react["default"].createElement("p", {
-    className: "text-xs text-gray-400 font-medium uppercase tracking-widest"
-  }, "or start from scratch")), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4"
-  }, _utility.presets.map(function (preset) {
-    return /*#__PURE__*/_react["default"].createElement("button", {
-      type: "button",
-      suppressHydrationWarning: true,
-      key: preset.id,
-      onClick: function onClick() {
-        return loadPreset(preset);
-      },
-      className: "group relative flex flex-col bg-[#151618] aspect-[4/3] border border-gray-700 hover:border-gray-500 rounded-lg shadow-xl hover:shadow-2xl hover:scale-105 cursor-pointer transition-all duration-200 overflow-hidden text-left"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "z-10 p-2 bg-[#242629] border-b border-gray-700 flex items-center px-3 justify-between"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "flex items-center gap-2"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "w-2 h-2 rounded-full ".concat(preset.id === "empty-workflow" ? "bg-gray-400" : "bg-blue-500")
-    }), /*#__PURE__*/_react["default"].createElement("span", {
-      className: "text-[10px] font-bold text-gray-300 uppercase tracking-wider"
-    }, preset.id === "empty-workflow" ? "NEW" : "PRESET")), /*#__PURE__*/_react["default"].createElement("div", {
-      className: "flex gap-1"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "w-1.5 h-1.5 rounded-full bg-gray-600"
-    }), /*#__PURE__*/_react["default"].createElement("div", {
-      className: "w-1.5 h-1.5 rounded-full bg-gray-600"
-    }))), /*#__PURE__*/_react["default"].createElement("div", {
-      className: "z-0 p-4 flex flex-col gap-3 h-full"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "flex items-center justify-center gap-2 z-10 w-full h-full"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "text-white group-hover:text-blue-400 transition-colors"
-    }, iconMap[preset.icon] || /*#__PURE__*/_react["default"].createElement(_ri.RiInputMethodLine, {
-      size: 16
-    })), /*#__PURE__*/_react["default"].createElement("h3", {
-      className: "text-sm font-medium text-white leading-tight group-hover:text-blue-400 transition-colors"
-    }, preset.title)), preset.image && /*#__PURE__*/_react["default"].createElement("div", {
-      className: "absolute inset-0 z-0 w-full h-full rounded overflow-hidden border border-gray-800"
-    }, /*#__PURE__*/_react["default"].createElement("img", {
-      src: preset.image,
-      alt: "",
-      className: "w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity"
-    }), /*#__PURE__*/_react["default"].createElement("div", {
-      className: "absolute inset-0 z-10 w-full h-full bg-black/60"
-    })), preset.description && /*#__PURE__*/_react["default"].createElement("p", {
-      className: "z-10 text-[11px] text-gray-300 leading-relaxed border-t border-gray-500 pt-2 mt-auto"
-    }, preset.description)));
-  })), /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    onClick: function onClick() {
-      return setIsPresetsDismissed(true);
-    },
-    className: "mt-4 px-5 py-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-xs text-gray-300 font-medium transition-colors border border-gray-700 hover:border-gray-500"
-  }, "Dismiss & Enter Empty Canvas"))), isCategoryPopupOpen && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+  }, "Save")))), isCategoryPopupOpen && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "fixed inset-0 z-[100] flex items-center justify-center bg-black px-4"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "bg-[#1b1e23] border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
   }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -3333,7 +3399,7 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "w-full px-4 py-3 bg-[#151618] border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 hover:border-gray-600 transition-all",
     autoFocus: true
   })))), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "p-4 bg-[#151618]/50 flex items-center justify-end gap-3 border-t border-gray-700/50"
+    className: "p-4 bg-[#151618] flex items-center justify-end gap-3 border-t border-gray-700"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
@@ -3349,22 +3415,22 @@ var NodeFlow = function NodeFlow(_ref) {
   }, /*#__PURE__*/_react["default"].createElement(_md.MdSave, {
     size: 18
   }), "Save Category")))), publishModal && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black/30 backdrop-blur",
+    className: "fixed inset-0 flex flex-col items-center justify-center z-[100] overflow-auto bg-black/60 backdrop-blur-sm",
     onClick: function onClick() {
       return setPublishModal(null);
     }
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4",
+    className: "bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4 border border-white/10",
     onClick: function onClick(e) {
       return e.stopPropagation();
     }
   }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-base text-center font-semibold text-white"
-  }, "Publish Workflow"), /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u041F\u0443\u0431\u043B\u0438\u043A\u0430\u0446\u0438\u044F \u0432\u043E\u0440\u043A\u0444\u043B\u043E\u0443"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1.5 w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-xs text-gray-400"
-  }, "Workflow Name"), /*#__PURE__*/_react["default"].createElement("input", {
+  }, "\u041D\u0430\u0437\u0432\u0430\u043D\u0438\u0435 \u0432\u043E\u0440\u043A\u0444\u043B\u043E\u0443"), /*#__PURE__*/_react["default"].createElement("input", {
     type: "text",
     value: publishModal.name,
     autoFocus: true,
@@ -3375,14 +3441,14 @@ var NodeFlow = function NodeFlow(_ref) {
         });
       });
     },
-    placeholder: "Enter Workflow Name",
+    placeholder: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043D\u0430\u0437\u0432\u0430\u043D\u0438\u0435...",
     className: "border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
   })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1.5 w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {
     className: "text-xs text-gray-400"
-  }, "\u041F\u0440\u0435\u0432\u044C\u044E"), (publishModal.candidates || []).length > 0 ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto"
+  }, "\u041F\u0440\u0435\u0432\u044C\u044E (\u043E\u0431\u043B\u043E\u0436\u043A\u0430)"), (publishModal.candidates || []).length > 0 ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto custom-scrollbar-thin"
   }, (publishModal.candidates || []).map(function (url) {
     return /*#__PURE__*/_react["default"].createElement("div", {
       key: url,
@@ -3402,7 +3468,7 @@ var NodeFlow = function NodeFlow(_ref) {
         e.target.parentElement.style.display = 'none';
       }
     }), publishModal.thumbnail === url && /*#__PURE__*/_react["default"].createElement("div", {
-      className: "absolute inset-0 bg-blue-500/30 flex items-center justify-center"
+      className: "absolute inset-0 bg-blue-500/80 flex items-center justify-center"
     }, /*#__PURE__*/_react["default"].createElement(_fa.FaCheck, {
       className: "text-white drop-shadow",
       size: 16
@@ -3417,8 +3483,8 @@ var NodeFlow = function NodeFlow(_ref) {
     onClick: function onClick() {
       return setPublishModal(null);
     },
-    className: "px-4 py-2 bg-gray-700/50 text-white rounded-full text-sm hover:bg-gray-600/50 transition w-full cursor-pointer"
-  }, "Cancel"), /*#__PURE__*/_react["default"].createElement("button", {
+    className: "px-4 py-2 bg-gray-700 text-white rounded-full text-sm hover:bg-gray-600 transition w-full cursor-pointer"
+  }, "\u041E\u0442\u043C\u0435\u043D\u0430"), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handlePublishWithForm,
@@ -3428,6 +3494,6 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"
   }) : /*#__PURE__*/_react["default"].createElement(_fa2.FaTelegramPlane, {
     size: 14
-  }), "Publish")))), /*#__PURE__*/_react["default"].createElement(_reactHotToast.Toaster, null));
+  }), "\u041E\u043F\u0443\u0431\u043B\u0438\u043A\u043E\u0432\u0430\u0442\u044C")))), /*#__PURE__*/_react["default"].createElement(_reactHotToast.Toaster, null));
 };
 var _default = exports["default"] = NodeFlow;

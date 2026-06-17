@@ -321,7 +321,7 @@ var ChatWidget = function ChatWidget(_ref2) {
     ref: widgetRef,
     className: "fixed bottom-10 right-10 z-50 flex flex-col items-end gap-2 font-sans"
   }, isOpen && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "".concat(isWide ? 'w-[800px]' : 'w-[380px]', " max-w-[100vw] h-[600px] max-h-[100%] flex flex-col bg-[#0B0F17]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 animate-in slide-in-from-bottom-5 fade-in text-left")
+    className: "".concat(isWide ? 'w-[800px]' : 'w-[380px]', " max-w-[100vw] h-[600px] max-h-[100%] flex flex-col bg-[#0B0F17] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden transition-all duration-300 animate-in slide-in-from-bottom-5 fade-in text-left")
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between p-4 bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-b border-white/10"
   }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -507,7 +507,7 @@ var ChatWidget = function ChatWidget(_ref2) {
           var node = _ref13.node,
             props = _objectWithoutProperties(_ref13, _excluded11);
           return /*#__PURE__*/_react["default"].createElement("div", {
-            className: "my-4 overflow-hidden border border-white/10 rounded-2xl shadow-xl bg-black/20 backdrop-blur-sm"
+            className: "my-4 overflow-hidden border border-white/10 rounded-2xl shadow-xl bg-black"
           }, /*#__PURE__*/_react["default"].createElement("div", {
             className: "overflow-x-auto custom-scrollbar"
           }, /*#__PURE__*/_react["default"].createElement("table", _extends({
@@ -575,7 +575,7 @@ var ChatWidget = function ChatWidget(_ref2) {
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1"
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "bg-[#1A1F2B]/80 backdrop-blur-sm p-3.5 rounded-2xl rounded-bl-none border border-white/5 shadow-sm flex items-center gap-2 min-w-[70px]"
+    className: "bg-[#1A1F2B] p-3.5 rounded-2xl rounded-bl-none border border-white/5 shadow-sm flex items-center gap-2 min-w-[70px]"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex gap-1.5"
   }, /*#__PURE__*/_react["default"].createElement("span", {

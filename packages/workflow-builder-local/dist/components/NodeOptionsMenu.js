@@ -57,7 +57,7 @@ var NodeOptionsMenu = function NodeOptionsMenu(_ref) {
   }, /*#__PURE__*/_react["default"].createElement(_bs.BsThreeDots, {
     size: 18
   })), isOpen && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute right-0 mt-2 whitespace-nowrap bg-[#1b1e23]/95 backdrop-blur-xl border border-white/10 rounded-md shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in duration-200"
+    className: "absolute right-0 mt-2 whitespace-nowrap bg-[#0c0d0f] border border-white/10 rounded-md shadow-2xl z-[100] overflow-hidden animate-in fade-in zoom-in duration-200"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
@@ -70,7 +70,7 @@ var NodeOptionsMenu = function NodeOptionsMenu(_ref) {
   }, /*#__PURE__*/_react["default"].createElement(_io.IoDuplicateOutline, {
     size: 14,
     className: "text-blue-400"
-  }), /*#__PURE__*/_react["default"].createElement("span", null, "Duplicate")), downloadUrl && /*#__PURE__*/_react["default"].createElement("button", {
+  }), /*#__PURE__*/_react["default"].createElement("span", null, "\u0414\u0443\u0431\u043B\u0438\u0440\u043E\u0432\u0430\u0442\u044C")), downloadUrl && /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: function onClick(e) {
@@ -82,7 +82,7 @@ var NodeOptionsMenu = function NodeOptionsMenu(_ref) {
   }, /*#__PURE__*/_react["default"].createElement(_md.MdOutlineFileDownload, {
     size: 14,
     className: "text-emerald-400"
-  }), /*#__PURE__*/_react["default"].createElement("span", null, "Download")), showThumbnailOption && /*#__PURE__*/_react["default"].createElement("button", {
+  }), /*#__PURE__*/_react["default"].createElement("span", null, "\u0421\u043A\u0430\u0447\u0430\u0442\u044C")), showThumbnailOption && /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: function onClick(e) {
@@ -94,7 +94,7 @@ var NodeOptionsMenu = function NodeOptionsMenu(_ref) {
   }, /*#__PURE__*/_react["default"].createElement(_hi.HiOutlinePhotograph, {
     size: 14,
     className: "text-purple-400"
-  }), /*#__PURE__*/_react["default"].createElement("span", null, "Set Thumbnail")), /*#__PURE__*/_react["default"].createElement("button", {
+  }), /*#__PURE__*/_react["default"].createElement("span", null, "\u0423\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u043E\u0431\u043B\u043E\u0436\u043A\u0443")), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: function onClick(e) {
@@ -105,6 +105,6 @@ var NodeOptionsMenu = function NodeOptionsMenu(_ref) {
     className: "w-full flex items-center gap-3 px-4 py-2.5 text-[11px] font-medium text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-colors"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoTrashOutline, {
     size: 14
-  }), /*#__PURE__*/_react["default"].createElement("span", null, "Delete Node ", nodeId))));
+  }), /*#__PURE__*/_react["default"].createElement("span", null, "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u043D\u043E\u0434\u0443 ", nodeId))));
 };
 var _default = exports["default"] = NodeOptionsMenu;

@@ -300,11 +300,11 @@ var AudioGeneration = function AudioGeneration(_ref) {
         if (latest.status === "failed") {
           var _latest$result, _outputs$;
           var outputs = latest === null || latest === void 0 || (_latest$result = latest.result) === null || _latest$result === void 0 ? void 0 : _latest$result.outputs;
-          var errorMsg = "Generation failed";
+          var errorMsg = "Ошибка генерации";
           if (outputs && (_outputs$ = outputs[0]) !== null && _outputs$ !== void 0 && (_outputs$ = _outputs$.value) !== null && _outputs$ !== void 0 && _outputs$.error) {
             errorMsg = outputs[0].value.error;
           }
-          _reactHotToast.toast.error("Node ".concat(id, " failed"));
+          _reactHotToast.toast.error("\u0423\u0437\u0435\u043B ".concat(id, " \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u043B\u0441\u044F \u0441 \u043E\u0448\u0438\u0431\u043A\u043E\u0439"));
           var _currentHistory = data.outputHistory || [];
           data.onDataChange(id, {
             isLoading: false,
@@ -319,13 +319,12 @@ var AudioGeneration = function AudioGeneration(_ref) {
         data.onDataChange(id, {
           isLoading: false
         });
-        _reactHotToast.toast.error("Failed to get workflow status Audio ".concat(id.replace(/^\D+/g, "")));
+        _reactHotToast.toast.error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0441\u0442\u0430\u0442\u0443\u0441 \u0432\u043E\u0440\u043A\u0444\u043B\u043E\u0443 \u0410\u0443\u0434\u0438\u043E ".concat(id.replace(/^\D+/g, "")));
       });
     };
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var _nodeSchemas$categori2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _error$response, _t;
@@ -344,7 +343,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
               _context.n = 2;
               break;
             }
-            _reactHotToast.toast.error("Failed to save workflow before running node");
+            _reactHotToast.toast.error("Не удалось сохранить воркфлоу перед запуском узла");
             data.onDataChange(id, {
               isLoading: false
             });
@@ -355,7 +354,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
               _context.n = 3;
               break;
             }
-            _reactHotToast.toast.error("No input schema found for this model");
+            _reactHotToast.toast.error("Схема входных данных не найдена для этой модели");
             data.onDataChange(id, {
               isLoading: false
             });
@@ -397,7 +396,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,
-                errorMsg: "Generation failed"
+                errorMsg: "Ошибка генерации"
               });
             } else {
               pollNodeStatus(_r.run_id);
@@ -410,7 +409,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
             data.onDataChange(id, {
               isLoading: false
             });
-            _reactHotToast.toast.error(((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Error running node");
+            _reactHotToast.toast.error(((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Ошибка при запуске узла");
             console.error(_t);
           case 6:
             ;
@@ -420,13 +419,11 @@ var AudioGeneration = function AudioGeneration(_ref) {
       }, _callee, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref1.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref1.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
-    if (window.confirm("Are you sure you want to delete this ".concat(id, " node?"))) {
+    if (window.confirm("\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B, \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u0443\u0437\u0435\u043B ".concat(id, "?"))) {
       setNodes(function (nds) {
         return nds.filter(function (n) {
           return n.id !== id;
@@ -437,7 +434,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
           return e.source !== id && e.target !== id;
         });
       });
-      _reactHotToast.toast.success("Deleted node ".concat(id));
+      _reactHotToast.toast.success("\u0423\u0437\u0435\u043B ".concat(id, " \u0443\u0434\u0430\u043B\u0435\u043D"));
     }
     ;
   };
@@ -517,7 +514,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
             }
             return _context2.a(2);
           case 1:
-            if (!window.confirm("Are you sure you want to delete this history entry?")) {
+            if (!window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
               _context2.n = 5;
               break;
             }
@@ -539,13 +536,13 @@ var AudioGeneration = function AudioGeneration(_ref) {
             } else {
               setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
             }
-            _reactHotToast.toast.success("History entry deleted");
+            _reactHotToast.toast.success("Запись истории удалена");
             _context2.n = 5;
             break;
           case 4:
             _context2.p = 4;
             _t2 = _context2.v;
-            _reactHotToast.toast.error(((_error$response2 = _t2.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Failed to delete history entry");
+            _reactHotToast.toast.error(((_error$response2 = _t2.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Не удалось удалить запись истории");
             console.error(_t2);
           case 5:
             return _context2.a(2);
@@ -579,20 +576,20 @@ var AudioGeneration = function AudioGeneration(_ref) {
       minHeight: 220,
       '--loader-color': '#eab308'
     },
-    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.3)] scale-[1.02] ring-1 ring-yellow-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]/95 backdrop-blur-sm\n      ")
+    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-yellow-500 shadow-[0_0_25px_rgba(234,179,8,0.3)] scale-[1.02] ring-1 ring-yellow-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
   }, data.isLoading && /*#__PURE__*/_react["default"].createElement("div", {
     className: "loader-border"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 absolute -top-5 left-0"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-zinc-400 text-[10px] font-medium tracking-wider uppercase"
-  }, "Audio ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
+  }, "\u0410\u0443\u0434\u0438\u043E ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-yellow-500 -mt-0.5 font-medium flex items-center gap-1 opacity-80"
   }, isRefreshingCost ? /*#__PURE__*/_react["default"].createElement("span", {
     className: "flex items-center gap-1 italic text-yellow-200"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-2 h-2 border-[1.5px] border-yellow-200/30 border-t-yellow-400 rounded-full animate-spin"
-  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Free' : "$".concat(generationCost)))), /*#__PURE__*/_react["default"].createElement("div", {
+  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Бесплатно' : "\u2248 ".concat(generationCost.toFixed(2), " \u20BD")))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3"
@@ -605,14 +602,14 @@ var AudioGeneration = function AudioGeneration(_ref) {
   })), /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-xs font-bold text-zinc-100"
   }, selectedModel.name)), outputHistory.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
+    className: "absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handlePrev,
     disabled: currentHistoryIndex <= 0,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Previous"
+    title: "\u041D\u0430\u0437\u0430\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -626,7 +623,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
     suppressHydrationWarning: true,
     onClick: handleDeleteHistory,
     className: "p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center",
-    title: "Delete history"
+    title: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoTrashOutline, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -643,7 +640,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
     onClick: handleNext,
     disabled: currentHistoryIndex >= outputHistory.length - 1,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Next"
+    title: "\u0412\u043F\u0435\u0440\u0435\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 10
   }))), /*#__PURE__*/_react["default"].createElement(_NodeOptionsMenu["default"], {
@@ -663,25 +660,25 @@ var AudioGeneration = function AudioGeneration(_ref) {
     uploadType: "upload",
     acceptType: "audio"
   })) : /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center flex-grow justify-center w-full h-full rounded transition-all duration-500"
+    className: "flex flex-col flex-grow w-full rounded-b-none overflow-hidden transition-all duration-500"
   }, data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-2xl"
+    className: "flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-none"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-center gap-3"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-8 h-8 border-2 border-yellow-500 border-t-transparent rounded-full animate-spin"
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] font-bold text-yellow-500 tracking-wider uppercase"
-  }, "Generating..."))) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u0413\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F..."))) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 m-3 w-full"
-  }, data.errorMsg || "Generation failed") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-full h-full relative group/audio flex flex-col items-center justify-center"
+  }, data.errorMsg || "Ошибка генерации") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
+    className: "w-full h-full relative group/audio flex flex-col items-center justify-center overflow-hidden rounded-b-none"
   }, /*#__PURE__*/_react["default"].createElement(_AudioPlayer["default"], {
     src: currentOutput,
     nodeId: id,
-    className: "flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-2xl"
+    className: "flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-none"
   }), currentOutputList.length > 1 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full px-2 py-1 z-10 shadow-xl"
+    className: "absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black border border-white/10 rounded-full px-2 py-1 z-10 shadow-xl"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
@@ -714,7 +711,7 @@ var AudioGeneration = function AudioGeneration(_ref) {
     size: 32
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] italic"
-  }, "Result appeared here..."))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+  }, "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C..."))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "audioInput",
@@ -729,8 +726,12 @@ var AudioGeneration = function AudioGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.audioInput ? '!bg-yellow-500 !border-zinc-900 shadow-[0_0_15px_rgba(234,179,8,0.8)]' : '!bg-zinc-900 !border-yellow-500/50 hover:!border-yellow-500 shadow-sm', "\n        "),
     "data-type": "yellow"
   }), hasAudioUrl && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-7 top-[70px] text-xs text-yellow-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Audio"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 70,
+      left: -45
+    }
+  }, "\u0410\u0443\u0434\u0438\u043E"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "audioInput2",
@@ -745,8 +746,12 @@ var AudioGeneration = function AudioGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.audioInput2 ? '!bg-blue-600 !border-zinc-900 shadow-[0_0_15px_rgba(37,99,235,0.8)]' : '!bg-zinc-900 !border-blue-600/50 hover:!border-blue-600 shadow-sm', "\n        "),
     "data-type": "blue"
   }), hasPrompt && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-8 top-[100px] text-xs text-blue-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "blue" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Text"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-blue-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "blue" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 100,
+      left: -45
+    }
+  }, "\u0422\u0435\u043A\u0441\u0442"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "audioInput3",
@@ -761,8 +766,12 @@ var AudioGeneration = function AudioGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.audioInput3 ? '!bg-emerald-600 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]' : '!bg-zinc-900 !border-emerald-600/50 hover:!border-emerald-600 shadow-sm', "\n        "),
     "data-type": "green"
   }), hasImageUrl && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[130px] text-xs text-green-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Image"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-green-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "green" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 130,
+      left: -75
+    }
+  }, "\u0418\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "audioInput4",
@@ -777,8 +786,12 @@ var AudioGeneration = function AudioGeneration(_ref) {
     className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.audioInput4 ? '!bg-orange-600 !border-zinc-900 shadow-[0_0_15px_rgba(249,115,22,0.8)]' : '!bg-zinc-900 !border-orange-600/50 hover:!border-orange-600 shadow-sm', "\n        "),
     "data-type": "orange"
   }), hasVideoUrl && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-10 top-[160px] text-xs text-orange-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Video"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-xs text-orange-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 160,
+      left: -45
+    }
+  }, "\u0412\u0438\u0434\u0435\u043E"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "source",
     position: _reactflow.Position.Right,
     id: "audioOutput",
@@ -791,7 +804,11 @@ var AudioGeneration = function AudioGeneration(_ref) {
     className: "!rounded-full !border-[3px] !right-[-8px] transition-all\n          ".concat(connectedOutputs.audioOutput ? '!bg-yellow-500 !border-zinc-900 shadow-[0_0_15px_rgba(234,179,8,0.8)]' : '!bg-zinc-900 !border-yellow-500/50 hover:!border-yellow-500 shadow-sm', "\n        "),
     "data-type": "yellow"
   }), /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -right-10 top-[100px] text-xs text-yellow-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Audio"));
+    className: "absolute text-xs text-yellow-500 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "yellow" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 100,
+      right: -45
+    }
+  }, "\u0410\u0443\u0434\u0438\u043E"));
 };
 var _default = exports["default"] = AudioGeneration;

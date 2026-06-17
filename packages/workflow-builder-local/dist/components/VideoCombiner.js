@@ -222,6 +222,8 @@ var VideoCombiner = function VideoCombiner(_ref) {
   }, [formValues, id, selectedModel]);
   (0, _react.useEffect)(function () {
     if (!data.formValues) return;
+    // Key-order-independent compare so a parent rebuild with the same content
+    // doesn't look "different" and pull us into a sync loop (React #185).
     if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
@@ -234,10 +236,15 @@ var VideoCombiner = function VideoCombiner(_ref) {
   }, [data.formValues]);
   var lastSentRef = (0, _react.useRef)(null);
   (0, _react.useEffect)(function () {
+    var _data$selectedModel;
     if (!(data !== null && data !== void 0 && data.onDataChange)) return;
     var localSig = (0, _utility.stableStringify)(formValues);
     var parentSig = (0, _utility.stableStringify)(data.formValues || {});
-    var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === (data.selectedModel === null || data.selectedModel === void 0 ? void 0 : data.selectedModel.id);
+    var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === ((_data$selectedModel = data.selectedModel) === null || _data$selectedModel === void 0 ? void 0 : _data$selectedModel.id);
+
+    // Echo suppression: if the parent already holds exactly this state, sending
+    // it back would just bounce through onDataChange <-> formValues forever
+    // (React #185 — an array field like videos_list churns its reference).
     if (sameModel && localSig === parentSig) {
       lastSentRef.current = localSig;
       return;
@@ -291,11 +298,11 @@ var VideoCombiner = function VideoCombiner(_ref) {
         if (latest.status === "failed") {
           var _latest$result, _outputs$;
           var outputs = latest === null || latest === void 0 || (_latest$result = latest.result) === null || _latest$result === void 0 ? void 0 : _latest$result.outputs;
-          var errorMsg = "Generation failed";
+          var errorMsg = "Ошибка генерации";
           if (outputs && (_outputs$ = outputs[0]) !== null && _outputs$ !== void 0 && (_outputs$ = _outputs$.value) !== null && _outputs$ !== void 0 && _outputs$.error) {
             errorMsg = outputs[0].value.error;
           }
-          _reactHotToast.toast.error("Node ".concat(id, " failed"));
+          _reactHotToast.toast.error("\u041E\u0448\u0438\u0431\u043A\u0430 \u0432 \u043D\u043E\u0434\u0435 ".concat(id));
           var _currentHistory = data.outputHistory || [];
           data.onDataChange(id, {
             isLoading: false,
@@ -310,13 +317,12 @@ var VideoCombiner = function VideoCombiner(_ref) {
         data.onDataChange(id, {
           isLoading: false
         });
-        _reactHotToast.toast.error("Failed to get workflow status Video Combiner ".concat(id.replace(/^\D+/g, "")));
+        _reactHotToast.toast.error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0441\u0442\u0430\u0442\u0443\u0441 \u043E\u0431\u044A\u0435\u0434\u0438\u043D\u0438\u0442\u0435\u043B\u044F \u0432\u0438\u0434\u0435\u043E ".concat(id.replace(/^\D+/g, "")));
       });
     };
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var _nodeSchemas$categori2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _error$response, _t;
@@ -335,7 +341,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
               _context.n = 2;
               break;
             }
-            _reactHotToast.toast.error("Failed to save workflow before running node");
+            _reactHotToast.toast.error("Не удалось сохранить воркфлоу перед запуском ноды");
             data.onDataChange(id, {
               isLoading: false
             });
@@ -346,7 +352,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
               _context.n = 3;
               break;
             }
-            _reactHotToast.toast.error("No input schema found for this model");
+            _reactHotToast.toast.error("Схема входных данных для этой модели не найдена");
             data.onDataChange(id, {
               isLoading: false
             });
@@ -388,7 +394,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,
-                errorMsg: "Generation failed"
+                errorMsg: "Ошибка генерации"
               });
             } else {
               pollNodeStatus(_r.run_id);
@@ -401,7 +407,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
             data.onDataChange(id, {
               isLoading: false
             });
-            _reactHotToast.toast.error(((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Error running node");
+            _reactHotToast.toast.error(((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Ошибка при запуске ноды");
             console.error(_t);
           case 6:
             ;
@@ -411,13 +417,11 @@ var VideoCombiner = function VideoCombiner(_ref) {
       }, _callee, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref1.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref1.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
-    if (window.confirm("Are you sure you want to delete this ".concat(id, " node?"))) {
+    if (window.confirm("\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B, \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u043D\u043E\u0434\u0443 ".concat(id, "?"))) {
       setNodes(function (nds) {
         return nds.filter(function (n) {
           return n.id !== id;
@@ -428,7 +432,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
           return e.source !== id && e.target !== id;
         });
       });
-      _reactHotToast.toast.success("Deleted node ".concat(id));
+      _reactHotToast.toast.success("\u041D\u043E\u0434\u0430 ".concat(id, " \u0443\u0434\u0430\u043B\u0435\u043D\u0430"));
     }
     ;
   };
@@ -506,7 +510,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
             }
             return _context2.a(2);
           case 1:
-            if (!window.confirm("Are you sure you want to delete this history entry?")) {
+            if (!window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
               _context2.n = 5;
               break;
             }
@@ -528,13 +532,13 @@ var VideoCombiner = function VideoCombiner(_ref) {
             } else {
               setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
             }
-            _reactHotToast.toast.success("History entry deleted");
+            _reactHotToast.toast.success("Запись удалена");
             _context2.n = 5;
             break;
           case 4:
             _context2.p = 4;
             _t2 = _context2.v;
-            _reactHotToast.toast.error(((_error$response2 = _t2.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Failed to delete history entry");
+            _reactHotToast.toast.error(((_error$response2 = _t2.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Не удалось удалить запись");
             console.error(_t2);
           case 5:
             return _context2.a(2);
@@ -567,20 +571,20 @@ var VideoCombiner = function VideoCombiner(_ref) {
       minHeight: 280,
       '--loader-color': '#f97316'
     },
-    className: "\n        nowheel group flex flex-col w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-orange-600 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]/95 backdrop-blur-sm\n      ")
+    className: "\n        nowheel group flex flex-col w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-orange-600 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
   }, data.isLoading && /*#__PURE__*/_react["default"].createElement("div", {
     className: "loader-border"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 absolute -top-5 left-0"
   }, /*#__PURE__*/_react["default"].createElement("h4", {
     className: "text-zinc-400 text-[10px] font-medium tracking-wider uppercase"
-  }, "Video Combiner ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
+  }, "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0438\u0442\u0435\u043B\u044C \u0432\u0438\u0434\u0435\u043E ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-orange-500 -mt-0.5 font-medium flex items-center gap-1 opacity-80"
   }, isRefreshingCost ? /*#__PURE__*/_react["default"].createElement("span", {
     className: "flex items-center gap-1 italic text-orange-200"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-2 h-2 border-[1.5px] border-orange-200/30 border-t-orange-400 rounded-full animate-spin"
-  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Free' : "$".concat(generationCost)))), /*#__PURE__*/_react["default"].createElement("div", {
+  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Бесплатно' : "\u2248 ".concat(generationCost.toFixed(2), " \u20BD")))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3"
@@ -594,14 +598,14 @@ var VideoCombiner = function VideoCombiner(_ref) {
   })), /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-xs font-bold text-zinc-100"
   }, selectedModel.name)), outputHistory.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
+    className: "absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handlePrev,
     disabled: currentHistoryIndex <= 0,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Previous"
+    title: "\u041D\u0430\u0437\u0430\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -615,7 +619,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
     suppressHydrationWarning: true,
     onClick: handleDeleteHistory,
     className: "p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center",
-    title: "Delete history"
+    title: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoTrashOutline, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -632,7 +636,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
     onClick: handleNext,
     disabled: currentHistoryIndex >= outputHistory.length - 1,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Next"
+    title: "\u0412\u043F\u0435\u0440\u0435\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 10
   }))), /*#__PURE__*/_react["default"].createElement(_NodeOptionsMenu["default"], {
@@ -648,7 +652,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
     className: "w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] font-bold text-orange-500 tracking-wider uppercase"
-  }, "Combining...")) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u041E\u0431\u044A\u0435\u0434\u0438\u043D\u0435\u043D\u0438\u0435...")) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 m-3 w-full capitalize"
   }, data.errorMsg) : currentOutput ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "h-full w-full relative"
@@ -662,7 +666,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
     size: 32
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] italic"
-  }, "Result appeared here..."))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+  }, "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C..."))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "videoInput7",
@@ -678,7 +682,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
     "data-type": "orange"
   }), hasVideosList && /*#__PURE__*/_react["default"].createElement("p", {
     className: "absolute -left-10 top-[100px] text-xs text-orange-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Videos"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+  }, "\u0412\u0438\u0434\u0435\u043E"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "source",
     position: _reactflow.Position.Right,
     id: "videoOutput",
@@ -692,6 +696,6 @@ var VideoCombiner = function VideoCombiner(_ref) {
     "data-type": "orange"
   }), /*#__PURE__*/_react["default"].createElement("p", {
     className: "absolute -right-10 top-[100px] text-xs text-orange-500 transition-opacity duration-200 ".concat(data.activeHandleColor === "orange" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
-  }, "Video"));
+  }, "\u0412\u0438\u0434\u0435\u043E"));
 };
 var _default = exports["default"] = VideoCombiner;

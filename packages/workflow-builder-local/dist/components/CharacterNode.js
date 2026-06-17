@@ -16,6 +16,11 @@ var _utility = require("./utility");
 var _FaceRegistrationDialog = _interopRequireDefault(require("./FaceRegistrationDialog"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
@@ -239,12 +244,21 @@ var CharacterNode = function CharacterNode(_ref) {
     saveLibrary(next);
     setLibrary(next);
   };
+  var updateLibraryThumb = function updateLibraryThumb(id, thumb) {
+    var next = library.map(function (f) {
+      return f.id === id ? _objectSpread(_objectSpread({}, f), {}, {
+        thumbnail: thumb
+      }) : f;
+    });
+    saveLibrary(next);
+    setLibrary(next);
+  };
   return /*#__PURE__*/_react["default"].createElement("div", {
     style: {
       minHeight: 220,
       "--loader-color": "#a855f7"
     },
-    className: "nowheel group flex flex-col flex-1 w-80 rounded-2xl border-2 relative transition-all duration-300 ease-in-out\n        ".concat(selected ? "border-purple-600 shadow-[0_0_25px_rgba(168,85,247,0.3)] scale-[1.02] ring-1 ring-purple-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", "\n        bg-[#0c0d0f]/95 backdrop-blur-sm")
+    className: "nowheel group flex flex-col flex-1 w-80 rounded-2xl border-2 relative transition-all duration-300 ease-in-out\n        ".concat(selected ? "border-purple-600 shadow-[0_0_25px_rgba(168,85,247,0.3)] scale-[1.02] ring-1 ring-purple-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", "\n        bg-[#0c0d0f]")
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 absolute -top-5 left-0"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
@@ -274,7 +288,7 @@ var CharacterNode = function CharacterNode(_ref) {
       return setName(e.target.value);
     },
     placeholder: "\u0418\u043C\u044F \u043F\u0435\u0440\u0441\u043E\u043D\u0430\u0436\u0430\u2026",
-    className: "h-9 px-3 rounded-lg bg-white/5 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
+    className: "h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/_react["default"].createElement("button", {
@@ -282,7 +296,7 @@ var CharacterNode = function CharacterNode(_ref) {
     onClick: function onClick() {
       return setTab("photo");
     },
-    className: "h-8 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ".concat(tab === "photo" ? "bg-purple-600/30 border-purple-500/50 text-purple-100" : "bg-white/5 border-zinc-800 text-zinc-400 hover:text-white")
+    className: "h-8 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ".concat(tab === "photo" ? "bg-purple-600 border-purple-500/50 text-purple-100" : "bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-white")
   }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
     size: 12
   }), " \u0424\u043E\u0442\u043E"), /*#__PURE__*/_react["default"].createElement("button", {
@@ -290,7 +304,7 @@ var CharacterNode = function CharacterNode(_ref) {
     onClick: function onClick() {
       return setTab("uri");
     },
-    className: "h-8 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ".concat(tab === "uri" ? "bg-purple-600/30 border-purple-500/50 text-purple-100" : "bg-white/5 border-zinc-800 text-zinc-400 hover:text-white")
+    className: "h-8 rounded-lg text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ".concat(tab === "uri" ? "bg-purple-600 border-purple-500/50 text-purple-100" : "bg-zinc-800 border-zinc-800 text-zinc-400 hover:text-white")
   }, /*#__PURE__*/_react["default"].createElement(_fi.FiLink, {
     size: 12
   }), " Asset URI")), /*#__PURE__*/_react["default"].createElement("button", {
@@ -322,9 +336,9 @@ var CharacterNode = function CharacterNode(_ref) {
     onClick: function onClick() {
       return setPhotoUrl("");
     },
-    className: "absolute top-2 right-2 bg-black/60 hover:bg-black text-white rounded px-1.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
+    className: "absolute top-2 right-2 bg-black hover:bg-black text-white rounded px-1.5 opacity-0 group-hover/photo:opacity-100 transition-opacity"
   }, "\u2715")) : /*#__PURE__*/_react["default"].createElement("label", {
-    className: "cursor-pointer flex flex-col items-center justify-center gap-1.5 text-zinc-500 border border-dashed border-zinc-700 rounded-lg p-4 hover:bg-zinc-800/40"
+    className: "cursor-pointer flex flex-col items-center justify-center gap-1.5 text-zinc-500 border border-dashed border-zinc-700 rounded-lg p-4 hover:bg-zinc-800"
   }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
     size: 18
   }), /*#__PURE__*/_react["default"].createElement("span", {
@@ -341,18 +355,18 @@ var CharacterNode = function CharacterNode(_ref) {
       setPhotoUrl("");
     },
     placeholder: "asset://asset-\u2026",
-    className: "h-9 px-3 rounded-lg bg-white/5 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50 font-mono"
+    className: "h-9 px-3 rounded-lg bg-zinc-800 border border-zinc-800 text-xs text-white placeholder-zinc-600 outline-none focus:border-purple-500/50 font-mono"
   }), faceValue && /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1"
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "text-[10px] font-mono text-zinc-500 truncate bg-black/30 rounded px-2 py-1 border border-zinc-800"
+    className: "text-[10px] font-mono text-zinc-500 truncate bg-black rounded px-2 py-1 border border-zinc-800"
   }, faceValue), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] text-emerald-400 flex items-center gap-1"
   }, "\u2713 ", isAsset ? "Trusted asset подключён. Доступен в Seedance 2.0." : "Фото подключено как референс лица.")), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     onClick: saveToLibrary,
     disabled: !faceValue,
-    className: "h-9 rounded-lg bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/30 text-purple-200 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+    className: "h-9 rounded-lg bg-purple-900 hover:bg-purple-800 border border-purple-500/30 text-purple-200 text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
   }, "+ \u0421\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u0432 \u0431\u0438\u0431\u043B\u0438\u043E\u0442\u0435\u043A\u0443"), library.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1.5 border-t border-zinc-800 pt-2"
   }, /*#__PURE__*/_react["default"].createElement("span", {
@@ -363,13 +377,28 @@ var CharacterNode = function CharacterNode(_ref) {
     return /*#__PURE__*/_react["default"].createElement("div", {
       key: face.id,
       className: "relative group/lib flex flex-col items-center gap-0.5"
-    }, /*#__PURE__*/_react["default"].createElement("button", {
+    }, /*#__PURE__*/_react["default"].createElement("input", {
+      id: "thumb-upload-".concat(face.id),
+      type: "file",
+      accept: "image/*",
+      className: "hidden",
+      onChange: function onChange(e) {
+        var _e$target$files2;
+        var file = (_e$target$files2 = e.target.files) === null || _e$target$files2 === void 0 ? void 0 : _e$target$files2[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          return updateLibraryThumb(face.id, ev.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    }), /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
       onClick: function onClick() {
         return pickFromLibrary(face);
       },
       title: face.name,
-      className: "w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-white/5 ".concat(faceValue && faceValue === face.assetUri ? "border-purple-500" : "border-zinc-800 hover:border-purple-500/50")
+      className: "w-12 h-12 rounded-lg overflow-hidden border transition-all flex items-center justify-center bg-zinc-800 relative ".concat(faceValue && faceValue === face.assetUri ? "border-purple-500" : "border-zinc-800 hover:border-purple-500/50")
     }, face.thumbnail ? /*#__PURE__*/_react["default"].createElement("img", {
       src: face.thumbnail,
       alt: face.name,
@@ -377,14 +406,25 @@ var CharacterNode = function CharacterNode(_ref) {
     }) : /*#__PURE__*/_react["default"].createElement(_io.IoPersonCircleOutline, {
       size: 22,
       className: "text-purple-300"
-    })), /*#__PURE__*/_react["default"].createElement("span", {
+    }), /*#__PURE__*/_react["default"].createElement("div", {
+      onClick: function onClick(e) {
+        var _document$getElementB;
+        e.stopPropagation();
+        (_document$getElementB = document.getElementById("thumb-upload-".concat(face.id))) === null || _document$getElementB === void 0 || _document$getElementB.click();
+      },
+      className: "absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/lib:opacity-100 transition-opacity cursor-pointer",
+      title: "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C \u043F\u0440\u0435\u0432\u044C\u044E"
+    }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
+      size: 14,
+      className: "text-white"
+    }))), /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-[8px] text-zinc-500 truncate w-12 text-center"
     }, face.name), /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
       onClick: function onClick() {
         return deleteFromLibrary(face.id);
       },
-      className: "absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500/80 text-white text-[8px] hidden group-hover/lib:flex items-center justify-center"
+      className: "absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 text-white text-[8px] hidden group-hover/lib:flex items-center justify-center"
     }, "\xD7"));
   })))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "source",
@@ -399,15 +439,17 @@ var CharacterNode = function CharacterNode(_ref) {
     className: "!rounded-full !border-[3px] !right-[-8px] transition-all\n          ".concat((_data$connectedOutput = data.connectedOutputs) !== null && _data$connectedOutput !== void 0 && _data$connectedOutput.characterOutput ? "!bg-purple-600 !border-zinc-900 shadow-[0_0_15px_rgba(168,85,247,0.8)]" : "!bg-zinc-900 !border-purple-600/50 hover:!border-purple-600 shadow-sm"),
     "data-type": "purple"
   }), /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -right-12 top-[100px] text-xs text-purple-400 transition-opacity duration-200 ".concat(data.activeHandleColor === "purple" ? "opacity-100" : "opacity-0 group-hover:opacity-100")
+    className: "absolute text-xs text-purple-400 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "purple" ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+    style: {
+      top: 100,
+      right: -45
+    }
   }, "\u041B\u0438\u0446\u043E"), faceRegOpen && typeof document !== "undefined" && /*#__PURE__*/(0, _reactDom.createPortal)(/*#__PURE__*/_react["default"].createElement(_FaceRegistrationDialog["default"], {
     open: faceRegOpen,
     onClose: function onClose() {
       return setFaceRegOpen(false);
     },
-    onRegistered: function onRegistered(uri, regName) {
-      return onFaceRegistered(uri, regName);
-    }
+    onRegistered: onFaceRegistered
   }), document.body));
 };
 var _default = exports["default"] = CharacterNode;

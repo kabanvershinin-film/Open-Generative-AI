@@ -174,7 +174,8 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
           id: "skylark-agent",
           icon: <RiRobot2Line className="text-purple-400" size={18} />,
           description: "Умный видео-агент для генерации контента",
-          action: () => handleAddNode("skylarkNode", { id: "skylark", name: "Агент Гена" }),
+          isSoon: true,
+          action: () => {},
         },
       ]
     },
@@ -226,7 +227,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
       ...textUtils.map(m => ({ ...m, type: m.id === "video-combiner" ? "vidConcatNode" : "concatNode" })),
       ...apiNodeModels.map(m => ({ ...m, type: "apiNode" })),
       { id: "seedance-prompt", name: "Seedance Промпт", type: "seedancePromptNode" },
-      { id: "skylark-agent", name: "Агент Гена", type: "skylarkNode" },
+      { id: "skylark-agent", name: "Агент Гена", type: "skylarkNode", isSoon: true },
     ];
 
     const filtered = allModels.filter(m => m && m.name && m.name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -238,8 +239,8 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             type="button"
             suppressHydrationWarning={true}
             key={idx}
-            className="flex items-center gap-2 px-3 py-2 text-xs text-white hover:bg-[#2c3037] rounded cursor-pointer transition text-left"
-            onClick={() => handleAddNode(item.type, item)}
+            className={`flex items-center gap-2 px-3 py-2 text-xs text-white rounded transition text-left ${item.isSoon ? "opacity-50 cursor-not-allowed" : "hover:bg-[#2c3037] cursor-pointer"}`}
+            onClick={() => !item.isSoon && handleAddNode(item.type, item)}
           >
             {item.type === "imageNode" && <IoImageOutline />}
             {item.type === "videoNode" && <IoVideocamOutline />}
@@ -250,6 +251,11 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             {item.type === "skylarkNode" && <RiRobot2Line />}
             {item.type === "seedancePromptNode" && <MdAutoFixHigh />}
             <span>{item.name}</span>
+            {item.isSoon && (
+              <span className="ml-auto text-[8px] bg-purple-500/20 text-purple-400 px-1 py-0.5 rounded font-bold uppercase">
+                Скоро
+              </span>
+            )}
           </button>
         )) : (
           <div className="px-3 py-2 text-xs text-gray-500">Ничего не найдено</div>
@@ -341,8 +347,9 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
                   {section.items.map((item, i) => (
                     <div
                       key={i}
-                      className={`flex items-center justify-between px-2 py-2 rounded-lg cursor-pointer group transition-colors relative ${activeSubMenu === item.id ? "bg-[#2c3037] text-white" : "text-gray-300 hover:bg-[#212326] hover:text-white"}`}
+                      className={`flex items-center justify-between px-2 py-2 rounded-lg transition-colors relative ${item.isSoon ? "opacity-50 cursor-not-allowed" : "cursor-pointer group hover:bg-[#212326] hover:text-white"} ${activeSubMenu === item.id ? "bg-[#2c3037] text-white" : "text-gray-300"}`}
                       onMouseEnter={() => {
+                        if (item.isSoon) return;
                         if (item.hasSubmenu) {
                           setActiveSubMenu(item.id);
                         } else {
@@ -350,6 +357,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
                         }
                       }}
                       onClick={() => {
+                        if (item.isSoon) return;
                         if (item.hasSubmenu) {
                           setActiveSubMenu(item.id);
                         } else if (item.action) {
@@ -358,12 +366,17 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
                       }}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-gray-400 group-hover:text-white">{item.icon}</span>
+                        <span className={`${item.isSoon ? "text-gray-500" : "text-gray-400 group-hover:text-white"}`}>{item.icon}</span>
                         <span className="text-xs font-medium">{item.label}</span>
+                        {item.isSoon && (
+                          <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                            Скоро
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         {item.shortcut && <span className="text-[10px] text-gray-600">{item.shortcut}</span>}
-                        {item.hasSubmenu && <FaAngleRight size={10} className="text-gray-500" />}
+                        {item.hasSubmenu && !item.isSoon && <FaAngleRight size={10} className="text-gray-500" />}
                       </div>
                     </div>
                   ))}

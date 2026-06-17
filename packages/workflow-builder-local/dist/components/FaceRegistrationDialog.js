@@ -389,7 +389,7 @@ function FaceRegistrationDialog(_ref) {
   }, [open]);
   if (!open) return null;
   return /*#__PURE__*/_react["default"].createElement("div", {
-    className: "fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4",
+    className: "fixed inset-0 z-[60] bg-black flex items-center justify-center p-4",
     onClick: handleClose
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-4",

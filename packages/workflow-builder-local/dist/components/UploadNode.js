@@ -54,8 +54,28 @@ var UploadNode = function UploadNode(_ref) {
     _useState6 = _slicedToArray(_useState5, 2),
     imageMetadata = _useState6[0],
     setImageMetadata = _useState6[1];
+  var _useState7 = (0, _react.useState)(false),
+    _useState8 = _slicedToArray(_useState7, 2),
+    isMobileUploadUi = _useState8[0],
+    setIsMobileUploadUi = _useState8[1];
   var videoRef = (0, _react.useRef)(null);
   var prevFormValues = (0, _react.useRef)(formValues);
+  var fileInputRef = (0, _react.useRef)(null);
+  var cameraInputRef = (0, _react.useRef)(null);
+  (0, _react.useEffect)(function () {
+    var _mediaQuery$addEventL;
+    if (typeof window === "undefined") return;
+    var mediaQuery = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+    var applyMatch = function applyMatch() {
+      return setIsMobileUploadUi(mediaQuery.matches);
+    };
+    applyMatch();
+    (_mediaQuery$addEventL = mediaQuery.addEventListener) === null || _mediaQuery$addEventL === void 0 || _mediaQuery$addEventL.call(mediaQuery, "change", applyMatch);
+    return function () {
+      var _mediaQuery$removeEve;
+      return (_mediaQuery$removeEve = mediaQuery.removeEventListener) === null || _mediaQuery$removeEve === void 0 ? void 0 : _mediaQuery$removeEve.call(mediaQuery, "change", applyMatch);
+    };
+  }, []);
   var handleDrop = function handleDrop(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -71,17 +91,12 @@ var UploadNode = function UploadNode(_ref) {
     } else {
       return;
     }
-    var acceptedTypes = [];
-    if (acceptType === "image") {
-      acceptedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"];
-    } else if (acceptType === "video") {
-      acceptedTypes = ["video/mp4", "video/webm"];
-    } else if (acceptType === "audio") {
-      acceptedTypes = ["audio/mpeg", "audio/wav", "audio/webm"];
-    }
+    var fileName = (file.name || "").toLowerCase();
+    var isAcceptedFile = acceptType === "image" ? file.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|avif|heic|heif)$/i.test(fileName) : acceptType === "video" ? file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v)$/i.test(fileName) : file.type.startsWith("audio/") || /\.(mp3|wav|webm|m4a|ogg)$/i.test(fileName);
     var type = file.type.startsWith("video") ? "video_url" : file.type.startsWith("image") ? "image_url" : "audio_url";
-    if (!acceptedTypes.includes(file.type)) {
-      _reactHotToast.toast.error("Please upload a valid ".concat(acceptType, " file"));
+    if (!isAcceptedFile) {
+      var typeRus = acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио";
+      _reactHotToast.toast.error("\u041F\u043E\u0436\u0430\u043B\u0443\u0439\u0441\u0442\u0430, \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u0435 \u043A\u043E\u0440\u0440\u0435\u043A\u0442\u043D\u044B\u0439 \u0444\u0430\u0439\u043B (".concat(typeRus, ")"));
       return;
     }
     ;
@@ -115,7 +130,7 @@ var UploadNode = function UploadNode(_ref) {
     })["catch"](function (error) {
       var _error$response;
       console.error("Upload failed", error);
-      _reactHotToast.toast.error("Upload failed.", error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
+      _reactHotToast.toast.error("Ошибка загрузки.", error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
       setUploading(false);
       setUploadProgress(0);
     });
@@ -124,6 +139,7 @@ var UploadNode = function UploadNode(_ref) {
     e.preventDefault();
     e.stopPropagation();
   };
+  var acceptAttr = acceptType === "image" ? "image/*,.heic,.heif" : acceptType === "video" ? "video/*,.mov,.m4v" : "audio/*,.m4a,.ogg";
   var handleTextChange = function handleTextChange(e) {
     var textValue = e.target.value;
     setFormValues(function (prev) {
@@ -173,23 +189,25 @@ var UploadNode = function UploadNode(_ref) {
       });
     };
     img.src = imageUrl;
-    fetch(imageUrl, {
-      method: 'HEAD'
-    }).then(function (res) {
-      if (cancelled) return;
-      var size = res.headers.get('content-length');
-      setImageMetadata(function (prev) {
-        return _objectSpread(_objectSpread({}, prev), {}, {
-          size: size ? (parseInt(size) / (1024 * 1024)).toFixed(2) + ' MB' : null
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      fetch(imageUrl, {
+        method: 'HEAD'
+      }).then(function (res) {
+        if (cancelled) return;
+        var size = res.headers.get('content-length');
+        setImageMetadata(function (prev) {
+          return _objectSpread(_objectSpread({}, prev), {}, {
+            size: size ? (parseInt(size) / (1024 * 1024)).toFixed(2) + ' MB' : null
+          });
+        });
+      })["catch"](function () {
+        if (!cancelled) setImageMetadata(function (prev) {
+          return _objectSpread(_objectSpread({}, prev), {}, {
+            size: null
+          });
         });
       });
-    })["catch"](function () {
-      if (!cancelled) setImageMetadata(function (prev) {
-        return _objectSpread(_objectSpread({}, prev), {}, {
-          size: null
-        });
-      });
-    });
+    }
     return function () {
       cancelled = true;
     };
@@ -264,7 +282,7 @@ var UploadNode = function UploadNode(_ref) {
       var n = nodesArr.find(function (nn) {
         return nn.id === tid;
       });
-      return (n === null || n === void 0 ? void 0 : n.type) === "videoNode" || (n === null || n === void 0 ? void 0 : n.type) === "imageNode";
+      return (n === null || n === void 0 ? void 0 : n.type) === "videoNode" || (n === null || n === void 0 ? void 0 : n.type) === "imageNode" || (n === null || n === void 0 ? void 0 : n.type) === "skylarkNode";
     }));
     if (!targetSet.size) return [];
     // Персонаж-ноды, подключённые к тем же целям.
@@ -279,7 +297,7 @@ var UploadNode = function UploadNode(_ref) {
       })) === null || _nodesArr$find === void 0 ? void 0 : _nodesArr$find.type) === "characterNode";
     }));
     var isUrl = function isUrl(v) {
-      return typeof v === "string" && v && !v.startsWith("asset://");
+      return typeof v === "string" && v.length > 5 && (v.startsWith("http") || v.startsWith("data:image/")) && !v.startsWith("asset://");
     };
     var tags = [];
     var _iterator = _createForOfIteratorHelper(charIds),
@@ -293,10 +311,9 @@ var UploadNode = function UploadNode(_ref) {
         });
         var fv = (cnode === null || cnode === void 0 || (_cnode$data = cnode.data) === null || _cnode$data === void 0 ? void 0 : _cnode$data.formValues) || {};
         var name = (fv.character_name || "лицо").trim();
+
         // Превью лица: фото персонажа, иначе любой пригодный URL из его полей.
-        // В крайнем случае берём face_thumbnail у подключённой видео-ноды
-        // (то же превью, что показывает панель «Референс лица»).
-        var thumb = fv.character_photo || (isUrl(fv.face_thumbnail) ? fv.face_thumbnail : null) || (isUrl(fv.image_url) ? fv.image_url : null) || (isUrl(fv.face_asset) ? fv.face_asset : null);
+        var thumb = (isUrl(fv.character_photo) ? fv.character_photo : null) || (isUrl(fv.face_thumbnail) ? fv.face_thumbnail : null) || (isUrl(fv.image_url) ? fv.image_url : null) || (isUrl(fv.face_asset) ? fv.face_asset : null);
         if (!thumb) {
           var _iterator2 = _createForOfIteratorHelper(targetSet),
             _step2;
@@ -360,7 +377,7 @@ var UploadNode = function UploadNode(_ref) {
       var n = nodesArr.find(function (nn) {
         return nn.id === tid;
       });
-      return (n === null || n === void 0 ? void 0 : n.type) === "videoNode" || (n === null || n === void 0 ? void 0 : n.type) === "imageNode";
+      return (n === null || n === void 0 ? void 0 : n.type) === "videoNode" || (n === null || n === void 0 ? void 0 : n.type) === "imageNode" || (n === null || n === void 0 ? void 0 : n.type) === "skylarkNode";
     }));
     if (!targetSet.size) return [];
     var mediaIds = new Set(rfEdges.filter(function (e) {
@@ -517,10 +534,10 @@ var UploadNode = function UploadNode(_ref) {
   })), /*#__PURE__*/_react["default"].createElement("textarea", {
     ref: textareaRef,
     className: "bg-transparent border border-gray-800 w-full h-full max-h-96 p-2 text-xs text-white resize-none overflow-y-auto custom-scrollbar",
-    placeholder: "Enter your text prompt here...",
+    placeholder: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u0442\u0435\u043A\u0441\u0442\u043E\u0432\u044B\u0439 \u043F\u0440\u043E\u043C\u043F\u0442 \u0437\u0434\u0435\u0441\u044C...",
     value: (formValues === null || formValues === void 0 ? void 0 : formValues.prompt) || "",
     onChange: handleTextChange
-  })) : uploadType === "upload" && /*#__PURE__*/_react["default"].createElement("div", {
+  })) : /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-center justify-center w-full h-full relative",
     onDragOver: handleDragOver,
     onDrop: handleDrop
@@ -528,7 +545,7 @@ var UploadNode = function UploadNode(_ref) {
     className: "flex flex-col justify-center gap-2 w-full h-full max-w-[95%]"
   }, /*#__PURE__*/_react["default"].createElement("h4", {
     className: "text-xs text-white"
-  }, "Uploading... ", uploadProgress, "%"), /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430... ", uploadProgress, "%"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-full bg-gray-100 rounded h-1 overflow-hidden"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "bg-blue-500 h-full",
@@ -556,13 +573,13 @@ var UploadNode = function UploadNode(_ref) {
     className: "flex flex-col gap-0.5"
   }, /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] text-white/50 uppercase tracking-tighter font-semibold"
-  }, "Dimensions"), /*#__PURE__*/_react["default"].createElement("span", {
+  }, "\u0420\u0430\u0437\u0440\u0435\u0448\u0435\u043D\u0438\u0435"), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-white font-medium tabular-nums"
   }, imageMetadata.width, " \xD7 ", imageMetadata.height)), imageMetadata.size && /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-end gap-0.5"
   }, /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] text-white/50 uppercase tracking-tighter font-semibold"
-  }, "File Size"), /*#__PURE__*/_react["default"].createElement("span", {
+  }, "\u0420\u0430\u0437\u043C\u0435\u0440 \u0444\u0430\u0439\u043B\u0430"), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-white font-medium tabular-nums"
   }, imageMetadata.size))))) : /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-full h-full relative group/audio flex flex-col items-center justify-center"
@@ -575,20 +592,60 @@ var UploadNode = function UploadNode(_ref) {
     suppressHydrationWarning: true,
     className: "text-white hover:text-red-500 bg-black/40 hover:bg-black cursor-pointer absolute left-4 top-4 px-1.5 rounded opacity-0 group-hover:opacity-100 transition-all duration-300",
     onClick: removeData
-  }, "\u2715")) : /*#__PURE__*/_react["default"].createElement("label", {
+  }, "\u2715")) : isMobileUploadUi ? /*#__PURE__*/_react["default"].createElement("div", {
+    style: {
+      minHeight: 200
+    },
+    className: "flex flex-col items-center justify-center gap-3 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 h-full"
+  }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
+    size: 20
+  }), /*#__PURE__*/_react["default"].createElement("span", {
+    className: "text-xs capitalize"
+  }, "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C ", acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"), /*#__PURE__*/_react["default"].createElement("span", {
+    className: "text-[11px] text-gray-500 text-center"
+  }, "\u041D\u0430 \u0442\u0435\u043B\u0435\u0444\u043E\u043D\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u0439\u0442\u0435 \u0432\u044B\u0431\u043E\u0440 \u0444\u0430\u0439\u043B\u0430 \u0438\u043B\u0438 \u043A\u0430\u043C\u0435\u0440\u0443. \u041F\u0435\u0440\u0435\u0442\u0430\u0441\u043A\u0438\u0432\u0430\u043D\u0438\u0435 \u043C\u043E\u0436\u043D\u043E \u043D\u0435 \u0438\u0441\u043F\u043E\u043B\u044C\u0437\u043E\u0432\u0430\u0442\u044C."), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col sm:flex-row gap-2 w-full max-w-xs"
+  }, /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      var _fileInputRef$current;
+      return (_fileInputRef$current = fileInputRef.current) === null || _fileInputRef$current === void 0 ? void 0 : _fileInputRef$current.click();
+    },
+    className: "flex-1 min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
+  }, "\u0412\u044B\u0431\u0440\u0430\u0442\u044C \u0444\u0430\u0439\u043B"), acceptType === "image" && /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    onClick: function onClick() {
+      var _cameraInputRef$curre;
+      return (_cameraInputRef$curre = cameraInputRef.current) === null || _cameraInputRef$curre === void 0 ? void 0 : _cameraInputRef$curre.click();
+    },
+    className: "flex-1 min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
+  }, "\u041A\u0430\u043C\u0435\u0440\u0430")), /*#__PURE__*/_react["default"].createElement("input", {
+    ref: fileInputRef,
+    type: "file",
+    accept: acceptAttr,
+    className: "hidden",
+    onChange: handleFileUpload
+  }), acceptType === "image" && /*#__PURE__*/_react["default"].createElement("input", {
+    ref: cameraInputRef,
+    type: "file",
+    accept: acceptAttr,
+    capture: "environment",
+    className: "hidden",
+    onChange: handleFileUpload
+  })) : /*#__PURE__*/_react["default"].createElement("label", {
     style: {
       minHeight: 200
     },
     className: "cursor-pointer flex flex-col items-center justify-center gap-2 text-gray-400 border border-dashed border-gray-600 rounded-lg p-4 w-full flex-1 hover:bg-gray-700/50 h-full"
-  }, "                ", /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
+  }, /*#__PURE__*/_react["default"].createElement(_fi.FiUpload, {
     size: 20
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs capitalize"
-  }, "Upload ", acceptType), /*#__PURE__*/_react["default"].createElement("span", {
+  }, "\u0417\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C ", acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио"), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-gray-500"
-  }, "Hint: drag and drop file(s) here."), /*#__PURE__*/_react["default"].createElement("input", {
+  }, "\u041F\u043E\u0434\u0441\u043A\u0430\u0437\u043A\u0430: \u043F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0444\u0430\u0439\u043B(\u044B) \u0441\u044E\u0434\u0430."), /*#__PURE__*/_react["default"].createElement("input", {
     type: "file",
-    accept: acceptType === "image" ? "image/*" : acceptType === "video" ? "video/*" : "audio/*",
+    accept: acceptAttr,
     className: "hidden",
     onChange: handleFileUpload
   })))));

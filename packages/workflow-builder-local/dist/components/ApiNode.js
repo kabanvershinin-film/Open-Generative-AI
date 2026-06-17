@@ -191,7 +191,7 @@ var ApiNode = function ApiNode(_ref) {
   };
   var fetchSchema = function fetchSchema(workflowId) {
     if (!workflowId) {
-      _reactHotToast.toast.error("Failed to save workflow before running node");
+      _reactHotToast.toast.error("Не удалось сохранить воркфлоу перед запуском узла");
       setLoading(0);
       return;
     }
@@ -270,13 +270,13 @@ var ApiNode = function ApiNode(_ref) {
           });
         }
       } else {
-        _reactHotToast.toast.warn("No schema found for id: ".concat(id));
+        _reactHotToast.toast.warn("\u0421\u0445\u0435\u043C\u0430 \u0434\u043B\u044F id: ".concat(id, " \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u0430"));
       }
       setLoading(0);
     })["catch"](function (error) {
       var _error$response;
       setLoading(0);
-      _reactHotToast.toast.error(((_error$response = error.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Failed to fetch model details.");
+      _reactHotToast.toast.error(((_error$response = error.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Не удалось получить данные модели.");
       console.error(error);
     });
   };
@@ -474,11 +474,11 @@ var ApiNode = function ApiNode(_ref) {
         if (latest.status === "failed") {
           var _latest$result, _outputs$;
           var outputs = latest === null || latest === void 0 || (_latest$result = latest.result) === null || _latest$result === void 0 ? void 0 : _latest$result.outputs;
-          var errorMsg = "Generation failed";
+          var errorMsg = "Ошибка генерации";
           if (outputs && (_outputs$ = outputs[0]) !== null && _outputs$ !== void 0 && (_outputs$ = _outputs$.value) !== null && _outputs$ !== void 0 && _outputs$.error) {
             errorMsg = outputs[0].value.error;
           }
-          _reactHotToast.toast.error("Node ".concat(id, " failed"));
+          _reactHotToast.toast.error("\u0423\u0437\u0435\u043B ".concat(id, " \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u043B\u0441\u044F \u0441 \u043E\u0448\u0438\u0431\u043A\u043E\u0439"));
           var _currentHistory = data.outputHistory || [];
           data.onDataChange(id, {
             isLoading: false,
@@ -493,13 +493,12 @@ var ApiNode = function ApiNode(_ref) {
         data.onDataChange(id, {
           isLoading: false
         });
-        _reactHotToast.toast.error("Failed to get workflow status Api ".concat(id.replace(/^\D+/g, "")));
+        _reactHotToast.toast.error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C \u0441\u0442\u0430\u0442\u0443\u0441 \u0432\u043E\u0440\u043A\u0444\u043B\u043E\u0443 Api ".concat(id.replace(/^\D+/g, "")));
       });
     };
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref15 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var workflow_id, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, filteredInputParams, response, _r, _nd, _lt, _o, _error$response2, _t;
@@ -518,7 +517,7 @@ var ApiNode = function ApiNode(_ref) {
               _context.n = 2;
               break;
             }
-            _reactHotToast.toast.error("Failed to save workflow before running node");
+            _reactHotToast.toast.error("Не удалось сохранить воркфлоу перед запуском узла");
             data.onDataChange(id, {
               isLoading: false
             });
@@ -528,7 +527,7 @@ var ApiNode = function ApiNode(_ref) {
               _context.n = 3;
               break;
             }
-            _reactHotToast.toast.error("No input schema found for this model");
+            _reactHotToast.toast.error("Схема входных данных не найдена для этой модели");
             data.onDataChange(id, {
               isLoading: false
             });
@@ -576,7 +575,7 @@ var ApiNode = function ApiNode(_ref) {
             } else if (_lt && _lt.status === "failed") {
               data && data.onDataChange && data.onDataChange(id, {
                 isLoading: false,
-                errorMsg: "Generation failed"
+                errorMsg: "Ошибка генерации"
               });
             } else {
               pollNodeStatus(_r.run_id);
@@ -589,7 +588,7 @@ var ApiNode = function ApiNode(_ref) {
             data.onDataChange(id, {
               isLoading: false
             });
-            _reactHotToast.toast.error(((_error$response2 = _t.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Error running node");
+            _reactHotToast.toast.error(((_error$response2 = _t.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Ошибка при запуске узла");
             console.error(_t);
           case 6:
             ;
@@ -599,13 +598,11 @@ var ApiNode = function ApiNode(_ref) {
       }, _callee, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref15.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref15.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
-    if (window.confirm("Are you sure you want to delete this ".concat(id, " node?"))) {
+    if (window.confirm("\u0412\u044B \u0443\u0432\u0435\u0440\u0435\u043D\u044B, \u0447\u0442\u043E \u0445\u043E\u0442\u0438\u0442\u0435 \u0443\u0434\u0430\u043B\u0438\u0442\u044C \u0443\u0437\u0435\u043B ".concat(id, "?"))) {
       setNodes(function (nds) {
         return nds.filter(function (n) {
           return n.id !== id;
@@ -616,7 +613,7 @@ var ApiNode = function ApiNode(_ref) {
           return e.source !== id && e.target !== id;
         });
       });
-      _reactHotToast.toast.success("Deleted node ".concat(id));
+      _reactHotToast.toast.success("\u0423\u0437\u0435\u043B ".concat(id, " \u0443\u0434\u0430\u043B\u0435\u043D"));
     }
     ;
   };
@@ -635,7 +632,7 @@ var ApiNode = function ApiNode(_ref) {
               _context2.n = 1;
               break;
             }
-            _reactHotToast.toast.error("".concat(missingFields, " required before fetching schema"));
+            _reactHotToast.toast.error("".concat(missingFields, " \u043E\u0431\u044F\u0437\u0430\u0442\u0435\u043B\u044C\u043D\u044B \u043F\u0435\u0440\u0435\u0434 \u043F\u043E\u043B\u0443\u0447\u0435\u043D\u0438\u0435\u043C \u0441\u0445\u0435\u043C\u044B"));
             return _context2.a(2);
           case 1:
             setLoading(1);
@@ -647,7 +644,7 @@ var ApiNode = function ApiNode(_ref) {
               _context2.n = 3;
               break;
             }
-            _reactHotToast.toast.error("Failed to save workflow before running node");
+            _reactHotToast.toast.error("Не удалось сохранить воркфлоу перед запуском узла");
             setLoading(0);
             return _context2.a(2);
           case 3:
@@ -733,7 +730,7 @@ var ApiNode = function ApiNode(_ref) {
             }
             return _context3.a(2);
           case 1:
-            if (!window.confirm("Are you sure you want to delete this history entry?")) {
+            if (!window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
               _context3.n = 5;
               break;
             }
@@ -755,13 +752,13 @@ var ApiNode = function ApiNode(_ref) {
             } else {
               setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
             }
-            _reactHotToast.toast.success("History entry deleted");
+            _reactHotToast.toast.success("Запись истории удалена");
             _context3.n = 5;
             break;
           case 4:
             _context3.p = 4;
             _t2 = _context3.v;
-            _reactHotToast.toast.error(((_error$response3 = _t2.response) === null || _error$response3 === void 0 || (_error$response3 = _error$response3.data) === null || _error$response3 === void 0 ? void 0 : _error$response3.detail) || "Failed to delete history entry");
+            _reactHotToast.toast.error(((_error$response3 = _t2.response) === null || _error$response3 === void 0 || (_error$response3 = _error$response3.data) === null || _error$response3 === void 0 ? void 0 : _error$response3.detail) || "Не удалось удалить запись истории");
             console.error(_t2);
           case 5:
             return _context3.a(2);
@@ -793,7 +790,7 @@ var ApiNode = function ApiNode(_ref) {
     style: {
       minHeight: minHeight
     },
-    className: "\n        nowheel group flex flex-col w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]/95 backdrop-blur-sm\n      ")
+    className: "\n        nowheel group flex flex-col w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 absolute -top-5 left-0"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
@@ -813,14 +810,14 @@ var ApiNode = function ApiNode(_ref) {
   })), /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-xs font-bold text-zinc-100"
   }, selectedModel.name)), outputHistory.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
+    className: "absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handlePrev,
     disabled: currentHistoryIndex <= 0,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Previous"
+    title: "\u041D\u0430\u0437\u0430\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -834,7 +831,7 @@ var ApiNode = function ApiNode(_ref) {
     suppressHydrationWarning: true,
     onClick: handleDeleteHistory,
     className: "p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center",
-    title: "Delete history"
+    title: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoTrashOutline, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -851,7 +848,7 @@ var ApiNode = function ApiNode(_ref) {
     onClick: handleNext,
     disabled: currentHistoryIndex >= outputHistory.length - 1,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors",
-    title: "Next"
+    title: "\u0412\u043F\u0435\u0440\u0435\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 10
   }))), /*#__PURE__*/_react["default"].createElement(_NodeOptionsMenu["default"], {
@@ -869,9 +866,9 @@ var ApiNode = function ApiNode(_ref) {
     className: "w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] font-bold text-blue-500 tracking-wider uppercase"
-  }, "Processing..."))) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, "\u041E\u0431\u0440\u0430\u0431\u043E\u0442\u043A\u0430..."))) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 m-3 w-full"
-  }, data.errorMsg || "API failure") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, data.errorMsg || "Ошибка API") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-full h-full relative group/api"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex-1 w-full h-full flex flex-col items-center justify-center"
@@ -902,7 +899,7 @@ var ApiNode = function ApiNode(_ref) {
       minHeight: "60px"
     }
   }))), currentOutputList.length > 1 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/10 opacity-0 group-hover/api:opacity-100 transition-opacity"
+    className: "absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black border border-white/10 px-2 py-0.5 rounded-full opacity-0 group-hover/api:opacity-100 transition-opacity"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
@@ -935,11 +932,11 @@ var ApiNode = function ApiNode(_ref) {
     size: 32
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] italic"
-  }, "Result appeared here..."))), function (_data$outputs) {
+  }, "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C..."))), function (_data$outputs) {
     var outputColor = "green";
     var activeClass = "!bg-green-500 !border-white shadow-[0_0_20px_rgba(34,197,94,1)]";
     var inactiveClass = "!bg-black !border-green-500 shadow-[0_0_20px_rgba(34,197,94,0.5)]";
-    var labelText = "Image";
+    var labelText = "Изображение";
     var labelColor = "text-green-500";
     var output = (_data$outputs = data.outputs) === null || _data$outputs === void 0 ? void 0 : _data$outputs[0];
     var modelType = formValues.model_type; // || selectedModel.model_type?
@@ -948,25 +945,25 @@ var ApiNode = function ApiNode(_ref) {
       outputColor = "blue";
       activeClass = "!bg-blue-600 !border-zinc-900 shadow-[0_0_15px_rgba(37,99,235,0.8)]";
       inactiveClass = "!bg-zinc-900 !border-blue-600/50 hover:!border-blue-600 shadow-sm";
-      labelText = "Text";
+      labelText = "Текст";
       labelColor = "text-blue-500";
     } else if ((output === null || output === void 0 ? void 0 : output.type) === 'video_url' || modelType === 'video') {
       outputColor = "orange";
       activeClass = "!bg-orange-600 !border-zinc-900 shadow-[0_0_15px_rgba(249,115,22,0.8)]";
       inactiveClass = "!bg-zinc-900 !border-orange-600/50 hover:!border-orange-600 shadow-sm";
-      labelText = "Video";
+      labelText = "Видео";
       labelColor = "text-orange-500";
     } else if ((output === null || output === void 0 ? void 0 : output.type) === 'audio_url' || modelType === 'audio') {
       outputColor = "yellow";
       activeClass = "!bg-yellow-500 !border-zinc-900 shadow-[0_0_15px_rgba(234,179,8,0.8)]";
       inactiveClass = "!bg-zinc-900 !border-yellow-500/50 hover:!border-yellow-500 shadow-sm";
-      labelText = "Audio";
+      labelText = "Аудио";
       labelColor = "text-yellow-500";
     } else {
       outputColor = "green";
       activeClass = "!bg-emerald-600 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]";
       inactiveClass = "!bg-zinc-900 !border-emerald-600/50 hover:!border-emerald-600 shadow-sm";
-      labelText = "Image";
+      labelText = "Изображение";
       labelColor = "text-emerald-500";
     }
     return /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
@@ -982,7 +979,11 @@ var ApiNode = function ApiNode(_ref) {
       className: "!rounded-full !border-2 transition-all duration-200 !right-[-7px]\n              ".concat(connectedOutputs.apiOutput ? activeClass : inactiveClass, "\n            "),
       "data-type": outputColor
     }), /*#__PURE__*/_react["default"].createElement("p", {
-      className: "absolute -right-10 top-[100px] text-xs ".concat(labelColor, " transition-opacity duration-200 ").concat(data.activeHandleColor === outputColor ? "opacity-100" : "opacity-0 group-hover:opacity-100")
+      className: "absolute text-xs ".concat(labelColor, " transition-opacity duration-200 pointer-events-none whitespace-nowrap ").concat(data.activeHandleColor === outputColor ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+      style: {
+        top: 100,
+        right: -40
+      }
     }, labelText));
   }(), filteredTaskDataEntries.map(function (_ref22, idx) {
     var _ref23 = _slicedToArray(_ref22, 2),
@@ -1006,11 +1007,11 @@ var ApiNode = function ApiNode(_ref) {
       className: "!rounded-full !border-[3px] !left-[-8px] transition-all\n                ".concat(connectedInputs[key] ? '!bg-white !border-zinc-900 shadow-[0_0_15px_rgba(255,255,255,0.8)]' : '!bg-zinc-900 !border-white hover:!border-zinc-500 shadow-sm', "\n              "),
       "data-type": "white"
     }), /*#__PURE__*/_react["default"].createElement("p", {
-      className: "absolute -left-20 top-[".concat(150 + idx * 50, "px] text-xs text-white text-right w-16 transition-opacity duration-200 ").concat(isExposed ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
+      className: "absolute text-xs text-white text-right w-16 transition-opacity duration-200 pointer-events-none whitespace-nowrap ".concat(isExposed ? "opacity-100" : "opacity-0 group-hover:opacity-100"),
       style: {
         top: 150 + idx * 50,
-        opacity: isExposed ? undefined : 0,
-        pointerEvents: isExposed ? 'all' : 'none'
+        left: -80,
+        opacity: isExposed ? undefined : 0
       }
     }, key));
   }));

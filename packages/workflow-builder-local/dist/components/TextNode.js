@@ -7,442 +7,137 @@ Object.defineProperty(exports, "__esModule", {
 exports["default"] = void 0;
 var _react = _interopRequireWildcard(require("react"));
 var _reactflow = require("reactflow");
-var _fa = require("react-icons/fa6");
-var _utility = require("./utility");
-var _axios = _interopRequireDefault(require("axios"));
-var _WorkflowStore = require("./WorkflowStore");
-var _reactHotToast = require("react-hot-toast");
-var _io = require("react-icons/io5");
-var _UploadNode = _interopRequireDefault(require("./UploadNode"));
 var _tfi = require("react-icons/tfi");
-var _NodeSendButton = _interopRequireDefault(require("./NodeSendButton"));
+var _fa = require("react-icons/fa");
+var _io = require("react-icons/io5");
+var _reactHotToast = require("react-hot-toast");
+var _axios = _interopRequireDefault(require("axios"));
 var _NodeOptionsMenu = _interopRequireDefault(require("./NodeOptionsMenu"));
-var _useGenerationCost2 = require("./useGenerationCost");
+var _NodeSendButton = _interopRequireDefault(require("./NodeSendButton"));
+var _UploadNode = _interopRequireDefault(require("./UploadNode"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
-function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t3 in e) "default" !== _t3 && {}.hasOwnProperty.call(e, _t3) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t3)) && (i.get || i.set) ? o(f, _t3, i) : f[_t3] = e[_t3]); return f; })(e, t); }
-function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
-function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
-function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
-function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
-function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
-function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t2 in e) "default" !== _t2 && {}.hasOwnProperty.call(e, _t2) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t2)) && (i.get || i.set) ? o(f, _t2, i) : f[_t2] = e[_t2]); return f; })(e, t); }
 function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
 function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
+function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
+function _arrayWithoutHoles(r) { if (Array.isArray(r)) return _arrayLikeToArray(r); }
+function _regenerator() { /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */ var e, t, r = "function" == typeof Symbol ? Symbol : {}, n = r.iterator || "@@iterator", o = r.toStringTag || "@@toStringTag"; function i(r, n, o, i) { var c = n && n.prototype instanceof Generator ? n : Generator, u = Object.create(c.prototype); return _regeneratorDefine2(u, "_invoke", function (r, n, o) { var i, c, u, f = 0, p = o || [], y = !1, G = { p: 0, n: 0, v: e, a: d, f: d.bind(e, 4), d: function d(t, r) { return i = t, c = 0, u = e, G.n = r, a; } }; function d(r, n) { for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) { var o, i = p[t], d = G.p, l = i[2]; r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0)); } if (o || r > 1) return a; throw y = !0, n; } return function (o, p, l) { if (f > 1) throw TypeError("Generator is already running"); for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) { i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u); try { if (f = 2, i) { if (c || (o = "next"), t = i[o]) { if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object"); if (!t.done) return t; u = t.value, c < 2 && (c = 0); } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1); i = e; } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break; } catch (t) { i = e, c = 1, u = t; } finally { f = 1; } } return { value: t, done: y }; }; }(r, o, i), !0), u; } var a = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} t = Object.getPrototypeOf; var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () { return this; }), t), u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c); function f(e) { return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e; } return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () { return this; }), _regeneratorDefine2(u, "toString", function () { return "[object Generator]"; }), (_regenerator = function _regenerator() { return { w: i, m: f }; })(); }
+function _regeneratorDefine2(e, r, n, t) { var i = Object.defineProperty; try { i({}, "", {}); } catch (e) { i = 0; } _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) { function o(r, n) { _regeneratorDefine2(e, r, function (e) { return this._invoke(r, n, e); }); } r ? i ? i(e, r, { value: n, enumerable: !t, configurable: !t, writable: !t }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2)); }, _regeneratorDefine2(e, r, n, t); }
+function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
+function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
 function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
-var inputHandles = ["textInput", "textInput2", "textInput3", "textInput4"];
-var outputHandles = ["textOutput"];
 var TextGeneration = function TextGeneration(_ref) {
-  var _data$runId, _nodeSchemas$categori, _data$selectedModel3, _data$selectedModel4, _data$selectedModel5, _data$selectedModel6, _outputHistory$curren, _currentOutputList$cu, _currentOutputList$, _data$selectedModel7;
+  var _data$nodeSchemas, _data$nodeSchemas2, _selectedModel$id, _outputHistory$curren, _currentOutputList$cu, _currentOutputList$, _data$selectedModel;
   var id = _ref.id,
     data = _ref.data,
     selected = _ref.selected;
-  var models = (0, _react.useMemo)(function () {
-    var _data$nodeSchemas;
-    return (_data$nodeSchemas = data.nodeSchemas) !== null && _data$nodeSchemas !== void 0 && (_data$nodeSchemas = _data$nodeSchemas.categories) !== null && _data$nodeSchemas !== void 0 && (_data$nodeSchemas = _data$nodeSchemas.text) !== null && _data$nodeSchemas !== void 0 && _data$nodeSchemas.models ? Object.values(data.nodeSchemas.categories.text.models) : [];
-  }, [data.nodeSchemas]);
-  var _useState = (0, _react.useState)(data.selectedModel || models[1] || models[0] || {}),
+  var formValues = data.formValues || {};
+  var setFormValues = data.setFormValues || function () {};
+  var selectedModel = data.selectedModel || {};
+  var loading = data.loading || false;
+  var _useState = (0, _react.useState)(data.outputHistory ? data.outputHistory.length - 1 : -1),
     _useState2 = _slicedToArray(_useState, 2),
-    selectedModel = _useState2[0],
-    setSelectedModel = _useState2[1];
-  var _useState3 = (0, _react.useState)({}),
+    currentHistoryIndex = _useState2[0],
+    setCurrentHistoryIndex = _useState2[1];
+  var _useState3 = (0, _react.useState)(0),
     _useState4 = _slicedToArray(_useState3, 2),
-    connectedInputs = _useState4[0],
-    setConnectedInputs = _useState4[1];
-  var _useState5 = (0, _react.useState)({}),
+    currentOutputIndex = _useState4[0],
+    setCurrentOutputIndex = _useState4[1];
+  var _useState5 = (0, _react.useState)(false),
     _useState6 = _slicedToArray(_useState5, 2),
-    connectedOutputs = _useState6[0],
-    setConnectedOutputs = _useState6[1];
-  var _useState7 = (0, _react.useState)(data.formValues || {}),
+    isRefreshingCost = _useState6[0],
+    setIsRefreshingCost = _useState6[1];
+  var _useState7 = (0, _react.useState)(null),
     _useState8 = _slicedToArray(_useState7, 2),
-    formValues = _useState8[0],
-    setFormValues = _useState8[1];
-  var _useState9 = (0, _react.useState)(0),
-    _useState0 = _slicedToArray(_useState9, 2),
-    dropDown = _useState0[0],
-    setDropDown = _useState0[1];
-  var _useState1 = (0, _react.useState)(0),
-    _useState10 = _slicedToArray(_useState1, 2),
-    loading = _useState10[0],
-    setLoading = _useState10[1];
-  var _useState11 = (0, _react.useState)(-1),
-    _useState12 = _slicedToArray(_useState11, 2),
-    currentHistoryIndex = _useState12[0],
-    setCurrentHistoryIndex = _useState12[1];
-  var _useState13 = (0, _react.useState)(0),
-    _useState14 = _slicedToArray(_useState13, 2),
-    currentOutputIndex = _useState14[0],
-    setCurrentOutputIndex = _useState14[1];
-  var outputHistory = data.outputHistory || [];
-  var prevHistoryLengthRef = (0, _react.useRef)(outputHistory.length);
-  var workflowId = (0, _WorkflowStore.getWorkflowId)();
-  var runId = (_data$runId = data.runId) !== null && _data$runId !== void 0 ? _data$runId : (0, _WorkflowStore.getRunId)();
-  var nodeSchemas = data.nodeSchemas || {};
-  var _useReactFlow = (0, _reactflow.useReactFlow)(),
-    setNodes = _useReactFlow.setNodes,
-    setEdges = _useReactFlow.setEdges;
-  var updateNodeInternals = (0, _reactflow.useUpdateNodeInternals)();
-  var edges = (0, _reactflow.useStore)(function (state) {
-    return state.edges;
-  });
-  var properties = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori = nodeSchemas.categories) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.text) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.models) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori[selectedModel.id]) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.input_schema) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.schemas) === null || _nodeSchemas$categori === void 0 || (_nodeSchemas$categori = _nodeSchemas$categori.input_data) === null || _nodeSchemas$categori === void 0 ? void 0 : _nodeSchemas$categori.properties;
-  var _useGenerationCost = (0, _useGenerationCost2.useGenerationCost)(selectedModel, formValues),
-    generationCost = _useGenerationCost.generationCost,
-    isRefreshingCost = _useGenerationCost.isRefreshingCost;
-  (0, _react.useEffect)(function () {
-    if (data.cost !== generationCost) {
-      var _data$onDataChange;
-      (_data$onDataChange = data.onDataChange) === null || _data$onDataChange === void 0 || _data$onDataChange.call(data, id, {
-        cost: generationCost
-      });
-    }
-  }, [id, generationCost, data.cost]);
+    generationCost = _useState8[0],
+    setGenerationCost = _useState8[1];
   var textareaRef = (0, _react.useRef)(null);
-  var _initializeFormData = function initializeFormData(schemaProperties) {
-    var initialData = {};
-    var fieldEntries = Object.entries(schemaProperties || {});
-    fieldEntries.forEach(function (_ref2) {
-      var _ref3 = _slicedToArray(_ref2, 2),
-        fieldName = _ref3[0],
-        fieldSchema = _ref3[1];
-      if (fieldSchema.type === "array") {
-        var _fieldSchema$items;
-        if (((_fieldSchema$items = fieldSchema.items) === null || _fieldSchema$items === void 0 ? void 0 : _fieldSchema$items.type) === "object") {
-          var examples = fieldSchema.examples;
-          if (Array.isArray(examples) && examples.length > 0) {
-            initialData[fieldName] = examples.map(function (ex) {
-              return _objectSpread({}, ex);
-            });
-          } else {
-            initialData[fieldName] = [];
-          }
-        } else {
-          initialData[fieldName] = fieldSchema.examples || [];
-        }
-      } else if (fieldSchema.type === "object") {
-        var nestedProps = fieldSchema.properties || {};
-        initialData[fieldName] = _initializeFormData(nestedProps);
-      } else if (fieldSchema["default"] !== undefined) {
-        initialData[fieldName] = fieldSchema["default"];
-      } else if (fieldSchema.examples && fieldSchema.examples.length > 0) {
-        initialData[fieldName] = fieldSchema.examples[0];
-      } else {
-        switch (fieldSchema.type) {
-          case "boolean":
-            initialData[fieldName] = false;
-            break;
-          case "int":
-          case "number":
-            initialData[fieldName] = 0;
-            break;
-          default:
-            initialData[fieldName] = "";
-        }
-      }
+  var outputHistory = data.outputHistory || [];
+  var connectedInputs = data.connectedInputs || {};
+  var connectedOutputs = data.connectedOutputs || {};
+  var properties = ((_data$nodeSchemas = data.nodeSchemas) === null || _data$nodeSchemas === void 0 || (_data$nodeSchemas = _data$nodeSchemas.categories) === null || _data$nodeSchemas === void 0 || (_data$nodeSchemas = _data$nodeSchemas.text) === null || _data$nodeSchemas === void 0 || (_data$nodeSchemas = _data$nodeSchemas.models) === null || _data$nodeSchemas === void 0 || (_data$nodeSchemas = _data$nodeSchemas[selectedModel.id]) === null || _data$nodeSchemas === void 0 || (_data$nodeSchemas = _data$nodeSchemas.input_schema) === null || _data$nodeSchemas === void 0 || (_data$nodeSchemas = _data$nodeSchemas.schemas) === null || _data$nodeSchemas === void 0 || (_data$nodeSchemas = _data$nodeSchemas.input_data) === null || _data$nodeSchemas === void 0 ? void 0 : _data$nodeSchemas.properties) || ((_data$nodeSchemas2 = data.nodeSchemas) === null || _data$nodeSchemas2 === void 0 || (_data$nodeSchemas2 = _data$nodeSchemas2.categories) === null || _data$nodeSchemas2 === void 0 || (_data$nodeSchemas2 = _data$nodeSchemas2.text) === null || _data$nodeSchemas2 === void 0 || (_data$nodeSchemas2 = _data$nodeSchemas2.models) === null || _data$nodeSchemas2 === void 0 || (_data$nodeSchemas2 = _data$nodeSchemas2[selectedModel.id]) === null || _data$nodeSchemas2 === void 0 || (_data$nodeSchemas2 = _data$nodeSchemas2.input_params) === null || _data$nodeSchemas2 === void 0 ? void 0 : _data$nodeSchemas2.properties) || {};
+  var isPassthrough = selectedModel === null || selectedModel === void 0 || (_selectedModel$id = selectedModel.id) === null || _selectedModel$id === void 0 ? void 0 : _selectedModel$id.includes("passthrough");
+  var hasPrompt = data.hasPrompt !== false && !isPassthrough && ("prompt" in properties || Object.keys(properties).length === 0);
+  var hasImageUrl = data.hasImageUrl !== false && !isPassthrough && "image_url" in properties;
+  var hasImagesList = data.hasImagesList !== false && !isPassthrough && "images_list" in properties;
+  var hasSystemPrompt = data.hasSystemPrompt !== false && !isPassthrough && "system_prompt" in properties;
+  var handlePrev = function handlePrev(e) {
+    e.stopPropagation();
+    setCurrentHistoryIndex(function (prev) {
+      return prev > 0 ? prev - 1 : prev;
     });
-    return initialData;
+    setCurrentOutputIndex(0);
   };
-  var addFormValuesInTaskData = function addFormValuesInTaskData(properties) {
-    var defaults = _initializeFormData(properties);
-    var validKeys = Object.keys(properties);
-    var filteredFormValues = Object.entries(data.formValues || {}).reduce(function (acc, _ref4) {
-      var _ref5 = _slicedToArray(_ref4, 2),
-        key = _ref5[0],
-        val = _ref5[1];
-      if (validKeys.includes(key)) acc[key] = val;
-      return acc;
-    }, {});
-    var merged = Object.entries(_objectSpread(_objectSpread({}, defaults), filteredFormValues)).reduce(function (acc, _ref6) {
-      var _ref7 = _slicedToArray(_ref6, 2),
-        key = _ref7[0],
-        val = _ref7[1];
-      var meta = properties[key];
-      if (meta !== null && meta !== void 0 && meta["enum"] && !meta["enum"].includes(val)) {
-        var _ref8, _meta$default;
-        acc[key] = (_ref8 = (_meta$default = meta["default"]) !== null && _meta$default !== void 0 ? _meta$default : meta["enum"][0]) !== null && _ref8 !== void 0 ? _ref8 : "";
-      } else {
-        acc[key] = val;
-      }
-      return acc;
-    }, {});
-
-    // Preserve UI-only flags that are not part of the model schema
-    var UI_KEYS = ["make_output", "make_input"];
-    UI_KEYS.forEach(function (k) {
-      var _data$formValues;
-      if (((_data$formValues = data.formValues) === null || _data$formValues === void 0 ? void 0 : _data$formValues[k]) !== undefined) merged[k] = data.formValues[k];
+  var handleNext = function handleNext(e) {
+    e.stopPropagation();
+    setCurrentHistoryIndex(function (prev) {
+      return prev < outputHistory.length - 1 ? prev + 1 : prev;
     });
-    setFormValues(merged);
+    setCurrentOutputIndex(0);
   };
-  (0, _react.useEffect)(function () {
-    setLoading(1);
-    if (properties) {
-      addFormValuesInTaskData(properties);
-    }
-    setLoading(0);
-  }, [selectedModel]);
-  (0, _react.useEffect)(function () {
-    if (data.selectedModel) {
-      setSelectedModel(data.selectedModel);
-    }
-    if (data.triggerRun) {
-      handleRunSingleNode();
-      data.onDataChange(id, {
-        triggerRun: false
-      });
-    }
-    if (data.outputHistory && data.outputHistory.length > 0) {
-      if (currentHistoryIndex === -1) {
-        setCurrentHistoryIndex(data.outputHistory.length - 1);
-        setCurrentOutputIndex(0);
-      } else if (data.outputHistory.length > prevHistoryLengthRef.current) {
-        setCurrentHistoryIndex(data.outputHistory.length - 1);
-        setCurrentOutputIndex(0);
-      }
-    }
-    prevHistoryLengthRef.current = data.outputHistory ? data.outputHistory.length : 0;
-  }, [data.selectedModel, data.triggerRun, data.outputHistory]);
-  (0, _react.useEffect)(function () {
-    updateNodeInternals(id);
-  }, [formValues, id]);
-  (0, _react.useEffect)(function () {
-    if (!data.formValues) return;
-    // Key-order-independent compare so a parent rebuild with the same content
-    // doesn't look "different" and pull us into a sync loop (React #185).
-    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
-    var timer = setTimeout(function () {
-      if (Object.entries(data.formValues || {}).length > 0) {
-        setFormValues(data.formValues);
-      }
-    }, 200);
-    return function () {
-      return clearTimeout(timer);
-    };
-  }, [data.formValues]);
-  var lastSentRef = (0, _react.useRef)(null);
-  (0, _react.useEffect)(function () {
-    var _data$selectedModel, _data$selectedModel2;
-    if (!(data !== null && data !== void 0 && data.onDataChange) || (data === null || data === void 0 || (_data$selectedModel = data.selectedModel) === null || _data$selectedModel === void 0 ? void 0 : _data$selectedModel.id) === "text-passthrough") return;
-    var localSig = (0, _utility.stableStringify)(formValues);
-    var parentSig = (0, _utility.stableStringify)(data.formValues || {});
-    var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === ((_data$selectedModel2 = data.selectedModel) === null || _data$selectedModel2 === void 0 ? void 0 : _data$selectedModel2.id);
-
-    // Echo suppression: skip propagation when the parent already holds exactly
-    // our state, otherwise the formValues sync loops (React #185).
-    if (sameModel && localSig === parentSig) {
-      lastSentRef.current = localSig;
-      return;
-    }
-    if (sameModel && localSig === lastSentRef.current) return;
-    lastSentRef.current = localSig;
-    data.onDataChange(id, {
-      selectedModel: selectedModel,
-      formValues: formValues,
-      loading: loading
-    });
-  }, [selectedModel, formValues, loading, data.formValues, data.selectedModel]);
-  var handleChange = function handleChange(key, value) {
-    setFormValues(function (prev) {
-      return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, key, value));
-    });
-    setDropDown(-1);
+  var handleDeleteNode = function handleDeleteNode() {
+    data.deleteNode(id);
   };
-  var pollNodeStatus = function pollNodeStatus(run_id) {
-    var interval;
-    var _check = function _check() {
-      _axios["default"].get("/api/workflow/run/".concat(run_id, "/status")).then(function (response) {
-        var _Object$entries$find;
-        var nodesInRes = response.data.nodes || {};
-        var nodeData = nodesInRes[id] || ((_Object$entries$find = Object.entries(nodesInRes).find(function (_ref9) {
-          var _ref0 = _slicedToArray(_ref9, 1),
-            key = _ref0[0];
-          return key.toLowerCase().replace(/\s+/g, '') === id.toLowerCase().replace(/\s+/g, '');
-        })) === null || _Object$entries$find === void 0 ? void 0 : _Object$entries$find[1]);
-        if (!nodeData || nodeData.length === 0) return;
-        var latest = nodeData[nodeData.length - 1];
-        if (latest.status === "succeeded" || latest.status === "completed") {
-          var _output$, _data$onDataChange2;
-          var output = latest.result.outputs;
-          var val = ((_output$ = output[0]) === null || _output$ === void 0 ? void 0 : _output$.value) || "";
-          var currentHistory = data.outputHistory || [];
-          var result = latest.result;
-          var isAlreadyInHistory = currentHistory.some(function (h) {
-            var _h$result;
-            return ((_h$result = h.result) === null || _h$result === void 0 ? void 0 : _h$result.id) === result.id;
-          });
-          var newHistory = isAlreadyInHistory ? currentHistory.map(function (h) {
-            var _h$result2;
-            return ((_h$result2 = h.result) === null || _h$result2 === void 0 ? void 0 : _h$result2.id) === result.id ? latest : h;
-          }) : [].concat(_toConsumableArray(currentHistory), [latest]);
-          data === null || data === void 0 || (_data$onDataChange2 = data.onDataChange) === null || _data$onDataChange2 === void 0 || _data$onDataChange2.call(data, id, {
-            outputs: output,
-            resultUrl: val,
-            isLoading: false,
-            errorMsg: null,
-            outputHistory: newHistory
-          });
-          setCurrentHistoryIndex(newHistory.length - 1);
-          setCurrentOutputIndex(0);
-          clearInterval(interval);
-        }
-        if (latest.status === "failed") {
-          var _latest$result, _outputs$;
-          var outputs = latest === null || latest === void 0 || (_latest$result = latest.result) === null || _latest$result === void 0 ? void 0 : _latest$result.outputs;
-          var errorMsg = "Generation failed";
-          if (outputs && (_outputs$ = outputs[0]) !== null && _outputs$ !== void 0 && (_outputs$ = _outputs$.value) !== null && _outputs$ !== void 0 && _outputs$.error) {
-            errorMsg = outputs[0].value.error;
-          }
-          _reactHotToast.toast.error("Node ".concat(id, " failed"));
-          var _currentHistory = data.outputHistory || [];
-          data.onDataChange(id, {
-            isLoading: false,
-            errorMsg: errorMsg,
-            outputHistory: _currentHistory
-          });
-          clearInterval(interval);
-        }
-      })["catch"](function (error) {
-        console.log(error);
-        clearInterval(interval);
-        data.onDataChange(id, {
-          isLoading: false
-        });
-        _reactHotToast.toast.error("Failed to get workflow status Text ".concat(id.replace(/^\D+/g, "")));
-      });
-    };
-    _check();
-    interval = setInterval(_check, 500);
-  };
-  var inFlightRef = (0, _react.useRef)(false);
-  var handleRunSingleNode = /*#__PURE__*/function () {
-    var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
-      var _nodeSchemas$categori2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _error$response, _t;
+  var handleDeleteHistory = /*#__PURE__*/function () {
+    var _ref2 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(e) {
+      var itemToDelete, newHistory, _error$response, _t;
       return _regenerator().w(function (_context) {
         while (1) switch (_context.p = _context.n) {
           case 0:
-            _context.p = 0;
-            data.onDataChange(id, {
-              isLoading: true
-            });
-            _context.n = 1;
-            return data.handleSaveWorkFlow();
-          case 1:
-            workflow_id = _context.v;
-            if (workflow_id) {
-              _context.n = 2;
+            e.stopPropagation();
+            if (!window.confirm("Вы уверены, что хотите удалить эту запись из истории?")) {
+              _context.n = 4;
               break;
             }
-            _reactHotToast.toast.error("Failed to save workflow before running node");
-            data.onDataChange(id, {
-              isLoading: false
-            });
-            return _context.a(2);
+            _context.p = 1;
+            itemToDelete = outputHistory[currentHistoryIndex];
+            _context.n = 2;
+            return _axios["default"]["delete"]("/api/workflow/history/".concat(itemToDelete.id));
           case 2:
-            modelSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori2 = nodeSchemas.categories) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.text) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.models[selectedModel.id]) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.input_schema) === null || _nodeSchemas$categori2 === void 0 || (_nodeSchemas$categori2 = _nodeSchemas$categori2.schemas) === null || _nodeSchemas$categori2 === void 0 ? void 0 : _nodeSchemas$categori2.input_data;
-            if (!(!modelSchema || !modelSchema.properties)) {
-              _context.n = 3;
-              break;
-            }
-            _reactHotToast.toast.error("No input schema found for this model");
-            data.onDataChange(id, {
-              isLoading: false
+            newHistory = outputHistory.filter(function (_, i) {
+              return i !== currentHistoryIndex;
             });
-            return _context.a(2);
-          case 3:
-            params = {};
-            inputSchema = modelSchema.properties;
-            localSources = formValues || {};
-            for (_i = 0, _Object$entries = Object.entries(inputSchema); _i < _Object$entries.length; _i++) {
-              _Object$entries$_i = _slicedToArray(_Object$entries[_i], 2), key = _Object$entries$_i[0], meta = _Object$entries$_i[1];
-              if (localSources.hasOwnProperty(key)) {
-                params[key] = localSources[key];
-              } else {
-                params[key] = (_meta$default2 = meta["default"]) !== null && _meta$default2 !== void 0 ? _meta$default2 : null;
-              }
-            }
-            _context.n = 4;
-            return _axios["default"].post("/api/workflow/".concat(workflow_id, "/node/").concat(id, "/run"), {
-              run_id: runId,
-              model: selectedModel.id,
-              params: params,
-              cost: generationCost,
-              node_id: "AI Text"
+            data.updateNodeData(id, {
+              outputHistory: newHistory
             });
-          case 4:
-            response = _context.v;
-            _r = response.data;
-            _nd = _r && _r.nodes && (_r.nodes[id] || Object.values(_r.nodes)[0]);
-            _lt = _nd && _nd[_nd.length - 1];
-            if (_lt && (_lt.status === "succeeded" || _lt.status === "completed") && _lt.result && _lt.result.outputs) {
-              _o = _lt.result.outputs;
-              data && data.onDataChange && data.onDataChange(id, {
-                outputs: _o,
-                resultUrl: _o[0] && _o[0].value || "",
-                isLoading: false,
-                errorMsg: null,
-                outputHistory: (data.outputHistory || []).concat([_lt])
-              });
-            } else if (_lt && _lt.status === "failed") {
-              data && data.onDataChange && data.onDataChange(id, {
-                isLoading: false,
-                errorMsg: "Generation failed"
-              });
+            if (newHistory.length === 0) {
+              setCurrentHistoryIndex(-1);
             } else {
-              pollNodeStatus(_r.run_id);
+              setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
             }
-            _context.n = 6;
+            _reactHotToast.toast.success("Запись удалена");
+            _context.n = 4;
             break;
-          case 5:
-            _context.p = 5;
+          case 3:
+            _context.p = 3;
             _t = _context.v;
-            data.onDataChange(id, {
-              isLoading: false
-            });
-            _reactHotToast.toast.error(((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Error running node");
+            _reactHotToast.toast.error(((_error$response = _t.response) === null || _error$response === void 0 || (_error$response = _error$response.data) === null || _error$response === void 0 ? void 0 : _error$response.detail) || "Не удалось удалить запись");
             console.error(_t);
-          case 6:
-            ;
-          case 7:
+          case 4:
             return _context.a(2);
         }
-      }, _callee, null, [[0, 5]]);
+      }, _callee, null, [[1, 3]]);
     }));
-    return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref1.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+    return function handleDeleteHistory(_x) {
+      return _ref2.apply(this, arguments);
     };
   }();
-  var handleDeleteNode = function handleDeleteNode() {
-    if (window.confirm("Are you sure you want to delete this ".concat(id, " node?"))) {
-      setNodes(function (nds) {
-        return nds.filter(function (n) {
-          return n.id !== id;
-        });
-      });
-      setEdges(function (eds) {
-        return eds.filter(function (e) {
-          return e.source !== id && e.target !== id;
-        });
-      });
-      _reactHotToast.toast.success("Deleted node ".concat(id));
-    }
-    ;
-  };
-  var hasPrompt = properties && "prompt" in properties && !((_data$selectedModel3 = data.selectedModel) !== null && _data$selectedModel3 !== void 0 && (_data$selectedModel3 = _data$selectedModel3.id) !== null && _data$selectedModel3 !== void 0 && _data$selectedModel3.includes("passthrough"));
-  var hasImagesList = properties && "images_list" in properties && !((_data$selectedModel4 = data.selectedModel) !== null && _data$selectedModel4 !== void 0 && (_data$selectedModel4 = _data$selectedModel4.id) !== null && _data$selectedModel4 !== void 0 && _data$selectedModel4.includes("passthrough"));
-  var hasImageUrl = properties && "image_url" in properties && !((_data$selectedModel5 = data.selectedModel) !== null && _data$selectedModel5 !== void 0 && (_data$selectedModel5 = _data$selectedModel5.id) !== null && _data$selectedModel5 !== void 0 && _data$selectedModel5.includes("passthrough"));
-  var hasSystemPrompt = properties && "system_prompt" in properties && !((_data$selectedModel6 = data.selectedModel) !== null && _data$selectedModel6 !== void 0 && (_data$selectedModel6 = _data$selectedModel6.id) !== null && _data$selectedModel6 !== void 0 && _data$selectedModel6.includes("passthrough"));
+  var currentOutputList = currentHistoryIndex !== -1 && outputHistory[currentHistoryIndex] ? ((_outputHistory$curren = outputHistory[currentHistoryIndex]) === null || _outputHistory$curren === void 0 || (_outputHistory$curren = _outputHistory$curren.result) === null || _outputHistory$curren === void 0 ? void 0 : _outputHistory$curren.outputs) || [] : data.outputs || [];
+  var currentOutput = currentOutputList.length > 0 ? ((_currentOutputList$cu = currentOutputList[currentOutputIndex]) === null || _currentOutputList$cu === void 0 ? void 0 : _currentOutputList$cu.value) || ((_currentOutputList$ = currentOutputList[0]) === null || _currentOutputList$ === void 0 ? void 0 : _currentOutputList$.value) || data.resultUrl : data.resultUrl;
+  var setNodes = data.setNodes,
+    setEdges = data.setEdges;
   (0, _react.useEffect)(function () {
+    if (!setEdges) return;
     var timeout = setTimeout(function () {
       var validHandles = [hasPrompt && "textInput", hasImageUrl && "textInput2", hasImagesList && "textInput3", hasSystemPrompt && "textInput4"].filter(Boolean);
       setEdges(function (prevEdges) {
@@ -457,121 +152,6 @@ var TextGeneration = function TextGeneration(_ref) {
     };
   }, [hasPrompt, hasImageUrl, hasImagesList, hasSystemPrompt, id, setEdges]);
   (0, _react.useEffect)(function () {
-    var connectedInputs = {};
-    inputHandles.forEach(function (h) {
-      connectedInputs[h] = edges.some(function (e) {
-        return e.target === id && e.targetHandle === h;
-      });
-    });
-    var connectedOutputs = {};
-    outputHandles.forEach(function (h) {
-      connectedOutputs[h] = edges.some(function (e) {
-        return e.source === id && e.sourceHandle === h;
-      });
-    });
-    setConnectedInputs(connectedInputs);
-    setConnectedOutputs(connectedOutputs);
-  }, [edges, id]);
-  var handlePrev = function handlePrev(e) {
-    e.stopPropagation();
-    if (currentHistoryIndex > 0) {
-      var _outputHistory$newInd;
-      var newIndex = currentHistoryIndex - 1;
-      setCurrentHistoryIndex(newIndex);
-      setCurrentOutputIndex(0);
-      var viewing = (_outputHistory$newInd = outputHistory[newIndex]) === null || _outputHistory$newInd === void 0 || (_outputHistory$newInd = _outputHistory$newInd.result) === null || _outputHistory$newInd === void 0 || (_outputHistory$newInd = _outputHistory$newInd.outputs) === null || _outputHistory$newInd === void 0 || (_outputHistory$newInd = _outputHistory$newInd[0]) === null || _outputHistory$newInd === void 0 ? void 0 : _outputHistory$newInd.value;
-      setNodes(function (nds) {
-        return nds.map(function (n) {
-          if (n.id === id) {
-            return _objectSpread(_objectSpread({}, n), {}, {
-              data: _objectSpread(_objectSpread({}, n.data), {}, {
-                viewingOutput: viewing
-              })
-            });
-          }
-          return n;
-        });
-      });
-    }
-  };
-  var handleNext = function handleNext(e) {
-    e.stopPropagation();
-    if (currentHistoryIndex < outputHistory.length - 1) {
-      var _outputHistory$newInd2;
-      var newIndex = currentHistoryIndex + 1;
-      setCurrentHistoryIndex(newIndex);
-      setCurrentOutputIndex(0);
-      var viewing = (_outputHistory$newInd2 = outputHistory[newIndex]) === null || _outputHistory$newInd2 === void 0 || (_outputHistory$newInd2 = _outputHistory$newInd2.result) === null || _outputHistory$newInd2 === void 0 || (_outputHistory$newInd2 = _outputHistory$newInd2.outputs) === null || _outputHistory$newInd2 === void 0 || (_outputHistory$newInd2 = _outputHistory$newInd2[0]) === null || _outputHistory$newInd2 === void 0 ? void 0 : _outputHistory$newInd2.value;
-      setNodes(function (nds) {
-        return nds.map(function (n) {
-          if (n.id === id) {
-            return _objectSpread(_objectSpread({}, n), {}, {
-              data: _objectSpread(_objectSpread({}, n.data), {}, {
-                viewingOutput: viewing
-              })
-            });
-          }
-          return n;
-        });
-      });
-    }
-  };
-  var handleDeleteHistory = /*#__PURE__*/function () {
-    var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2(e) {
-      var currentHistory, _data$onDataChange3, newHistory, _error$response2, _t2;
-      return _regenerator().w(function (_context2) {
-        while (1) switch (_context2.p = _context2.n) {
-          case 0:
-            e.stopPropagation();
-            currentHistory = outputHistory[currentHistoryIndex];
-            if (!(!currentHistory || !currentHistory.node_run_id)) {
-              _context2.n = 1;
-              break;
-            }
-            return _context2.a(2);
-          case 1:
-            if (!window.confirm("Are you sure you want to delete this history entry?")) {
-              _context2.n = 5;
-              break;
-            }
-            _context2.p = 2;
-            _context2.n = 3;
-            return _axios["default"]["delete"]("/api/workflow/node-run/".concat(currentHistory.node_run_id));
-          case 3:
-            newHistory = outputHistory.filter(function (_, i) {
-              return i !== currentHistoryIndex;
-            });
-            data === null || data === void 0 || (_data$onDataChange3 = data.onDataChange) === null || _data$onDataChange3 === void 0 || _data$onDataChange3.call(data, id, _objectSpread({
-              outputHistory: newHistory
-            }, newHistory.length === 0 ? {
-              outputs: [],
-              resultUrl: null
-            } : {}));
-            if (newHistory.length === 0) {
-              setCurrentHistoryIndex(-1);
-            } else {
-              setCurrentHistoryIndex(Math.max(0, currentHistoryIndex - 1));
-            }
-            _reactHotToast.toast.success("History entry deleted");
-            _context2.n = 5;
-            break;
-          case 4:
-            _context2.p = 4;
-            _t2 = _context2.v;
-            _reactHotToast.toast.error(((_error$response2 = _t2.response) === null || _error$response2 === void 0 || (_error$response2 = _error$response2.data) === null || _error$response2 === void 0 ? void 0 : _error$response2.detail) || "Failed to delete history entry");
-            console.error(_t2);
-          case 5:
-            return _context2.a(2);
-        }
-      }, _callee2, null, [[2, 4]]);
-    }));
-    return function handleDeleteHistory(_x) {
-      return _ref10.apply(this, arguments);
-    };
-  }();
-  var currentOutputList = currentHistoryIndex !== -1 && outputHistory[currentHistoryIndex] ? ((_outputHistory$curren = outputHistory[currentHistoryIndex]) === null || _outputHistory$curren === void 0 || (_outputHistory$curren = _outputHistory$curren.result) === null || _outputHistory$curren === void 0 ? void 0 : _outputHistory$curren.outputs) || [] : data.outputs || [];
-  var currentOutput = currentOutputList.length > 0 ? ((_currentOutputList$cu = currentOutputList[currentOutputIndex]) === null || _currentOutputList$cu === void 0 ? void 0 : _currentOutputList$cu.value) || ((_currentOutputList$ = currentOutputList[0]) === null || _currentOutputList$ === void 0 ? void 0 : _currentOutputList$.value) || data.resultUrl : data.resultUrl;
-  (0, _react.useEffect)(function () {
     var textarea = textareaRef.current;
     if (textarea) {
       textarea.style.height = "0px";
@@ -584,20 +164,20 @@ var TextGeneration = function TextGeneration(_ref) {
       minHeight: 280,
       '--loader-color': '#2563eb'
     },
-    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]/95 backdrop-blur-sm\n      ")
+    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-2xl border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
   }, data.isLoading && /*#__PURE__*/_react["default"].createElement("div", {
     className: "loader-border"
   }), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 absolute -top-5 left-0"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-zinc-400 text-[10px] font-medium tracking-wider uppercase"
-  }, "Text ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
+  }, "\u0422\u0435\u043A\u0441\u0442 ", id.replace(/^\D+/g, "")), generationCost !== null && !(selectedModel !== null && selectedModel !== void 0 && selectedModel.id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-xs text-blue-500 -mt-0.5 font-medium flex items-center gap-1 opacity-80"
   }, isRefreshingCost ? /*#__PURE__*/_react["default"].createElement("span", {
     className: "flex items-center gap-1 italic text-blue-200"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-2 h-2 border-[1.5px] border-blue-200/30 border-t-blue-400 rounded-full animate-spin"
-  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Free' : "$".concat(generationCost)))), /*#__PURE__*/_react["default"].createElement("div", {
+  })) : /*#__PURE__*/_react["default"].createElement("span", null, generationCost === 0 ? 'Бесплатно' : "\u2248 ".concat(generationCost.toFixed(2), " \u20BD")))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3"
@@ -610,14 +190,14 @@ var TextGeneration = function TextGeneration(_ref) {
   })), /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-xs font-bold text-zinc-100"
   }, selectedModel.name)), outputHistory.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute -top-10 right-0 bg-[#0c0d0f]/95 flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
+    className: "absolute -top-10 right-0 bg-[#0c0d0f] flex items-center gap-1 p-1 border border-white/10 rounded-full ml-auto"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handlePrev,
     disabled: currentHistoryIndex <= 0,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all",
-    title: "Previous"
+    title: "\u041D\u0430\u0437\u0430\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -631,7 +211,7 @@ var TextGeneration = function TextGeneration(_ref) {
     suppressHydrationWarning: true,
     onClick: handleDeleteHistory,
     className: "p-1 hover:bg-red-500/10 rounded-full text-zinc-400 hover:text-red-500 transition-colors flex items-center justify-center",
-    title: "Delete history"
+    title: "\u0423\u0434\u0430\u043B\u0438\u0442\u044C \u0438\u0441\u0442\u043E\u0440\u0438\u044E"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoTrashOutline, {
     size: 10
   })), /*#__PURE__*/_react["default"].createElement("div", {
@@ -648,14 +228,14 @@ var TextGeneration = function TextGeneration(_ref) {
     onClick: handleNext,
     disabled: currentHistoryIndex >= outputHistory.length - 1,
     className: "w-5 h-5 flex items-center justify-center rounded-full hover:bg-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all",
-    title: "Next"
+    title: "\u0412\u043F\u0435\u0440\u0435\u0434"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 10
   }))), /*#__PURE__*/_react["default"].createElement(_NodeOptionsMenu["default"], {
     nodeId: id,
     onDuplicate: data.duplicateNode,
     onDelete: handleDeleteNode
-  }))), ((_data$selectedModel7 = data.selectedModel) === null || _data$selectedModel7 === void 0 ? void 0 : _data$selectedModel7.id) === "text-passthrough" ? /*#__PURE__*/_react["default"].createElement("div", {
+  }))), ((_data$selectedModel = data.selectedModel) === null || _data$selectedModel === void 0 ? void 0 : _data$selectedModel.id) === "text-passthrough" ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-full h-full flex-1 flex flex-col"
   }, /*#__PURE__*/_react["default"].createElement(_UploadNode["default"], {
     id: id,
@@ -667,7 +247,20 @@ var TextGeneration = function TextGeneration(_ref) {
     uploadType: "text",
     acceptType: "text"
   })) : /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-center flex-1 w-full h-full bg-black/20"
+    className: "flex flex-col flex-1 w-full h-full bg-black/20"
+  }, connectedInputs.textInput && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "mx-3 mt-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 animate-in fade-in slide-in-from-top-1 duration-300"
+  }, /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, {
+    className: "text-blue-400",
+    size: 12
+  }), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col overflow-hidden"
+  }, /*#__PURE__*/_react["default"].createElement("span", {
+    className: "text-[9px] text-blue-400 font-bold uppercase tracking-tight"
+  }, "\u0412\u0445\u043E\u0434\u044F\u0449\u0438\u0439 \u0442\u0435\u043A\u0441\u0442 \u043F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D"), /*#__PURE__*/_react["default"].createElement("span", {
+    className: "text-[8px] text-blue-300/60 truncate max-w-[200px]"
+  }, formValues.prompt || "Ожидание данных..."))), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center justify-center flex-1 w-full h-full p-3"
   }, data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-2.5 w-full h-full overflow-hidden animate-pulse"
   }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -686,16 +279,16 @@ var TextGeneration = function TextGeneration(_ref) {
     className: "h-2.5 bg-white/5 rounded-full w-[60%]"
   })) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 w-full"
-  }, data.errorMsg || "Generation failed") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, data.errorMsg || "Ошибка генерации") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "relative flex flex-col gap-2 bg-zinc-900/30 rounded-xl border border-zinc-800/50 w-full h-full p-2"
   }, /*#__PURE__*/_react["default"].createElement("textarea", {
     ref: textareaRef,
     readOnly: true,
     value: currentOutput || "",
-    placeholder: "Output will appear here...",
+    placeholder: "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C...",
     className: "w-full h-full max-h-96 text-xs leading-relaxed outline-none bg-transparent resize-none text-zinc-100 overflow-hidden font-medium placeholder:italic placeholder:opacity-50"
   }), currentOutputList.length > 1 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/10 opacity-0 group-hover/text:opacity-100 transition-opacity"
+    className: "absolute -bottom-1 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black px-2 py-0.5 rounded-full border border-white/10 opacity-0 group-hover/text:opacity-100 transition-opacity"
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
@@ -723,12 +316,63 @@ var TextGeneration = function TextGeneration(_ref) {
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 12
   })))) : /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col items-center justify-center gap-2"
+  }, function () {
+    var extra = Array.isArray(formValues.images_list) ? formValues.images_list.filter(Boolean) : [];
+    var all = [].concat(_toConsumableArray(formValues.image_url ? [{
+      url: formValues.image_url,
+      primary: true
+    }] : []), _toConsumableArray(extra.map(function (u) {
+      return {
+        url: u,
+        primary: false
+      };
+    })));
+    if (!all.length) return null;
+    var removeAt = function removeAt(item) {
+      setFormValues(function (cfv) {
+        var updated = _objectSpread({}, cfv);
+        if (item.primary) {
+          var rest = Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : [];
+          updated.image_url = rest.length ? rest[0] : null;
+          updated.images_list = rest.slice(1);
+        } else {
+          updated.images_list = (Array.isArray(updated.images_list) ? updated.images_list.filter(Boolean) : []).filter(function (u) {
+            return u !== item.url;
+          });
+        }
+        return updated;
+      });
+    };
+    return /*#__PURE__*/_react["default"].createElement("div", {
+      className: "w-full px-3 pb-2"
+    }, /*#__PURE__*/_react["default"].createElement("p", {
+      className: "text-[10px] font-semibold text-emerald-300 uppercase tracking-wider mb-1.5"
+    }, "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u043D\u044B\u0435 \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u044F (", all.length, ")"), /*#__PURE__*/_react["default"].createElement("div", {
+      className: "grid grid-cols-4 gap-1.5"
+    }, all.map(function (item, i) {
+      return /*#__PURE__*/_react["default"].createElement("div", {
+        key: "".concat(item.url, "-").concat(i),
+        className: "relative group/refimg rounded-lg overflow-hidden border border-emerald-500/30 bg-black aspect-square"
+      }, /*#__PURE__*/_react["default"].createElement("img", {
+        src: item.url,
+        alt: "ref",
+        className: "w-full h-full object-cover"
+      }), /*#__PURE__*/_react["default"].createElement("button", {
+        type: "button",
+        onClick: function onClick() {
+          return removeAt(item);
+        },
+        className: "absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity z-10"
+      }, "\xD7"));
+    })));
+  }(), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-center justify-center text-zinc-400 gap-2"
   }, /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, {
     size: 32
   }), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[10px] italic"
-  }, "Result appeared here..."))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+  }, "\u0420\u0435\u0437\u0443\u043B\u044C\u0442\u0430\u0442 \u043F\u043E\u044F\u0432\u0438\u0442\u0441\u044F \u0437\u0434\u0435\u0441\u044C..."))))), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "textInput",
@@ -743,8 +387,12 @@ var TextGeneration = function TextGeneration(_ref) {
     className: "\n          !rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.textInput ? '!bg-blue-500 !border-zinc-900 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : '!bg-zinc-900 !border-blue-500/50 hover:!border-blue-500 shadow-sm', "\n        "),
     "data-type": "blue"
   }), hasPrompt && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-9 top-[100px] text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 ".concat(data.activeHandleColor === "blue" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0")
-  }, "TEXT"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "blue" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"),
+    style: {
+      top: 100,
+      left: -40
+    }
+  }, "\u0422\u0415\u041A\u0421\u0422"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "textInput2",
@@ -759,8 +407,12 @@ var TextGeneration = function TextGeneration(_ref) {
     className: "\n          !rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.textInput2 ? '!bg-emerald-500 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]' : '!bg-zinc-900 !border-emerald-500/50 hover:!border-emerald-500 shadow-sm', "\n        "),
     "data-type": "green"
   }), hasImageUrl && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-11 top-[150px] text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 ".concat(data.activeHandleColor === "green" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0")
-  }, "IMAGE"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "green" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"),
+    style: {
+      top: 150,
+      left: -45
+    }
+  }, "\u0418\u0417\u041E\u0411\u0420\u0410\u0416\u0415\u041D\u0418\u0415"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "textInput3",
@@ -775,8 +427,12 @@ var TextGeneration = function TextGeneration(_ref) {
     className: "\n          !rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.textInput3 ? '!bg-emerald-500 !border-zinc-900 shadow-[0_0_15px_rgba(16,185,129,0.8)]' : '!bg-zinc-900 !border-emerald-500/50 hover:!border-emerald-500 shadow-sm', "\n        "),
     "data-type": "green"
   }), hasImagesList && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-11 top-[200px] text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 ".concat(data.activeHandleColor === "green" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0")
-  }, "IMAGE"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-[10px] font-bold tracking-tight text-emerald-500 transition-all duration-300 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "green" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"),
+    style: {
+      top: 200,
+      left: -45
+    }
+  }, "\u0418\u0417\u041E\u0411\u0420\u0410\u0416\u0415\u041D\u0418\u0415"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "target",
     position: _reactflow.Position.Left,
     id: "textInput4",
@@ -791,8 +447,12 @@ var TextGeneration = function TextGeneration(_ref) {
     className: "\n          !rounded-full !border-[3px] !left-[-8px] transition-all\n          ".concat(connectedInputs.textInput4 ? '!bg-blue-600 !border-zinc-900 shadow-[0_0_15px_rgba(37,99,235,0.8)]' : '!bg-zinc-900 !border-blue-600/50 hover:!border-blue-600 shadow-sm', "\n        "),
     "data-type": "blue"
   }), hasSystemPrompt && /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -left-14 top-[250px] text-[10px] font-bold tracking-tight text-blue-600 transition-all duration-300 ".concat(data.activeHandleColor === "blue" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0")
-  }, "SYSTEM"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
+    className: "absolute text-[10px] font-bold tracking-tight text-blue-600 transition-all duration-300 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "blue" ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"),
+    style: {
+      top: 250,
+      left: -50
+    }
+  }, "\u0421\u0418\u0421\u0422\u0415\u041C\u041D\u042B\u0419"), /*#__PURE__*/_react["default"].createElement(_reactflow.Handle, {
     type: "source",
     position: _reactflow.Position.Right,
     id: "textOutput",
@@ -805,7 +465,11 @@ var TextGeneration = function TextGeneration(_ref) {
     className: "\n          !rounded-full !border-[3px] !right-[-8px] transition-all\n          ".concat(connectedOutputs.textOutput ? '!bg-blue-500 !border-zinc-900 shadow-[0_0_15px_rgba(59,130,246,0.8)]' : '!bg-zinc-900 !border-blue-500/50 hover:!border-blue-500 shadow-sm', "\n        "),
     "data-type": "blue"
   }), /*#__PURE__*/_react["default"].createElement("p", {
-    className: "absolute -right-9 top-[100px] text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 ".concat(data.activeHandleColor === "blue" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0")
-  }, "TEXT"));
+    className: "absolute text-[10px] font-bold tracking-tight text-blue-500 transition-all duration-300 pointer-events-none whitespace-nowrap ".concat(data.activeHandleColor === "blue" ? "opacity-100 translate-x-0" : "opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"),
+    style: {
+      top: 100,
+      right: -40
+    }
+  }, "\u0422\u0415\u041A\u0421\u0422"));
 };
 var _default = exports["default"] = TextGeneration;
