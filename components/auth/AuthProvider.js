@@ -144,8 +144,11 @@ export function AuthProvider({ children }) {
     // Every logged-out visitor is greeted with the registration modal on each
     // visit (until they sign up). It stays dismissible so they can still look
     // around, but reappears on the next load while they remain unregistered.
+    // NOTE: We don't force it on legal pages (/terms, /privacy) so users can read them.
     useEffect(() => {
         if (loading || user) return;
+        const path = window.location.pathname;
+        if (path === '/terms' || path === '/privacy') return;
         setLoginOpen(true);
     }, [loading, user]);
 

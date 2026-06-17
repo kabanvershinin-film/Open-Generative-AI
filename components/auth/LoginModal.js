@@ -50,6 +50,12 @@ export default function LoginModal() {
 
     const isRegister = mode === 'register';
     const isPhone = method === 'phone';
+    
+    // Don't show the modal if we are on a legal page, even if loginOpen is true.
+    // This prevents the modal from blocking the terms/privacy text.
+    const isLegalPage = typeof window !== 'undefined' && (window.location.pathname === '/terms' || window.location.pathname === '/privacy');
+    if (!loginOpen || isLegalPage) return null;
+
     const inputCls = 'w-full px-4 py-3 rounded-xl bg-white/[0.08] border border-purple-300/25 text-white text-sm outline-none transition-colors placeholder:text-white/45 focus:border-purple-400 focus:bg-white/[0.12] shadow-sm shadow-purple-500/10';
     const switchMethod = (nextMethod) => {
         setMethod(nextMethod);
