@@ -1636,28 +1636,115 @@ export async function GET(request, { params }) {
         }
     }
 
-    // GET /api/workflow/debug-models?key=...
-    if (path[0] === 'debug-models') {
-        const { searchParams } = new URL(request.url);
-        const cookieKey = request.headers.get('cookie')?.match(/muapi_key=([^;]+)/)?.[1] || '';
-        const apiKey = searchParams.get('key')
-            || request.headers.get('authorization')?.replace('Bearer ', '')
-            || cookieKey
-            || '';
+    // GET /api/workflow/debug-tos-index — dumps the raw index from TOS
+    if (path[0] === 'debug-tos-index') {
+        const user = await getUserForGallery(request);
+        if (!isAdminUser(user)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        const data = await tosLoadIndex();
+        return NextResponse.json(data);
+    }
+
+    // GET /api/workflow/debug-tos-files — lists files in workflows/ folder
+    if (path[0] === 'debug-tos-files') {
+        const user = await getUserForGallery(request);
+        if (!isAdminUser(user)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        
         try {
-            const r = await fetch(`${MEMEFAST}/v1/models`, {
-                headers: { 'Authorization': `Bearer ${apiKey}` },
+            const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+            const date = iso.slice(0, 8);
+            const datetime = iso;
+            const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+            // TOS ListObjectsV2: GET /?list-type=2&prefix=workflows/
+            const path = '/';
+            const query = 'list-type=2&prefix=workflows/';
+            
+            const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
+            const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
+            const canonical = `GET\n${path}\n${query}\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
+            
+            const scope = `${date}/${TOS_REGION}/tos/request`;
+            const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+            const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
+            const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
+            const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+
+            const r = await fetch(`https://${host}${path}?${query}`, {
+                headers: {
+                    'Authorization': auth,
+                    'X-Tos-Content-Sha256': EMPTY_SHA256,
+                    'X-Tos-Date': datetime,
+                }
             });
-            const data = await r.json();
-            const ids = (data.data || []).map(m => m.id).sort();
-            return NextResponse.json({ ok: r.ok, status: r.status, count: ids.length, models: ids });
+            const xml = await r.text();
+            // Parse XML for <Key> entries
+            const keys = xml.match(/<Key>([^<]+)<\/Key>/g)?.map(k => k.replace(/<\/?Key>/g, '')) || [];
+            return NextResponse.json({ keys, raw: xml.slice(0, 2000) });
         } catch (e) {
-            return NextResponse.json({ ok: false, error: e.message });
+            return NextResponse.json({ error: e.message });
         }
     }
 
-    // Получить список пользователей с доступом: /api/workflow/{id}/shares
-    if (path[1] === 'shares') {
+    // GET /api/workflow/debug-tos-restore — attempts to re-index all workflows found in TOS
+    if (path[0] === 'debug-tos-restore') {
+        const user = await getUserForGallery(request);
+        if (!isAdminUser(user)) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+        
+        try {
+            // 1. List all files in workflows/
+            const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+            const date = iso.slice(0, 8);
+            const datetime = iso;
+            const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+            const query = 'list-type=2&prefix=workflows/';
+            const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
+            const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
+            const canonical = `GET\n/\n${query}\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
+            const scope = `${date}/${TOS_REGION}/tos/request`;
+            const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+            const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
+            const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
+            const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+
+            const r = await fetch(`https://${host}/?${query}`, {
+                headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime }
+            });
+            const xml = await r.text();
+            const keys = xml.match(/<Key>workflows\/wf_[^<]+.json<\/Key>/g)?.map(k => k.replace(/<\/?Key>/g, '')) || [];
+            
+            // 2. Load current index
+            const index = await tosLoadIndex();
+            const indexedIds = new Set(index.map(w => w.id));
+            
+            // 3. Find missing workflows
+            const missing = [];
+            for (const key of keys) {
+                const id = key.replace('workflows/', '').replace('.json', '');
+                if (!indexedIds.has(id)) {
+                    const wf = await tosFetchJson(key);
+                    if (wf) {
+                        missing.push({
+                            id,
+                            name: wf.name || 'Untitled',
+                            updated_at: wf.updated_at || new Date().toISOString(),
+                            thumbnail: wf.thumbnail || null,
+                            owner_id: wf.owner_id || null
+                        });
+                    }
+                }
+            }
+            
+            // 4. Update index if missing found
+            if (missing.length > 0) {
+                const nextIndex = [...missing, ...index];
+                await tosUpload('workflows/index.json', Buffer.from(JSON.stringify(nextIndex)), 'application/json');
+                return NextResponse.json({ restored: missing.length, items: missing });
+            }
+            
+            return NextResponse.json({ restored: 0, message: 'Index is up to date' });
+        } catch (e) {
+            return NextResponse.json({ error: e.message });
+        }
+    }
         const wfId = path[0];
         const user = await getUserForGallery(request);
         if (!user?.id) return NextResponse.json([]);
