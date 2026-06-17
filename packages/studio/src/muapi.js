@@ -572,12 +572,36 @@ async function generateSeedanceArk(modelInfo, params) {
     const fast = /fast/.test(modelInfo?.apiId || modelInfo?.id || '');
     
     // Ark handles face_asset for trusted assets.
-    // We pass the face asset URI in face_asset field, 
+    // We pass the face asset URI in face_asset field of each image, 
     // but for image_urls we must use a real HTTP URL (thumbnail) to avoid validation errors.
     const faceAsset = params.face_asset;
     const initialImages = Array.isArray(params.image_urls) ? [...params.image_urls] : [];
-    if (params.face_thumbnail && !initialImages.includes(params.face_thumbnail)) {
-        initialImages.unshift(params.face_thumbnail);
+    
+    // Convert images to objects with face_asset if needed
+    let images = initialImages.map(u => (typeof u === 'string' ? { url: u } : u));
+    
+    if (params.face_thumbnail) {
+        const thumb = params.face_thumbnail;
+        const exists = images.some(img => img.url === thumb);
+        if (!exists) {
+            images.unshift({ url: thumb, face_asset: faceAsset || undefined });
+        } else {
+            // Update existing image with face_asset
+            images = images.map(img => img.url === thumb ? { ...img, face_asset: faceAsset || undefined } : img);
+        }
+    }
+
+    // Construct the request body. 
+    // We must be careful not to drop images[0] (which often contains the face_asset)
+    // if params.image_url is also provided.
+    let finalImageUrl = params.image_url || images[0] || undefined;
+    let finalImageUrls = params.image_url ? images : (images.length > 1 ? images.slice(1) : undefined);
+    
+    // Remove duplication if the main image is also in the references list
+    if (finalImageUrl && Array.isArray(finalImageUrls)) {
+        const mainUrl = typeof finalImageUrl === 'string' ? finalImageUrl : finalImageUrl.url;
+        finalImageUrls = finalImageUrls.filter(img => (typeof img === 'string' ? img : img.url) !== mainUrl);
+        if (finalImageUrls.length === 0) finalImageUrls = undefined;
     }
 
     const body = {
@@ -585,8 +609,8 @@ async function generateSeedanceArk(modelInfo, params) {
         model: modelInfo?.apiId || modelInfo?.id || undefined,
         is_i2v: params.is_i2v ?? false,
         prompt: params.prompt || '',
-        image_url: params.image_url || initialImages[0] || undefined,
-        image_urls: initialImages.length > 1 ? initialImages.slice(1) : undefined,
+        image_url: finalImageUrl,
+        image_urls: finalImageUrls,
         video_url: params.video_url || undefined,
         video_urls: Array.isArray(params.video_urls) ? params.video_urls : undefined,
         audio_url: params.audio_url || undefined,
@@ -594,7 +618,7 @@ async function generateSeedanceArk(modelInfo, params) {
         resolution: params.resolution || undefined,
         ratio: params.aspect_ratio || undefined,
         duration: params.duration || undefined,
-        face_asset: faceAsset || undefined,
+        face_asset: params.face_asset || undefined,
     };
 
     // Step 1: submit task (fast — just creates the Ark task and returns taskId)

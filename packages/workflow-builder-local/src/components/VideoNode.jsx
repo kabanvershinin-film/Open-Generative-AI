@@ -347,7 +347,7 @@ const VideoGeneration = ({ id, data, selected }) => {
     // MUST match the order logic in SeedancePromptNode.jsx so 图片1, 图片2, etc. refer to the right things.
     const findConnectedAssets = () => {
       const incoming = edges.filter(e => e.target === id);
-      const assets = { faces: [], images: [], videos: [], audios: [] };
+      const assets = { images: [], videos: [], audios: [] };
       const seen = new Set();
       
       const processSource = (sourceId) => {
@@ -360,17 +360,25 @@ const VideoGeneration = ({ id, data, selected }) => {
           const fv = sourceNode.data?.formValues || {};
           const rawAsset = fv.face_asset || sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           const asset = toAssetUri(rawAsset);
-          if (asset) {
-            assets.faces.push(asset);
-          }
+          
           // Always use the character_photo (HTTP URL) as the reference image.
           // Using asset:// in image_url causes "invalid_image_url" validation error in Ark.
           if (fv.character_photo) {
-            assets.images.push(fv.character_photo);
+            assets.images.push({
+              url: fv.character_photo,
+              face_asset: asset || undefined
+            });
+          } else if (asset) {
+            // If no photo, but we have an asset, we still need to pass it.
+            // But Seedance 2.0 requires a visual image for the face_asset to work.
+            assets.images.push({
+              url: "", // This might be an issue, but we don't have a photo
+              face_asset: asset
+            });
           }
         } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
           const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
-          if (url) assets.images.push(url);
+          if (url) assets.images.push({ url });
         } else if (sourceNode.type === "videoNode") {
           const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           if (url) assets.videos.push(url);
@@ -389,24 +397,20 @@ const VideoGeneration = ({ id, data, selected }) => {
     };
 
     const allAssets = findConnectedAssets();
-    const uniqueFaces = Array.from(new Set(allAssets.faces)).filter(f => f.startsWith("asset://"));
-    const uniqueImages = Array.from(new Set(allAssets.images));
+    const uniqueImages = allAssets.images;
     const uniqueVideos = Array.from(new Set(allAssets.videos));
     const uniqueAudios = Array.from(new Set(allAssets.audios));
+    const facesFound = uniqueImages.filter(img => img.face_asset).length;
 
-    console.log('[VideoNode] Connected assets found:', { uniqueFaces, uniqueImages, uniqueVideos, uniqueAudios });
+    console.log('[VideoNode] Connected assets found:', { facesFound, imageCount: uniqueImages.length, uniqueVideos, uniqueAudios });
 
-    if (uniqueFaces.length > 0 || uniqueImages.length > 0) {
-      toast(`Использую: ${uniqueFaces.length} лиц, ${uniqueImages.length} фото`, { icon: "🎨" });
+    if (facesFound > 0 || uniqueImages.length > 0) {
+      toast(`Использую: ${facesFound} лиц, ${uniqueImages.length} фото`, { icon: "🎨" });
     }
 
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
     
-    // Ark handles face_asset separately for trusted assets.
-    // Plain images should go in image_url/image_urls.
-    const faceAssetPayload = uniqueFaces.length > 0 ? (uniqueFaces.length > 1 ? uniqueFaces : uniqueFaces[0]) : undefined;
-
     const body = {
       fast,
       prompt: src.prompt || "",
@@ -419,7 +423,6 @@ const VideoGeneration = ({ id, data, selected }) => {
       resolution: src.resolution || undefined,
       ratio: src.aspect_ratio || src.ratio || undefined,
       duration: src.duration || undefined,
-      face_asset: faceAssetPayload,
     };
     
     console.log('[VideoNode] Submitting to Ark:', body);

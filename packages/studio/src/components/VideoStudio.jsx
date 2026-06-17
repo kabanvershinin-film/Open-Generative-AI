@@ -876,12 +876,18 @@ export default function VideoStudio({
           : null;
 
   // Per-kind label + ordinal for the @reference chip, e.g. 图片1, 视频2, 音频1.
-  // Note: faceAsset is always mapped to 图片1 if present.
+  // Note: faceAsset is always mapped to 图片1 if present (or 图片2 if uploadedImageUrl exists).
   const refLabel = (kind, index) => {
     const word = kind === "image" ? "图片" : kind === "video" ? "视频" : "音频";
-    // If we have a faceAsset, it will be the first image in the payload.
-    // So images from refFiles start from index + (faceAsset ? 1 : 0).
-    const actualIndex = kind === "image" && faceAsset ? index + 1 : index;
+    
+    let actualIndex = index;
+    if (kind === "image") {
+      // Offset by 1 if there's a main image (uploadedImageUrl)
+      if (uploadedImageUrl) actualIndex += 1;
+      // Offset by 1 if there's a character face asset
+      if (faceAsset) actualIndex += 1;
+    }
+    
     return `${word}${actualIndex}`;
   };
 
@@ -1446,6 +1452,7 @@ export default function VideoStudio({
             video_urls: readyRefs.filter((f) => f.kind === "video").map((f) => f.url),
             audio_urls: readyRefs.filter((f) => f.kind === "audio").map((f) => f.url),
             face_asset: faceAsset?.uri || undefined,
+            face_thumbnail: faceAsset?.thumbnail || undefined,
             is_i2v: i2vModels.some((m) => m.id === taskModel),
             onTaskId: (arkTaskId, bill) => {
               updateTask(taskId, { arkTaskId, bill });
@@ -2840,7 +2847,10 @@ export default function VideoStudio({
         onClose={() => setFacePickOpen(false)}
         onSelect={(assetUri, name, thumb) => {
           setFaceAsset({ uri: assetUri, name, thumbnail: thumb });
-          insertRefToken("图片1");
+          // If there's already a main image (uploadedImageUrl), the face asset 
+          // becomes 图片2, otherwise it's 图片1.
+          const label = uploadedImageUrl ? "图片2" : "图片1";
+          insertRefToken(label);
         }}
         onRegisterNew={() => setFaceRegOpen(true)}
       />
@@ -2851,7 +2861,8 @@ export default function VideoStudio({
         onClose={() => setFaceRegOpen(false)}
         onRegistered={(assetUri, displayName, photo) => {
           setFaceAsset({ uri: assetUri, name: displayName, thumbnail: photo || null });
-          insertRefToken(String(displayName || "лицо").trim().replace(/\s+/g, "_"));
+          const label = uploadedImageUrl ? "图片2" : "图片1";
+          insertRefToken(label);
         }}
       />
     </div>
