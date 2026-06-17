@@ -91,7 +91,7 @@ export default function LoginModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-md">
+        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-md">
             {/* Background Image */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <img
@@ -101,7 +101,7 @@ export default function LoginModal() {
                 />
             </div>
             
-            <div className="relative flex flex-col md:flex-row items-center gap-8 w-full max-w-5xl animate-in zoom-in-95 fade-in duration-300">
+            <div className="relative flex flex-col items-center gap-6 w-full max-w-2xl animate-in zoom-in-95 fade-in duration-300 md:translate-x-32">
                 {/* Main Auth Card */}
                 <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/80 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)]">
                     {/* glow */}
@@ -250,55 +250,50 @@ export default function LoginModal() {
                     </div>
                 </div>
 
-                {/* Right Side Information Card */}
-                <div className="w-full max-w-sm flex flex-col gap-5 animate-in slide-in-from-left-10 fade-in duration-500 delay-150">
-                    <div className="p-6 rounded-3xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl">
-                        <h3 className="text-purple-400 text-xs font-black uppercase tracking-widest mb-4">Юридическая информация</h3>
-                        <div className="space-y-4">
-                            <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-white/30 uppercase tracking-wider">Реквизиты</span>
-                                <div className="grid grid-cols-[50px_1fr] gap-y-1 text-xs text-white/70">
-                                    <span className="text-white/40">ИП</span>
-                                    <span>Вершинин Евгений Александрович</span>
-                                    <span className="text-white/40">ИНН</span>
-                                    <span className="font-mono">692700514344</span>
-                                    <span className="text-white/40">ОГРНИП</span>
-                                    <span className="font-mono">326690000024874</span>
-                                </div>
+                {/* Bottom Information Card */}
+                <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-bottom-5 fade-in duration-500 delay-150">
+                    <div className="p-5 rounded-3xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            {/* Legal Links */}
+                            <div className="flex items-center gap-4">
+                                <a 
+                                    href="/terms" 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1.5 group"
+                                >
+                                    Условия
+                                    <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
+                                </a>
+                                <div className="h-3 w-px bg-white/10" />
+                                <a 
+                                    href="/privacy" 
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1.5 group"
+                                >
+                                    Конфиденциальность
+                                    <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
+                                </a>
                             </div>
-                            
-                            <div className="h-px bg-white/5" />
-                            
-                            <div className="flex flex-col gap-3">
-                                <span className="text-[10px] text-white/30 uppercase tracking-wider">Документы</span>
-                                <div className="flex flex-col gap-2">
-                                    <a 
-                                        href="/terms" 
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-purple-600/10 hover:border-purple-500/30 transition-all group"
-                                    >
-                                        <span className="text-xs text-white/80 group-hover:text-purple-300 transition-colors">Условия использования</span>
-                                        <span className="text-white/20 group-hover:text-purple-400 transition-transform group-hover:translate-x-1">→</span>
-                                    </a>
-                                    <a 
-                                        href="/privacy" 
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:bg-purple-600/10 hover:border-purple-500/30 transition-all group"
-                                    >
-                                        <span className="text-xs text-white/80 group-hover:text-purple-300 transition-colors">Политика конфиденциальности</span>
-                                        <span className="text-white/20 group-hover:text-purple-400 transition-transform group-hover:translate-x-1">→</span>
-                                    </a>
+
+                            {/* Credentials */}
+                            <div className="flex items-center gap-4 text-[10px] text-white/25">
+                                <div className="flex gap-2">
+                                    <span>ИНН</span>
+                                    <span className="text-white/40 font-mono">692700514344</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <span>ОГРНИП</span>
+                                    <span className="text-white/40 font-mono">326690000024874</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <div className="p-5 rounded-3xl bg-gradient-to-br from-purple-600/20 to-fuchsia-600/20 border border-purple-500/20 backdrop-blur-xl">
-                        <p className="text-[11px] leading-relaxed text-purple-200/70">
-                            Продолжая, вы подтверждаете свое согласие с юридическими документами сервиса Сапог AI.
-                        </p>
+                        
+                        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+                            <span className="text-[10px] text-white/30 font-medium uppercase tracking-tight">ИП Вершинин Евгений Александрович</span>
+                            <span className="text-[9px] text-white/15 uppercase tracking-widest">© 2026 Сапог AI</span>
+                        </div>
                     </div>
                 </div>
             </div>
