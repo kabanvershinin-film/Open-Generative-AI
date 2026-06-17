@@ -1,4 +1,4 @@
-# Сапог AI — Open-Source Alternative to AI Video Platforms
+# Сапог AI — Open-Source Alternative to AI Video Platforms (v2.1.6)
 
 > **The free, open-source alternative to AI Video Platforms.** Generate AI images and videos using 200+ state-of-the-art models — no content filters, no closed ecosystem, no subscription fees.
 
