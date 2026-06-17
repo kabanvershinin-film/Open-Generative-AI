@@ -1532,7 +1532,7 @@ export async function GET(request, { params }) {
         // Combine and deduplicate
         const combinedMap = new Map();
         [...ownerWorkflows, ...sharedWorkflows].forEach(wf => {
-            if (!combinedMap.has(wf.id)) {
+            if (wf && wf.id && !combinedMap.has(wf.id)) {
                 combinedMap.set(wf.id, wf);
             }
         });
