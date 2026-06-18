@@ -112,6 +112,7 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
     // resumption if the user navigates away before polling finishes. The bill
     // token rides along so a resumed poll can still refund on failure.
     params.onTaskId?.(taskId, submitData.bill);
+    if (params.onRequestId) params.onRequestId(taskId);
 
     return pollArkTask(apiKey, taskId, submitData.bill);
 }
@@ -122,7 +123,7 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
 // refunds the right amount.
 export async function pollArkTask(apiKey, taskId, bill) {
     const billQs = bill ? `&bill=${encodeURIComponent(bill)}` : '';
-    for (let attempt = 0; attempt < 300; attempt++) {
+    for (let attempt = 0; attempt < 600; attempt++) {
         await new Promise((r) => setTimeout(r, 5000));
         const poll = await fetch(`/api/ark/seedance?taskId=${encodeURIComponent(taskId)}${billQs}`, {
             headers: { 'Authorization': `Bearer ${apiKey}` }
