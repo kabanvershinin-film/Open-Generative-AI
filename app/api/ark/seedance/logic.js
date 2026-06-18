@@ -1,9 +1,6 @@
 export function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, last_image_url }) {
   const content = [];
   
-  // Text prompt first - often required for Seedance 2.0 to correctly bind tags like 图片1
-  if (prompt) content.push({ type: 'text', text: prompt });
-
   const images = [];
   if (image_url) images.push(image_url);
   if (Array.isArray(image_urls)) images.push(...image_urls.filter(Boolean));
@@ -28,12 +25,18 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
     const isFirstImage = idx === 0;
     const effectiveFace = face || (isFirstImage && typeof face_asset === 'string' ? face_asset : null);
 
+    // If we have a face_asset (asset://), we MUST use it as the URL to avoid sending the real photo.
+    // If we send a photo of a real person as the URL, Ark's safety filters will block it.
+    const isAsset = effectiveFace && effectiveFace.startsWith('asset://');
+    const finalUrl = isAsset ? effectiveFace : url;
+
     const item = { 
       type: 'image_url', 
       image_url: { 
-        url,
-        // Double-bind: some Ark endpoints look for face_asset inside image_url
-        ...(effectiveFace ? { face_asset: effectiveFace } : {})
+        url: finalUrl,
+        // For Trusted Assets, do not include face_asset inside image_url if we already use it as the url,
+        // as some versions of the API might get confused.
+        ...(!isAsset && effectiveFace ? { face_asset: effectiveFace } : {})
       }
     };
     
@@ -63,6 +66,9 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
   
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
   audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u }, role: 'reference_audio' }));
+  
+  // Text prompt at the end - Seedance 2.0 often expects this to bind to preceding media roles/indices
+  if (prompt) content.push({ type: 'text', text: prompt });
   
   return content;
 }
