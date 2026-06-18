@@ -459,3 +459,11 @@ export async function getUserWorkflows(apiKey) {
     const data = await r.json().catch(() => []);
     return Array.isArray(data) ? data : [];
 }
+
+export async function getUserBalance(apiKey) {
+    const r = await fetch('/api/user/balance', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    const data = await r.json().catch(() => ({ balance: 0 }));
+    return data.balance ?? 0;
+}
