@@ -183,8 +183,14 @@ export async function POST(request) {
       return NextResponse.json({ error: charge.error || 'Ошибка списания баланса' }, { status: 403 });
     }
 
-    const payload = { model, content, generate_audio, watermark: false };
-    if (face_asset) payload.face_asset = face_asset;
+    const payload = {
+      model,
+      content,
+      generate_audio,
+      watermark: false,
+      // Pass face_asset at top level for some Ark versions
+      ...(face_asset ? { face_asset } : {}),
+    };
     if (resolution) {
       let res = String(resolution).toLowerCase();
       if (fast && res === '1080p') res = '720p';
