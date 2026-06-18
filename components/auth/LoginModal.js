@@ -251,48 +251,54 @@ export default function LoginModal() {
                 </div>
 
                 {/* Bottom Information Card */}
-                <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-bottom-5 fade-in duration-500 delay-150">
-                    <div className="p-5 rounded-3xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl">
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="w-full max-w-md animate-in slide-in-from-bottom-5 fade-in duration-500 delay-150">
+                    <div className="px-6 py-4 rounded-3xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl">
+                        {/* Row 1: Legal & Credentials */}
+                        <div className="flex flex-wrap items-center justify-between gap-y-3 gap-x-6 mb-4">
                             {/* Legal Links */}
                             <div className="flex items-center gap-4">
                                 <a 
                                     href="/terms" 
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[11px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1.5 group"
+                                    className="text-[10px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1 group"
                                 >
                                     Условия
-                                    <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
                                 </a>
-                                <div className="h-3 w-px bg-white/10" />
+                                <div className="h-2.5 w-px bg-white/10" />
                                 <a 
                                     href="/privacy" 
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[11px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1.5 group"
+                                    className="text-[10px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1 group"
                                 >
                                     Конфиденциальность
-                                    <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
                                 </a>
                             </div>
 
                             {/* Credentials */}
-                            <div className="flex items-center gap-4 text-[10px] text-white/25">
-                                <div className="flex gap-2">
+                            <div className="flex items-center gap-4 text-[9px] uppercase tracking-wider text-white/20">
+                                <div className="flex gap-1.5">
                                     <span>ИНН</span>
-                                    <span className="text-white/40 font-mono">692700514344</span>
+                                    <span className="text-white/35 font-mono tracking-normal">692700514344</span>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-1.5">
                                     <span>ОГРНИП</span>
-                                    <span className="text-white/40 font-mono">326690000024874</span>
+                                    <span className="text-white/35 font-mono tracking-normal">326690000024874</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                            <span className="text-[10px] text-white/30 font-medium uppercase tracking-tight">ИП Вершинин Евгений Александрович</span>
-                            <span className="text-[9px] text-white/15 uppercase tracking-widest">© 2026 Сапог AI</span>
+                        {/* Row 2: Entity & Copyright */}
+                        <div className="pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-[10px] text-white/30 font-medium uppercase tracking-wide">
+                                ИП Вершинин Евгений Александрович
+                            </span>
+                            <span className="text-[9px] text-white/15 uppercase tracking-[0.2em]">
+                                © 2026 Сапог AI
+                            </span>
                         </div>
                     </div>
                 </div>
