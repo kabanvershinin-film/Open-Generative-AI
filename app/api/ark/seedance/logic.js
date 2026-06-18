@@ -1,6 +1,9 @@
 export function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, last_image_url }) {
   const content = [];
   
+  // Text prompt first - often required for Seedance 2.0 to correctly bind tags like 图片1
+  if (prompt) content.push({ type: 'text', text: prompt });
+
   const images = [];
   if (image_url) images.push(image_url);
   if (Array.isArray(image_urls)) images.push(...image_urls.filter(Boolean));
@@ -60,9 +63,6 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
   
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
   audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u }, role: 'reference_audio' }));
-  
-  // Text prompt at the end
-  if (prompt) content.push({ type: 'text', text: prompt });
   
   return content;
 }

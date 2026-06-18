@@ -2,6 +2,64 @@ import { NextResponse } from 'next/server';
 import { BILLING_ENABLED, getUser, spendBalance, refundBalanceRpc, signBill, verifyBill } from '../../_lib/balance';
 import { priceRub, ensureCnyRate } from '../../_lib/pricing';
 import { buildContent } from './logic';
+import { buildUserMediaKey } from '../../_lib/tosPaths';
+
+const TOS_AK = process.env.TOS_ACCESS_KEY || '';
+const TOS_SK = process.env.TOS_SECRET_KEY || '';
+const TOS_ENDPOINT = process.env.TOS_ENDPOINT || 'tos-cn-beijing.volces.com';
+const TOS_REGION = process.env.TOS_REGION || 'cn-beijing';
+const TOS_BUCKET = process.env.TOS_BUCKET || '';
+const TOS_ENABLED = !!(TOS_AK && TOS_SK && TOS_BUCKET);
+
+import { createHmac, createHash } from 'crypto';
+function sha256hex(data) { return createHash('sha256').update(data).digest('hex'); }
+function hmac(key, data)  { return createHmac('sha256', key).update(data).digest(); }
+
+async function tosUpload(key, buffer, contentType) {
+  if (!TOS_ENABLED) return null;
+  try {
+    const now = new Date();
+    const iso = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+    const date = iso.slice(0, 8);
+    const datetime = iso;
+    const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+    const path = `/${key}`;
+    const payloadHash = sha256hex(buffer);
+    const canonHeaders = `content-length:${buffer.length}\ncontent-type:${contentType}\nhost:${host}\nx-tos-content-sha256:${payloadHash}\nx-tos-date:${datetime}\n`;
+    const signedHeaders = 'content-length;content-type;host;x-tos-content-sha256;x-tos-date';
+    const canonical = `PUT\n${path}\n\n${canonHeaders}\n${signedHeaders}\n${payloadHash}`;
+    const scope = `${date}/${TOS_REGION}/tos/request`;
+    const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+    const sigKey = hmac(hmac(hmac(hmac(TOS_SK, date), TOS_REGION), 'tos'), 'request');
+    const sig = createHmac('sha256', sigKey).update(strToSign).digest('hex');
+    const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+    const r = await fetch(`https://${host}${path}`, {
+      method: 'PUT',
+      headers: { 'Authorization': auth, 'Content-Type': contentType, 'Content-Length': buffer.length, 'X-Tos-Content-Sha256': payloadHash, 'X-Tos-Date': datetime },
+      body: buffer,
+    });
+    if (!r.ok) { const t = await r.text(); console.error('TOS error:', r.status, t); return null; }
+    return `https://${host}${path}`;
+  } catch (e) { console.error('TOS upload error:', e.message); return null; }
+}
+
+async function maybeUploadToTOS(dataUrl, userId = null) {
+  if (!dataUrl || !dataUrl.startsWith('data:') || !TOS_ENABLED) return dataUrl;
+  const m = dataUrl.match(/^data:([^;]+);base64,(.+)$/s);
+  if (!m) return dataUrl;
+  const contentType = m[1];
+  const ext = contentType.split('/')[1]?.split('+')[0] || 'bin';
+  const buffer = Buffer.from(m[2], 'base64');
+  const tosKey = buildUserMediaKey(userId, 'images', ext);
+  return (await tosUpload(tosKey, buffer, contentType)) || dataUrl;
+}
+
+async function resolvePublic(u, userId = null) {
+  if (!u || typeof u !== 'string') return undefined;
+  if (!u.startsWith('data:')) return u;
+  const uploaded = await maybeUploadToTOS(u, userId);
+  return (uploaded && !uploaded.startsWith('data:')) ? uploaded : undefined;
+}
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
 // Auth: long-lived Ark API Key (Bearer). Set ARK_API_KEY in env.
@@ -65,6 +123,9 @@ export async function POST(request) {
   }
   try {
     const body = await request.json();
+    const user = await getUser(request);
+    const userId = user?.id || null;
+
     const {
       fast = false,
       prompt = '',
@@ -82,16 +143,27 @@ export async function POST(request) {
       last_image_url,
     } = body;
 
+    // Resolve any base64 URLs (like face thumbnails or uploads) to public TOS URLs.
+    const resolvedImageUrl = typeof image_url === 'object' 
+        ? { ...image_url, url: await resolvePublic(image_url.url, userId) }
+        : await resolvePublic(image_url, userId);
+    
+    const resolvedImageUrls = Array.isArray(image_urls)
+        ? await Promise.all(image_urls.map(async u => 
+            typeof u === 'object' ? { ...u, url: await resolvePublic(u.url, userId) } : await resolvePublic(u, userId)
+          ))
+        : undefined;
+
     const content = buildContent({ 
       prompt, 
-      image_url, 
-      image_urls, 
+      image_url: resolvedImageUrl, 
+      image_urls: resolvedImageUrls, 
       video_url, 
       video_urls, 
       audio_url, 
       audio_urls,
       face_asset,
-      last_image_url,
+      last_image_url: await resolvePublic(last_image_url, userId),
     });
     if (content.length === 0) {
       return NextResponse.json({ error: 'Empty content' }, { status: 400 });
