@@ -453,7 +453,7 @@ export async function persistImageToTOS(url) {
 }
 
 export async function getUserWorkflows(apiKey) {
-    const r = await fetch('/api/workflow', {
+    const r = await fetch('/api/workflow/list', {
         headers: { 'Authorization': `Bearer ${apiKey}` },
     });
     const data = await r.json().catch(() => []);
