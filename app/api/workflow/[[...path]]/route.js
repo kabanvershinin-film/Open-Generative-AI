@@ -4,6 +4,7 @@ import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../
 import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund, isAdminUser, getEmailsForIds } from '../../_lib/balance';
 import { buildLegacyWorkflowStorageKey, buildUserMediaKey, buildWorkflowStorageKey } from '../../_lib/tosPaths';
 import { createClient } from '@supabase/supabase-js';
+import { buildContent } from '../../ark/seedance/logic';
 
 // Supabase client for workflow shares
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -537,12 +538,15 @@ async function generateVideoARK(model, params, userId = null) {
       ? params.face_asset
       : await resolvePublic(params.face_asset);
 
-    // Build the multimodal content array (text + optional reference media).
-    const content = [{ type: 'text', text: params.prompt || '' }];
-    if (imageUrl) content.push({ type: 'image_url', image_url: { url: imageUrl }, role: 'first_frame' });
-    if (videoUrl) content.push({ type: 'video_url', video_url: { url: videoUrl }, role: 'reference_video' });
-    if (audioUrl) content.push({ type: 'audio_url', audio_url: { url: audioUrl }, role: 'reference_audio' });
-    if (faceAsset) content.push({ type: 'image_url', image_url: { url: faceAsset }, role: 'reference_image' });
+    // Build the multimodal content array using the shared logic.
+    const content = buildContent({
+        prompt: params.prompt,
+        image_url: imageUrl,
+        video_url: videoUrl,
+        audio_url: audioUrl,
+        face_asset: faceAsset,
+        last_image_url: await resolvePublic(params.last_image_url)
+    });
 
     // Output parameters go directly in the request body (abbreviations like
     // --rs/--rt/--dur are NOT supported by Seedance 2.0).
@@ -558,8 +562,8 @@ async function generateVideoARK(model, params, userId = null) {
         const d = Math.max(4, Math.min(15, Number(params.duration) || 5));
         body.duration = d;
     }
-    // Generate native audio when an audio reference is supplied.
-    if (audioUrl) body.generate_audio = true;
+    // Generate native audio when an audio reference is supplied or explicitly requested.
+    if (audioUrl || params.generate_audio) body.generate_audio = true;
 
     const submitRes = await fetch(`${ARK_BASE}/api/v3/contents/generations/tasks`, {
         method: 'POST',

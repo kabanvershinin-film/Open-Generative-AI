@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { BILLING_ENABLED, getUser, spendBalance, refundBalanceRpc, signBill, verifyBill } from '../../_lib/balance';
 import { priceRub, ensureCnyRate } from '../../_lib/pricing';
+import { buildContent } from './logic';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
 // Auth: long-lived Ark API Key (Bearer). Set ARK_API_KEY in env.
@@ -57,66 +58,6 @@ function pickEndpoint(fast) {
   return ep;
 }
 
-function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset }) {
-  const content = [];
-  // Some versions of Seedance prefer text at the end to keep image indexing (图片1, 图片2) clean.
-  
-  const images = [];
-  if (image_url) images.push(image_url);
-  if (Array.isArray(image_urls)) images.push(...image_urls.filter(Boolean));
-
-  const videos = [];
-  if (video_url) videos.push(video_url);
-  if (Array.isArray(video_urls)) videos.push(...video_urls.filter(Boolean));
-
-  const audios = [];
-  if (audio_url) audios.push(audio_url);
-  if (Array.isArray(audio_urls)) audios.push(...audio_urls.filter(Boolean));
-
-  // Multiple images or image + video/audio → multimodal reference (role: reference_image).
-  // If face_asset is present, any image MUST be a reference_image.
-  const hasRefMedia = videos.length > 0 || audios.length > 0;
-  const multiImage  = images.length > 1;
-  const hasFaceAsset = !!face_asset;
-
-  images.forEach((u, idx) => {
-    const url = typeof u === 'string' ? u : (u.url || u.image_url);
-    const face = typeof u === 'object' ? u.face_asset : null;
-    
-    const isFirstImage = idx === 0;
-    // face_asset takes priority if provided in the object, otherwise use the global one for the first image.
-    const effectiveFace = face || (isFirstImage && typeof face_asset === 'string' ? face_asset : null);
-
-    const item = { 
-      type: 'image_url', 
-      image_url: { 
-        url,
-        // Double-bind: some Ark endpoints look for face_asset inside image_url
-        ...(effectiveFace ? { face_asset: effectiveFace } : {})
-      }
-    };
-    
-    if (effectiveFace) {
-      // For Trusted Assets in Seedance 2.0, face_asset MUST be at the item level.
-      item.face_asset = effectiveFace;
-      // Mark as reference_image to ensure face_asset is processed.
-      item.role = 'reference_image';
-    } else if (hasRefMedia || multiImage || hasFaceAsset) {
-      item.role = 'reference_image';
-    }
-    
-    content.push(item);
-  });
-  
-  videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
-  audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u }, role: 'reference_audio' }));
-  
-  // Text prompt at the end
-  if (prompt) content.push({ type: 'text', text: prompt });
-  
-  return content;
-}
-
 // POST /api/ark/seedance — submit a generation task, returns { taskId, endpoint, bill, balance }
 export async function POST(request) {
   if (!ARK_API_KEY) {
@@ -138,6 +79,7 @@ export async function POST(request) {
       duration,
       generate_audio = true,
       face_asset,
+      last_image_url,
     } = body;
 
     const content = buildContent({ 
@@ -148,7 +90,8 @@ export async function POST(request) {
       video_urls, 
       audio_url, 
       audio_urls,
-      face_asset
+      face_asset,
+      last_image_url,
     });
     if (content.length === 0) {
       return NextResponse.json({ error: 'Empty content' }, { status: 400 });

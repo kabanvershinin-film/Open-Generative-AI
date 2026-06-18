@@ -78,6 +78,7 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
         ratio: params.aspect_ratio || undefined,
         duration: params.duration || undefined,
         face_asset: params.face_asset || undefined,
+        last_image_url: params.last_image_url || undefined,
     };
 
     // Step 1: submit task (fast — just creates the Ark task and returns taskId)
