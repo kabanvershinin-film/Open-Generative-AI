@@ -1,6 +1,9 @@
 export function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, last_image_url }) {
   const content = [];
   
+  // Text prompt MUST be the first element for Ark Seedance 2.0 to correctly bind character tags like 图片1
+  if (prompt) content.push({ type: 'text', text: prompt });
+
   const images = [];
   if (image_url) images.push(image_url);
   if (Array.isArray(image_urls)) images.push(...image_urls.filter(Boolean));
@@ -26,7 +29,7 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
     const effectiveFace = face || (isFirstImage && typeof face_asset === 'string' ? face_asset : null);
 
     // If we have a face_asset (asset://), we MUST use it as the URL to avoid sending the real photo.
-    // If we send a photo of a real person as the URL, Ark's safety filters will block it.
+    // Ark Seedance 2.0 Trusted Assets requirement: url should be the asset URI.
     const isAsset = effectiveFace && effectiveFace.startsWith('asset://');
     const finalUrl = isAsset ? effectiveFace : url;
 
@@ -34,14 +37,13 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
       type: 'image_url', 
       image_url: { 
         url: finalUrl,
-        // For Trusted Assets, do not include face_asset inside image_url if we already use it as the url,
-        // as some versions of the API might get confused.
-        ...(!isAsset && effectiveFace ? { face_asset: effectiveFace } : {})
+        // Trusted Assets MUST have face_asset inside the image_url object
+        ...(effectiveFace ? { face_asset: effectiveFace } : {})
       }
     };
     
     if (effectiveFace) {
-      // For Trusted Assets in Seedance 2.0, face_asset MUST be at the item level.
+      // Also keep it at the item level for backward compatibility
       item.face_asset = effectiveFace;
       item.role = 'reference_image';
     } else if (isFirstImage && !hasRefMedia && !multiImage && !hasFaceAsset) {
@@ -66,9 +68,6 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
   
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
   audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u }, role: 'reference_audio' }));
-  
-  // Text prompt at the end - Seedance 2.0 uses this to bind to preceding media roles/indices (图片1 refers to the first media item)
-  if (prompt) content.push({ type: 'text', text: prompt });
   
   return content;
 }
