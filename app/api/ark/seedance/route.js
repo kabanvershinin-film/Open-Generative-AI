@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { BILLING_ENABLED, getUser, spendBalance, refundBalanceRpc, signBill, verifyBill } from '../../_lib/balance';
+import { priceRub, ensureCnyRate } from '../../_lib/pricing';
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
 // Auth: long-lived Ark API Key (Bearer). Set ARK_API_KEY in env.
@@ -115,7 +117,7 @@ function buildContent({ prompt, image_url, image_urls, video_url, video_urls, au
   return content;
 }
 
-// POST /api/ark/seedance — submit a generation task, returns { taskId, endpoint }
+// POST /api/ark/seedance — submit a generation task, returns { taskId, endpoint, bill, balance }
 export async function POST(request) {
   if (!ARK_API_KEY) {
     return NextResponse.json({ error: 'ARK_API_KEY not configured' }, { status: 503 });
@@ -146,39 +148,63 @@ export async function POST(request) {
       video_urls, 
       audio_url, 
       audio_urls,
-      face_asset // Pass the top-level face_asset
+      face_asset
     });
     if (content.length === 0) {
       return NextResponse.json({ error: 'Empty content' }, { status: 400 });
     }
 
-    const model = pickEndpoint(fast) || (fast ? FAST_MODEL_ID : STD_MODEL_ID);
+    const modelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
+    const model = pickEndpoint(fast) || modelId;
+
+    // Billing: calculate cost and deduct balance before submitting to Ark.
+    await ensureCnyRate();
+    const cost = await priceRub('video', modelId, { resolution, video_url, duration, generate_audio });
+    const charge = await spendBalance(request, cost, `ark_seedance_${modelId}`, { model: modelId, taskId: 'pending' });
+    if (!charge.ok) {
+      if (charge.error === 'insufficient') {
+        return NextResponse.json({ error: 'insufficient_funds', required: cost, balance: charge.balance }, { status: 402 });
+      }
+      return NextResponse.json({ error: charge.error || 'Ошибка списания баланса' }, { status: 403 });
+    }
 
     const payload = { model, content, generate_audio, watermark: false };
-    // We keep face_asset at top level for backward compatibility with some models/versions,
-    // but buildContent now also puts it inside 'content' items for more precision.
     if (face_asset) payload.face_asset = face_asset;
     if (resolution) {
       let res = String(resolution).toLowerCase();
-      if (fast && res === '1080p') res = '720p'; // Fast caps at 720p
+      if (fast && res === '1080p') res = '720p';
       payload.resolution = res;
     }
     if (ratio) payload.ratio = ratio;
     if (duration != null && duration !== '') payload.duration = Math.max(4, Math.min(15, Number(duration) || 5));
 
-    const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${ARK_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      return NextResponse.json(
-        { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
-        { status: r.status },
-      );
+    try {
+      const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${ARK_API_KEY}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        // Refund on submission failure.
+        if (charge.ok && cost > 0) await refundBalanceRpc(request, cost, `refund_ark_seedance_${modelId}`);
+        return NextResponse.json(
+          { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
+          { status: r.status },
+        );
+      }
+      
+      // Return the taskId along with the bill token and remaining balance.
+      return NextResponse.json({ 
+        taskId: data.id, 
+        endpoint: model,
+        bill: signBill(cost, { model: modelId, taskId: data.id }),
+        balance: charge.balance
+      });
+    } catch (e) {
+      if (charge.ok && cost > 0) await refundBalanceRpc(request, cost, `refund_ark_seedance_${modelId}`);
+      throw e;
     }
-    return NextResponse.json({ taskId: data.id, endpoint: model });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -191,6 +217,7 @@ export async function GET(request) {
   }
   const { searchParams } = new URL(request.url);
   const taskId = searchParams.get('taskId');
+  const bill = searchParams.get('bill');
   if (!taskId) return NextResponse.json({ error: 'Missing taskId' }, { status: 400 });
 
   try {
@@ -204,10 +231,19 @@ export async function GET(request) {
         { status: r.status },
       );
     }
-    const status = data.status || 'running';
+    const status = (data.status || 'running').toLowerCase();
     const url = data.content?.video_url || data.video_url || null;
-    // Include data.message in error field for more robust error reporting when status is 'failed'
-    return NextResponse.json({ status, url, error: data.error?.message || data.message || null });
+    const error = data.error?.message || data.message || null;
+
+    // Refund if task failed and a bill token was provided.
+    if ((status === 'failed' || status === 'error' || status === 'expired' || status === 'cancelled') && bill) {
+      const cost = verifyBill(bill);
+      if (cost > 0) {
+        await refundBalanceRpc(request, cost, `refund_ark_seedance_${taskId}`);
+      }
+    }
+
+    return NextResponse.json({ status, url, error });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
