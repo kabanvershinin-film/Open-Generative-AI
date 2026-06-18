@@ -67,7 +67,7 @@ var toAssetUri = function toAssetUri(val) {
   return s;
 };
 var VideoGeneration = function VideoGeneration(_ref) {
-  var _data$runId, _nodeSchemas$categori, _data$selectedModel6, _data$selectedModel7, _data$selectedModel8, _data$selectedModel9, _data$selectedModel0, _data$selectedModel1, _data$selectedModel10, _data$selectedModel11, _outputHistory$curren, _currentOutputList$cu, _currentOutputList$, _data$selectedModel12;
+  var _data$runId, _nodeSchemas$categori, _data$selectedModel6, _data$selectedModel7, _data$selectedModel8, _data$selectedModel9, _data$selectedModel0, _data$selectedModel1, _data$selectedModel10, _data$selectedModel11, _outputHistory$curren, _currentOutputList$cu, _currentOutputList$, _selectedModel$id, _data$selectedModel12;
   var id = _ref.id,
     data = _ref.data,
     selected = _ref.selected;
@@ -448,24 +448,23 @@ var VideoGeneration = function VideoGeneration(_ref) {
   // "GENERATING…"); the short submit + poll requests here never hang.
   var runArkSeedanceBrowser = /*#__PURE__*/function () {
     var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
-      var _submit$data, _submit$data2, _submit$data3, _data$selectedModel3;
-      var _ref11, getNodes, getEdges, nodes, edges, findConnectedAssets, allAssets, uniqueFaces, uniqueImages, uniqueVideos, uniqueAudios, fast, src, faceAssetPayload, body, submit, _e$response, _e$response2, _e$response3, _e$response4, _d$required, _d$balance, d, apiError, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response5, status, histId, output, newHistory, _t2, _t3;
+      var _connectedFaceAssets$, _submit$data, _submit$data2, _submit$data3, _data$selectedModel3;
+      var _ref11, getNodes, getEdges, nodes, edges, findConnectedAssets, allAssets, connectedImages, connectedFaceAssets, uniqueVideos, uniqueAudios, fast, src, finalImages, primaryFace, url, facesFound, finalPrompt, tag, tagRegex, body, submit, _e$response, _e$response2, _e$response3, _e$response4, _d$required, _d$balance, d, apiError, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response5, status, histId, output, newHistory, _t2, _t3;
       return _regenerator().w(function (_context3) {
         while (1) switch (_context3.p = _context3.n) {
           case 0:
             _ref11 = data.reactFlowInstance || {}, getNodes = _ref11.getNodes, getEdges = _ref11.getEdges;
             nodes = getNodes ? getNodes() : [];
-            edges = getEdges ? getEdges() : []; // Gather all character nodes and images connected to this node
-            // MUST match the order logic in SeedancePromptNode.jsx so 图片1, 图片2, etc. refer to the right things.
+            edges = getEdges ? getEdges() : [];
             findConnectedAssets = function findConnectedAssets() {
               var incoming = edges.filter(function (e) {
                 return e.target === id;
               });
               var assets = {
-                faces: [],
                 images: [],
                 videos: [],
-                audios: []
+                audios: [],
+                faceAssets: []
               };
               var seen = new Set();
               var _processSource = function processSource(sourceId) {
@@ -481,17 +480,17 @@ var VideoGeneration = function VideoGeneration(_ref) {
                   var rawAsset = fv.face_asset || ((_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.resultUrl) || ((_sourceNode$data3 = sourceNode.data) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3.outputs) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3[0]) === null || _sourceNode$data3 === void 0 ? void 0 : _sourceNode$data3.value);
                   var asset = toAssetUri(rawAsset);
                   if (asset) {
-                    assets.faces.push(asset);
-                  }
-                  // Always use the character_photo (HTTP URL) as the reference image.
-                  // Using asset:// in image_url causes "invalid_image_url" validation error in Ark.
-                  if (fv.character_photo) {
-                    assets.images.push(fv.character_photo);
+                    assets.faceAssets.push({
+                      uri: asset,
+                      thumbnail: fv.character_photo || null
+                    });
                   }
                 } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
                   var _sourceNode$data4, _sourceNode$data5;
                   var url = ((_sourceNode$data4 = sourceNode.data) === null || _sourceNode$data4 === void 0 ? void 0 : _sourceNode$data4.resultUrl) || ((_sourceNode$data5 = sourceNode.data) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5.outputs) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5[0]) === null || _sourceNode$data5 === void 0 ? void 0 : _sourceNode$data5.value);
-                  if (url) assets.images.push(url);
+                  if (url) assets.images.push({
+                    url: url
+                  });
                 } else if (sourceNode.type === "videoNode") {
                   var _sourceNode$data6, _sourceNode$data7;
                   var _url = ((_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.resultUrl) || ((_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.outputs) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7[0]) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.value);
@@ -501,7 +500,6 @@ var VideoGeneration = function VideoGeneration(_ref) {
                   var _url2 = ((_sourceNode$data8 = sourceNode.data) === null || _sourceNode$data8 === void 0 ? void 0 : _sourceNode$data8.resultUrl) || ((_sourceNode$data9 = sourceNode.data) === null || _sourceNode$data9 === void 0 || (_sourceNode$data9 = _sourceNode$data9.outputs) === null || _sourceNode$data9 === void 0 || (_sourceNode$data9 = _sourceNode$data9[0]) === null || _sourceNode$data9 === void 0 ? void 0 : _sourceNode$data9.value);
                   if (_url2) assets.audios.push(_url2);
                 } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
-                  // For utility nodes, we look at THEIR incoming edges
                   var subEdges = edges.filter(function (e) {
                     return e.target === sourceId;
                   });
@@ -516,32 +514,78 @@ var VideoGeneration = function VideoGeneration(_ref) {
               return assets;
             };
             allAssets = findConnectedAssets();
-            uniqueFaces = Array.from(new Set(allAssets.faces)).filter(function (f) {
-              return f.startsWith("asset://");
-            });
-            uniqueImages = Array.from(new Set(allAssets.images));
+            connectedImages = allAssets.images;
+            connectedFaceAssets = allAssets.faceAssets;
             uniqueVideos = Array.from(new Set(allAssets.videos));
             uniqueAudios = Array.from(new Set(allAssets.audios));
             console.log('[VideoNode] Connected assets found:', {
-              uniqueFaces: uniqueFaces,
-              uniqueImages: uniqueImages,
+              faceCount: connectedFaceAssets.length,
+              imageCount: connectedImages.length,
               uniqueVideos: uniqueVideos,
               uniqueAudios: uniqueAudios
             });
-            if (uniqueFaces.length > 0 || uniqueImages.length > 0) {
-              (0, _reactHotToast.toast)("\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E: ".concat(uniqueFaces.length, " \u043B\u0438\u0446, ").concat(uniqueImages.length, " \u0444\u043E\u0442\u043E"), {
+            fast = /fast/.test("".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "").toLowerCase());
+            src = formValues || {}; // Construct final images list for Seedance 2.0
+            finalImages = []; // If we have a face asset, we want to apply it to an image.
+            if (connectedFaceAssets.length > 0) {
+              primaryFace = connectedFaceAssets[0]; // If there's a connected image (e.g. from an uploadNode), use it as 图片1 and attach the face.
+              if (connectedImages.length > 0) {
+                finalImages.push(_objectSpread(_objectSpread({}, connectedImages[0]), {}, {
+                  face_asset: primaryFace.uri
+                }));
+                // Add other connected images
+                finalImages.push.apply(finalImages, _toConsumableArray(connectedImages.slice(1)));
+              }
+              // User says "pass the asset... not the photo". 
+              // But Ark requires a valid HTTP URL in 'url' field for validation.
+              // So we use the thumbnail as the visual base, and the asset URI as the face_asset.
+              else {
+                finalImages.push({
+                  url: primaryFace.thumbnail || primaryFace.uri,
+                  face_asset: primaryFace.uri
+                });
+              }
+            } else {
+              // No face assets, just use connected images
+              finalImages.push.apply(finalImages, _toConsumableArray(connectedImages));
+            }
+
+            // Add main node image_url if not already present
+            if (src.image_url) {
+              url = typeof src.image_url === 'string' ? src.image_url : src.image_url.url;
+              if (url && !finalImages.some(function (img) {
+                return (typeof img === 'string' ? img : img.url) === url;
+              })) {
+                finalImages.push(typeof src.image_url === 'string' ? {
+                  url: url
+                } : src.image_url);
+              }
+            }
+            if (finalImages.length > 0) {
+              facesFound = finalImages.filter(function (img) {
+                return img.face_asset;
+              }).length;
+              (0, _reactHotToast.toast)("\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E: ".concat(facesFound, " \u043B\u0438\u0446, ").concat(finalImages.length, " \u0444\u043E\u0442\u043E"), {
                 icon: "🎨"
               });
             }
-            fast = /fast/.test("".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "").toLowerCase());
-            src = formValues || {}; // Ark handles face_asset separately for trusted assets.
-            // Plain images should go in image_url/image_urls.
-            faceAssetPayload = uniqueFaces.length > 0 ? uniqueFaces.length > 1 ? uniqueFaces : uniqueFaces[0] : undefined;
+
+            // Ensure the character tag is present in the prompt if a character is connected.
+            finalPrompt = src.prompt || "";
+            if (finalImages.some(function (img) {
+              return img.face_asset;
+            })) {
+              tag = "图片1";
+              tagRegex = new RegExp(tag, "i");
+              if (!tagRegex.test(finalPrompt)) {
+                finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
+              }
+            }
             body = {
               fast: fast,
-              prompt: src.prompt || "",
-              image_url: uniqueImages[0] || src.image_url || undefined,
-              image_urls: uniqueImages.length > 1 ? uniqueImages.slice(1) : undefined,
+              prompt: finalPrompt,
+              image_url: finalImages[0] || undefined,
+              image_urls: finalImages.length > 1 ? finalImages.slice(1) : undefined,
               video_url: uniqueVideos[0] || src.video_url || undefined,
               video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
               audio_url: uniqueAudios[0] || src.audio_url || undefined,
@@ -549,7 +593,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
               resolution: src.resolution || undefined,
               ratio: src.aspect_ratio || src.ratio || undefined,
               duration: src.duration || undefined,
-              face_asset: faceAssetPayload
+              face_asset: ((_connectedFaceAssets$ = connectedFaceAssets[0]) === null || _connectedFaceAssets$ === void 0 ? void 0 : _connectedFaceAssets$.uri) || undefined
             };
             console.log('[VideoNode] Submitting to Ark:', body);
 
@@ -1165,6 +1209,14 @@ var VideoGeneration = function VideoGeneration(_ref) {
     onDuplicate: data.duplicateNode,
     onDelete: handleDeleteNode,
     downloadUrl: currentOutput
+  })), !(selectedModel !== null && selectedModel !== void 0 && (_selectedModel$id = selectedModel.id) !== null && _selectedModel$id !== void 0 && _selectedModel$id.includes("passthrough")) && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "p-3 border-b border-zinc-800/50 bg-black/20"
+  }, /*#__PURE__*/_react["default"].createElement(_NodeSendButton["default"], {
+    id: id,
+    data: data,
+    onRun: handleRunSingleNode,
+    isLoading: data.isLoading,
+    cost: generationCost
   }))), ((_data$selectedModel12 = data.selectedModel) === null || _data$selectedModel12 === void 0 ? void 0 : _data$selectedModel12.id) === "video-passthrough" ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "w-full h-full flex-1"
   }, /*#__PURE__*/_react["default"].createElement(_UploadNode["default"], {

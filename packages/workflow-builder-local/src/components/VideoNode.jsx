@@ -417,10 +417,11 @@ const VideoGeneration = ({ id, data, selected }) => {
         finalImages.push(...connectedImages.slice(1));
       } 
       // User says "pass the asset... not the photo". 
-      // We pass the asset URI (asset://) directly as the URL.
+      // But Ark requires a valid HTTP URL in 'url' field for validation.
+      // So we use the thumbnail as the visual base, and the asset URI as the face_asset.
       else {
         finalImages.push({
-          url: primaryFace.uri,
+          url: primaryFace.thumbnail || primaryFace.uri,
           face_asset: primaryFace.uri
         });
       }
@@ -900,6 +901,17 @@ const VideoGeneration = ({ id, data, selected }) => {
             downloadUrl={currentOutput}
           />
         </div>
+        {!selectedModel?.id?.includes("passthrough") && (
+          <div className="p-3 border-b border-zinc-800/50 bg-black/20">
+            <NodeSendButton
+              id={id}
+              data={data}
+              onRun={handleRunSingleNode}
+              isLoading={data.isLoading}
+              cost={generationCost}
+            />
+          </div>
+        )}
       </div>
       {data.selectedModel?.id === "video-passthrough" ? (
         <div className="w-full h-full flex-1">
