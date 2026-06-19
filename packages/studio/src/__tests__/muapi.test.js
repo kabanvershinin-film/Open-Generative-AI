@@ -152,6 +152,31 @@ test('generateI2I posts multipart edit request and returns url', async (t) => {
     assert.ok(options.body instanceof FormData);
 });
 
+test('generateImage routes Gemini image models to chat completions', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementationOnce(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+            id: 'chat-img-1',
+            choices: [{ message: { content: [{ image_url: { url: 'http://example.com/gemini.png' } }] } }],
+        }),
+    }));
+
+    const result = await muapi.generateImage('key', {
+        model: 'gemini-3.1-flash-image-preview',
+        prompt: 'кот',
+        aspect_ratio: '1:1',
+    });
+
+    assert.strictEqual(result.url, 'http://example.com/gemini.png');
+    const [url, options] = global.fetch.mock.calls[0].arguments;
+    assert.strictEqual(url, '/api/mf/v1/chat/completions');
+    const body = JSON.parse(options.body);
+    assert.strictEqual(body.model, 'gemini-3.1-flash-image-preview');
+    assert.deepEqual(body.messages, [{ role: 'user', content: 'кот' }]);
+});
+
 test('generateImage formats object API errors', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementationOnce(async () => ({

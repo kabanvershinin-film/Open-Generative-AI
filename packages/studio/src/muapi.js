@@ -35,6 +35,17 @@ function applyImageRouting(modelId, routing) {
     return routing && routing !== 'default' ? `${modelId}:${routing}` : modelId;
 }
 
+const CHAT_IMAGE_MODELS = new Set([
+    'gemini-3.1-flash-image-preview',
+    'gemini-3-pro-image-preview',
+    'gemini-3.1-flash-image-preview-edit',
+    'gemini-3-pro-image-preview-edit',
+]);
+
+function isChatImageModel(modelId) {
+    return CHAT_IMAGE_MODELS.has(modelId);
+}
+
 function getImageUrlFromResponse(data) {
     const item = data?.data?.[0];
     return item?.url || (item?.b64_json ? `data:image/png;base64,${item.b64_json}` : '') || data?.url || data?.output?.url || data?.outputs?.[0] || '';
@@ -43,6 +54,69 @@ function getImageUrlFromResponse(data) {
 function normalizeImageResult(data, fallbackId) {
     const url = getImageUrlFromResponse(data);
     return { ...data, id: data?.id || data?.request_id || fallbackId, url };
+}
+
+function getImageUrlFromText(text) {
+    return String(text || '').match(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/)?.[0]
+        || String(text || '').match(/https?:\/\/\S+\.(png|jpg|jpeg|webp|gif)/i)?.[0]
+        || '';
+}
+
+function getChatImageUrlFromResponse(data) {
+    const message = data?.choices?.[0]?.message;
+    const content = message?.content;
+    if (Array.isArray(content)) {
+        for (const part of content) {
+            const url = part?.image_url?.url || part?.image_url || part?.url || getImageUrlFromText(part?.text);
+            if (url) return url;
+        }
+    }
+    const directUrl = message?.image_url?.url || message?.image_url || message?.url || data?.url || data?.output?.url;
+    if (directUrl) return directUrl;
+    const fromText = getImageUrlFromText(typeof content === 'string' ? content : data?.choices?.[0]?.text);
+    if (fromText) return fromText;
+
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    for (const part of parts) {
+        const inline = part?.inlineData || part?.inline_data;
+        if (inline?.data) {
+            const mime = inline.mimeType || inline.mime_type || 'image/png';
+            return `data:${mime};base64,${inline.data}`;
+        }
+    }
+    return getImageUrlFromText(parts.find((part) => typeof part?.text === 'string')?.text);
+}
+
+function normalizeChatImageResult(data, fallbackId) {
+    return { ...data, id: data?.id || data?.request_id || fallbackId, url: getChatImageUrlFromResponse(data) };
+}
+
+async function generateChatImage(apiKey, modelId, params) {
+    const body = {
+        model: modelId,
+        messages: [{ role: 'user', content: params.prompt || '' }],
+        stream: false,
+    };
+    if (params.aspect_ratio) body.aspect_ratio = params.aspect_ratio;
+    if (params.imageSize) body.imageSize = params.imageSize;
+
+    const r = await fetch('/api/mf/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+        if (r.status === 401) notifyAuthRequired(401, formatApiError(data.error, 'Войдите в аккаунт, чтобы генерировать.'));
+        if (r.status === 402) throw new Error(`Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`);
+        throw new Error(formatApiError(data.error || data.detail, `Gemini Image API ${r.status}`));
+    }
+    const result = normalizeChatImageResult(data);
+    if (!result.url) throw new Error('Gemini Image API не вернул изображение.');
+    return result;
 }
 
 function formatApiError(error, fallback) {
@@ -213,7 +287,11 @@ export async function pollArkTask(apiKey, taskId, bill) {
 
 export async function generateImage(apiKey, params) {
     const modelInfo = getImageModelById(params.model);
-    const modelId = applyImageRouting(modelInfo?.apiId || params.model, params.routing);
+    const rawModelId = modelInfo?.apiId || params.model;
+    const modelId = applyImageRouting(rawModelId, params.routing);
+    if (isChatImageModel(params.model) || isChatImageModel(rawModelId)) {
+        return generateChatImage(apiKey, modelId, params);
+    }
     const body = {
         model: modelId,
         prompt: params.prompt || '',
