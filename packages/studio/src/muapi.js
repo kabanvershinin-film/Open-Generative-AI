@@ -1,5 +1,43 @@
 import { getT2vModels, getI2vModels, getV2vModels, getT2iModels, getI2iModels } from './models.js';
 
+export const MAX_IMAGE_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
+export const SUPPORTED_IMAGE_UPLOAD_EXTENSIONS = new Set([
+    'jpg', 'jpeg', 'png', 'tif', 'tiff',
+    'raw', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'orf', 'raf', 'rw2', 'pef', 'srw',
+]);
+export const SUPPORTED_IMAGE_UPLOAD_MIME_TYPES = new Set([
+    'image/jpeg', 'image/jpg', 'image/png', 'image/tiff', 'image/x-tiff',
+    'image/raw', 'image/x-raw', 'image/x-canon-cr2', 'image/x-canon-cr3', 'image/x-nikon-nef',
+    'image/x-sony-arw', 'image/x-adobe-dng', 'image/x-olympus-orf', 'image/x-fuji-raf',
+]);
+
+function getFileExtension(file) {
+    return String(file?.name || '').split('.').pop()?.toLowerCase() || '';
+}
+
+export function isSupportedImageUploadFile(file) {
+    const type = String(file?.type || '').toLowerCase();
+    const ext = getFileExtension(file);
+    return SUPPORTED_IMAGE_UPLOAD_MIME_TYPES.has(type) || SUPPORTED_IMAGE_UPLOAD_EXTENSIONS.has(ext);
+}
+
+export function validateImageUploadFile(file) {
+    if (!file) throw new Error('Файл изображения не выбран.');
+    if (!isSupportedImageUploadFile(file)) {
+        throw new Error(`Формат файла не поддерживается: ${file.name || 'без имени'}. Поддерживаются JPG, PNG, TIFF и RAW.`);
+    }
+    if (file.size > MAX_IMAGE_UPLOAD_SIZE_BYTES) {
+        throw new Error(`Файл слишком большой: ${file.name || 'без имени'}. Максимальный размер — 50 МБ.`);
+    }
+    return true;
+}
+
+function createUploadError(error, fallback) {
+    if (typeof error === 'string' && error.trim()) return new Error(error);
+    if (error?.message) return new Error(error.message);
+    return new Error(fallback);
+}
+
 // Internal helper to get model metadata from either T2V or I2V lists.
 function getVideoModelById(id) {
     const all = [...getT2vModels(), ...getI2vModels(), ...getV2vModels()];
@@ -669,6 +707,8 @@ export async function processV2V(apiKey, params) {
 // ── Persistence & Assets ───────────────────────────────────────────────────────
 
 export async function uploadFile(apiKey, file, onProgress) {
+    validateImageUploadFile(file);
+
     const fileToDataUrl = async () => {
         const buffer = await file.arrayBuffer();
         let binary = '';
@@ -687,33 +727,43 @@ export async function uploadFile(apiKey, file, onProgress) {
             body: JSON.stringify({ image }),
         });
         const localData = await local.json().catch(() => ({}));
-        if (!local.ok) throw new Error(localData.error || 'Upload failed');
+        if (!local.ok) throw createUploadError(localData.error || localData.detail, `Локальная загрузка не удалась (${local.status}).`);
+        if (!localData.url) throw new Error('Локальная загрузка не вернула URL изображения.');
         return localData.url;
     };
 
     onProgress?.(5);
     const formData = new FormData();
-    formData.append('file', file);
-    const r = await fetch('/api/mf/v1/assets/upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}` },
-        body: formData,
-    });
-    const data = await r.json().catch(() => ({}));
-    const uploadedUrl = data.url || data.file_url || data.data?.url;
-    if (r.ok && uploadedUrl) {
-        onProgress?.(100);
-        return uploadedUrl;
+    formData.append('file', file, file.name || 'image');
+
+    let serverError = null;
+    try {
+        onProgress?.(20);
+        const r = await fetch('/api/mf/v1/assets/upload', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+            body: formData,
+        });
+        const data = await r.json().catch(() => ({}));
+        const uploadedUrl = data.url || data.file_url || data.data?.url;
+        if (r.ok && uploadedUrl) {
+            onProgress?.(100);
+            return uploadedUrl;
+        }
+        serverError = formatApiError(data.error || data.detail, `Сервер загрузки вернул ошибку ${r.status}`);
+    } catch (error) {
+        serverError = error?.message || 'Ошибка сети при загрузке изображения.';
     }
 
-    const image = await fileToDataUrl();
     try {
+        onProgress?.(70);
+        const image = await fileToDataUrl();
         const fallbackUrl = await uploadToLocalStorage(image);
         onProgress?.(100);
         return fallbackUrl;
-    } catch {
-        onProgress?.(100);
-        return image;
+    } catch (fallbackError) {
+        onProgress?.(0);
+        throw new Error(`${serverError || 'Не удалось загрузить изображение.'} ${fallbackError?.message || ''}`.trim());
     }
 }
 

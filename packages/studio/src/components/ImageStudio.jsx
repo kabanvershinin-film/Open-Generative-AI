@@ -3,7 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
-import { generateImage, generateI2I, uploadFile, persistImageToTOS, getUserWorkflows } from "../muapi.js";
+import {
+  generateImage,
+  generateI2I,
+  uploadFile,
+  persistImageToTOS,
+  getUserWorkflows,
+  validateImageUploadFile,
+  isSupportedImageUploadFile,
+} from "../muapi.js";
 import {
   getT2iModels,
   getI2iModels,
@@ -41,6 +49,8 @@ async function downloadImage(url, filename) {
     window.open(url, "_blank");
   }
 }
+
+const IMAGE_UPLOAD_ACCEPT = "image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.tif,.tiff,.raw,.cr2,.cr3,.nef,.arw,.dng,.orf,.raf,.rw2,.pef,.srw";
 
 // ─── UploadButton (inline picker) ───────────────────────────────────────────
 
