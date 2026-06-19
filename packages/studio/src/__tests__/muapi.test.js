@@ -206,6 +206,39 @@ test('generateImage routes Gemini image models to chat completions', async (t) =
     assert.deepEqual(body.messages, [{ role: 'user', content: 'кот' }]);
 });
 
+test('generateI2I routes Gemini edit models to chat completions with image reference', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementationOnce(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+            id: 'chat-edit-1',
+            choices: [{ message: { content: [{ image_url: { url: 'http://example.com/gemini-edit.png' } }] } }],
+        }),
+    }));
+
+    const result = await muapi.generateI2I('key', {
+        model: 'gemini-3.1-flash-image-preview-edit',
+        prompt: 'сделай рыжим',
+        images_list: ['http://example.com/source.jpg'],
+        image_url: 'http://example.com/source.jpg',
+        aspect_ratio: '1:1',
+    });
+
+    assert.strictEqual(result.url, 'http://example.com/gemini-edit.png');
+    const [url, options] = global.fetch.mock.calls[0].arguments;
+    assert.strictEqual(url, '/api/mf/v1/chat/completions');
+    const body = JSON.parse(options.body);
+    assert.strictEqual(body.model, 'gemini-3.1-flash-image-preview');
+    assert.deepEqual(body.messages, [{
+        role: 'user',
+        content: [
+            { type: 'text', text: 'сделай рыжим' },
+            { type: 'image_url', image_url: { url: 'http://example.com/source.jpg' } },
+        ],
+    }]);
+});
+
 test('generateImage formats object API errors', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementationOnce(async () => ({

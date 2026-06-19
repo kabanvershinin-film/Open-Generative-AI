@@ -125,6 +125,22 @@ function getChatImageUrlFromResponse(data) {
     return getImageUrlFromText(parts.find((part) => typeof part?.text === 'string')?.text);
 }
 
+function getChatImageReferences(params) {
+    return [
+        ...(Array.isArray(params.images_list) ? params.images_list : []),
+        params.image_url,
+    ].filter(Boolean).filter((image, index, list) => list.indexOf(image) === index);
+}
+
+function buildChatImageContent(params) {
+    const images = getChatImageReferences(params);
+    if (!images.length) return params.prompt || '';
+    return [
+        { type: 'text', text: params.prompt || '' },
+        ...images.map((url) => ({ type: 'image_url', image_url: { url } })),
+    ];
+}
+
 function normalizeChatImageResult(data, fallbackId) {
     return { ...data, id: data?.id || data?.request_id || fallbackId, url: getChatImageUrlFromResponse(data) };
 }
@@ -132,7 +148,7 @@ function normalizeChatImageResult(data, fallbackId) {
 async function generateChatImage(apiKey, modelId, params) {
     const body = {
         model: modelId,
-        messages: [{ role: 'user', content: params.prompt || '' }],
+        messages: [{ role: 'user', content: buildChatImageContent(params) }],
         stream: false,
     };
     if (params.aspect_ratio) body.aspect_ratio = params.aspect_ratio;
@@ -386,6 +402,10 @@ async function imageReferenceToEditFile(image, index) {
 export async function generateI2I(apiKey, params) {
     const modelInfo = getI2IModelById(params.model) || getImageModelById(params.model);
     const modelId = applyImageRouting(modelInfo?.apiId || params.model, params.routing);
+    if (isChatImageModel(params.model) || isChatImageModel(modelInfo?.apiId || params.model)) {
+        return generateChatImage(apiKey, modelId, params);
+    }
+
     const images = [
         ...(Array.isArray(params.images_list) ? params.images_list : []),
         params.image_url,
