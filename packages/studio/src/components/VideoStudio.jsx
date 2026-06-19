@@ -26,6 +26,30 @@ import { buildSeedanceStudioPayload, validateFaceAsset } from "../videoAssetPayl
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const HISTORY_PAGE_SIZE = 18;
+const MAX_CONCURRENT_HISTORY_PREVIEWS = 3;
+let activeHistoryPreviewLoads = 0;
+const pendingHistoryPreviewLoads = [];
+
+function acquireHistoryPreviewSlot() {
+  return new Promise((resolve) => {
+    const grant = () => {
+      activeHistoryPreviewLoads += 1;
+      let released = false;
+      resolve(() => {
+        if (released) return;
+        released = true;
+        activeHistoryPreviewLoads = Math.max(0, activeHistoryPreviewLoads - 1);
+        pendingHistoryPreviewLoads.shift()?.();
+      });
+    };
+    if (activeHistoryPreviewLoads < MAX_CONCURRENT_HISTORY_PREVIEWS) grant();
+    else pendingHistoryPreviewLoads.push(grant);
+  });
+}
+
+function getFirstFramePreviewUrl(entry) {
+  return entry?.preview_url || entry?.thumbnail || null;
+}
 
 function getQualitiesForModel(modelList, modelId) {
   const model = modelList.find((m) => m.id === modelId);
@@ -94,6 +118,79 @@ const VideoReadySvg = () => (
     <polyline points="7 10 10 13 15 8" stroke="#22d3ee" strokeWidth="2.5" />
   </svg>
 );
+
+function LazyVideoFirstFramePreview({ entry, onOpen }) {
+  const previewUrl = getFirstFramePreviewUrl(entry);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const rootRef = useRef(null);
+
+  useEffect(() => {
+    if (previewUrl || !entry?.url || typeof IntersectionObserver === "undefined") return;
+    const root = rootRef.current;
+    if (!root) return;
+    let cancelled = false;
+    const observer = new IntersectionObserver((items) => {
+      if (!items.some((item) => item.isIntersecting)) return;
+      observer.disconnect();
+      acquireHistoryPreviewSlot().then((release) => {
+        if (cancelled) {
+          release();
+          return;
+        }
+        setShouldLoadVideo(true);
+        window.setTimeout(release, 5000);
+      });
+    }, { rootMargin: "600px 0px", threshold: 0.01 });
+    observer.observe(root);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [entry?.url, previewUrl]);
+
+  return (
+    <button
+      ref={rootRef}
+      type="button"
+      className="w-full aspect-video bg-black/40 cursor-pointer hover:opacity-80 transition-opacity relative flex items-center justify-center overflow-hidden"
+      onClick={onOpen}
+      title="Открыть видео"
+    >
+      {previewUrl ? (
+        <img
+          src={previewUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={(e) => { e.currentTarget.style.display = "none"; }}
+        />
+      ) : shouldLoadVideo && !videoError ? (
+        <video
+          src={entry.url}
+          className="absolute inset-0 w-full h-full object-cover"
+          preload="metadata"
+          muted
+          playsInline
+          controls={false}
+          onLoadedMetadata={(e) => {
+            try { e.currentTarget.currentTime = 0.05; } catch {}
+          }}
+          onCanPlay={(e) => e.currentTarget.pause()}
+          onError={() => setVideoError(true)}
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-black to-cyan-950/20" />
+      )}
+      <span className="relative z-10 w-14 h-14 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      </span>
+    </button>
+  );
+}
 
 // ── Dropdown components ───────────────────────────────────────────────────────
 
@@ -1980,30 +2077,10 @@ export default function VideoStudio({
                   className="relative group rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col"
                   style={{ contentVisibility: "auto", containIntrinsicSize: "360px 260px" }}
                 >
-                  <button
-                    type="button"
-                    className="w-full aspect-video bg-black/40 cursor-pointer hover:opacity-80 transition-opacity relative flex items-center justify-center overflow-hidden"
-                    onClick={() => setFullscreenUrl(entry.url)}
-                    title="Открыть видео"
-                  >
-                    {entry.preview_url ? (
-                      <img
-                        src={entry.preview_url}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                        className="absolute inset-0 w-full h-full object-cover"
-                        onError={(e) => { e.currentTarget.style.display = "none"; }}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-black to-cyan-950/20" />
-                    )}
-                    <span className="relative z-10 w-14 h-14 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
-                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </span>
-                  </button>
+                  <LazyVideoFirstFramePreview
+                    entry={entry}
+                    onOpen={() => setFullscreenUrl(entry.url)}
+                  />
                   
                   {/* Overlay actions */}
                   <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
