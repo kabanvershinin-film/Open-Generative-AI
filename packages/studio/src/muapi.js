@@ -638,6 +638,27 @@ export async function processV2V(apiKey, params) {
 // ── Persistence & Assets ───────────────────────────────────────────────────────
 
 export async function uploadFile(apiKey, file, onProgress) {
+    const uploadToLocalStorage = async () => {
+        const buffer = await file.arrayBuffer();
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        for (let i = 0; i < bytes.byteLength; i += 1) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        const contentType = file.type || 'image/png';
+        const image = `data:${contentType};base64,${btoa(binary)}`;
+
+        const local = await fetch('/api/upload-file', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image }),
+        });
+        const localData = await local.json().catch(() => ({}));
+        if (!local.ok) throw new Error(localData.error || 'Upload failed');
+        return localData.url;
+    };
+
+    onProgress?.(5);
     const formData = new FormData();
     formData.append('file', file);
     const r = await fetch('/api/mf/v1/assets/upload', {
@@ -646,8 +667,15 @@ export async function uploadFile(apiKey, file, onProgress) {
         body: formData,
     });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(data.error || 'Upload failed');
-    return data.url;
+    const uploadedUrl = data.url || data.file_url || data.data?.url;
+    if (r.ok && uploadedUrl) {
+        onProgress?.(100);
+        return uploadedUrl;
+    }
+
+    const fallbackUrl = await uploadToLocalStorage();
+    onProgress?.(100);
+    return fallbackUrl;
 }
 
 export async function persistImageToTOS(url) {

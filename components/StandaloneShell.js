@@ -329,7 +329,7 @@ export default function StandaloneShell() {
 
         {/* Generation indicator overlay - visible across all tabs */}
         {isGenerating && (
-          <div className="fixed bottom-6 right-6 z-[110] animate-fade-in pointer-events-none">
+          <div className="fixed top-24 right-6 z-[110] animate-fade-in pointer-events-none">
             <div className="bg-[#0f0c18]/95 border border-purple-500/25 rounded-xl p-4 shadow-2xl flex flex-col items-center gap-3 min-w-[240px] backdrop-blur-xl">
               <div className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#a855f7] to-[#d946ef] p-1 animate-spin shadow-lg shadow-purple-500/20">
