@@ -52,6 +52,23 @@ async function downloadImage(url, filename) {
 
 const IMAGE_UPLOAD_ACCEPT = "image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.tif,.tiff,.raw,.cr2,.cr3,.nef,.arw,.dng,.orf,.raf,.rw2,.pef,.srw";
 
+// #region debug-point E:ui-select
+function debugImageUploadUi(msg, data = {}) {
+  fetch('http://127.0.0.1:7777/event', {
+    method: 'POST',
+    body: JSON.stringify({
+      sessionId: 'image-upload-stuck',
+      runId: 'pre-fix',
+      hypothesisId: 'E',
+      location: 'packages/studio/src/components/ImageStudio.jsx',
+      msg: `[DEBUG] ${msg}`,
+      data,
+      ts: Date.now(),
+    }),
+  }).catch(() => {});
+}
+// #endregion
+
 // ─── UploadButton (inline picker) ───────────────────────────────────────────
 
 function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }) {
@@ -130,6 +147,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     (entries) => {
       if (!entries.length) return;
       const urls = entries.map((e) => e.url);
+      debugImageUploadUi('fireOnSelect', { count: urls.length, hasFirstUrl: !!urls[0], firstHost: urls[0] ? new URL(urls[0]).host : null });
       onSelect({ url: urls[0], urls, thumbnail: entries[0].url });
     },
     [onSelect],
@@ -138,6 +156,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
+    debugImageUploadUi('file input selected', { count: files.length, firstName: files[0]?.name, firstType: files[0]?.type, firstSize: files[0]?.size });
     e.target.value = "";
 
     const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -171,6 +190,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
                 prev.map((h) => (h.id === id ? { ...h, progress: pct } : h)),
               );
             });
+            debugImageUploadUi('uploadFile resolved', { hasUrl: !!uploadedUrl, host: uploadedUrl ? new URL(uploadedUrl).host : null });
 
             // Update history with real URL and Mark as 100%
             setUploadHistory((prev) =>

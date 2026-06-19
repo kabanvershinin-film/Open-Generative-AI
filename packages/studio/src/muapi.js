@@ -11,6 +11,23 @@ export const SUPPORTED_IMAGE_UPLOAD_MIME_TYPES = new Set([
     'image/x-sony-arw', 'image/x-adobe-dng', 'image/x-olympus-orf', 'image/x-fuji-raf',
 ]);
 
+// #region debug-point A:upload-trace
+function debugImageUpload(hypothesisId, msg, data = {}) {
+    fetch('http://127.0.0.1:7777/event', {
+        method: 'POST',
+        body: JSON.stringify({
+            sessionId: 'image-upload-stuck',
+            runId: 'pre-fix',
+            hypothesisId,
+            location: 'packages/studio/src/muapi.js',
+            msg: `[DEBUG] ${msg}`,
+            data,
+            ts: Date.now(),
+        }),
+    }).catch(() => {});
+}
+// #endregion
+
 function getFileExtension(file) {
     return String(file?.name || '').split('.').pop()?.toLowerCase() || '';
 }
@@ -732,28 +749,35 @@ export async function processV2V(apiKey, params) {
 
 export async function uploadFile(apiKey, file, onProgress) {
     validateImageUploadFile(file);
+    debugImageUpload('A', 'upload start', { name: file?.name, type: file?.type, size: file?.size });
 
     const uploadViaPresignedUrl = async () => {
         const contentType = file.type || 'application/octet-stream';
+        debugImageUpload('C', 'sign request start', { name: file?.name, contentType });
         const sign = await fetch(`/api/upload-file?filename=${encodeURIComponent(file.name || 'image')}&type=${encodeURIComponent(contentType)}`);
         const signData = await sign.json().catch(() => ({}));
+        debugImageUpload('C', 'sign response', { ok: sign.ok, status: sign.status, hasPutUrl: !!signData.putUrl, hasPublicUrl: !!signData.publicUrl, putHost: signData.putUrl ? new URL(signData.putUrl).host : null, publicHost: signData.publicUrl ? new URL(signData.publicUrl).host : null });
         if (!sign.ok) throw createUploadError(signData.error || signData.detail, `Не удалось подготовить загрузку (${sign.status}).`);
         if (!signData.putUrl || !signData.publicUrl) throw new Error('Сервер не вернул URL для загрузки изображения.');
 
         onProgress?.(35);
+        debugImageUpload('A', 'put request start', { contentType, size: file?.size });
         const put = await fetch(signData.putUrl, {
             method: 'PUT',
             headers: { 'Content-Type': contentType },
             body: file,
         });
+        debugImageUpload('B', 'put response', { ok: put.ok, status: put.status, statusText: put.statusText });
         if (!put.ok) throw new Error(`Прямая загрузка изображения не удалась (${put.status}).`);
         onProgress?.(100);
+        debugImageUpload('A', 'upload via tos success', { publicHost: new URL(signData.publicUrl).host });
         return signData.publicUrl;
     };
 
     const uploadViaAssetApi = async () => {
         const formData = new FormData();
         formData.append('file', file, file.name || 'image');
+        debugImageUpload('D', 'asset fallback start', { name: file?.name, type: file?.type, size: file?.size });
         const r = await fetch('/api/mf/v1/assets/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}` },
@@ -761,6 +785,7 @@ export async function uploadFile(apiKey, file, onProgress) {
         });
         const data = await r.json().catch(() => ({}));
         const uploadedUrl = data.url || data.file_url || data.data?.url;
+        debugImageUpload('D', 'asset fallback response', { ok: r.ok, status: r.status, hasUploadedUrl: !!uploadedUrl });
         if (r.ok && uploadedUrl) return uploadedUrl;
         throw createUploadError(data.error || data.detail, `Сервер загрузки вернул ошибку ${r.status}.`);
     };
@@ -772,15 +797,18 @@ export async function uploadFile(apiKey, file, onProgress) {
         return await uploadViaPresignedUrl();
     } catch (error) {
         primaryError = error?.message || 'Ошибка сети при прямой загрузке изображения.';
+        debugImageUpload('D', 'presigned upload failed, fallback next', { primaryError });
     }
 
     try {
         onProgress?.(70);
         const assetUrl = await uploadViaAssetApi();
         onProgress?.(100);
+        debugImageUpload('D', 'upload via fallback success', { uploadedHost: new URL(assetUrl).host });
         return assetUrl;
     } catch (fallbackError) {
         onProgress?.(0);
+        debugImageUpload('D', 'fallback failed', { primaryError, fallbackError: fallbackError?.message });
         throw new Error(`${primaryError} ${fallbackError?.message || ''}`.trim());
     }
 }
