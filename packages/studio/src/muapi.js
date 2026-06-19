@@ -1,4 +1,4 @@
-import { getT2vModels, getI2vModels, getV2vModels } from './models.js';
+import { getT2vModels, getI2vModels, getV2vModels, getT2iModels, getI2iModels } from './models.js';
 
 // Internal helper to get model metadata from either T2V or I2V lists.
 function getVideoModelById(id) {
@@ -7,6 +7,42 @@ function getVideoModelById(id) {
 }
 function getI2VModelById(id) {
     return getI2vModels().find((m) => m.id === id);
+}
+function getImageModelById(id) {
+    const all = [...getT2iModels(), ...getI2iModels()];
+    return all.find((m) => m.id === id);
+}
+function getI2IModelById(id) {
+    return getI2iModels().find((m) => m.id === id);
+}
+
+function computeImageSize(aspectRatio, imageSize) {
+    if (imageSize) return imageSize;
+    const sizes = {
+        '1:1': '1024x1024',
+        '16:9': '1792x1024',
+        '9:16': '1024x1792',
+        '4:3': '1024x768',
+        '3:4': '768x1024',
+        '3:2': '1536x1024',
+        '2:3': '1024x1536',
+        '21:9': '2048x878',
+    };
+    return sizes[aspectRatio] || '1024x1024';
+}
+
+function applyImageRouting(modelId, routing) {
+    return routing && routing !== 'default' ? `${modelId}:${routing}` : modelId;
+}
+
+function getImageUrlFromResponse(data) {
+    const item = data?.data?.[0];
+    return item?.url || (item?.b64_json ? `data:image/png;base64,${item.b64_json}` : '') || data?.url || data?.output?.url || data?.outputs?.[0] || '';
+}
+
+function normalizeImageResult(data, fallbackId) {
+    const url = getImageUrlFromResponse(data);
+    return { ...data, id: data?.id || data?.request_id || fallbackId, url };
 }
 
 function notifyAuthRequired(status, message) {
@@ -162,6 +198,73 @@ export async function pollArkTask(apiKey, taskId, bill) {
         }
     }
     throw new Error('Ark: превышено время ожидания генерации.');
+}
+
+// ── Image generation ─────────────────────────────────────────────────────────
+
+export async function generateImage(apiKey, params) {
+    const modelInfo = getImageModelById(params.model);
+    const modelId = applyImageRouting(modelInfo?.apiId || params.model, params.routing);
+    const body = {
+        model: modelId,
+        prompt: params.prompt || '',
+        n: 1,
+        size: computeImageSize(params.aspect_ratio, params.imageSize || params.size),
+        response_format: 'url',
+    };
+    if (params.quality) body.quality = params.quality;
+    if (params.format) body.format = params.format;
+    if (params.image_url) body.image_url = params.image_url;
+
+    const r = await fetch('/api/mf/v1/images/generations', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+        if (r.status === 401) notifyAuthRequired(401, data.error);
+        if (r.status === 402) throw new Error(`Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`);
+        throw new Error(data.error || `Image API ${r.status}`);
+    }
+    return normalizeImageResult(data);
+}
+
+export async function generateI2I(apiKey, params) {
+    const modelInfo = getI2IModelById(params.model) || getImageModelById(params.model);
+    const modelId = applyImageRouting(modelInfo?.apiId || params.model, params.routing);
+    const images = [
+        ...(Array.isArray(params.images_list) ? params.images_list : []),
+        params.image_url,
+    ].filter(Boolean);
+
+    const form = new FormData();
+    form.append('model', modelId);
+    form.append('prompt', params.prompt || '');
+    form.append('n', '1');
+    form.append('size', computeImageSize(params.aspect_ratio, params.imageSize || params.size));
+    if (params.quality) form.append('quality', params.quality);
+    if (params.format) form.append('format', params.format);
+    if (params.background) form.append('background', params.background);
+    if (params.moderation) form.append('moderation', params.moderation);
+    if (params.name) form.append('name', params.name);
+    for (const image of images) form.append('image[]', image);
+
+    const r = await fetch('/api/mf/v1/images/edits', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+        body: form,
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) {
+        if (r.status === 401) notifyAuthRequired(401, data.error);
+        if (r.status === 402) throw new Error(`Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`);
+        throw new Error(data.error || `Image Edit API ${r.status}`);
+    }
+    return normalizeImageResult(data);
 }
 
 // ── Video generation (routes by platform) ─────────────────────────────────────

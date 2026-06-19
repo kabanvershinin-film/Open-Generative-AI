@@ -108,6 +108,50 @@ test('generateSeedanceArk handles 402 Insufficient funds', async (t) => {
     );
 });
 
+test('generateImage posts to image generation proxy and returns url', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementationOnce(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'img-1', data: [{ url: 'http://example.com/image.jpg' }] }),
+    }));
+
+    const result = await muapi.generateImage('key', {
+        model: 'gpt-image-2',
+        prompt: 'кот',
+        aspect_ratio: '1:1',
+    });
+
+    assert.strictEqual(result.url, 'http://example.com/image.jpg');
+    const [url, options] = global.fetch.mock.calls[0].arguments;
+    assert.strictEqual(url, '/api/mf/v1/images/generations');
+    assert.strictEqual(options.method, 'POST');
+    const body = JSON.parse(options.body);
+    assert.strictEqual(body.model, 'gpt-image-2');
+    assert.strictEqual(body.prompt, 'кот');
+});
+
+test('generateI2I posts multipart edit request and returns url', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementationOnce(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'edit-1', data: [{ url: 'http://example.com/edit.jpg' }] }),
+    }));
+
+    const result = await muapi.generateI2I('key', {
+        model: 'gpt-image-2-edit',
+        prompt: 'измени фон',
+        image_url: 'http://example.com/source.jpg',
+    });
+
+    assert.strictEqual(result.url, 'http://example.com/edit.jpg');
+    const [url, options] = global.fetch.mock.calls[0].arguments;
+    assert.strictEqual(url, '/api/mf/v1/images/edits');
+    assert.strictEqual(options.method, 'POST');
+    assert.ok(options.body instanceof FormData);
+});
+
 test('getUserBalance returns numeric balance', async (t) => {
     global.fetch.mock.mockImplementationOnce(() => Promise.resolve({
         ok: true,
