@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { getUser } from '../_lib/balance';
 import { buildUserMediaKey } from '../_lib/tosPaths';
+import { paginateGalleryEntries } from './pagination.js';
 
 // Allow time to download the generated video from the CDN and re-upload to TOS.
 // Videos cross two regions (ARK CDN in China → Vercel → TOS in China), so 60s was
@@ -264,11 +265,18 @@ export async function GET(request) {
             seenUrl.add(e.url);
             return true;
         });
-        const type = new URL(request.url).searchParams.get('type');
-        if (type) entries = entries.filter((e) => e.type === type);
+        const page = paginateGalleryEntries(entries, new URL(request.url).searchParams);
 
-        logStep('GET ok', { user: user.id, perFile: keys.length, total: entries.length });
-        return NextResponse.json({ entries });
+        logStep('GET ok', { user: user.id, perFile: keys.length, total: page.total, cursor: page.cursor, limit: page.limit, returned: page.entries.length });
+        return NextResponse.json(
+            { entries: page.entries, nextCursor: page.nextCursor, total: page.total, limit: page.limit },
+            {
+                headers: {
+                    'Cache-Control': 'private, max-age=30, stale-while-revalidate=120',
+                    'CDN-Cache-Control': 'private, max-age=30',
+                },
+            },
+        );
     } catch (error) {
         logStep('GET error', { message: error.message });
         return NextResponse.json({ entries: [] });

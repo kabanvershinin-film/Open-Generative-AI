@@ -25,6 +25,7 @@ import FaceAssetDialog from "./FaceAssetDialog.jsx";
 import { buildSeedanceStudioPayload, validateFaceAsset } from "../videoAssetPayload.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
+const HISTORY_PAGE_SIZE = 18;
 
 function getQualitiesForModel(modelList, modelId) {
   const model = modelList.find((m) => m.id === modelId);
@@ -350,6 +351,8 @@ export default function VideoStudio({
   // ── history ──
   const [localHistory, setLocalHistory] = useState([]);
   const [remoteHistory, setRemoteHistory] = useState([]);
+  const [remoteHistoryNextCursor, setRemoteHistoryNextCursor] = useState(null);
+  const [remoteHistoryError, setRemoteHistoryError] = useState(null);
   const [isLoadingRemoteHistory, setIsLoadingRemoteHistory] = useState(false);
   const [activeHistoryIdx, setActiveHistoryIdx] = useState(0);
 
@@ -364,6 +367,8 @@ export default function VideoStudio({
   const isMountedRef = useRef(true);
   useEffect(() => { return () => { isMountedRef.current = false; }; }, []);
   const containerRef = useRef(null);
+  const historyScrollRef = useRef(null);
+  const remoteHistoryLoadingRef = useRef(false);
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
   const imageFileInputRef = useRef(null);
@@ -631,28 +636,59 @@ export default function VideoStudio({
     localHistory,
   ]);
 
-  // ── Fetch remote history from /api/gallery ────────────────────────────────
-  const fetchRemoteHistory = useCallback(async () => {
-    if (!apiKey) return;
+  // ── Fetch remote history from /api/gallery in pages ───────────────────────
+  const fetchRemoteHistory = useCallback(async ({ reset = false } = {}) => {
+    if (!apiKey || remoteHistoryLoadingRef.current) return;
+    const cursor = reset ? 0 : remoteHistoryNextCursor;
+    if (!reset && cursor == null && remoteHistory.length > 0) return;
+
+    remoteHistoryLoadingRef.current = true;
     setIsLoadingRemoteHistory(true);
+    setRemoteHistoryError(null);
     try {
-      const response = await fetch("/api/gallery?type=video", {
+      const response = await fetch(`/api/gallery?type=video&limit=${HISTORY_PAGE_SIZE}&cursor=${cursor || 0}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
+        cache: "force-cache",
       });
-      if (response.ok) {
-        const data = await response.json();
-        setRemoteHistory(data.entries || []);
-      }
+      if (!response.ok) throw new Error(`Gallery ${response.status}`);
+      const data = await response.json();
+      const nextEntries = Array.isArray(data.entries) ? data.entries : [];
+      setRemoteHistory((prev) => {
+        const base = reset ? [] : prev;
+        const seen = new Set(base.map((e) => e.id || e.url));
+        const merged = [...base];
+        nextEntries.forEach((entry) => {
+          const key = entry.id || entry.url;
+          if (!seen.has(key)) {
+            seen.add(key);
+            merged.push(entry);
+          }
+        });
+        return merged;
+      });
+      setRemoteHistoryNextCursor(data.nextCursor ?? null);
     } catch (err) {
       console.warn("Failed to fetch remote history:", err);
+      setRemoteHistoryError(err.message || "Ошибка загрузки истории");
     } finally {
+      remoteHistoryLoadingRef.current = false;
       setIsLoadingRemoteHistory(false);
     }
-  }, [apiKey]);
+  }, [apiKey, remoteHistory.length, remoteHistoryNextCursor]);
 
   useEffect(() => {
-    fetchRemoteHistory();
-  }, [fetchRemoteHistory]);
+    setRemoteHistory([]);
+    setRemoteHistoryNextCursor(null);
+    fetchRemoteHistory({ reset: true });
+  }, [apiKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleHistoryScroll = useCallback((e) => {
+    const el = e.currentTarget;
+    if (!el || isLoadingRemoteHistory || remoteHistoryNextCursor == null) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 900) {
+      fetchRemoteHistory();
+    }
+  }, [fetchRemoteHistory, isLoadingRemoteHistory, remoteHistoryNextCursor]);
 
   // ── Derived UI values ────────────────────────────────────────────────────
 
@@ -1867,7 +1903,11 @@ export default function VideoStudio({
       className="w-full h-full flex flex-col items-center justify-center bg-app-bg relative overflow-hidden"
     >
       {/* ── CENTRAL GALLERY AREA ── */}
-      <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
+      <div
+        ref={historyScrollRef}
+        onScroll={handleHistoryScroll}
+        className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2"
+      >
         {(activeTasks.length > 0 || history.length > 0 || isLoadingRemoteHistory) ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {/* Active generation cards */}
@@ -1938,21 +1978,32 @@ export default function VideoStudio({
                 <div
                   key={entry.id || idx}
                   className="relative group rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col"
+                  style={{ contentVisibility: "auto", containIntrinsicSize: "360px 260px" }}
                 >
-                  <video
-                    src={entry.url}
-                    className="w-full aspect-video object-cover bg-black/40 cursor-pointer hover:opacity-80 transition-opacity"
+                  <button
+                    type="button"
+                    className="w-full aspect-video bg-black/40 cursor-pointer hover:opacity-80 transition-opacity relative flex items-center justify-center overflow-hidden"
                     onClick={() => setFullscreenUrl(entry.url)}
-                    controls={false}
-                    loop
-                    muted
-                    playsInline
-                    onMouseOver={(e) => e.target.play()}
-                    onMouseOut={(e) => {
-                      e.target.pause();
-                      e.target.currentTime = 0;
-                    }}
-                  />
+                    title="Открыть видео"
+                  >
+                    {entry.preview_url ? (
+                      <img
+                        src={entry.preview_url}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.style.display = "none"; }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-black to-cyan-950/20" />
+                    )}
+                    <span className="relative z-10 w-14 h-14 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </span>
+                  </button>
                   
                   {/* Overlay actions */}
                   <div className="absolute top-2 right-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -2052,6 +2103,29 @@ export default function VideoStudio({
                 </div>
               );
             })}
+            {(remoteHistoryError || isLoadingRemoteHistory || remoteHistoryNextCursor != null) && (
+              <div className="col-span-full flex justify-center py-4">
+                {remoteHistoryError ? (
+                  <button
+                    type="button"
+                    onClick={() => fetchRemoteHistory()}
+                    className="px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-200 text-xs hover:bg-red-500/20 transition-colors"
+                  >
+                    Ошибка загрузки истории. Повторить
+                  </button>
+                ) : isLoadingRemoteHistory ? (
+                  <span className="text-[11px] font-semibold text-primary/70 tracking-widest uppercase">Загрузка ещё…</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fetchRemoteHistory()}
+                    className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white/60 text-xs hover:text-primary hover:border-primary/40 transition-colors"
+                  >
+                    Загрузить ещё
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center h-full animate-fade-in-up transition-all duration-700 min-h-[50vh]">
