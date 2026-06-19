@@ -320,6 +320,24 @@ export async function generateImage(apiKey, params) {
     return normalizeImageResult(data);
 }
 
+async function dataUrlToUploadableImage(apiKey, image, index) {
+    const response = await fetch(image);
+    const blob = await response.blob();
+    const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+    const filename = `reference-${index + 1}.${ext}`;
+
+    const uploadForm = new FormData();
+    uploadForm.append('file', blob, filename);
+    const upload = await fetch('/api/mf/v1/assets/upload', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+        body: uploadForm,
+    });
+    const uploadData = await upload.json().catch(() => ({}));
+    const uploadedUrl = uploadData.url || uploadData.file_url || uploadData.data?.url;
+    return upload.ok && uploadedUrl ? uploadedUrl : { blob, filename };
+}
+
 export async function generateI2I(apiKey, params) {
     const modelInfo = getI2IModelById(params.model) || getImageModelById(params.model);
     const modelId = applyImageRouting(modelInfo?.apiId || params.model, params.routing);
@@ -342,10 +360,12 @@ export async function generateI2I(apiKey, params) {
     for (let index = 0; index < images.length; index += 1) {
         const image = images[index];
         if (typeof image === 'string' && image.startsWith('data:')) {
-            const response = await fetch(image);
-            const blob = await response.blob();
-            const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
-            form.append('image[]', blob, `reference-${index + 1}.${ext}`);
+            const uploadable = await dataUrlToUploadableImage(apiKey, image, index);
+            if (typeof uploadable === 'string') {
+                form.append('image[]', uploadable);
+            } else {
+                form.append('image[]', uploadable.blob, uploadable.filename);
+            }
         } else {
             form.append('image[]', image);
         }
