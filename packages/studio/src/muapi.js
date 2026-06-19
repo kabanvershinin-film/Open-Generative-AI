@@ -16,6 +16,19 @@ function notifyAuthRequired(status, message) {
     }
 }
 
+function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    return fetch(url, { ...options, signal: controller.signal })
+        .catch((error) => {
+            if (error?.name === 'AbortError') {
+                throw new Error(`Таймаут соединения (${Math.round(timeoutMs / 1000)}с): ${url}`);
+            }
+            throw error;
+        })
+        .finally(() => clearTimeout(timeout));
+}
+
 /**
  * Ark Seedance 2.0 (Volcano Engine) generation.
  * This model has a custom multimodal protocol and is called via a direct proxy
@@ -81,15 +94,23 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
         last_image_url: params.last_image_url || undefined,
     };
 
+    console.info('[muapi] Submit Ark Seedance task', {
+        model: body.model,
+        hasFaceAsset: !!body.face_asset,
+        imageRefs: [body.image_url, ...(body.image_urls || [])].filter(Boolean).length,
+        videoRefs: [body.video_url, ...(body.video_urls || [])].filter(Boolean).length,
+        audioRefs: [body.audio_url, ...(body.audio_urls || [])].filter(Boolean).length,
+    });
+
     // Step 1: submit task (fast — just creates the Ark task and returns taskId)
-    const submit = await fetch('/api/ark/seedance', {
+    const submit = await fetchWithTimeout('/api/ark/seedance', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify(body),
-    });
+    }, 30000);
     const submitData = await submit.json().catch(() => ({}));
     if (!submit.ok) {
         if (submit.status === 401) {
@@ -126,9 +147,9 @@ export async function pollArkTask(apiKey, taskId, bill) {
     const billQs = bill ? `&bill=${encodeURIComponent(bill)}` : '';
     for (let attempt = 0; attempt < 600; attempt++) {
         await new Promise((r) => setTimeout(r, 5000));
-        const poll = await fetch(`/api/ark/seedance?taskId=${encodeURIComponent(taskId)}${billQs}`, {
+        const poll = await fetchWithTimeout(`/api/ark/seedance?taskId=${encodeURIComponent(taskId)}${billQs}`, {
             headers: { 'Authorization': `Bearer ${apiKey}` }
-        });
+        }, 20000);
         const data = await poll.json().catch(() => ({}));
         if (!poll.ok) continue;
         const status = (data.status || '').toLowerCase();

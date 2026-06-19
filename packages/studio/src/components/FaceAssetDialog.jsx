@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { validateFaceAsset } from "../videoAssetPayload.js";
 
 const LIBRARY_KEY = "face_library_v1";
 const AVATAR_LIBRARY_KEY = "avatar_library_v1";
@@ -140,12 +141,24 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
   if (!open) return null;
 
   const pickFace = (face) => {
-    onSelect?.(face.assetUri, face.name, face.thumbnail);
+    const validated = validateFaceAsset({ uri: face.assetUri, name: face.name, thumbnail: face.thumbnail, status: face.status });
+    if (!validated.ok) {
+      console.warn("[FaceAssetDialog] Invalid saved face asset", { face, reason: validated.error });
+      alert(validated.error);
+      return;
+    }
+    onSelect?.(validated.asset.uri, validated.asset.name, validated.asset.thumbnail, { status: validated.asset.status });
     onClose?.();
   };
 
   const pickAvatar = (avatar) => {
-    onSelect?.(avatar.assetUri || `asset://${avatar.id}`, avatar.name, avatar.thumbnail);
+    const validated = validateFaceAsset({ uri: avatar.assetUri || `asset://${avatar.id}`, name: avatar.name, thumbnail: avatar.thumbnail, status: avatar.status });
+    if (!validated.ok) {
+      console.warn("[FaceAssetDialog] Invalid avatar asset", { avatar, reason: validated.error });
+      alert(validated.error);
+      return;
+    }
+    onSelect?.(validated.asset.uri, validated.asset.name, validated.asset.thumbnail, { status: validated.asset.status });
     onClose?.();
   };
 
@@ -199,8 +212,14 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
     const uri = toUri(id);
     const name = manualName.trim() || id.replace(/^asset:\/\//, "").slice(0, 16);
     const thumb = thumbTab === "url" ? (thumbUrl.trim() || null) : (thumbUrl || null);
-    if (saveToLib) addToLibrary(uri, name, thumb);
-    onSelect?.(uri, name, thumb);
+    const validated = validateFaceAsset({ uri, name, thumbnail: thumb, status: "Active" });
+    if (!validated.ok) {
+      console.warn("[FaceAssetDialog] Invalid manual asset", { uri, name, reason: validated.error });
+      alert(validated.error);
+      return;
+    }
+    if (saveToLib) addToLibrary(validated.asset.uri, validated.asset.name, validated.asset.thumbnail);
+    onSelect?.(validated.asset.uri, validated.asset.name, validated.asset.thumbnail, { status: validated.asset.status });
     onClose?.();
     setManualId("");
     setManualName("");
@@ -209,11 +228,23 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
   };
 
   const saveArkToLib = (a) => {
-    addToLibrary(toUri(a.id), a.name || a.id, null);
+    const validated = validateFaceAsset({ uri: toUri(a.id), name: a.name || a.id, status: a.status });
+    if (!validated.ok) {
+      console.warn("[FaceAssetDialog] Invalid ARK asset for library", { asset: a, reason: validated.error });
+      alert(validated.error);
+      return;
+    }
+    addToLibrary(validated.asset.uri, validated.asset.name, null);
   };
 
   const pickArkAsset = (a) => {
-    onSelect?.(toUri(a.id), a.name || a.id, null);
+    const validated = validateFaceAsset({ uri: toUri(a.id), name: a.name || a.id, status: a.status });
+    if (!validated.ok) {
+      console.warn("[FaceAssetDialog] Invalid ARK asset", { asset: a, reason: validated.error });
+      alert(validated.error);
+      return;
+    }
+    onSelect?.(validated.asset.uri, validated.asset.name, null, { status: validated.asset.status });
     onClose?.();
   };
 

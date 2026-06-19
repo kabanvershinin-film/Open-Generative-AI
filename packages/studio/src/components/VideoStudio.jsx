@@ -22,6 +22,7 @@ import {
 import { useModelConfig } from "../useModelConfig.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
+import { buildSeedanceStudioPayload, validateFaceAsset } from "../videoAssetPayload.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 
@@ -1445,62 +1446,44 @@ export default function VideoStudio({
       try {
         // ── Seedance 2.0 (Ark) multimodal path ──
         if (currentModel?.provider === "ark") {
-          const readyRefs = refFiles.filter((f) => f.url);
-          
-          // Ensure the character tag is present in the prompt if a faceAsset is selected.
-          // In muapi.js, we prioritize character as 图片1.
-          let finalPrompt = taskPrompt;
-          if (faceAsset) {
-            const tag = "图片1";
-            const name = faceAsset.name || "";
-            
-            // 1. If the prompt contains the tag, we're good.
-            // 2. If it contains the name (e.g. "Жека"), replace it with the tag.
-            // 3. Otherwise, append the tag.
-            const tagRegex = new RegExp(tag, "i");
-            if (!tagRegex.test(finalPrompt)) {
-              if (name && finalPrompt.includes(name)) {
-                finalPrompt = finalPrompt.replace(new RegExp(name, "gi"), tag);
-              } else {
-                finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
-              }
-            }
-          }
-
-          const params = {
+          const isI2V = i2vModels.some((m) => m.id === taskModel);
+          const params = buildSeedanceStudioPayload({
             model: taskModel,
-            prompt: finalPrompt,
-            aspect_ratio: selectedAr,
-            // Prioritize multimodal refs, but fallback to single uploaders if they exist
-            image_url: uploadedImageUrl || undefined,
-            video_url: uploadedVideoUrl || undefined,
-            audio_url: uploadedAudioUrl || undefined,
-            image_urls: readyRefs.filter((f) => f.kind === "image").map((f) => f.url),
-            video_urls: readyRefs.filter((f) => f.kind === "video").map((f) => f.url),
-            audio_urls: readyRefs.filter((f) => f.kind === "audio").map((f) => f.url),
-            face_asset: faceAsset?.uri || undefined,
-            face_thumbnail: faceAsset?.thumbnail || undefined,
-            is_i2v: i2vModels.some((m) => m.id === taskModel),
-            onTaskId: (arkTaskId, bill) => {
-              updateTask(taskId, { arkTaskId, bill });
-              try {
-                localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
-                  taskId: arkTaskId,
-                  bill,
-                  model: taskModel,
-                  prompt: taskPrompt,
-                  aspect_ratio: selectedAr,
-                  duration: selectedDuration,
-                }));
-              } catch {}
-            },
+            prompt: taskPrompt,
+            aspectRatio: selectedAr,
+            uploadedImageUrl,
+            uploadedVideoUrl,
+            uploadedAudioUrl,
+            refFiles,
+            faceAsset,
+            isI2V,
+          });
+          params.onTaskId = (arkTaskId, bill) => {
+            updateTask(taskId, { arkTaskId, bill });
+            try {
+              localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
+                taskId: arkTaskId,
+                bill,
+                model: taskModel,
+                prompt: taskPrompt,
+                aspect_ratio: selectedAr,
+                duration: selectedDuration,
+              }));
+            } catch {}
           };
+          console.info("[VideoStudio] Seedance asset payload", {
+            model: taskModel,
+            hasFaceAsset: !!params.face_asset,
+            faceAsset: params.face_asset,
+            imageRefs: [params.image_url, ...(params.image_urls || [])].filter(Boolean).length,
+            videoRefs: [params.video_url, ...(params.video_urls || [])].filter(Boolean).length,
+            audioRefs: [params.audio_url, ...(params.audio_urls || [])].filter(Boolean).length,
+          });
           const durations = getCurrentDurations(taskModel);
           if (durations.length > 0) params.duration = selectedDuration;
           const resolutions = getCurrentResolutions(taskModel);
           if (resolutions.length > 0) params.resolution = selectedResolution;
 
-          const isI2V = i2vModels.some((m) => m.id === taskModel);
           const res = isI2V
             ? await generateI2V(apiKey, params)
             : await generateVideo(apiKey, params);
@@ -2872,8 +2855,14 @@ export default function VideoStudio({
       <FaceAssetDialog
         open={facePickOpen}
         onClose={() => setFacePickOpen(false)}
-        onSelect={(assetUri, name, thumb) => {
-          setFaceAsset({ uri: assetUri, name, thumbnail: thumb });
+        onSelect={(assetUri, name, thumb, meta = {}) => {
+          const validated = validateFaceAsset({ uri: assetUri, name, thumbnail: thumb, status: meta.status });
+          if (!validated.ok) {
+            console.warn("[VideoStudio] Rejected face asset", { assetUri, name, reason: validated.error });
+            alert(validated.error);
+            return;
+          }
+          setFaceAsset(validated.asset);
           // Character is always 图片1 in muapi.js.
           insertRefToken("图片1");
         }}
