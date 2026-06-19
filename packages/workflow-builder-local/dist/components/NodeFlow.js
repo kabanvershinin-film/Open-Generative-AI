@@ -2942,7 +2942,7 @@ var NodeFlow = function NodeFlow(_ref) {
       setIsPanelOpen(false);
     }
   }, "\u2715"), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col gap-4 h-full w-full"
+    className: "flex flex-col gap-4 h-full min-h-0 w-full"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
     className: "text-base font-semibold text-center text-white mt-6 tracking-tight"
   }, "\u0421\u0432\u043E\u0439\u0441\u0442\u0432\u0430"), /*#__PURE__*/_react["default"].createElement("h1", {
@@ -2958,9 +2958,9 @@ var NodeFlow = function NodeFlow(_ref) {
   }) : /*#__PURE__*/_react["default"].createElement(_ri.RiInputMethodLine, {
     className: "text-purple-400"
   }), formatNodeTitle(selectedNode.id)), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col gap-4 w-full h-full overflow-y-auto px-4 custom-scrollbar-thin"
+    className: "flex flex-col gap-4 w-full flex-1 min-h-0 overflow-y-auto px-4 custom-scrollbar-thin"
   }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col gap-4 w-full h-full"
+    className: "flex flex-col gap-4 w-full"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1 relative w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {

@@ -2634,14 +2634,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           >
             &#10005;
           </button>
-          <div className="flex flex-col gap-4 h-full w-full">
+          <div className="flex flex-col gap-4 h-full min-h-0 w-full">
             <h3 className="text-base font-semibold text-center text-white mt-6 tracking-tight">Свойства</h3>
             <h1 className="flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800 border border-white/5 rounded-xl px-3 py-2 transition-all">
               {selectedNode.id.startsWith("text") ? <TfiText className="text-blue-400" /> : selectedNode.id.startsWith("image") ? <IoImageOutline className="text-green-400" /> : selectedNode.id.startsWith("video") ? <IoVideocamOutline className="text-orange-400" /> : selectedNode.id.startsWith("audio") ? <AiOutlineAudio className="text-yellow-400" /> : <RiInputMethodLine className="text-purple-400" />}
               {formatNodeTitle(selectedNode.id)}
             </h1>
-            <div className="flex flex-col gap-4 w-full h-full overflow-y-auto px-4 custom-scrollbar-thin">
-              <div className="flex flex-col gap-4 w-full h-full">
+            <div className="flex flex-col gap-4 w-full flex-1 min-h-0 overflow-y-auto px-4 custom-scrollbar-thin">
+              <div className="flex flex-col gap-4 w-full">
                 <div className="flex flex-col gap-1 relative w-full">
                   <label className="text-[10px] font-bold text-zinc-500 text-start px-1">Модель</label>
                   <div className="flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-lg">
