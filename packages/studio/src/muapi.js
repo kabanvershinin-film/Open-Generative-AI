@@ -326,7 +326,7 @@ export async function generateI2I(apiKey, params) {
     const images = [
         ...(Array.isArray(params.images_list) ? params.images_list : []),
         params.image_url,
-    ].filter(Boolean);
+    ].filter(Boolean).filter((image, index, list) => list.indexOf(image) === index);
 
     const form = new FormData();
     form.append('model', modelId);
@@ -338,7 +338,18 @@ export async function generateI2I(apiKey, params) {
     if (params.background) form.append('background', params.background);
     if (params.moderation) form.append('moderation', params.moderation);
     if (params.name) form.append('name', params.name);
-    for (const image of images) form.append('image[]', image);
+
+    for (let index = 0; index < images.length; index += 1) {
+        const image = images[index];
+        if (typeof image === 'string' && image.startsWith('data:')) {
+            const response = await fetch(image);
+            const blob = await response.blob();
+            const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+            form.append('image[]', blob, `reference-${index + 1}.${ext}`);
+        } else {
+            form.append('image[]', image);
+        }
+    }
 
     const r = await fetch('/api/mf/v1/images/edits', {
         method: 'POST',
@@ -638,7 +649,7 @@ export async function processV2V(apiKey, params) {
 // ── Persistence & Assets ───────────────────────────────────────────────────────
 
 export async function uploadFile(apiKey, file, onProgress) {
-    const uploadToLocalStorage = async () => {
+    const fileToDataUrl = async () => {
         const buffer = await file.arrayBuffer();
         let binary = '';
         const bytes = new Uint8Array(buffer);
@@ -646,8 +657,10 @@ export async function uploadFile(apiKey, file, onProgress) {
             binary += String.fromCharCode(bytes[i]);
         }
         const contentType = file.type || 'image/png';
-        const image = `data:${contentType};base64,${btoa(binary)}`;
+        return `data:${contentType};base64,${btoa(binary)}`;
+    };
 
+    const uploadToLocalStorage = async (image) => {
         const local = await fetch('/api/upload-file', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -673,9 +686,15 @@ export async function uploadFile(apiKey, file, onProgress) {
         return uploadedUrl;
     }
 
-    const fallbackUrl = await uploadToLocalStorage();
-    onProgress?.(100);
-    return fallbackUrl;
+    const image = await fileToDataUrl();
+    try {
+        const fallbackUrl = await uploadToLocalStorage(image);
+        onProgress?.(100);
+        return fallbackUrl;
+    } catch {
+        onProgress?.(100);
+        return image;
+    }
 }
 
 export async function persistImageToTOS(url) {
