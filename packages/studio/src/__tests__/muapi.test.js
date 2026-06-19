@@ -152,18 +152,11 @@ test('generateI2I posts multipart edit request and returns url', async (t) => {
     assert.ok(options.body instanceof FormData);
 });
 
-test('generateI2I uploads data URL references before edit request', async (t) => {
+test('generateI2I sends data URL references as multipart files', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {
         if (String(url).startsWith('data:')) {
             return { blob: async () => new Blob(['image'], { type: 'image/png' }) };
-        }
-        if (url === '/api/mf/v1/assets/upload') {
-            return {
-                ok: true,
-                status: 200,
-                json: async () => ({ url: 'http://example.com/uploaded.png' }),
-            };
         }
         if (url === '/api/mf/v1/images/edits') {
             return {
@@ -182,8 +175,10 @@ test('generateI2I uploads data URL references before edit request', async (t) =>
     });
 
     assert.strictEqual(result.url, 'http://example.com/edit.jpg');
-    const [, editOptions] = global.fetch.mock.calls[2].arguments;
-    assert.deepEqual(editOptions.body.getAll('image[]'), ['http://example.com/uploaded.png']);
+    const [, editOptions] = global.fetch.mock.calls[1].arguments;
+    const imageEntries = editOptions.body.getAll('image[]');
+    assert.strictEqual(imageEntries.length, 1);
+    assert.ok(imageEntries[0] instanceof Blob);
 });
 
 test('generateImage routes Gemini image models to chat completions', async (t) => {

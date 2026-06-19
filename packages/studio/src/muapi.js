@@ -358,22 +358,29 @@ export async function generateImage(apiKey, params) {
     return normalizeImageResult(data);
 }
 
-async function dataUrlToUploadableImage(apiKey, image, index) {
+async function dataUrlToBlob(image) {
     const response = await fetch(image);
-    const blob = await response.blob();
-    const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
-    const filename = `reference-${index + 1}.${ext}`;
+    if (!response.ok && response.status) throw new Error(`Не удалось прочитать data URL изображения (${response.status}).`);
+    return response.blob();
+}
 
-    const uploadForm = new FormData();
-    uploadForm.append('file', blob, filename);
-    const upload = await fetch('/api/mf/v1/assets/upload', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${apiKey}` },
-        body: uploadForm,
-    });
-    const uploadData = await upload.json().catch(() => ({}));
-    const uploadedUrl = uploadData.url || uploadData.file_url || uploadData.data?.url;
-    return upload.ok && uploadedUrl ? uploadedUrl : { blob, filename };
+async function imageReferenceToEditFile(image, index) {
+    if (image instanceof Blob) {
+        const ext = (image.type.split('/')[1] || 'png').split('+')[0];
+        return { blob: image, filename: `reference-${index + 1}.${ext}` };
+    }
+
+    if (typeof image === 'string' && image.startsWith('data:')) {
+        const blob = await dataUrlToBlob(image);
+        const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+        return { blob, filename: `reference-${index + 1}.${ext}` };
+    }
+
+    if (typeof image === 'string' && /^https?:\/\//i.test(image)) {
+        return image;
+    }
+
+    return image;
 }
 
 export async function generateI2I(apiKey, params) {
@@ -397,15 +404,11 @@ export async function generateI2I(apiKey, params) {
 
     for (let index = 0; index < images.length; index += 1) {
         const image = images[index];
-        if (typeof image === 'string' && image.startsWith('data:')) {
-            const uploadable = await dataUrlToUploadableImage(apiKey, image, index);
-            if (typeof uploadable === 'string') {
-                form.append('image[]', uploadable);
-            } else {
-                form.append('image[]', uploadable.blob, uploadable.filename);
-            }
+        const uploadable = await imageReferenceToEditFile(image, index);
+        if (uploadable?.blob) {
+            form.append('image[]', uploadable.blob, uploadable.filename);
         } else {
-            form.append('image[]', image);
+            form.append('image[]', uploadable);
         }
     }
 
@@ -709,36 +712,27 @@ export async function processV2V(apiKey, params) {
 export async function uploadFile(apiKey, file, onProgress) {
     validateImageUploadFile(file);
 
-    const fileToDataUrl = async () => {
-        const buffer = await file.arrayBuffer();
-        let binary = '';
-        const bytes = new Uint8Array(buffer);
-        for (let i = 0; i < bytes.byteLength; i += 1) {
-            binary += String.fromCharCode(bytes[i]);
-        }
-        const contentType = file.type || 'image/png';
-        return `data:${contentType};base64,${btoa(binary)}`;
-    };
+    const uploadViaPresignedUrl = async () => {
+        const contentType = file.type || 'application/octet-stream';
+        const sign = await fetch(`/api/upload-file?filename=${encodeURIComponent(file.name || 'image')}&type=${encodeURIComponent(contentType)}`);
+        const signData = await sign.json().catch(() => ({}));
+        if (!sign.ok) throw createUploadError(signData.error || signData.detail, `Не удалось подготовить загрузку (${sign.status}).`);
+        if (!signData.putUrl || !signData.publicUrl) throw new Error('Сервер не вернул URL для загрузки изображения.');
 
-    const uploadToLocalStorage = async (image) => {
-        const local = await fetch('/api/upload-file', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image }),
+        onProgress?.(35);
+        const put = await fetch(signData.putUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': contentType },
+            body: file,
         });
-        const localData = await local.json().catch(() => ({}));
-        if (!local.ok) throw createUploadError(localData.error || localData.detail, `Локальная загрузка не удалась (${local.status}).`);
-        if (!localData.url) throw new Error('Локальная загрузка не вернула URL изображения.');
-        return localData.url;
+        if (!put.ok) throw new Error(`Прямая загрузка изображения не удалась (${put.status}).`);
+        onProgress?.(100);
+        return signData.publicUrl;
     };
 
-    onProgress?.(5);
-    const formData = new FormData();
-    formData.append('file', file, file.name || 'image');
-
-    let serverError = null;
-    try {
-        onProgress?.(20);
+    const uploadViaAssetApi = async () => {
+        const formData = new FormData();
+        formData.append('file', file, file.name || 'image');
         const r = await fetch('/api/mf/v1/assets/upload', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${apiKey}` },
@@ -746,24 +740,27 @@ export async function uploadFile(apiKey, file, onProgress) {
         });
         const data = await r.json().catch(() => ({}));
         const uploadedUrl = data.url || data.file_url || data.data?.url;
-        if (r.ok && uploadedUrl) {
-            onProgress?.(100);
-            return uploadedUrl;
-        }
-        serverError = formatApiError(data.error || data.detail, `Сервер загрузки вернул ошибку ${r.status}`);
+        if (r.ok && uploadedUrl) return uploadedUrl;
+        throw createUploadError(data.error || data.detail, `Сервер загрузки вернул ошибку ${r.status}.`);
+    };
+
+    onProgress?.(5);
+    let primaryError = null;
+    try {
+        onProgress?.(15);
+        return await uploadViaPresignedUrl();
     } catch (error) {
-        serverError = error?.message || 'Ошибка сети при загрузке изображения.';
+        primaryError = error?.message || 'Ошибка сети при прямой загрузке изображения.';
     }
 
     try {
         onProgress?.(70);
-        const image = await fileToDataUrl();
-        const fallbackUrl = await uploadToLocalStorage(image);
+        const assetUrl = await uploadViaAssetApi();
         onProgress?.(100);
-        return fallbackUrl;
+        return assetUrl;
     } catch (fallbackError) {
         onProgress?.(0);
-        throw new Error(`${serverError || 'Не удалось загрузить изображение.'} ${fallbackError?.message || ''}`.trim());
+        throw new Error(`${primaryError} ${fallbackError?.message || ''}`.trim());
     }
 }
 
