@@ -45,6 +45,15 @@ function normalizeImageResult(data, fallbackId) {
     return { ...data, id: data?.id || data?.request_id || fallbackId, url };
 }
 
+function formatApiError(error, fallback) {
+    if (!error) return fallback;
+    if (typeof error === 'string') return error;
+    if (typeof error === 'object') {
+        return error.message || error.detail || error.error || error.code || JSON.stringify(error);
+    }
+    return String(error);
+}
+
 function notifyAuthRequired(status, message) {
     if (typeof window !== 'undefined') {
         const event = new CustomEvent('muapi:auth-required', { detail: { status, message } });
@@ -226,9 +235,9 @@ export async function generateImage(apiKey, params) {
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-        if (r.status === 401) notifyAuthRequired(401, data.error);
+        if (r.status === 401) notifyAuthRequired(401, formatApiError(data.error, 'Войдите в аккаунт, чтобы генерировать.'));
         if (r.status === 402) throw new Error(`Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`);
-        throw new Error(data.error || `Image API ${r.status}`);
+        throw new Error(formatApiError(data.error || data.detail, `Image API ${r.status}`));
     }
     return normalizeImageResult(data);
 }
@@ -260,9 +269,9 @@ export async function generateI2I(apiKey, params) {
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
-        if (r.status === 401) notifyAuthRequired(401, data.error);
+        if (r.status === 401) notifyAuthRequired(401, formatApiError(data.error, 'Войдите в аккаунт, чтобы генерировать.'));
         if (r.status === 402) throw new Error(`Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`);
-        throw new Error(data.error || `Image Edit API ${r.status}`);
+        throw new Error(formatApiError(data.error || data.detail, `Image Edit API ${r.status}`));
     }
     return normalizeImageResult(data);
 }

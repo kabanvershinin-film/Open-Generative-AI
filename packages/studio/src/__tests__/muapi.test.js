@@ -152,6 +152,20 @@ test('generateI2I posts multipart edit request and returns url', async (t) => {
     assert.ok(options.body instanceof FormData);
 });
 
+test('generateImage formats object API errors', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementationOnce(async () => ({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: { message: 'Invalid image request' } }),
+    }));
+
+    await assert.rejects(
+        muapi.generateImage('key', { model: 'gpt-image-2', prompt: 'кот' }),
+        { message: 'Invalid image request' },
+    );
+});
+
 test('getUserBalance returns numeric balance', async (t) => {
     global.fetch.mock.mockImplementationOnce(() => Promise.resolve({
         ok: true,
