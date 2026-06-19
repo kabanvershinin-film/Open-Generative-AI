@@ -176,7 +176,7 @@ test('generateI2I sends data URL references as multipart files', async (t) => {
 
     assert.strictEqual(result.url, 'http://example.com/edit.jpg');
     const [, editOptions] = global.fetch.mock.calls[1].arguments;
-    const imageEntries = editOptions.body.getAll('image[]');
+    const imageEntries = editOptions.body.getAll('image');
     assert.strictEqual(imageEntries.length, 1);
     assert.ok(imageEntries[0] instanceof Blob);
 });

@@ -425,10 +425,11 @@ export async function generateI2I(apiKey, params) {
     for (let index = 0; index < images.length; index += 1) {
         const image = images[index];
         const uploadable = await imageReferenceToEditFile(image, index);
+        const fieldName = index === 0 ? 'image' : 'image[]';
         if (uploadable?.blob) {
-            form.append('image[]', uploadable.blob, uploadable.filename);
+            form.append(fieldName, uploadable.blob, uploadable.filename);
         } else {
-            form.append('image[]', uploadable);
+            form.append(fieldName, uploadable);
         }
     }
 

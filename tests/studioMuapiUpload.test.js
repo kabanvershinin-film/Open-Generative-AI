@@ -98,7 +98,7 @@ test('studio generateI2I sends data url references as file blobs', async (t) => 
             };
         }
         if (url === '/api/mf/v1/images/edits') {
-            const imageEntries = [...options.body.entries()].filter(([key]) => key === 'image[]');
+            const imageEntries = [...options.body.entries()].filter(([key]) => key === 'image');
             assert.strictEqual(imageEntries.length, 1);
             assert.ok(imageEntries[0][1] instanceof Blob);
             return {
