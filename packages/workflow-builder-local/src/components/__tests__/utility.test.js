@@ -8,7 +8,7 @@ global.axios = { post: mock.fn() };
 global.toast = { error: mock.fn(), success: mock.fn() };
 
 // Now import the module.
-import * as utility from '../utility.js';
+import * as utility from '../../../dist/components/utility.js';
 
 test('stableStringify sorts keys and handles nested objects', () => {
     const obj1 = { b: 2, a: 1, c: { y: 2, x: 1 } };

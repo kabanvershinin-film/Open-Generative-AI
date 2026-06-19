@@ -461,6 +461,163 @@ export async function getUserWorkflows(apiKey) {
     return Array.isArray(data) ? data : [];
 }
 
+export async function getTemplateWorkflows(_apiKey) {
+    return [];
+}
+
+export async function getPublishedWorkflows(apiKey) {
+    try {
+        const r = await fetch('/api/workflow/community', {
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+        });
+        if (!r.ok) return [];
+        const data = await r.json().catch(() => []);
+        return Array.isArray(data) ? data : [];
+    } catch {
+        return [];
+    }
+}
+
+export async function createWorkflow(apiKey, data = {}) {
+    const r = await fetch('/api/workflow/create', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    });
+    if (!r.ok) throw new Error('Failed to create workflow');
+    return r.json();
+}
+
+export async function updateWorkflowName(apiKey, id, name) {
+    const r = await fetch(`/api/workflow/${id}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name }),
+    });
+    if (!r.ok) return {};
+    return r.json();
+}
+
+export async function deleteWorkflow(apiKey, id) {
+    await fetch(`/api/workflow/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+    });
+    return { success: true };
+}
+
+export async function getWorkflowData(apiKey, id) {
+    try {
+        const response = await fetch(`/api/workflow/${id}`, {
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+        });
+        if (!response.ok) throw new Error('Not found');
+        const wf = await response.json();
+        return {
+            workflow_id: id,
+            id,
+            name: wf.name || 'Untitled Workflow',
+            data: { nodes: wf.nodes || wf.data?.nodes || [] },
+            edges: wf.edges || [],
+            is_owner: wf.is_owner ?? true,
+            is_published: wf.is_published ?? false,
+            is_template: wf.is_template ?? false,
+            show_temp_button: wf.show_temp_button ?? false,
+            can_edit: wf.can_edit ?? wf.is_owner ?? true,
+            run_id: wf.run_id || null,
+            category: wf.category || 'General',
+            thumbnail: wf.thumbnail || null,
+        };
+    } catch {
+        return {
+            workflow_id: id,
+            id,
+            name: 'Untitled Workflow',
+            data: { nodes: [] },
+            edges: [],
+            is_owner: true,
+            can_edit: true,
+            is_published: false,
+            is_template: false,
+            show_temp_button: false,
+            run_id: null,
+            category: 'General',
+        };
+    }
+}
+
+export async function getWorkflowInputs(apiKey, id) {
+    try {
+        const wf = await getWorkflowData(apiKey, id);
+        const nodes = wf.data?.nodes || wf.nodes || [];
+        const properties = {};
+        for (const node of nodes) {
+            const cat = node.category || node.type || '';
+            const model = node.model || '';
+            if (cat === 'text' || node.type === 'textNode') {
+                const prompt = node.input_params?.prompt || node.data?.formValues?.prompt || '';
+                properties[node.id] = {
+                    type: 'string',
+                    title: node.id,
+                    description: 'Text input',
+                    default: prompt,
+                    examples: [prompt],
+                };
+            } else if (model.includes('passthrough') && (cat === 'image' || node.type === 'uploadNode')) {
+                const url = node.input_params?.image_url || node.data?.formValues?.image_url || '';
+                properties[node.id] = {
+                    type: 'string',
+                    title: `${node.id} (image URL)`,
+                    description: 'Image URL',
+                    field: 'image',
+                    default: url,
+                };
+            }
+        }
+        return { properties, required: [] };
+    } catch {
+        return { properties: {}, required: [] };
+    }
+}
+
+export async function getAllNodeSchemas(_apiKey, id) {
+    try {
+        const response = await fetch(`/api/workflow/${id}/node-schemas`);
+        if (!response.ok) return { categories: {} };
+        const data = await response.json().catch(() => ({ categories: {} }));
+        return data && typeof data === 'object' ? data : { categories: {} };
+    } catch {
+        return { categories: {} };
+    }
+}
+
+export async function getNodeSchemas(_apiKey) {
+    return { categories: {} };
+}
+
+export async function calculateDynamicCost(_apiKey) {
+    return { cost: 0 };
+}
+
+export async function executeWorkflow(apiKey, id, inputs) {
+    const response = await fetch(`/api/workflow/${id}/run`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ inputs: inputs || {} }),
+    });
+    if (!response.ok) throw new Error('Failed to execute workflow');
+    return response.json();
+}
+
 export async function getUserBalance(apiKey) {
     const r = await fetch('/api/user/balance', {
         headers: { 'Authorization': `Bearer ${apiKey}` },
