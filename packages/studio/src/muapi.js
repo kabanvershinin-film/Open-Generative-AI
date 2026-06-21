@@ -493,7 +493,7 @@ async function dataUrlToBlob(image) {
     return response.blob();
 }
 
-async function imageReferenceToEditFile(image, index) {
+async function imageReferenceToEditFile(image, index, forceDownload = false) {
     if (image instanceof Blob) {
         const ext = (image.type.split('/')[1] || 'png').split('+')[0];
         return { blob: image, filename: `reference-${index + 1}.${ext}` };
@@ -505,9 +505,18 @@ async function imageReferenceToEditFile(image, index) {
         return { blob, filename: `reference-${index + 1}.${ext}` };
     }
 
-    // If it's a URL, just return it as a string—let's send it directly instead of downloading!
     if (typeof image === 'string' && /^https?:\/\//i.test(image)) {
-        return image;
+        if (forceDownload) {
+            // Download the URL and return as blob for non-chat edit models that require files
+            const res = await fetch(image);
+            if (!res.ok) throw new Error(`Не удалось скачать изображение (${res.status}).`);
+            const blob = await res.blob();
+            const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+            return { blob, filename: `reference-${index + 1}.${ext}` };
+        } else {
+            // Return URL as string for chat models that accept references by URL
+            return image;
+        }
     }
 
     return image;
@@ -538,7 +547,8 @@ export async function generateI2I(apiKey, params) {
 
     for (let index = 0; index < images.length; index += 1) {
         const image = images[index];
-        const uploadable = await imageReferenceToEditFile(image, index);
+        // For I2I, we always need to download URLs and send as files!
+        const uploadable = await imageReferenceToEditFile(image, index, true);
         const fieldName = index === 0 ? 'image' : 'image[]';
         if (uploadable?.blob) {
             form.append(fieldName, uploadable.blob, uploadable.filename);

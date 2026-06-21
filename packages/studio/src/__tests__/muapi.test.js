@@ -228,9 +228,15 @@ test('generateI2I posts multipart edit request and returns url', async (t) => {
     assert.ok(options.body instanceof FormData);
 });
 
-test('generateI2I sends http image references as string parameters', async (t) => {
+test('generateI2I downloads http image references and sends them as file blobs', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {
+        if (url === 'http://example.com/source.jpg') {
+            return {
+                ok: true,
+                blob: async () => new Blob(['image-source-bytes'], { type: 'image/jpeg' }),
+            };
+        }
         if (url === '/api/mf/v1/images/edits') {
             return {
                 ok: true,
@@ -248,10 +254,20 @@ test('generateI2I sends http image references as string parameters', async (t) =
     });
 
     assert.strictEqual(result.url, 'http://example.com/edit2.jpg');
-    const [, editOptions] = global.fetch.mock.calls[0].arguments;
+
+    // Should have 2 fetches: download image, then submit edit
+    assert.strictEqual(global.fetch.mock.calls.length, 2);
+
+    // First call: download source image
+    const [downloadUrl] = global.fetch.mock.calls[0].arguments;
+    assert.strictEqual(downloadUrl, 'http://example.com/source.jpg');
+
+    // Second call: submit edit
+    const [editUrl, editOptions] = global.fetch.mock.calls[1].arguments;
+    assert.strictEqual(editUrl, '/api/mf/v1/images/edits');
     const imageEntries = editOptions.body.getAll('image');
     assert.strictEqual(imageEntries.length, 1);
-    assert.strictEqual(imageEntries[0], 'http://example.com/source.jpg');
+    assert.ok(imageEntries[0] instanceof Blob);
 });
 
 test('generateImage routes Gemini image models to chat completions', async (t) => {
