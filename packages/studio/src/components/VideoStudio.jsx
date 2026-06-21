@@ -1929,7 +1929,7 @@ export default function VideoStudio({
               duration: selectedDuration || 5,
               resolution: selectedResolution || "720p",
               video_url: hasVideoInput ? "exists" : undefined,
-              generate_audio: false // как было раньше
+              generate_audio: true // Seedance 2.0 по умолчанию генерирует аудио
             }
           };
           console.log("[calculateCost] Request body:", requestBody);
