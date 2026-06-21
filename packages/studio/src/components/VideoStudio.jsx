@@ -745,7 +745,7 @@ export default function VideoStudio({
     try {
       const response = await fetch(`/api/gallery?type=video&limit=${HISTORY_PAGE_SIZE}&cursor=${cursor || 0}`, {
         headers: { Authorization: `Bearer ${apiKey}` },
-        cache: "force-cache",
+        cache: reset ? "no-cache" : "default",
       });
       if (!response.ok) throw new Error(`Gallery ${response.status}`);
       const data = await response.json();
@@ -1420,7 +1420,7 @@ export default function VideoStudio({
       persistVideoEntryToStorage(entry);
       showVideoInCanvas(url, stored.model);
       persistVideoToGallery(entry).then(() => {
-        fetchRemoteHistory(); // Refresh remote history after saving to gallery
+        fetchRemoteHistory({ reset: true }); // Refresh remote history after saving to gallery, bypassing cache
       });
     };
 
@@ -1639,8 +1639,8 @@ export default function VideoStudio({
             persistVideoEntryToStorage(entry);
             showVideoInCanvas(res.url, taskModel);
             persistVideoToGallery(entry).then(() => {
-            fetchRemoteHistory();
-          });
+              fetchRemoteHistory({ reset: true });
+            });
             if (onGenerationComplete)
               onGenerationComplete({ url: res.url, model: taskModel, prompt: taskPrompt, type: "video" });
           }

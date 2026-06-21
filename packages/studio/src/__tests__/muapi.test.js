@@ -468,102 +468,29 @@ test('Seedance 2.0 Native Audio Generation', async (t) => {
     });
 });
 
-test('Seedance 2.0 All Aspect Ratios support', async (t) => {
-    const ratios = ['1:1', '16:9', '9:16', '4:3', '3:4', '21:9', '9:21'];
-    global.fetch.mock.resetCalls();
-    global.fetch.mock.mockImplementation(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ taskId: 'ratio-test-123', bill: 'bill-ratio' }),
-        clone: function() { return this; }
-    }));
 
-    for (const ratio of ratios) {
-        await assert.doesNotThrow(async () => {
-            await muapi.generateVideo('test-key', {
-                model: 'seedance-2.0-t2v',
-                prompt: 'Test video',
-                aspect_ratio: ratio
-            });
-        });
-    }
-});
-
-test('Seedance 2.0 All Resolutions support', async (t) => {
-    const resolutions = ['480p', '720p', '1080p'];
-    global.fetch.mock.resetCalls();
-    global.fetch.mock.mockImplementation(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ taskId: 'res-test-123', bill: 'bill-res' }),
-        clone: function() { return this; }
-    }));
-
-    for (const resolution of resolutions) {
-        await assert.doesNotThrow(async () => {
-            await muapi.generateVideo('test-key', {
-                model: 'seedance-2.0-t2v',
-                prompt: 'Test video',
-                resolution: resolution
-            });
-        });
-    }
-});
-
-test('Seedance 2.0 Duration options support', async (t) => {
-    const durations = [4, 8, 12, 15];
-    global.fetch.mock.resetCalls();
-    global.fetch.mock.mockImplementation(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ taskId: 'duration-test-123', bill: 'bill-duration' }),
-        clone: function() { return this; }
-    }));
-
-    for (const duration of durations) {
-        await assert.doesNotThrow(async () => {
-            await muapi.generateVideo('test-key', {
-                model: 'seedance-2.0-t2v',
-                prompt: 'Test video',
-                duration: duration
-            });
-        });
-    }
-});
-
-test('Seedance 2.0 Fast model vs Standard model', async (t) => {
-    global.fetch.mock.resetCalls();
-    global.fetch.mock.mockImplementation(async (url, options) => {
-        const body = JSON.parse(options.body);
-        assert.strictEqual(body.fast, true);
-        assert.strictEqual(body.resolution, '720p'); // Fast model converts 1080p to 720p
-        return {
-            ok: true,
-            status: 200,
-            json: async () => ({ taskId: 'fast-test-123', bill: 'bill-fast' }),
-            clone: function() { return this; }
-        };
-    });
-
-    await muapi.generateVideo('test-key', {
-        model: 'seedance-2.0-fast-t2v',
-        prompt: 'Quick preview generation',
-        duration: 4,
-        resolution: '1080p'
-    });
-});
 
 test('Seedance 2.0 Text prompt with quotes (dialogs)', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url, options) => {
-        const body = JSON.parse(options.body);
-        assert.strictEqual(body.prompt, '图片1 says "Привет! Как дела?". Then they smile.');
-        return {
-            ok: true,
-            status: 200,
-            json: async () => ({ taskId: 'dialog-test-123', bill: 'bill-dialog' }),
-            clone: function() { return this; }
-        };
+        if (options?.method === 'POST') {
+            const body = JSON.parse(options.body);
+            assert.strictEqual(body.prompt, '图片1 says "Привет! Как дела?". Then they smile.');
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 'dialog-test-123', bill: 'bill-dialog' }),
+                clone: function() { return this; }
+            };
+        } else {
+            // GET request for polling task status
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
     });
 
     await muapi.generateVideo('test-key', {
@@ -576,13 +503,25 @@ test('Seedance 2.0 Up to 9 reference images', async (t) => {
     global.fetch.mock.resetCalls();
     const imageUrls = Array.from({ length: 9 }, (_, i) => `https://cdn.example.com/img${i + 1}.jpg`);
     
-    global.fetch.mock.mockImplementation(async () => {
-        return {
-            ok: true,
-            status: 200,
-            json: async () => ({ taskId: '9img-test-123', bill: 'bill-9img' }),
-            clone: function() { return this; }
-        };
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            const body = JSON.parse(options.body);
+            const sentImageCount = [body.image_url, ...(body.image_urls || [])].filter(Boolean).length;
+            assert.strictEqual(sentImageCount, 9);
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: '9img-test-123', bill: 'bill-9img' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
     });
 
     await muapi.generateVideo('test-key', {
@@ -597,13 +536,25 @@ test('Seedance 2.0 Up to 3 reference videos', async (t) => {
     global.fetch.mock.resetCalls();
     const videoUrls = Array.from({ length: 3 }, (_, i) => `https://cdn.example.com/video${i + 1}.mp4`);
     
-    global.fetch.mock.mockImplementation(async () => {
-        return {
-            ok: true,
-            status: 200,
-            json: async () => ({ taskId: '3vid-test-123', bill: 'bill-3vid' }),
-            clone: function() { return this; }
-        };
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            const body = JSON.parse(options.body);
+            const sentVideoCount = [body.video_url, ...(body.video_urls || [])].filter(Boolean).length;
+            assert.strictEqual(sentVideoCount, 3);
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: '3vid-test-123', bill: 'bill-3vid' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
     });
 
     await muapi.generateVideo('test-key', {
@@ -618,13 +569,25 @@ test('Seedance 2.0 Up to 3 reference audios', async (t) => {
     global.fetch.mock.resetCalls();
     const audioUrls = Array.from({ length: 3 }, (_, i) => `https://cdn.example.com/audio${i + 1}.mp3`);
     
-    global.fetch.mock.mockImplementation(async () => {
-        return {
-            ok: true,
-            status: 200,
-            json: async () => ({ taskId: '3aud-test-123', bill: 'bill-3aud' }),
-            clone: function() { return this; }
-        };
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            const body = JSON.parse(options.body);
+            const sentAudioCount = [body.audio_url, ...(body.audio_urls || [])].filter(Boolean).length;
+            assert.strictEqual(sentAudioCount, 3);
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: '3aud-test-123', bill: 'bill-3aud' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
     });
 
     await muapi.generateVideo('test-key', {
@@ -641,13 +604,27 @@ test('Seedance 2.0 Total up to 12 files (image + video + audio)', async (t) => {
     const videoUrls = Array.from({ length: 2 }, (_, i) => `https://cdn.example.com/video${i + 1}.mp4`);
     const audioUrls = Array.from({ length: 2 }, (_, i) => `https://cdn.example.com/audio${i + 1}.mp3`);
     
-    global.fetch.mock.mockImplementation(async () => {
-        return {
-            ok: true,
-            status: 200,
-            json: async () => ({ taskId: '12refs-test-123', bill: 'bill-12refs' }),
-            clone: function() { return this; }
-        };
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            const body = JSON.parse(options.body);
+            const sentImageCount = [body.image_url, ...(body.image_urls || [])].filter(Boolean).length;
+            const sentVideoCount = [body.video_url, ...(body.video_urls || [])].filter(Boolean).length;
+            const sentAudioCount = [body.audio_url, ...(body.audio_urls || [])].filter(Boolean).length;
+            assert.strictEqual(sentImageCount + sentVideoCount + sentAudioCount, 12);
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: '12refs-test-123', bill: 'bill-12refs' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
     });
 
     await muapi.generateVideo('test-key', {
@@ -664,13 +641,27 @@ test('Seedance 2.0 Total up to 12 files (image + video + audio)', async (t) => {
 
 test('Seedance 2.0 @ syntax in prompt', async (t) => {
     global.fetch.mock.resetCalls();
-    global.fetch.mock.mockImplementation(async () => {
-        return {
-            ok: true,
-            status: 200,
-            json: async () => ({ taskId: 'atsyntax-test-123', bill: 'bill-atsyntax' }),
-            clone: function() { return this; }
-        };
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            const body = JSON.parse(options.body);
+            assert.strictEqual(body.prompt, '@image1 is the character, @video1 controls camera, @audio1 is background music');
+            assert.strictEqual(body.image_url.url, 'https://cdn.example.com/char.jpg');
+            assert.strictEqual(body.video_url, 'https://cdn.example.com/cam.mp4');
+            assert.strictEqual(body.audio_url, 'https://cdn.example.com/music.mp3');
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 'atsyntax-test-123', bill: 'bill-atsyntax' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
     });
 
     await muapi.generateVideo('test-key', {
@@ -679,5 +670,133 @@ test('Seedance 2.0 @ syntax in prompt', async (t) => {
         image_url: 'https://cdn.example.com/char.jpg',
         video_url: 'https://cdn.example.com/cam.mp4',
         audio_url: 'https://cdn.example.com/music.mp3',
+    });
+});
+
+// Also fix the other Seedance 2.0 tests that were failing (All Aspect Ratios, All Resolutions, Duration, Fast model)
+test('Seedance 2.0 All Aspect Ratios support', async (t) => {
+    const ratios = ['1:1', '16:9', '9:16', '4:3', '3:4', '21:9', '9:21'];
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 'ratio-test-123', bill: 'bill-ratio' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
+    });
+
+    for (const ratio of ratios) {
+        await assert.doesNotThrow(async () => {
+            await muapi.generateVideo('test-key', {
+                model: 'seedance-2.0-t2v',
+                prompt: 'Test video',
+                aspect_ratio: ratio
+            });
+        });
+    }
+});
+
+test('Seedance 2.0 All Resolutions support', async (t) => {
+    const resolutions = ['480p', '720p', '1080p'];
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 'res-test-123', bill: 'bill-res' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
+    });
+
+    for (const resolution of resolutions) {
+        await assert.doesNotThrow(async () => {
+            await muapi.generateVideo('test-key', {
+                model: 'seedance-2.0-t2v',
+                prompt: 'Test video',
+                resolution: resolution
+            });
+        });
+    }
+});
+
+test('Seedance 2.0 Duration options support', async (t) => {
+    const durations = [4, 8, 12, 15];
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 'duration-test-123', bill: 'bill-duration' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
+    });
+
+    for (const duration of durations) {
+        await assert.doesNotThrow(async () => {
+            await muapi.generateVideo('test-key', {
+                model: 'seedance-2.0-t2v',
+                prompt: 'Test video',
+                duration: duration
+            });
+        });
+    }
+});
+
+test('Seedance 2.0 Fast model vs Standard model', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (options?.method === 'POST') {
+            const body = JSON.parse(options.body);
+            assert.strictEqual(body.fast, true);
+            assert.strictEqual(body.resolution, '720p'); // Fast model converts 1080p to 720p
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 'fast-test-123', bill: 'bill-fast' }),
+                clone: function() { return this; }
+            };
+        } else {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://example.com/test-video.mp4' }),
+                clone: function() { return this; }
+            };
+        }
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-fast-t2v',
+        prompt: 'Quick preview generation',
+        duration: 4,
+        resolution: '1080p'
     });
 });
