@@ -410,7 +410,11 @@ async function imageReferenceToEditFile(image, index) {
     }
 
     if (typeof image === 'string' && /^https?:\/\//i.test(image)) {
-        return image;
+        const response = await fetch(image);
+        if (!response.ok && response.status) throw new Error(`Не удалось прочитать изображение для редактирования (${response.status}).`);
+        const blob = await response.blob();
+        const ext = (blob.type.split('/')[1] || 'png').split('+')[0];
+        return { blob, filename: `reference-${index + 1}.${ext}` };
     }
 
     return image;

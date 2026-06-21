@@ -133,30 +133,13 @@ test('generateImage posts to image generation proxy and returns url', async (t) 
 
 test('generateI2I posts multipart edit request and returns url', async (t) => {
     global.fetch.mock.resetCalls();
-    global.fetch.mock.mockImplementationOnce(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({ id: 'edit-1', data: [{ url: 'http://example.com/edit.jpg' }] }),
-    }));
-
-    const result = await muapi.generateI2I('key', {
-        model: 'gpt-image-2-edit',
-        prompt: 'измени фон',
-        image_url: 'http://example.com/source.jpg',
-    });
-
-    assert.strictEqual(result.url, 'http://example.com/edit.jpg');
-    const [url, options] = global.fetch.mock.calls[0].arguments;
-    assert.strictEqual(url, '/api/mf/v1/images/edits');
-    assert.strictEqual(options.method, 'POST');
-    assert.ok(options.body instanceof FormData);
-});
-
-test('generateI2I sends data URL references as multipart files', async (t) => {
-    global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {
-        if (String(url).startsWith('data:')) {
-            return { blob: async () => new Blob(['image'], { type: 'image/png' }) };
+        if (url === 'http://example.com/source.jpg') {
+            return {
+                ok: true,
+                status: 200,
+                blob: async () => new Blob(['image-bytes'], { type: 'image/jpeg' }),
+            };
         }
         if (url === '/api/mf/v1/images/edits') {
             return {
@@ -171,10 +154,43 @@ test('generateI2I sends data URL references as multipart files', async (t) => {
     const result = await muapi.generateI2I('key', {
         model: 'gpt-image-2-edit',
         prompt: 'измени фон',
-        image_url: 'data:image/png;base64,aW1hZ2U=',
+        image_url: 'http://example.com/source.jpg',
     });
 
     assert.strictEqual(result.url, 'http://example.com/edit.jpg');
+    const [url, options] = global.fetch.mock.calls[1].arguments;
+    assert.strictEqual(url, '/api/mf/v1/images/edits');
+    assert.strictEqual(options.method, 'POST');
+    assert.ok(options.body instanceof FormData);
+});
+
+test('generateI2I sends http image references as multipart blobs', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url) => {
+        if (url === 'http://example.com/source.jpg') {
+            return {
+                ok: true,
+                status: 200,
+                blob: async () => new Blob(['image-bytes'], { type: 'image/jpeg' }),
+            };
+        }
+        if (url === '/api/mf/v1/images/edits') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ id: 'edit-2', data: [{ url: 'http://example.com/edit2.jpg' }] }),
+            };
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const result = await muapi.generateI2I('key', {
+        model: 'gpt-image-2-edit',
+        prompt: 'измени фон',
+        image_url: 'http://example.com/source.jpg',
+    });
+
+    assert.strictEqual(result.url, 'http://example.com/edit2.jpg');
     const [, editOptions] = global.fetch.mock.calls[1].arguments;
     const imageEntries = editOptions.body.getAll('image');
     assert.strictEqual(imageEntries.length, 1);
