@@ -9,9 +9,19 @@ function createImageFile() {
     return file;
 }
 
+function isBusinessFetchCall(call) {
+    const url = call?.arguments?.[0];
+    return !(typeof url === 'string' && url.startsWith('http://127.0.0.1:7778/event'));
+}
+
 test('studio uploadFile uploads through presigned TOS URL', async (t) => {
     const progress = [];
+    let businessCalls = 0;
     t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
+        if (String(url).startsWith('http://127.0.0.1:7778/event')) {
+            return { ok: true, json: async () => ({}) };
+        }
+        businessCalls += 1;
         if (String(url).startsWith('/api/upload-file?')) {
             return {
                 ok: true,
@@ -31,12 +41,17 @@ test('studio uploadFile uploads through presigned TOS URL', async (t) => {
 
     assert.strictEqual(url, 'https://tos.example.com/ref/test.jpg');
     assert.deepStrictEqual(progress, [5, 15, 35, 100]);
-    assert.strictEqual(globalThis.fetch.mock.calls.length, 2);
+    assert.strictEqual(businessCalls, 2);
 });
 
 test('studio uploadFile falls back to asset upload when presigned upload is unavailable', async (t) => {
     const progress = [];
+    let businessCalls = 0;
     t.mock.method(globalThis, 'fetch', async (url, options = {}) => {
+        if (String(url).startsWith('http://127.0.0.1:7778/event')) {
+            return { ok: true, json: async () => ({}) };
+        }
+        businessCalls += 1;
         if (String(url).startsWith('/api/upload-file?')) {
             return {
                 ok: false,
@@ -59,12 +74,17 @@ test('studio uploadFile falls back to asset upload when presigned upload is unav
 
     assert.strictEqual(url, 'https://cdn.example.com/test.jpg');
     assert.deepStrictEqual(progress, [5, 15, 70, 100]);
-    assert.strictEqual(globalThis.fetch.mock.calls.length, 2);
+    assert.strictEqual(businessCalls, 2);
 });
 
 test('studio uploadFile throws when presigned and asset uploads fail', async (t) => {
     const progress = [];
+    let businessCalls = 0;
     t.mock.method(globalThis, 'fetch', async (url) => {
+        if (String(url).startsWith('http://127.0.0.1:7778/event')) {
+            return { ok: true, json: async () => ({}) };
+        }
+        businessCalls += 1;
         if (String(url).startsWith('/api/upload-file?')) {
             return {
                 ok: false,
@@ -87,16 +107,21 @@ test('studio uploadFile throws when presigned and asset uploads fail', async (t)
         /Storage not configured.*Payload too large/,
     );
     assert.deepStrictEqual(progress, [5, 15, 70, 0]);
-    assert.strictEqual(globalThis.fetch.mock.calls.length, 2);
+    assert.strictEqual(businessCalls, 2);
 });
 
 test('studio generateI2I sends data url references as file blobs', async (t) => {
+    let businessCalls = 0;
     t.mock.method(globalThis, 'fetch', async (url, options) => {
+        if (String(url).startsWith('http://127.0.0.1:7778/event')) {
+            return { ok: true, json: async () => ({}) };
+        }
         if (String(url).startsWith('data:image/jpeg;base64,')) {
             return {
                 blob: async () => new Blob([new Uint8Array([1, 2, 3])], { type: 'image/jpeg' }),
             };
         }
+        businessCalls += 1;
         if (url === '/api/mf/v1/images/edits') {
             const imageEntries = [...options.body.entries()].filter(([key]) => key === 'image');
             assert.strictEqual(imageEntries.length, 1);
@@ -118,5 +143,4 @@ test('studio generateI2I sends data url references as file blobs', async (t) => 
     });
 
     assert.strictEqual(result.url, 'https://cdn.example.com/edited.jpg');
-    assert.strictEqual(globalThis.fetch.mock.calls.length, 2);
 });

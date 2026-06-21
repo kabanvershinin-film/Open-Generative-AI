@@ -11,23 +11,6 @@ export const SUPPORTED_IMAGE_UPLOAD_MIME_TYPES = new Set([
     'image/x-sony-arw', 'image/x-adobe-dng', 'image/x-olympus-orf', 'image/x-fuji-raf',
 ]);
 
-// #region debug-point A:upload-trace
-function debugImageUpload(hypothesisId, msg, data = {}) {
-    fetch('http://127.0.0.1:7777/event', {
-        method: 'POST',
-        body: JSON.stringify({
-            sessionId: 'image-upload-stuck',
-            runId: 'pre-fix',
-            hypothesisId,
-            location: 'packages/studio/src/muapi.js',
-            msg: `[DEBUG] ${msg}`,
-            data,
-            ts: Date.now(),
-        }),
-    }).catch(() => {});
-}
-// #endregion
-
 function getFileExtension(file) {
     return String(file?.name || '').split('.').pop()?.toLowerCase() || '';
 }
@@ -89,6 +72,23 @@ function computeImageSize(aspectRatio, imageSize) {
 function applyImageRouting(modelId, routing) {
     return routing && routing !== 'default' ? `${modelId}:${routing}` : modelId;
 }
+
+// #region debug-point B:edit-entry
+function reportEditDebug(msg, data = {}) {
+    fetch('http://127.0.0.1:7777/event', {
+        method: 'POST',
+        body: JSON.stringify({
+            sessionId: 'image-edit-upload-failure',
+            runId: 'pre-fix',
+            hypothesisId: 'B',
+            location: 'packages/studio/src/muapi.js',
+            msg: `[DEBUG] ${msg}`,
+            data,
+            ts: Date.now(),
+        }),
+    }).catch(() => {});
+}
+// #endregion
 
 const CHAT_IMAGE_MODELS = new Set([
     'gemini-3.1-flash-image-preview',
@@ -421,9 +421,12 @@ async function imageReferenceToEditFile(image, index) {
 }
 
 export async function generateI2I(apiKey, params) {
+    reportEditDebug('generateI2I entry', { model: params?.model, hasPrompt: !!params?.prompt, imagesCount: Array.isArray(params?.images_list) ? params.images_list.length : 0, hasImageUrl: !!params?.image_url });
     const modelInfo = getI2IModelById(params.model) || getImageModelById(params.model);
     const modelId = applyImageRouting(modelInfo?.apiId || params.model, params.routing);
+    reportEditDebug('generateI2I model resolved', { modelId, apiId: modelInfo?.apiId, isChatImageModel: isChatImageModel(params.model) || isChatImageModel(modelInfo?.apiId || params.model) });
     if (isChatImageModel(params.model) || isChatImageModel(modelInfo?.apiId || params.model)) {
+        reportEditDebug('generateI2I route chat', { modelId });
         return generateChatImage(apiKey, modelId, params);
     }
 
@@ -445,8 +448,10 @@ export async function generateI2I(apiKey, params) {
 
     for (let index = 0; index < images.length; index += 1) {
         const image = images[index];
+        reportEditDebug('generateI2I image reference', { index, type: typeof image, isBlob: image instanceof Blob, isDataUrl: typeof image === 'string' && image.startsWith('data:'), isHttpUrl: typeof image === 'string' && /^https?:\/\//i.test(image) });
         const uploadable = await imageReferenceToEditFile(image, index);
         const fieldName = index === 0 ? 'image' : 'image[]';
+        reportEditDebug('generateI2I uploadable ready', { index, fieldName, hasBlob: !!uploadable?.blob, filename: uploadable?.filename || null, isString: typeof uploadable === 'string' });
         if (uploadable?.blob) {
             form.append(fieldName, uploadable.blob, uploadable.filename);
         } else {
@@ -454,6 +459,7 @@ export async function generateI2I(apiKey, params) {
         }
     }
 
+    reportEditDebug('generateI2I form ready', { imageCount: images.length, fields: images.length > 0 ? ['image', ...images.slice(1).map(() => 'image[]')] : [] });
     const r = await fetch('/api/mf/v1/images/edits', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}` },
@@ -765,16 +771,48 @@ export async function uploadFile(apiKey, file, onProgress) {
         if (!signData.putUrl || !signData.publicUrl) throw new Error('Сервер не вернул URL для загрузки изображения.');
 
         onProgress?.(35);
+        const putStartedAt = Date.now();
         debugImageUpload('A', 'put request start', { contentType, size: file?.size });
-        const put = await fetch(signData.putUrl, {
-            method: 'PUT',
-            headers: { 'Content-Type': contentType },
-            body: file,
+
+        if (typeof XMLHttpRequest !== 'function') {
+            const put = await fetch(signData.putUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': contentType },
+                body: file,
+            });
+            debugImageUpload('B', 'put response', { ok: put.ok, status: put.status, statusText: put.statusText, durationMs: Date.now() - putStartedAt });
+            if (!put.ok) throw new Error(`Прямая загрузка изображения не удалась (${put.status}).`);
+            onProgress?.(100);
+            debugImageUpload('A', 'upload via tos success', { publicHost: new URL(signData.publicUrl).host });
+            return signData.publicUrl;
+        }
+
+        await new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', signData.putUrl);
+            xhr.setRequestHeader('Content-Type', contentType);
+            xhr.upload.onprogress = (event) => {
+                if (!event?.lengthComputable || !event.total) return;
+                const scaled = 35 + Math.round((event.loaded * 60) / event.total);
+                onProgress?.(Math.min(95, scaled));
+            };
+            xhr.onload = () => {
+                const ok = xhr.status >= 200 && xhr.status < 300;
+                debugImageUpload('B', 'put response', { ok, status: xhr.status, statusText: xhr.statusText, durationMs: Date.now() - putStartedAt });
+                if (!ok) {
+                    reject(new Error(`Прямая загрузка изображения не удалась (${xhr.status}).`));
+                    return;
+                }
+                onProgress?.(100);
+                debugImageUpload('A', 'upload via tos success', { publicHost: new URL(signData.publicUrl).host });
+                resolve();
+            };
+            xhr.onerror = () => {
+                debugImageUpload('B', 'put response', { ok: false, status: xhr.status || 0, statusText: xhr.statusText || 'Network Error', durationMs: Date.now() - putStartedAt });
+                reject(new Error('Прямая загрузка изображения не удалась (network error).'));
+            };
+            xhr.send(file);
         });
-        debugImageUpload('B', 'put response', { ok: put.ok, status: put.status, statusText: put.statusText });
-        if (!put.ok) throw new Error(`Прямая загрузка изображения не удалась (${put.status}).`);
-        onProgress?.(100);
-        debugImageUpload('A', 'upload via tos success', { publicHost: new URL(signData.publicUrl).host });
         return signData.publicUrl;
     };
 
