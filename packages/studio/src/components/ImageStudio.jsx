@@ -847,7 +847,7 @@ export default function ImageStudio({
       .filter(Boolean)
       .map((entry) => ({
         id: entry.id,
-        url: typeof entry.url === "string" && !entry.url.startsWith("data:") ? entry.url : null,
+        url: typeof entry.url === "string" ? entry.url : null,
         prompt: typeof entry.prompt === "string" ? entry.prompt.slice(0, 500) : "",
         model: entry.model || null,
         aspect_ratio: entry.aspect_ratio || null,
