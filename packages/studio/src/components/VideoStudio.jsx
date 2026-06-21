@@ -1638,7 +1638,9 @@ export default function VideoStudio({
             addToLocalHistory(entry);
             persistVideoEntryToStorage(entry);
             showVideoInCanvas(res.url, taskModel);
-            persistVideoToGallery(entry);
+            persistVideoToGallery(entry).then(() => {
+            fetchRemoteHistory();
+          });
             if (onGenerationComplete)
               onGenerationComplete({ url: res.url, model: taskModel, prompt: taskPrompt, type: "video" });
           }
@@ -1727,7 +1729,7 @@ export default function VideoStudio({
         };
 
         if (isMountedRef.current) {
-          if (taskModel.startsWith("seedance-v2.0")) {
+          if (taskModel.startsWith("seedance-2.0")) {
             setLastGenerationId(genId);
             setLastGenerationModel(taskModel);
           } else {
