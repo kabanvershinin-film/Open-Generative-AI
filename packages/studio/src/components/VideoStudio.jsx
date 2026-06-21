@@ -1761,7 +1761,7 @@ export default function VideoStudio({
           addToLocalHistory(entry);
           persistVideoEntryToStorage(entry);
           persistVideoToGallery(entry).then(() => {
-            fetchRemoteHistory();
+            fetchRemoteHistory({ reset: true });
           });
           try {
             localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: taskId, entry }));
