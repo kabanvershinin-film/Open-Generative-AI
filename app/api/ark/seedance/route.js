@@ -58,7 +58,7 @@ async function resolvePublic(u, userId = null) {
   if (!u || typeof u !== 'string') return undefined;
   if (!u.startsWith('data:')) return u;
   const uploaded = await maybeUploadToTOS(u, userId);
-  return (uploaded && !uploaded.startsWith('data:')) ? uploaded : undefined;
+  return uploaded || u; // If TOS upload fails, return original data URL
 }
 
 // Volcano Ark video generation (Seedance 2.0) — called directly, bypassing Memefast.
