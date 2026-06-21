@@ -1400,7 +1400,14 @@ export default function VideoStudio({
 
   // ── add to local history ──────────────────────────────────────────────────
   const addToLocalHistory = useCallback((entry) => {
-    setLocalHistory((prev) => [entry, ...prev].slice(0, 30));
+    setLocalHistory((prev) => {
+      const key = entry.id || entry.url;
+      // Skip duplicates
+      const existing = prev.find(e => (e.id || e.url) === key);
+      if (existing) return prev;
+      // Add new entry at start
+      return [entry, ...prev].slice(0, 30);
+    });
     setActiveHistoryIdx(0);
   }, []);
 
