@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "react-hot-toast";
 import { generateVideo, generateI2V, processV2V, uploadFile, pollArkTask } from "../muapi.js";
 import {
@@ -477,7 +477,29 @@ export default function VideoStudio({
   const hasRestored = useRef(false);
 
   // ── derived data ──
-  const history = historyItems ?? (remoteHistory.length > 0 ? remoteHistory : localHistory);
+  // Merge localHistory and remoteHistory, local has priority
+  const history = useMemo(() => {
+    if (historyItems) return historyItems;
+    const seen = new Set();
+    const merged = [];
+    // Add local entries first (priority for new generations)
+    [...localHistory].reverse().forEach(entry => {
+      const key = entry.id || entry.url;
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        merged.unshift(entry);
+      }
+    });
+    // Then add remote entries that aren't already in local
+    remoteHistory.forEach(entry => {
+      const key = entry.id || entry.url;
+      if (key && !seen.has(key)) {
+        seen.add(key);
+        merged.push(entry);
+      }
+    });
+    return merged;
+  }, [historyItems, localHistory, remoteHistory]);
 
   const getCurrentModels = useCallback(() => {
     if (v2vMode) return v2vModels;
@@ -2062,7 +2084,7 @@ export default function VideoStudio({
                 </div>
               </div>
             ))}
-            {isLoadingRemoteHistory && activeTasks.length === 0 && (
+            {isLoadingRemoteHistory && activeTasks.length === 0 && localHistory.length === 0 && (
               <div className="relative rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl flex flex-col items-center justify-center aspect-video">
                 <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
@@ -2072,7 +2094,7 @@ export default function VideoStudio({
               </div>
             )}
             {history.map((entry, idx) => {
-              const isSeedance2 = entry.model === "seedance-v2.0-t2v" || entry.model === "seedance-v2.0-i2v";
+              const isSeedance2 = (entry.model?.startsWith("seedance-v2.0-") || entry.model?.startsWith("seedance-2.0-"));
               return (
                 <div
                   key={entry.id || idx}
