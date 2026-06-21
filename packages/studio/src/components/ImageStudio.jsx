@@ -49,7 +49,7 @@ async function downloadImage(url, filename) {
   }
 }
 
-const IMAGE_UPLOAD_ACCEPT = "image/png,.png";
+const IMAGE_UPLOAD_ACCEPT = "image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.tif,.tiff,.raw,.cr2,.cr3,.nef,.arw,.dng,.orf,.raf,.rw2,.pef,.srw";
 
 // ─── UploadButton (inline picker) ───────────────────────────────────────────
 
@@ -139,15 +139,6 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     if (!files.length) return;
     e.target.value = "";
 
-    const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB
-    const tooLarge = files.filter((f) => f.size > MAX_IMAGE_SIZE);
-    if (tooLarge.length > 0) {
-      alert(
-        `Следующие изображения слишком большие (макс. 4 МБ): ${tooLarge.map((f) => f.name).join(", ")}`,
-      );
-      return;
-    }
-
     const invalid = files.find((file) => {
       try {
         validateImageReferenceUploadFile(file);
@@ -158,7 +149,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     });
     if (invalid) {
       alert(
-        `Для генерации и редактирования нужен PNG-файл до 4 МБ: ${invalid.name || "без имени"}.`,
+        `Формат файла не поддерживается: ${invalid.name || "без имени"}. Поддерживаются JPG, PNG, TIFF и RAW до 50 МБ.`,
       );
       return;
     }
@@ -1165,15 +1156,6 @@ export default function ImageStudio({
   }, [currentImageUrl, generating, historyItems, localHistory.length, mergeHistoryEntries, readRecentResults]);
 
   const processDroppedImages = async (files) => {
-    const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB
-    const tooLarge = files.filter((f) => f.size > MAX_IMAGE_SIZE);
-    if (tooLarge.length > 0) {
-      alert(
-        `Следующие изображения слишком большие (макс. 4 МБ): ${tooLarge.map((f) => f.name).join(", ")}`
-      );
-      return;
-    }
-
     const invalid = files.find((file) => {
       try {
         validateImageReferenceUploadFile(file);
@@ -1184,7 +1166,7 @@ export default function ImageStudio({
     });
     if (invalid) {
       alert(
-        `Для генерации и редактирования нужен PNG-файл до 4 МБ: ${invalid.name || "без имени"}.`
+        `Формат файла не поддерживается: ${invalid.name || "без имени"}. Поддерживаются JPG, PNG, TIFF и RAW до 50 МБ.`
       );
       return;
     }

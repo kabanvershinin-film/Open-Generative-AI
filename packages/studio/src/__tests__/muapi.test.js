@@ -21,10 +21,11 @@ function createFile(name, type, size) {
     return file;
 }
 
-test('validateImageReferenceUploadFile accepts png under 4MB and rejects others', () => {
+test('validateImageReferenceUploadFile accepts various image formats under 50MB and rejects others', () => {
     assert.strictEqual(muapi.validateImageReferenceUploadFile(createFile('ref.png', 'image/png', 1024)), true);
-    assert.throws(() => muapi.validateImageReferenceUploadFile(createFile('ref.jpg', 'image/jpeg', 1024)), /нужен PNG-файл/);
-    assert.throws(() => muapi.validateImageReferenceUploadFile(createFile('ref.png', 'image/png', 5 * 1024 * 1024)), /4 МБ/);
+    assert.strictEqual(muapi.validateImageReferenceUploadFile(createFile('ref.jpg', 'image/jpeg', 1024)), true);
+    assert.strictEqual(muapi.validateImageReferenceUploadFile(createFile('ref.tiff', 'image/tiff', 1024)), true);
+    assert.throws(() => muapi.validateImageReferenceUploadFile(createFile('ref.png', 'image/png', 51 * 1024 * 1024)), /50 МБ/);
 });
 
 test('generateSeedanceArk forms correct request body and polls', async (t) => {
@@ -145,13 +146,6 @@ test('generateImage posts to image generation proxy and returns url', async (t) 
 test('generateI2I posts multipart edit request and returns url', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {
-        if (url === 'http://example.com/source.jpg') {
-            return {
-                ok: true,
-                status: 200,
-                blob: async () => new Blob(['image-bytes'], { type: 'image/jpeg' }),
-            };
-        }
         if (url === '/api/mf/v1/images/edits') {
             return {
                 ok: true,
@@ -162,29 +156,23 @@ test('generateI2I posts multipart edit request and returns url', async (t) => {
         throw new Error(`Unexpected fetch: ${url}`);
     });
 
+    const imageBlob = new Blob(['image-bytes'], { type: 'image/jpeg' });
     const result = await muapi.generateI2I('key', {
         model: 'gpt-image-2-edit',
         prompt: 'измени фон',
-        image_url: 'http://example.com/source.jpg',
+        image_url: imageBlob,
     });
 
     assert.strictEqual(result.url, 'http://example.com/edit.jpg');
-    const [url, options] = global.fetch.mock.calls[1].arguments;
+    const [url, options] = global.fetch.mock.calls[0].arguments;
     assert.strictEqual(url, '/api/mf/v1/images/edits');
     assert.strictEqual(options.method, 'POST');
     assert.ok(options.body instanceof FormData);
 });
 
-test('generateI2I sends http image references as multipart blobs', async (t) => {
+test('generateI2I sends http image references as string parameters', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {
-        if (url === 'http://example.com/source.jpg') {
-            return {
-                ok: true,
-                status: 200,
-                blob: async () => new Blob(['image-bytes'], { type: 'image/jpeg' }),
-            };
-        }
         if (url === '/api/mf/v1/images/edits') {
             return {
                 ok: true,
@@ -202,10 +190,10 @@ test('generateI2I sends http image references as multipart blobs', async (t) => 
     });
 
     assert.strictEqual(result.url, 'http://example.com/edit2.jpg');
-    const [, editOptions] = global.fetch.mock.calls[1].arguments;
+    const [, editOptions] = global.fetch.mock.calls[0].arguments;
     const imageEntries = editOptions.body.getAll('image');
     assert.strictEqual(imageEntries.length, 1);
-    assert.ok(imageEntries[0] instanceof Blob);
+    assert.strictEqual(imageEntries[0], 'http://example.com/source.jpg');
 });
 
 test('generateImage routes Gemini image models to chat completions', async (t) => {
