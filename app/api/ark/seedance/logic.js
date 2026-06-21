@@ -1,9 +1,31 @@
-export function buildContent({ prompt, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, last_image_url }) {
+export function buildContent({ prompt, first_frame_image, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, last_image_url }) {
   const content = [];
   
-  const images = [];
-  if (image_url) images.push(image_url);
-  if (Array.isArray(image_urls)) images.push(...image_urls.filter(Boolean));
+  // First, process explicit first frame image (if present)
+  if (first_frame_image || image_url) { // keep backward compatibility with image_url
+    const u = first_frame_image || image_url;
+    const url = typeof u === 'string' ? u : (u.url || u.image_url);
+    const face = typeof u === 'object' ? u.face_asset : null;
+    const effectiveFace = face || (typeof face_asset === 'string' ? face_asset : null);
+    const isAsset = effectiveFace && effectiveFace.startsWith('asset://');
+    const finalUrl = isAsset ? effectiveFace : url;
+    const item = { 
+      type: 'image_url', 
+      image_url: { 
+        url: finalUrl,
+        ...(effectiveFace ? { face_asset: effectiveFace } : {})
+      },
+      role: 'first_frame'
+    };
+    if (effectiveFace) {
+      item.face_asset = effectiveFace;
+    }
+    content.push(item);
+  }
+
+  // Process reference images (always as reference_image, never first_frame)
+  const refImages = [];
+  if (Array.isArray(image_urls)) refImages.push(...image_urls.filter(Boolean));
 
   const videos = [];
   if (video_url) videos.push(video_url);
@@ -13,20 +35,11 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
   if (audio_url) audios.push(audio_url);
   if (Array.isArray(audio_urls)) audios.push(...audio_urls.filter(Boolean));
 
-  // Multiple images or image + video/audio → multimodal reference.
-  const hasRefMedia = videos.length > 0 || audios.length > 0 || !!last_image_url;
-  const multiImage  = images.length > 1;
-  const hasFaceAsset = !!face_asset;
-
-  images.forEach((u, idx) => {
+  refImages.forEach((u) => {
     const url = typeof u === 'string' ? u : (u.url || u.image_url);
     const face = typeof u === 'object' ? u.face_asset : null;
-    
-    const isFirstImage = idx === 0;
-    const effectiveFace = face || (isFirstImage && typeof face_asset === 'string' ? face_asset : null);
+    const effectiveFace = face;
 
-    // If we have a face_asset (asset://), we MUST use it as the URL to avoid sending the real photo.
-    // Ark Seedance 2.0 Trusted Assets requirement: url should be the asset URI.
     const isAsset = effectiveFace && effectiveFace.startsWith('asset://');
     const finalUrl = isAsset ? effectiveFace : url;
 
@@ -34,23 +47,13 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
       type: 'image_url', 
       image_url: { 
         url: finalUrl,
-        // Trusted Assets MUST have face_asset inside the image_url object
         ...(effectiveFace ? { face_asset: effectiveFace } : {})
-      }
+      },
+      role: 'reference_image'
     };
-    
     if (effectiveFace) {
-      // Also keep it at the item level for backward compatibility
       item.face_asset = effectiveFace;
-      item.role = 'reference_image';
-    } else if (isFirstImage && !hasRefMedia && !multiImage && !hasFaceAsset) {
-      // Pure I2V: the single image is the first frame.
-      item.role = 'first_frame';
-    } else {
-      // Multimodal reference mode.
-      item.role = 'reference_image';
     }
-    
     content.push(item);
   });
 
@@ -66,7 +69,7 @@ export function buildContent({ prompt, image_url, image_urls, video_url, video_u
   videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u }, role: 'reference_video' }));
   audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u }, role: 'reference_audio' }));
   
-  // Text prompt at the end - Seedance 2.0 often expects this to bind to preceding media roles/indices (图片1 refers to the first media item)
+  // Text prompt at the end
   if (prompt) content.push({ type: 'text', text: prompt });
   
   return content;

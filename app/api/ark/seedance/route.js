@@ -129,7 +129,8 @@ export async function POST(request) {
     const {
       fast = false,
       prompt = '',
-      image_url,
+      first_frame_image,
+      image_url, // for backward compatibility
       image_urls,
       video_url,
       video_urls,
@@ -144,9 +145,16 @@ export async function POST(request) {
     } = body;
 
     // Resolve any base64 URLs (like face thumbnails or uploads) to public TOS URLs.
-    const resolvedImageUrl = typeof image_url === 'object' 
-        ? { ...image_url, url: await resolvePublic(image_url.url, userId) }
-        : await resolvePublic(image_url, userId);
+    const resolvedFirstFrameImage = first_frame_image
+      ? (typeof first_frame_image === 'object' 
+          ? { ...first_frame_image, url: await resolvePublic(first_frame_image.url, userId) }
+          : await resolvePublic(first_frame_image, userId))
+      : undefined;
+    const resolvedImageUrl = image_url
+      ? (typeof image_url === 'object' 
+          ? { ...image_url, url: await resolvePublic(image_url.url, userId) }
+          : await resolvePublic(image_url, userId))
+      : undefined;
     
     const resolvedImageUrls = Array.isArray(image_urls)
         ? await Promise.all(image_urls.map(async u => 
@@ -156,7 +164,8 @@ export async function POST(request) {
 
     const content = buildContent({ 
       prompt, 
-      image_url: resolvedImageUrl, 
+      first_frame_image: resolvedFirstFrameImage,
+      image_url: resolvedImageUrl, // for backward compatibility
       image_urls: resolvedImageUrls, 
       video_url, 
       video_urls, 
