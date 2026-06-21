@@ -9,8 +9,7 @@ import {
   uploadFile,
   persistImageToTOS,
   getUserWorkflows,
-  validateImageUploadFile,
-  isSupportedImageUploadFile,
+  validateImageReferenceUploadFile,
 } from "../muapi.js";
 import {
   getT2iModels,
@@ -50,7 +49,7 @@ async function downloadImage(url, filename) {
   }
 }
 
-const IMAGE_UPLOAD_ACCEPT = "image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.tif,.tiff,.raw,.cr2,.cr3,.nef,.arw,.dng,.orf,.raf,.rw2,.pef,.srw";
+const IMAGE_UPLOAD_ACCEPT = "image/png,.png";
 
 // ─── UploadButton (inline picker) ───────────────────────────────────────────
 
@@ -130,7 +129,6 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     (entries) => {
       if (!entries.length) return;
       const urls = entries.map((e) => e.url);
-      debugImageUploadUi('fireOnSelect', { count: urls.length, hasFirstUrl: !!urls[0], firstHost: urls[0] ? new URL(urls[0]).host : null });
       onSelect({ url: urls[0], urls, thumbnail: entries[0].url });
     },
     [onSelect],
@@ -139,14 +137,28 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
   const handleFileChange = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    debugImageUploadUi('file input selected', { count: files.length, firstName: files[0]?.name, firstType: files[0]?.type, firstSize: files[0]?.size });
     e.target.value = "";
 
-    const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB
     const tooLarge = files.filter((f) => f.size > MAX_IMAGE_SIZE);
     if (tooLarge.length > 0) {
       alert(
-        `Следующие изображения слишком большие (макс. 10 МБ): ${tooLarge.map((f) => f.name).join(", ")}`,
+        `Следующие изображения слишком большие (макс. 4 МБ): ${tooLarge.map((f) => f.name).join(", ")}`,
+      );
+      return;
+    }
+
+    const invalid = files.find((file) => {
+      try {
+        validateImageReferenceUploadFile(file);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+    if (invalid) {
+      alert(
+        `Для генерации и редактирования нужен PNG-файл до 4 МБ: ${invalid.name || "без имени"}.`,
       );
       return;
     }
@@ -162,8 +174,8 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
         toUpload.map(async (file) => {
           const id = Date.now().toString() + Math.random();
 
-          // Add a placeholder to history immediately without local preview
-          const placeholder = { id, name: file.name, url: null, progress: 0 };
+          const objectUrl = URL.createObjectURL(file);
+          const placeholder = { id, name: file.name, url: null, localUrl: objectUrl, progress: 0 };
           setUploadHistory((prev) => [placeholder, ...prev]);
 
           try {
@@ -173,7 +185,9 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
                 prev.map((h) => (h.id === id ? { ...h, progress: pct } : h)),
               );
             });
-            debugImageUploadUi('uploadFile resolved', { hasUrl: !!uploadedUrl, host: uploadedUrl ? new URL(uploadedUrl).host : null });
+            if (placeholder.localUrl && placeholder.localUrl !== uploadedUrl) {
+              URL.revokeObjectURL(placeholder.localUrl);
+            }
 
             // Update history with real URL and Mark as 100%
             setUploadHistory((prev) =>
@@ -187,7 +201,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
 
             // Auto-select if there's room
             if (selectedEntries.length < maxImages) {
-              const newEntry = { url: uploadedUrl };
+              const newEntry = { url: uploadedUrl, localUrl: objectUrl };
               setSelectedEntries((prev) => [...prev, newEntry]);
 
               if (maxImages === 1) {
@@ -351,7 +365,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
             {selectedEntries[1]?.url && (
               <div className="absolute top-1 left-1 w-6 h-6 rounded-md border border-black/40 overflow-hidden shadow-lg rotate-[-8deg] translate-x-[-1px] translate-y-[-1px]">
                 <img
-                  src={selectedEntries[1].url}
+                  src={selectedEntries[1].localUrl || selectedEntries[1].url}
                   alt=""
                   className="w-full h-full object-cover"
                 />
@@ -361,7 +375,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
             {selectedEntries[0]?.url && (
               <div className="absolute bottom-1 right-1 w-7 h-7 rounded-sm border-[1.5px] border-black/60 overflow-hidden shadow-2xl z-10 rotate-[4deg] translate-x-[1px] translate-y-[1px]">
                 <img
-                  src={selectedEntries[0].url}
+                  src={selectedEntries[0].localUrl || selectedEntries[0].url}
                   alt=""
                   className={`w-full h-full object-cover transition-all duration-300 ${
                     uploading && hasSelection ? "blur-[2px] opacity-60" : "opacity-100"
@@ -372,7 +386,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
           </div>
         ) : mainEntry?.url ? (
           <img
-            src={mainEntry.url}
+            src={mainEntry.localUrl || mainEntry.url}
             alt=""
             className={`w-full h-full object-cover transition-all duration-300 ${
               uploading && hasSelection ? "blur-[2px] scale-110 opacity-60" : "blur-0 scale-100 opacity-100"
@@ -430,7 +444,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept={IMAGE_UPLOAD_ACCEPT}
         multiple={isMulti}
         className="hidden"
         onChange={handleFileChange}
@@ -438,7 +452,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
       <input
         ref={cameraInputRef}
         type="file"
-        accept="image/*,.heic,.heif"
+        accept={IMAGE_UPLOAD_ACCEPT}
         capture="environment"
         className="hidden"
         onChange={handleFileChange}
@@ -1151,11 +1165,26 @@ export default function ImageStudio({
   }, [currentImageUrl, generating, historyItems, localHistory.length, mergeHistoryEntries, readRecentResults]);
 
   const processDroppedImages = async (files) => {
-    const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+    const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB
     const tooLarge = files.filter((f) => f.size > MAX_IMAGE_SIZE);
     if (tooLarge.length > 0) {
       alert(
-        `Следующие изображения слишком большие (макс. 10 МБ): ${tooLarge.map((f) => f.name).join(", ")}`
+        `Следующие изображения слишком большие (макс. 4 МБ): ${tooLarge.map((f) => f.name).join(", ")}`
+      );
+      return;
+    }
+
+    const invalid = files.find((file) => {
+      try {
+        validateImageReferenceUploadFile(file);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+    if (invalid) {
+      alert(
+        `Для генерации и редактирования нужен PNG-файл до 4 МБ: ${invalid.name || "без имени"}.`
       );
       return;
     }
@@ -1557,7 +1586,6 @@ export default function ImageStudio({
   );
 
   const handleGenerate = () => {
-    debugImageUploadUi('handleGenerate', { imageMode, uploadedCount: uploadedImageUrls.length, selectedModelId, selectedModelName, promptLength: prompt.trim().length });
     if (generating) return;
 
     if (imageMode) {

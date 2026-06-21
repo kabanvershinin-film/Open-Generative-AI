@@ -1,6 +1,7 @@
 import { getT2vModels, getI2vModels, getV2vModels, getT2iModels, getI2iModels } from './models.js';
 
 export const MAX_IMAGE_UPLOAD_SIZE_BYTES = 50 * 1024 * 1024;
+export const MAX_IMAGE_REFERENCE_UPLOAD_SIZE_BYTES = 4 * 1024 * 1024;
 export const SUPPORTED_IMAGE_UPLOAD_EXTENSIONS = new Set([
     'jpg', 'jpeg', 'png', 'tif', 'tiff',
     'raw', 'cr2', 'cr3', 'nef', 'arw', 'dng', 'orf', 'raf', 'rw2', 'pef', 'srw',
@@ -10,6 +11,9 @@ export const SUPPORTED_IMAGE_UPLOAD_MIME_TYPES = new Set([
     'image/raw', 'image/x-raw', 'image/x-canon-cr2', 'image/x-canon-cr3', 'image/x-nikon-nef',
     'image/x-sony-arw', 'image/x-adobe-dng', 'image/x-olympus-orf', 'image/x-fuji-raf',
 ]);
+export const SUPPORTED_IMAGE_REFERENCE_EXTENSIONS = new Set(['png']);
+export const SUPPORTED_IMAGE_REFERENCE_MIME_TYPES = new Set(['image/png']);
+
 
 function getFileExtension(file) {
     return String(file?.name || '').split('.').pop()?.toLowerCase() || '';
@@ -19,6 +23,23 @@ export function isSupportedImageUploadFile(file) {
     const type = String(file?.type || '').toLowerCase();
     const ext = getFileExtension(file);
     return SUPPORTED_IMAGE_UPLOAD_MIME_TYPES.has(type) || SUPPORTED_IMAGE_UPLOAD_EXTENSIONS.has(ext);
+}
+
+export function isSupportedImageReferenceFile(file) {
+    const type = String(file?.type || '').toLowerCase();
+    const ext = getFileExtension(file);
+    return SUPPORTED_IMAGE_REFERENCE_MIME_TYPES.has(type) && SUPPORTED_IMAGE_REFERENCE_EXTENSIONS.has(ext);
+}
+
+export function validateImageReferenceUploadFile(file) {
+    if (!file) throw new Error('Файл изображения не выбран.');
+    if (!isSupportedImageReferenceFile(file)) {
+        throw new Error(`Для генерации и редактирования нужен PNG-файл: ${file.name || 'без имени'}.`);
+    }
+    if (file.size > MAX_IMAGE_REFERENCE_UPLOAD_SIZE_BYTES) {
+        throw new Error(`Файл слишком большой: ${file.name || 'без имени'}. Максимальный размер — 4 МБ.`);
+    }
+    return true;
 }
 
 export function validateImageUploadFile(file) {

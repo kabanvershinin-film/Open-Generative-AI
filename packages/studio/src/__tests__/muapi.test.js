@@ -1,6 +1,5 @@
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
-import { mock } from 'node:test';
 import * as muapi from '../muapi.js';
 
 // Mock global environment
@@ -15,6 +14,18 @@ global.CustomEvent = class {
 global.window = {
     dispatchEvent: mock.fn()
 };
+
+function createFile(name, type, size) {
+    const file = new Blob([new Uint8Array(size)], { type });
+    Object.defineProperty(file, 'name', { value: name });
+    return file;
+}
+
+test('validateImageReferenceUploadFile accepts png under 4MB and rejects others', () => {
+    assert.strictEqual(muapi.validateImageReferenceUploadFile(createFile('ref.png', 'image/png', 1024)), true);
+    assert.throws(() => muapi.validateImageReferenceUploadFile(createFile('ref.jpg', 'image/jpeg', 1024)), /нужен PNG-файл/);
+    assert.throws(() => muapi.validateImageReferenceUploadFile(createFile('ref.png', 'image/png', 5 * 1024 * 1024)), /4 МБ/);
+});
 
 test('generateSeedanceArk forms correct request body and polls', async (t) => {
     const apiKey = 'test-api-key';
