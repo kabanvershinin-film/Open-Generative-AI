@@ -86,6 +86,49 @@ test('optimizeImageUploadFile compresses large images when browser runtime is av
     assert.ok(result.size < file.size);
 });
 
+test('optimizeImageUploadFile leaves 5MB images unchanged (exact limit)', async () => {
+    const file = createFile('exact-size.png', 'image/png', 5 * 1024 * 1024);
+    const result = await muapi.optimizeImageUploadFile(file);
+    assert.strictEqual(result, file);
+});
+
+test('optimizeImageUploadFile falls back to original file on errors', async () => {
+    // Simulate browser runtime, but canvas/toBlob fails
+    class MockFile extends Blob {
+        constructor(parts, name, options) {
+            super(parts, options);
+            Object.defineProperty(this, 'name', { value: name });
+        }
+    }
+
+    class MockFileReader {
+        readAsDataURL() {
+            this.onload?.({ target: { result: 'data:image/png;base64,AQID' } });
+        }
+    }
+
+    class MockImage {
+        set src(_value) {
+            this.onload?.();
+        }
+    }
+
+    const runtime = {
+        File: MockFile,
+        FileReader: MockFileReader,
+        Image: MockImage,
+        document: {
+            createElement() {
+                throw new Error('Canvas error');
+            },
+        },
+    };
+
+    const file = createFile('error-case.png', 'image/png', 6 * 1024 * 1024);
+    const result = await muapi.optimizeImageUploadFile(file, {}, runtime);
+    assert.strictEqual(result, file); // Should return original file instead of crashing
+});
+
 test('generateSeedanceArk forms correct request body and polls', async (t) => {
     const apiKey = 'test-api-key';
     const params = {
