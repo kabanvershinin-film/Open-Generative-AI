@@ -373,11 +373,12 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
         video_urls: Array.isArray(params.video_urls) ? params.video_urls : undefined,
         audio_url: params.audio_url || undefined,
         audio_urls: Array.isArray(params.audio_urls) ? params.audio_urls : undefined,
-        resolution: params.resolution || undefined,
+        resolution: fast ? '720p' : (params.resolution || undefined),
         ratio: params.aspect_ratio || undefined,
         duration: params.duration || undefined,
         face_asset: params.face_asset || undefined,
         last_image_url: params.last_image_url || undefined,
+        generate_audio: params.generate_audio || undefined,
     };
 
     console.info('[muapi] Submit Ark Seedance task', {

@@ -405,3 +405,279 @@ test('getUserWorkflows returns array', async (t) => {
     const workflows = await muapi.getUserWorkflows('key');
     assert.deepEqual(workflows, mockWorkflows);
 });
+
+test('Seedance 2.0 Text-to-Video (T2V) generation', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url) => {
+        if (url.includes('/api/ark/seedance') && !url.includes('taskId=')) {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 't2v-test-123', bill: 'bill-123' }),
+                text: async () => JSON.stringify({ taskId: 't2v-test-123', bill: 'bill-123' }),
+                clone: function() { return this; }
+            };
+        } else if (url.includes('taskId=t2v-test-123')) {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ status: 'succeeded', url: 'https://cdn.example.com/t2v.mp4' }),
+                text: async () => JSON.stringify({ status: 'succeeded', url: 'https://cdn.example.com/t2v.mp4' }),
+                clone: function() { return this; }
+            };
+        }
+        return { ok: true, json: async () => ({}) };
+    });
+
+    const result = await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: 'A cinematic slow-motion shot of a golden eagle soaring through a mountain valley at sunrise.',
+        aspect_ratio: '16:9',
+        resolution: '720p',
+        duration: 8,
+        generate_audio: true
+    });
+
+    assert.strictEqual(result.url, 'https://cdn.example.com/t2v.mp4');
+});
+
+test('Seedance 2.0 Native Audio Generation', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        if (url.includes('/api/ark/seedance') && !url.includes('taskId=')) {
+            const body = JSON.parse(options.body);
+            assert.strictEqual(body.generate_audio, true);
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ taskId: 'audio-test-123', bill: 'bill-456' }),
+                text: async () => JSON.stringify({ taskId: 'audio-test-123', bill: 'bill-456' }),
+                clone: function() { return this; }
+            };
+        }
+        return { ok: true, json: async () => ({ status: 'succeeded', url: 'https://cdn.example.com/with-audio.mp4' }) };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: 'A peaceful river flowing through a forest with birds singing.',
+        aspect_ratio: '16:9',
+        resolution: '720p',
+        duration: 8,
+        generate_audio: true
+    });
+});
+
+test('Seedance 2.0 All Aspect Ratios support', async (t) => {
+    const ratios = ['1:1', '16:9', '9:16', '4:3', '3:4', '21:9', '9:21'];
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ taskId: 'ratio-test-123', bill: 'bill-ratio' }),
+        clone: function() { return this; }
+    }));
+
+    for (const ratio of ratios) {
+        await assert.doesNotThrow(async () => {
+            await muapi.generateVideo('test-key', {
+                model: 'seedance-2.0-t2v',
+                prompt: 'Test video',
+                aspect_ratio: ratio
+            });
+        });
+    }
+});
+
+test('Seedance 2.0 All Resolutions support', async (t) => {
+    const resolutions = ['480p', '720p', '1080p'];
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ taskId: 'res-test-123', bill: 'bill-res' }),
+        clone: function() { return this; }
+    }));
+
+    for (const resolution of resolutions) {
+        await assert.doesNotThrow(async () => {
+            await muapi.generateVideo('test-key', {
+                model: 'seedance-2.0-t2v',
+                prompt: 'Test video',
+                resolution: resolution
+            });
+        });
+    }
+});
+
+test('Seedance 2.0 Duration options support', async (t) => {
+    const durations = [4, 8, 12, 15];
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ taskId: 'duration-test-123', bill: 'bill-duration' }),
+        clone: function() { return this; }
+    }));
+
+    for (const duration of durations) {
+        await assert.doesNotThrow(async () => {
+            await muapi.generateVideo('test-key', {
+                model: 'seedance-2.0-t2v',
+                prompt: 'Test video',
+                duration: duration
+            });
+        });
+    }
+});
+
+test('Seedance 2.0 Fast model vs Standard model', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        const body = JSON.parse(options.body);
+        assert.strictEqual(body.fast, true);
+        assert.strictEqual(body.resolution, '720p'); // Fast model converts 1080p to 720p
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ taskId: 'fast-test-123', bill: 'bill-fast' }),
+            clone: function() { return this; }
+        };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-fast-t2v',
+        prompt: 'Quick preview generation',
+        duration: 4,
+        resolution: '1080p'
+    });
+});
+
+test('Seedance 2.0 Text prompt with quotes (dialogs)', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url, options) => {
+        const body = JSON.parse(options.body);
+        assert.strictEqual(body.prompt, '图片1 says "Привет! Как дела?". Then they smile.');
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ taskId: 'dialog-test-123', bill: 'bill-dialog' }),
+            clone: function() { return this; }
+        };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: '图片1 says "Привет! Как дела?". Then they smile.'
+    });
+});
+
+test('Seedance 2.0 Up to 9 reference images', async (t) => {
+    global.fetch.mock.resetCalls();
+    const imageUrls = Array.from({ length: 9 }, (_, i) => `https://cdn.example.com/img${i + 1}.jpg`);
+    
+    global.fetch.mock.mockImplementation(async () => {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ taskId: '9img-test-123', bill: 'bill-9img' }),
+            clone: function() { return this; }
+        };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: 'Use all these images',
+        image_url: imageUrls[0],
+        image_urls: imageUrls.slice(1),
+    });
+});
+
+test('Seedance 2.0 Up to 3 reference videos', async (t) => {
+    global.fetch.mock.resetCalls();
+    const videoUrls = Array.from({ length: 3 }, (_, i) => `https://cdn.example.com/video${i + 1}.mp4`);
+    
+    global.fetch.mock.mockImplementation(async () => {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ taskId: '3vid-test-123', bill: 'bill-3vid' }),
+            clone: function() { return this; }
+        };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: 'Use all these videos',
+        video_url: videoUrls[0],
+        video_urls: videoUrls.slice(1),
+    });
+});
+
+test('Seedance 2.0 Up to 3 reference audios', async (t) => {
+    global.fetch.mock.resetCalls();
+    const audioUrls = Array.from({ length: 3 }, (_, i) => `https://cdn.example.com/audio${i + 1}.mp3`);
+    
+    global.fetch.mock.mockImplementation(async () => {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ taskId: '3aud-test-123', bill: 'bill-3aud' }),
+            clone: function() { return this; }
+        };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: 'Use all these audios',
+        audio_url: audioUrls[0],
+        audio_urls: audioUrls.slice(1),
+    });
+});
+
+test('Seedance 2.0 Total up to 12 files (image + video + audio)', async (t) => {
+    global.fetch.mock.resetCalls();
+    const imageUrls = Array.from({ length: 8 }, (_, i) => `https://cdn.example.com/img${i + 1}.jpg`);
+    const videoUrls = Array.from({ length: 2 }, (_, i) => `https://cdn.example.com/video${i + 1}.mp4`);
+    const audioUrls = Array.from({ length: 2 }, (_, i) => `https://cdn.example.com/audio${i + 1}.mp3`);
+    
+    global.fetch.mock.mockImplementation(async () => {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ taskId: '12refs-test-123', bill: 'bill-12refs' }),
+            clone: function() { return this; }
+        };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: 'Mix all references',
+        image_url: imageUrls[0],
+        image_urls: imageUrls.slice(1),
+        video_url: videoUrls[0],
+        video_urls: videoUrls.slice(1),
+        audio_url: audioUrls[0],
+        audio_urls: audioUrls.slice(1),
+    });
+});
+
+test('Seedance 2.0 @ syntax in prompt', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async () => {
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({ taskId: 'atsyntax-test-123', bill: 'bill-atsyntax' }),
+            clone: function() { return this; }
+        };
+    });
+
+    await muapi.generateVideo('test-key', {
+        model: 'seedance-2.0-t2v',
+        prompt: '@image1 is the character, @video1 controls camera, @audio1 is background music',
+        image_url: 'https://cdn.example.com/char.jpg',
+        video_url: 'https://cdn.example.com/cam.mp4',
+        audio_url: 'https://cdn.example.com/music.mp3',
+    });
+});
