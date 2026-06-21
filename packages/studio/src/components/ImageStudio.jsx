@@ -52,23 +52,6 @@ async function downloadImage(url, filename) {
 
 const IMAGE_UPLOAD_ACCEPT = "image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.tif,.tiff,.raw,.cr2,.cr3,.nef,.arw,.dng,.orf,.raf,.rw2,.pef,.srw";
 
-// #region debug-point E:ui-select
-function debugImageUploadUi(msg, data = {}) {
-  fetch('http://127.0.0.1:7777/event', {
-    method: 'POST',
-    body: JSON.stringify({
-      sessionId: 'image-upload-stuck',
-      runId: 'pre-fix',
-      hypothesisId: 'E',
-      location: 'packages/studio/src/components/ImageStudio.jsx',
-      msg: `[DEBUG] ${msg}`,
-      data,
-      ts: Date.now(),
-    }),
-  }).catch(() => {});
-}
-// #endregion
-
 // ─── UploadButton (inline picker) ───────────────────────────────────────────
 
 function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }) {
@@ -1574,6 +1557,7 @@ export default function ImageStudio({
   );
 
   const handleGenerate = () => {
+    debugImageUploadUi('handleGenerate', { imageMode, uploadedCount: uploadedImageUrls.length, selectedModelId, selectedModelName, promptLength: prompt.trim().length });
     if (generating) return;
 
     if (imageMode) {
