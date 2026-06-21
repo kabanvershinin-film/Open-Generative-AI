@@ -267,14 +267,14 @@ async function generateChatImage(apiKey, modelId, params) {
     if (params.aspect_ratio) body.aspect_ratio = params.aspect_ratio;
     if (params.imageSize) body.imageSize = params.imageSize;
 
-    const r = await fetch('/api/mf/v1/chat/completions', {
+    const r = await fetchWithTimeout('/api/mf/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
-    });
+    }, 5 * 60 * 1000); // 5 минут таймаут для долгой генерации
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
         if (r.status === 401) notifyAuthRequired(401, formatApiError(data.error, 'Войдите в аккаунт, чтобы генерировать.'));
@@ -470,14 +470,14 @@ export async function generateImage(apiKey, params) {
     if (params.format) body.format = params.format;
     if (params.image_url) body.image_url = params.image_url;
 
-    const r = await fetch('/api/mf/v1/images/generations', {
+    const r = await fetchWithTimeout('/api/mf/v1/images/generations', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify(body),
-    });
+    }, 5 * 60 * 1000); // 5 минут таймаут для долгой генерации
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
         if (r.status === 401) notifyAuthRequired(401, formatApiError(data.error, 'Войдите в аккаунт, чтобы генерировать.'));
@@ -557,11 +557,11 @@ export async function generateI2I(apiKey, params) {
         }
     }
 
-    const r = await fetch('/api/mf/v1/images/edits', {
+    const r = await fetchWithTimeout('/api/mf/v1/images/edits', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}` },
         body: form,
-    });
+    }, 5 * 60 * 1000); // 5 минут таймаут для долгой генерации
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
         if (r.status === 401) notifyAuthRequired(401, formatApiError(data.error, 'Войдите в аккаунт, чтобы генерировать.'));
