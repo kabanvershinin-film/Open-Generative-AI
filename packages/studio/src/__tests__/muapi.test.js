@@ -28,6 +28,64 @@ test('validateImageReferenceUploadFile accepts various image formats under 50MB 
     assert.throws(() => muapi.validateImageReferenceUploadFile(createFile('ref.png', 'image/png', 51 * 1024 * 1024)), /50 МБ/);
 });
 
+test('optimizeImageUploadFile leaves small images unchanged', async () => {
+    const file = createFile('small.png', 'image/png', 1024);
+    const result = await muapi.optimizeImageUploadFile(file);
+    assert.strictEqual(result, file);
+});
+
+test('optimizeImageUploadFile compresses large images when browser runtime is available', async () => {
+    class MockFile extends Blob {
+        constructor(parts, name, options) {
+            super(parts, options);
+            Object.defineProperty(this, 'name', { value: name });
+        }
+    }
+
+    class MockFileReader {
+        readAsDataURL() {
+            this.onload?.({ target: { result: 'data:image/png;base64,AQID' } });
+        }
+    }
+
+    class MockImage {
+        constructor() {
+            this.width = 4096;
+            this.height = 3072;
+        }
+
+        set src(_value) {
+            this.onload?.();
+        }
+    }
+
+    const runtime = {
+        File: MockFile,
+        FileReader: MockFileReader,
+        Image: MockImage,
+        document: {
+            createElement(tag) {
+                assert.strictEqual(tag, 'canvas');
+                return {
+                    width: 0,
+                    height: 0,
+                    getContext: () => ({ drawImage: () => {} }),
+                    toBlob: (callback, type) => {
+                        callback(new Blob([new Uint8Array(1024)], { type }));
+                    },
+                };
+            },
+        },
+    };
+
+    const file = createFile('large.png', 'image/png', 6 * 1024 * 1024);
+    const result = await muapi.optimizeImageUploadFile(file, {}, runtime);
+    assert.notStrictEqual(result, file);
+    assert.strictEqual(result.type, 'image/jpeg');
+    assert.strictEqual(result.name, 'large.jpg');
+    assert.ok(result.size < file.size);
+});
+
 test('generateSeedanceArk forms correct request body and polls', async (t) => {
     const apiKey = 'test-api-key';
     const params = {

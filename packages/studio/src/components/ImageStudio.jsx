@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import {
   generateImage,
   generateI2I,
+  optimizeImageUploadFile,
   uploadFile,
   persistImageToTOS,
   getUserWorkflows,
@@ -170,7 +171,8 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
           setUploadHistory((prev) => [placeholder, ...prev]);
 
           try {
-            const uploadedUrl = await uploadFile(apiKey, file, (pct) => {
+            const processedFile = await optimizeImageUploadFile(file);
+            const uploadedUrl = await uploadFile(apiKey, processedFile, (pct) => {
               setLastUploadProgress(pct);
               setUploadHistory((prev) =>
                 prev.map((h) => (h.id === id ? { ...h, progress: pct } : h)),
@@ -1178,7 +1180,8 @@ export default function ImageStudio({
       const urls = await Promise.all(
         toUpload.map(async (file) => {
           try {
-            return await uploadFile(apiKey, file);
+            const processedFile = await optimizeImageUploadFile(file);
+            return await uploadFile(apiKey, processedFile);
           } catch (err) {
             console.error(
               "[ImageStudio] Drop upload failed for",
