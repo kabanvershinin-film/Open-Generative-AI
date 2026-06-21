@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { BILLING_ENABLED, getUser, spendBalance, refundBalanceRpc, signBill, verifyBill } from '../../_lib/balance';
-import { priceRub, ensureCnyRate } from '../../_lib/pricing';
+import { BILLING_ENABLED, getUser, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData, chargeForTask } from '../../_lib/balance';
+import { priceRub, ensureCnyRate, seedance2RateCny, rubFromTokens } from '../../_lib/pricing';
 import { buildContent } from './logic';
 import { buildUserMediaKey } from '../../_lib/tosPaths';
 
@@ -172,16 +172,24 @@ export async function POST(request) {
     const modelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
     const model = pickEndpoint(fast) || modelId;
 
-    // Billing: calculate cost and deduct balance before submitting to Ark.
+    // Billing: calculate estimate to check balance, but do NOT charge yet!
     await ensureCnyRate();
-    const cost = await priceRub('video', modelId, { resolution, video_url, duration, generate_audio });
-    const charge = await spendBalance(request, cost, `ark_seedance_${modelId}`, { model: modelId, taskId: 'pending' });
-    if (!charge.ok) {
-      if (charge.error === 'insufficient') {
-        return NextResponse.json({ error: 'insufficient_funds', required: cost, balance: charge.balance }, { status: 402 });
-      }
-      return NextResponse.json({ error: charge.error || 'Ошибка списания баланса' }, { status: 403 });
-    }
+    const estimatedCost = await priceRub('video', modelId, { resolution, video_url, duration, generate_audio });
+    const hasVideoInput = !!(video_url);
+    let finalRes = String(resolution || '720p').toLowerCase();
+    if (fast && finalRes === '1080p') finalRes = '720p';
+    const rateCny = seedance2RateCny(modelId, finalRes, hasVideoInput);
+
+    // Verify user has enough for the estimate to avoid surprises later
+    const user = await getUser(request);
+    const userId = user?.id || null;
+    // (we don't charge now, just sign a bill token with params for final calculation)
+    const bill = signBill(estimatedCost, { 
+      model: modelId, 
+      resolution: finalRes,
+      hasVideoInput,
+      userId 
+    });
 
     const payload = {
       model,
@@ -207,23 +215,21 @@ export async function POST(request) {
       });
       const data = await r.json().catch(() => ({}));
       if (!r.ok) {
-        // Refund on submission failure.
-        if (charge.ok && cost > 0) await refundBalanceRpc(request, cost, `refund_ark_seedance_${modelId}`);
         return NextResponse.json(
           { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
           { status: r.status },
         );
       }
       
-      // Return the taskId along with the bill token and remaining balance.
+      // Return the taskId along with the bill token and remaining balance (no charge yet)
       return NextResponse.json({ 
         taskId: data.id, 
         endpoint: model,
-        bill: signBill(cost, { model: modelId, taskId: data.id }),
-        balance: charge.balance
+        bill,
+        estimatedCost,
+        rateCny
       });
     } catch (e) {
-      if (charge.ok && cost > 0) await refundBalanceRpc(request, cost, `refund_ark_seedance_${modelId}`);
       throw e;
     }
   } catch (e) {
@@ -255,16 +261,30 @@ export async function GET(request) {
     const status = (data.status || 'running').toLowerCase();
     const url = data.content?.video_url || data.video_url || null;
     const error = data.error?.message || data.message || null;
+    const totalTokens = data.usage?.total_tokens || 0;
 
-    // Refund if task failed and a bill token was provided.
-    if ((status === 'failed' || status === 'error' || status === 'expired' || status === 'cancelled') && bill) {
-      const cost = verifyBill(bill);
-      if (cost > 0) {
-        await refundBalanceRpc(request, cost, `refund_ark_seedance_${taskId}`);
+    // Charge REAL price when task succeeds!
+    if (status === 'succeeded' || status === 'success') {
+      if (bill) {
+        // Parse bill token to get params for final calculation
+        const billData = verifyBillData(bill);
+        if (billData) {
+          const { model, resolution, hasVideoInput, userId } = billData;
+          const rateCny = seedance2RateCny(model, resolution, hasVideoInput);
+          const finalCost = await rubFromTokens(totalTokens, rateCny, userId);
+          if (finalCost > 0) {
+            await chargeForTask(request, taskId, finalCost, `ark_seedance_${model}`, {
+              model,
+              taskId,
+              tokens: totalTokens
+            });
+          }
+        }
       }
     }
 
-    return NextResponse.json({ status, url, error });
+    // (No need to refund on failure because we never charged upfront)
+    return NextResponse.json({ status, url, error, tokens: totalTokens });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
