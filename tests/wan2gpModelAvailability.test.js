@@ -58,3 +58,72 @@ test('withWan2gpAvailability rejects unmatched models when endpoint metadata is 
     assert.equal(model.ready, false);
     assert.match(model.unavailableReason, /no api_name matching "flux"/);
 });
+
+test('withWan2gpAvailability handles missing third argument (no metadata at all)', () => {
+    const model = withWan2gpAvailability(fluxModel, { ok: true });
+    
+    assert.equal(model.ready, true);
+    assert.equal(model.fn, 'flux');
+    assert.match(model.availabilityNote, /default api_name/);
+});
+
+test('withWan2gpAvailability handles resolved map with key but value is undefined', () => {
+    const model = withWan2gpAvailability(
+        fluxModel,
+        { ok: true },
+        {
+            apiNames: ['flux_image'],
+            resolved: new Map(),
+        }
+    );
+    
+    assert.equal(model.ready, false);
+    assert.match(model.unavailableReason, /no api_name matching "flux"/);
+});
+
+test('withWan2gpAvailability handles model not found in resolved map (undefined)', () => {
+    const model = withWan2gpAvailability(
+        { id: 'wan2gp:qwen', name: 'Qwen', fn: 'qwen' },
+        { ok: true },
+        {
+            apiNames: ['flux_image'],
+            resolved: new Map([['wan2gp:flux-dev', 'flux_image']]),
+        }
+    );
+    
+    assert.equal(model.ready, false);
+    assert.match(model.unavailableReason, /no api_name matching "qwen"/);
+});
+
+test('withWan2gpAvailability resolves correct model when multiple models in resolved map', () => {
+    const qwenModel = { id: 'wan2gp:qwen', name: 'Qwen', fn: 'qwen' };
+    const model = withWan2gpAvailability(
+        qwenModel,
+        { ok: true },
+        {
+            apiNames: ['flux_image', 'qwen_image'],
+            resolved: new Map([
+                ['wan2gp:flux-dev', 'flux_image'],
+                ['wan2gp:qwen', 'qwen_image'],
+            ]),
+        }
+    );
+    
+    assert.equal(model.ready, true);
+    assert.equal(model.fn, 'qwen_image');
+});
+
+test('withWan2gpAvailability does not mutate original model object', () => {
+    const originalModel = { ...fluxModel };
+    const model = withWan2gpAvailability(
+        fluxModel,
+        { ok: true },
+        {
+            apiNames: ['flux_image'],
+            resolved: new Map([['wan2gp:flux-dev', 'flux_image']]),
+        }
+    );
+    
+    assert.deepEqual(fluxModel, originalModel);
+    assert.notEqual(model, fluxModel);
+});
