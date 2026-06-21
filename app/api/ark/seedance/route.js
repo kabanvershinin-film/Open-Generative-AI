@@ -181,8 +181,6 @@ export async function POST(request) {
     const rateCny = seedance2RateCny(modelId, finalRes, hasVideoInput);
 
     // Verify user has enough for the estimate to avoid surprises later
-    const user = await getUser(request);
-    const userId = user?.id || null;
     // (we don't charge now, just sign a bill token with params for final calculation)
     const bill = signBill(estimatedCost, { 
       model: modelId, 
