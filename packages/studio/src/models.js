@@ -111,7 +111,9 @@ export const _t2vModelsAll = [
       prompt: { type: "string", title: "Prompt" },
       aspect_ratio: { enum: ["adaptive", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"], default: "adaptive", title: "Aspect Ratio", type: "string" },
       resolution: { enum: ["720p", "1080p", "480p"], default: "720p", title: "Resolution", type: "string" },
-      duration: { enum: [4, 5, 6, 8, 10, 12, 15], default: 5, title: "Duration (s)", type: "int" }
+      duration: { enum: [4, 5, 6, 8, 10, 12, 15], default: 5, title: "Duration (s)", type: "int" },
+      seed: { type: "integer", title: "Seed (для повторения результатов)", default: -1 },
+      return_last_frame: { type: "boolean", title: "Возвращать последний кадр", default: false }
     }
   },
   {
@@ -149,7 +151,9 @@ export const _i2vModelsAll = [
       prompt: { type: "string", title: "Prompt" },
       aspect_ratio: { enum: ["adaptive", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"], default: "adaptive", title: "Aspect Ratio", type: "string" },
       resolution: { enum: ["720p", "1080p", "480p"], default: "720p", title: "Resolution", type: "string" },
-      duration: { enum: [4, 5, 6, 8, 10, 12, 15], default: 5, title: "Duration (s)", type: "int" }
+      duration: { enum: [4, 5, 6, 8, 10, 12, 15], default: 5, title: "Duration (s)", type: "int" },
+      seed: { type: "integer", title: "Seed (для повторения результатов)", default: -1 },
+      return_last_frame: { type: "boolean", title: "Возвращать последний кадр", default: false }
     }
   },
   {

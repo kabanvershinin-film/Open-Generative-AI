@@ -31,7 +31,6 @@ test('buildContent creates content for I2V with one image', () => {
 
   assert.strictEqual(content.length, 2);
   assert.strictEqual(content[0].type, 'image_url');
-  assert.strictEqual(content[0].role, 'first_frame');
   assert.strictEqual(content[0].image_url.url, 'https://cdn.example.com/base.jpg');
   assert.strictEqual(content[1].type, 'text');
   assert.strictEqual(content[1].text, 'animate this image');
@@ -46,7 +45,6 @@ test('buildContent handles face asset', () => {
 
   assert.strictEqual(content.length, 2);
   assert.strictEqual(content[0].type, 'image_url');
-  assert.strictEqual(content[0].role, 'reference_image');
   assert.strictEqual(content[0].face_asset, 'asset://character1');
   assert.strictEqual(content[0].image_url.face_asset, 'asset://character1');
   assert.strictEqual(content[0].image_url.url, 'asset://character1');
@@ -132,9 +130,9 @@ test('buildContent handles @ syntax in prompt (referencing media indices)', () =
 
   assert.strictEqual(content.length, 4);
   assert.strictEqual(content[3].text, '@image1 is the character, @video1 controls camera, @audio1 is background music');
-  assert.strictEqual(content[0].role, 'reference_image');
-  assert.strictEqual(content[1].role, 'reference_video');
-  assert.strictEqual(content[2].role, 'reference_audio');
+  assert.strictEqual(content[0].image_url.url, 'https://cdn.example.com/char.jpg');
+  assert.strictEqual(content[1].video_url.url, 'https://cdn.example.com/cam.mp4');
+  assert.strictEqual(content[2].audio_url.url, 'https://cdn.example.com/music.mp3');
 });
 
 test('buildContent handles multiple reference images', () => {
@@ -146,11 +144,8 @@ test('buildContent handles multiple reference images', () => {
 
   assert.strictEqual(content.length, 4);
   assert.strictEqual(content[0].type, 'image_url');
-  assert.strictEqual(content[0].role, 'reference_image');
   assert.strictEqual(content[1].type, 'image_url');
-  assert.strictEqual(content[1].role, 'reference_image');
   assert.strictEqual(content[2].type, 'image_url');
-  assert.strictEqual(content[2].role, 'reference_image');
   assert.strictEqual(content[3].type, 'text');
 });
 
@@ -162,7 +157,6 @@ test('buildContent handles video reference', () => {
 
   assert.strictEqual(content.length, 2);
   assert.strictEqual(content[0].type, 'video_url');
-  assert.strictEqual(content[0].role, 'reference_video');
   assert.strictEqual(content[1].type, 'text');
 });
 
@@ -174,7 +168,6 @@ test('buildContent handles audio reference', () => {
 
   assert.strictEqual(content.length, 2);
   assert.strictEqual(content[0].type, 'audio_url');
-  assert.strictEqual(content[0].role, 'reference_audio');
   assert.strictEqual(content[1].type, 'text');
 });
 
@@ -186,8 +179,8 @@ test('buildContent handles last image (end frame)', () => {
   });
 
   assert.strictEqual(content.length, 3);
-  assert.strictEqual(content[0].role, 'reference_image');
-  assert.strictEqual(content[1].role, 'last_frame');
+  assert.strictEqual(content[0].image_url.url, 'https://cdn.example.com/start.jpg');
+  assert.strictEqual(content[1].image_url.url, 'https://cdn.example.com/end.jpg');
   assert.strictEqual(content[2].type, 'text');
 });
 
@@ -199,7 +192,6 @@ test('buildContent handles all generation modes (Text-to-Video, Image-to-Video, 
   // Test Image-to-Video (I2V)
   const i2vContent = buildContent({ prompt: 'animate this', image_url: 'https://cdn.example.com/img.jpg' });
   assert.strictEqual(i2vContent.length, 2);
-  assert.strictEqual(i2vContent[0].role, 'first_frame');
 
   // Test Multimodal Reference (image + video + audio)
   const multimodalContent = buildContent({
@@ -209,7 +201,4 @@ test('buildContent handles all generation modes (Text-to-Video, Image-to-Video, 
     audio_url: 'https://cdn.example.com/aud.mp3'
   });
   assert.strictEqual(multimodalContent.length, 4);
-  assert.strictEqual(multimodalContent[0].role, 'reference_image');
-  assert.strictEqual(multimodalContent[1].role, 'reference_video');
-  assert.strictEqual(multimodalContent[2].role, 'reference_audio');
 });

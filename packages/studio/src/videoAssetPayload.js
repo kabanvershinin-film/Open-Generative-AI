@@ -61,6 +61,8 @@ export function buildSeedanceStudioPayload({
   refFiles = [],
   faceAsset,
   isI2V = false,
+  seed,
+  returnLastFrame,
 }) {
   const readyRefs = refFiles.filter((f) => f?.url && !f.uploading);
   const faceValidation = faceAsset ? validateFaceAsset(faceAsset) : { ok: true, asset: null };
@@ -81,5 +83,7 @@ export function buildSeedanceStudioPayload({
     face_asset: faceValidation.asset?.uri || undefined,
     face_thumbnail: faceValidation.asset?.thumbnail || undefined,
     is_i2v: isI2V,
+    seed: seed !== undefined ? seed : undefined,
+    return_last_frame: returnLastFrame !== undefined ? returnLastFrame : undefined,
   };
 }

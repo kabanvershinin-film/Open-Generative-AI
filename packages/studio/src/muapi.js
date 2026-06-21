@@ -379,6 +379,8 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
         face_asset: params.face_asset || undefined,
         last_image_url: params.last_image_url || undefined,
         generate_audio: params.generate_audio || undefined,
+        seed: params.seed !== undefined ? params.seed : undefined,
+        return_last_frame: params.return_last_frame !== undefined ? params.return_last_frame : undefined,
     };
 
     console.info('[muapi] Submit Ark Seedance task', {
@@ -442,7 +444,11 @@ export async function pollArkTask(apiKey, taskId, bill) {
         const status = (data.status || '').toLowerCase();
         if (status === 'succeeded' || status === 'success') {
             if (!data.url) throw new Error('Ark: видео готово, но URL не получен.');
-            return { url: data.url, id: taskId };
+            return { 
+                url: data.url, 
+                id: taskId,
+                last_frame_url: data.last_frame_url || null
+            };
         }
         if (status === 'failed' || status === 'error' || status === 'expired' || status === 'cancelled') {
             throw new Error(`Ark: генерация не удалась (${data.error || status}).`);

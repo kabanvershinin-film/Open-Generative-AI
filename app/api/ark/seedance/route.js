@@ -127,21 +127,23 @@ export async function POST(request) {
     const userId = user?.id || null;
 
     const {
-      fast = false,
-      prompt = '',
-      first_frame_image,
-      image_url, // for backward compatibility
-      image_urls,
-      video_url,
-      video_urls,
-      audio_url,
-      audio_urls,
-      resolution,
-      ratio,
-      duration,
-      generate_audio = true,
-      face_asset,
-      last_image_url,
+        fast = false,
+        prompt = '',
+        first_frame_image,
+        image_url, // for backward compatibility
+        image_urls,
+        video_url,
+        video_urls,
+        audio_url,
+        audio_urls,
+        resolution,
+        ratio,
+        duration,
+        generate_audio = true,
+        face_asset,
+        last_image_url,
+        seed,
+        return_last_frame,
     } = body;
 
     // Resolve any base64 URLs (like face thumbnails or uploads) to public TOS URLs.
@@ -199,20 +201,22 @@ export async function POST(request) {
     });
 
     const payload = {
-      model,
-      content,
-      generate_audio,
-      watermark: false,
-      // Pass face_asset at top level for some Ark versions
-      ...(face_asset ? { face_asset } : {}),
+        model,
+        content,
+        generate_audio,
+        watermark: false,
+        // Pass face_asset at top level for some Ark versions
+        ...(face_asset ? { face_asset } : {}),
     };
     if (resolution) {
-      let res = String(resolution).toLowerCase();
-      if (fast && res === '1080p') res = '720p';
-      payload.resolution = res;
+        let res = String(resolution).toLowerCase();
+        if (fast && res === '1080p') res = '720p';
+        payload.resolution = res;
     }
     if (ratio) payload.ratio = ratio;
     if (duration != null && duration !== '') payload.duration = Math.max(4, Math.min(15, Number(duration) || 5));
+    if (seed !== undefined && seed !== null) payload.seed = seed;
+    if (return_last_frame !== undefined && return_last_frame !== null) payload.return_last_frame = return_last_frame;
 
     try {
       const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {
@@ -291,7 +295,14 @@ export async function GET(request) {
     }
 
     // (No need to refund on failure because we never charged upfront)
-    return NextResponse.json({ status, url, error, tokens: totalTokens });
+    const lastFrameUrl = data.content?.last_frame_url || data.last_frame_url || null;
+    return NextResponse.json({ 
+        status, 
+        url, 
+        error, 
+        tokens: totalTokens,
+        last_frame_url: lastFrameUrl
+    });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
