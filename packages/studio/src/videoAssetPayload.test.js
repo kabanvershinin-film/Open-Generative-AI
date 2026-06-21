@@ -50,7 +50,7 @@ test('buildSeedanceStudioPayload carries face_asset and ready references', () =>
   assert.deepStrictEqual(payload.image_urls, ['https://cdn.example.com/i1.jpg']);
   assert.deepStrictEqual(payload.video_urls, ['https://cdn.example.com/v1.mp4']);
   assert.deepStrictEqual(payload.audio_urls, ['https://cdn.example.com/a1.mp3']);
-  assert.strictEqual(payload.image_url, 'https://cdn.example.com/base.jpg');
+  assert.strictEqual(payload.first_frame_image, 'https://cdn.example.com/base.jpg');
   assert.strictEqual(payload.video_url, 'https://cdn.example.com/ref.mp4');
   assert.strictEqual(payload.audio_url, 'https://cdn.example.com/ref.mp3');
 });
@@ -77,7 +77,7 @@ test('buildSeedanceStudioPayload works in I2V mode', () => {
   });
 
   assert.strictEqual(payload.is_i2v, true);
-  assert.strictEqual(payload.image_url, 'https://cdn.example.com/input.jpg');
+  assert.strictEqual(payload.first_frame_image, 'https://cdn.example.com/input.jpg');
 });
 
 test('validateFaceAsset rejects invalid formats and non-ready statuses', () => {

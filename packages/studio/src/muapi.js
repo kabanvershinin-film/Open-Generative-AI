@@ -367,7 +367,7 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
         model: modelInfo?.apiId || modelInfo?.id || undefined,
         is_i2v: params.is_i2v ?? false,
         prompt: params.prompt || '',
-        image_url: finalImages[0] || undefined,
+        first_frame_image: finalImages[0] || undefined,
         image_urls: finalImages.length > 1 ? finalImages.slice(1) : undefined,
         video_url: params.video_url || undefined,
         video_urls: Array.isArray(params.video_urls) ? params.video_urls : undefined,
@@ -384,7 +384,7 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
     console.info('[muapi] Submit Ark Seedance task', {
         model: body.model,
         hasFaceAsset: !!body.face_asset,
-        imageRefs: [body.image_url, ...(body.image_urls || [])].filter(Boolean).length,
+        imageRefs: [body.first_frame_image, ...(body.image_urls || [])].filter(Boolean).length,
         videoRefs: [body.video_url, ...(body.video_urls || [])].filter(Boolean).length,
         audioRefs: [body.audio_url, ...(body.audio_urls || [])].filter(Boolean).length,
     });

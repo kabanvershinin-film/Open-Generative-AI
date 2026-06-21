@@ -425,7 +425,15 @@ export default function VideoStudio({
   const generating = activeTasks.some(t => t.status === 'generating');
 
   const addTask = useCallback((task) => {
-    setActiveTasks(prev => [{ ...task, status: 'generating', timestamp: new Date().toISOString() }, ...prev]);
+    setActiveTasks(prev => {
+      const existing = prev.find(t => t.id === task.id);
+      if (existing) {
+        // Если задача уже существует, обновляем её, но сохраняем статус
+        return prev.map(t => t.id === task.id ? { ...t, ...task } : t);
+      }
+      // Если задачи нет, добавляем новую
+      return [{ ...task, status: 'generating', timestamp: new Date().toISOString() }, ...prev];
+    });
   }, []);
 
   const updateTask = useCallback((id, updates) => {
