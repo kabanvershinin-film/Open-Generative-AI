@@ -2290,7 +2290,7 @@ export default function VideoStudio({
 
       {/* ── BOTTOM PROMPT BAR ── */}
       <div className="absolute bottom-4 w-full max-w-[95%] lg:max-w-4xl z-40 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-        <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-3xl rounded-md border border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
+        <div className="w-full bg-[#0a0a0a] backdrop-blur-3xl rounded-md border border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
           {/* Registered face chip — the generated video keeps this face */}
           {isSeedanceArk && faceAsset && (
             <div className="flex flex-wrap gap-2 px-1 pb-1">
