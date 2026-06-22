@@ -456,8 +456,7 @@ const VideoGeneration = ({ id, data, selected }) => {
     const body = {
       fast,
       prompt: finalPrompt,
-      image_url: finalImages[0] || undefined,
-      image_urls: finalImages.length > 1 ? finalImages.slice(1) : undefined,
+      image_urls: finalImages.length > 0 ? finalImages : undefined,
       video_url: uniqueVideos[0] || src.video_url || undefined,
       video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
       audio_url: uniqueAudios[0] || src.audio_url || undefined,
