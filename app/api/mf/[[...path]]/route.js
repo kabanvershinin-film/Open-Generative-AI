@@ -129,6 +129,14 @@ async function proxyRequest(request, { params }) {
         if (!upstream.ok && billing.billed) {
             await refundBalanceRpc(request, billing.cost, billing.reason);
         }
+        // Log the response to see what MEMEFAST returns!
+        const clonedResponse = upstream.clone();
+        try {
+            const responseText = await clonedResponse.text();
+            console.log('MEMEFAST response:', responseText);
+        } catch (logErr) {
+            console.error('Error logging MEMEFAST response:', logErr);
+        }
         const responseHeaders = new Headers(upstream.headers);
         responseHeaders.delete('content-encoding');
         responseHeaders.delete('content-length');

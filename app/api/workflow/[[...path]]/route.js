@@ -975,6 +975,7 @@ async function generateVideo(apiKey, model, params, userId = null) {
         throw new Error(`Video API ${res.status}: ${txt.slice(0, 300)}`);
     }
     const data = await res.json();
+    console.log('MEMEFAST video create response:', JSON.stringify(data, null, 2));
     const taskId = data.task_id || data.id;
     // If the create response already contains a finished video, return it directly
     if (data.video_url) return [{ type: 'video_url', value: data.video_url }];
@@ -990,6 +991,7 @@ async function generateVideo(apiKey, model, params, userId = null) {
         });
         if (!poll.ok) continue;
         const pData = await poll.json();
+        console.log('MEMEFAST video poll response:', JSON.stringify(pData, null, 2));
         // Done as soon as a video URL is available
         if (pData.video_url || pData.url) {
             return [{ type: 'video_url', value: pData.video_url || pData.url }];
