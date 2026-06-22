@@ -37,9 +37,8 @@ export async function POST(request) {
         } = body;
         if (!idea.trim()) return NextResponse.json({ error: 'Пустая идея' }, { status: 400 });
 
-        // Billing: flat chat cost (text category). Charge before, refund on failure.
-        await ensureCnyRate();
-        const cost = priceRub('text', model, {});
+        // Billing: fixed cost 5 RUB. Charge before, refund on failure.
+        const cost = 5;
         const user = await getUserForGallery(request);
         let billed = false;
         if (BILLING_ENABLED && user && cost > 0) {
