@@ -18,17 +18,25 @@ const TextGeneration = ({ id, data, selected }) => {
   const selectedModel = data.selectedModel || {};
   const loading = data.loading || false;
   
-  // Auto-detect references wired into this TextNode,
+  // Auto-detect references wired into the video/image node this prompt node feeds,
   // and surface them as clickable chips (with thumbnails) — like SeedancePromptNode.
   const availableTags = useMemo(() => {
     const allNodes = getNodes() || [];
-    const incomingEdges = edges.filter((e) => e.target === id);
-    console.log('TextNode availableTags debug:', { id, edges, incomingEdges, allNodes: allNodes.map(n => ({ id: n.id, type: n.type })) });
+    const genIds = new Set(
+      edges.filter((e) => e.source === id)
+        .map((e) => e.target)
+        .filter((tid) => {
+          const n = allNodes.find((nn) => nn.id === tid);
+          return n && (n.type === "videoNode" || n.type === "imageNode");
+        }),
+    );
+    console.log('TextNode availableTags debug:', { id, edges, genIds, allNodes: allNodes.map(n => ({ id: n.id, type: n.type })) });
+    if (!genIds.size) return [];
     const out = [];
     const seen = new Set();
     const counters = { images: 0, video: 0, audio: 0 };
-    for (const e of incomingEdges) {
-      if (seen.has(e.source)) continue;
+    for (const e of edges) {
+      if (!genIds.has(e.target) || e.source === id || seen.has(e.source)) continue;
       seen.add(e.source);
       const n = allNodes.find((nn) => nn.id === e.source);
       if (!n) continue;
