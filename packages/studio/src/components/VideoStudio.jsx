@@ -1202,20 +1202,26 @@ export default function VideoStudio({
   // Insert the @reference token into the prompt at the caret (or append).
   const insertRefToken = (token) => {
     const el = textareaRef.current;
-    const savedScrollTop = el?.scrollTop ?? 0;
-    setPrompt((prev) => {
-      if (!el) return (prev ? prev + " " : "") + token + " ";
-      const start = el.selectionStart ?? prev.length;
-      const end = el.selectionEnd ?? prev.length;
-      const next = prev.slice(0, start) + token + " " + prev.slice(end);
+    if (!el) {
+      setPrompt((prev) => (prev ? prev + " " : "") + token + " ");
+      return;
+    }
+    const savedScrollTop = el.scrollTop;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    // Сначала обновляем текст
+    setPrompt((prev) => prev.slice(0, start) + token + " " + prev.slice(end));
+    // Затем восстанавливаем позицию и прокрутку
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        // Restore scroll position first, then set selection
-        el.scrollTop = savedScrollTop;
-        el.focus();
-        const pos = start + token.length + 1;
-        el.setSelectionRange(pos, pos);
+        const textarea = textareaRef.current;
+        if (textarea) {
+          textarea.scrollTop = savedScrollTop;
+          textarea.focus();
+          const pos = start + token.length + 1;
+          textarea.setSelectionRange(pos, pos);
+        }
       });
-      return next;
     });
   };
 
