@@ -2371,14 +2371,119 @@ export default function VideoStudio({
             </div>
           )}
           {/* Seedance 2.0 reference chips — click to insert @reference into prompt */}
-          {isSeedanceArk && refFiles.length > 0 && (
+          {isSeedanceArk && (
             <div className="flex flex-wrap gap-2 px-1 pb-1">
               {(() => {
-                const counters = { image: 0, video: 0, audio: 0 };
-                return refFiles.map((f) => {
+                const chips = [];
+                let imageCount = 0;
+                let videoCount = 0;
+                let audioCount = 0;
+
+                // Helper to get label
+                const getLabel = (kind) => {
+                  const word = kind === "image" ? "图片" : kind === "video" ? "视频" : "音频";
+                  let count = kind === "image" ? imageCount : kind === "video" ? videoCount : audioCount;
+                  count += 1;
+                  if (kind === "image") {
+                    if (faceAsset) count += 1;
+                  }
+                  return `${word}${count}`;
+                };
+
+                // Add uploadedImageUrl chip
+                if (uploadedImageUrl) {
+                  imageCount += 1;
+                  const label = getLabel("image");
+                  chips.push(
+                    <div
+                      key="uploaded-image"
+                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer transition-all"
+                      title={`Изображение — вставить ${label} в промпт`}
+                      onClick={() => insertRefToken(label)}
+                    >
+                      <img src={uploadedImageUrl} alt="" className="w-5 h-5 rounded object-cover" />
+                      <span className="whitespace-nowrap">{label}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); clearImageUpload(); }}
+                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        title="Удалить изображение"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                }
+
+                // Add uploadedVideoUrl chip
+                if (uploadedVideoUrl) {
+                  videoCount += 1;
+                  const label = getLabel("video");
+                  chips.push(
+                    <div
+                      key="uploaded-video"
+                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer transition-all"
+                      title={`Видео — вставить ${label} в промпт`}
+                      onClick={() => insertRefToken(label)}
+                    >
+                      <video src={uploadedVideoUrl} muted className="w-5 h-5 rounded object-cover" />
+                      <span className="whitespace-nowrap">{label}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); clearVideoUpload(); }}
+                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        title="Удалить видео"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                }
+
+                // Add uploadedAudioUrl chip
+                if (uploadedAudioUrl) {
+                  audioCount += 1;
+                  const label = getLabel("audio");
+                  chips.push(
+                    <div
+                      key="uploaded-audio"
+                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer transition-all"
+                      title={`Аудио — вставить ${label} в промпт`}
+                      onClick={() => insertRefToken(label)}
+                    >
+                      <span className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-[9px]">🎵</span>
+                      <span className="whitespace-nowrap">{label}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); clearAudioUpload(); }}
+                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        title="Удалить аудио"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                }
+
+                // Add refFiles chips
+                const counters = { image: imageCount, video: videoCount, audio: audioCount };
+                refFiles.forEach((f) => {
                   counters[f.kind] += 1;
-                  const label = refLabel(f.kind, counters[f.kind]);
-                  return (
+                  const word = f.kind === "image" ? "图片" : f.kind === "video" ? "视频" : "音频";
+                  let count = counters[f.kind];
+                  if (f.kind === "image" && faceAsset) count += 1;
+                  const label = `${word}${count}`;
+
+                  chips.push(
                     <div
                       key={f.id}
                       className={`group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border text-[11px] font-medium transition-all ${f.uploading ? "border-white/10 bg-white/5 text-white/40" : "border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer"}`}
@@ -2421,6 +2526,8 @@ export default function VideoStudio({
                     </div>
                   );
                 });
+
+                return chips;
               })()}
             </div>
           )}
@@ -2722,16 +2829,6 @@ export default function VideoStudio({
 
             {/* Prompt textarea */}
             <div className="flex-1 flex flex-col gap-1 relative">
-              {/* Highlight layer */}
-              <div
-                ref={(ref) => {
-                  if (ref && textareaRef.current) {
-                    ref.style.height = textareaRef.current.style.height || 'auto';
-                  }
-                }}
-                className="absolute inset-0 pointer-events-none z-0 text-white text-sm pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto overflow-x-hidden custom-scrollbar whitespace-pre-wrap break-words"
-                dangerouslySetInnerHTML={{ __html: renderHighlightedPrompt() }}
-              />
               {/* Actual textarea */}
               <textarea
                 ref={textareaRef}
@@ -2740,7 +2837,7 @@ export default function VideoStudio({
                 placeholder={promptPlaceholder}
                 disabled={promptDisabled}
                 rows={1}
-                className="relative z-10 w-full bg-transparent border-none text-transparent caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
+                className="relative z-10 w-full bg-transparent border-none text-white caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
               />
             </div>
           </div>

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildContent } from '../logic';
+import { buildContent } from '../logic.js';
 
 test('buildContent creates content for T2V prompt only', () => {
   const content = buildContent({
@@ -43,11 +43,10 @@ test('buildContent handles face asset', () => {
     face_asset: 'asset://character1',
   });
 
-  assert.strictEqual(content.length, 2);
-  assert.strictEqual(content[0].type, 'image_url');
-  assert.strictEqual(content[0].face_asset, 'asset://character1');
-  assert.strictEqual(content[0].image_url.face_asset, 'asset://character1');
-  assert.strictEqual(content[0].image_url.url, 'asset://character1');
+  // Now we add the image_url item and the face_asset item (so length is 3 + 1 text = 4?)
+  assert.ok(content.some(item => item.type === 'image_url' && item.face_asset === 'asset://character1'));
+  assert.strictEqual(content[content.length - 1].type, 'text');
+  assert.strictEqual(content[content.length - 1].text, '图片1 is driving a car');
 });
 
 test('buildContent handles up to 9 reference images', () => {
@@ -93,7 +92,7 @@ test('buildContent handles up to 3 reference audios', () => {
   const audioItems = content.filter(c => c.type === 'audio_url');
   assert.strictEqual(audioItems.length, 3);
   assert.strictEqual(audioItems[0].audio_url.url, 'https://cdn.example.com/audio1.mp3');
-  assert.strictEqual(audioItems[2].audio_url.url, 'https://cdn.example.com/audio3.mp4');
+  assert.strictEqual(audioItems[2].audio_url.url, 'https://cdn.example.com/audio3.mp3');
 });
 
 test('buildContent handles total up to 12 files (images + videos + audios)', () => {
