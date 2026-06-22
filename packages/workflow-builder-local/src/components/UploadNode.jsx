@@ -340,7 +340,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
                     key={`${t.id}-${t.label}`}
                     type="button"
                     onMouseDown={(e) => e.stopPropagation()}
-                    onClick={() => insertImageTag(t.url || t.label)}
+                    onClick={() => insertImageTag(t.label)}
                     title={`Вставить ${t.label} в промпт`}
                     className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
                   >
