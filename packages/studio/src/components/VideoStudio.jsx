@@ -3068,37 +3068,6 @@ export default function VideoStudio({
               )}
             </div>
 
-            {/* Seed input (separate row) */}
-            {isSeedanceArk && (
-              <div className="flex items-center gap-2 pt-2 border-t border-white/[0.03]">
-                <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] rounded-md border border-white/[0.03]">
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    className="opacity-40 text-white"
-                  >
-                    <circle cx="12" cy="12" r="9" />
-                    <circle cx="12" cy="12" r="4" />
-                    <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
-                  </svg>
-                  <input
-                    type="number"
-                    value={seed === -1 ? "" : seed}
-                    placeholder="Seed (случайно)"
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setSeed(val === "" ? -1 : Math.max(-1, Math.min(2**32 - 1, Number(val))));
-                    }}
-                    className="w-32 bg-transparent border-none text-white text-[11px] font-semibold focus:outline-none placeholder:text-white/20"
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Face registration — only for Seedance (binds a face to the video) */}
             {isSeedanceArk && (
               <button
