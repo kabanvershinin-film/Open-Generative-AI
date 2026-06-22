@@ -2360,8 +2360,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   const selectedNodes = nodes.filter(node => node.selected);
   const selectedNode = selectedNodes.length === 1 ? selectedNodes[0] : null;
   const { generationCost, isRefreshingCost } = useGenerationCost(selectedNode?.data?.selectedModel, selectedNode?.data?.formValues);
-  const edges = useStore(store => store.edges);
-  const getNodes = useStore(store => store.getNodes);
+  const { getNodes } = useReactFlow();
   
   // Логика из SeedancePromptNode для поиска availableTags для выбранной ноды
   const availableTagsForSelectedNode = useMemo(() => {
