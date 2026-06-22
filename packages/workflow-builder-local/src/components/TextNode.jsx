@@ -22,14 +22,15 @@ const TextGeneration = ({ id, data, selected }) => {
   // and surface them as clickable chips (with thumbnails) — like SeedancePromptNode.
   const availableTags = useMemo(() => {
     const allNodes = getNodes() || [];
+    const outgoingEdges = edges.filter((e) => e.source === id);
     const genIds = new Set(
-      edges.filter((e) => e.source === id)
-        .map((e) => e.target)
+      outgoingEdges.map((e) => e.target)
         .filter((tid) => {
           const n = allNodes.find((nn) => nn.id === tid);
           return n && (n.type === "videoNode" || n.type === "imageNode");
         }),
     );
+    console.log('TextNode availableTags debug:', { id, edges, outgoingEdges, genIds, allNodes: allNodes.map(n => ({ id: n.id, type: n.type })) });
     if (!genIds.size) return [];
     const out = [];
     const seen = new Set();
@@ -44,6 +45,7 @@ const TextGeneration = ({ id, data, selected }) => {
       const rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl
         || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url;
       const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
+      console.log('Found reference node:', { sourceId: e.source, type: n.type, url });
       if (n.type === "characterNode") {
         counters.images += 1;
         out.push({ id: n.id, label: `图片${counters.images}`, kind: "character", url, name: (fvN.character_name || "角色").trim() });
@@ -58,6 +60,7 @@ const TextGeneration = ({ id, data, selected }) => {
         out.push({ id: n.id, label: `图片${counters.images}`, kind: "images", url });
       }
     }
+    console.log('Final availableTags:', out);
     return out;
   }, [edges, id, getNodes]);
   
