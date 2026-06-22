@@ -1752,48 +1752,59 @@ export async function GET(request, { params }) {
         }
     }
 
-    // GET /api/workflow/restore-all-to-me — restore ALL possible workflows to current user
-    if (path[0] === 'restore-all-to-me') {
+    // GET /api/workflow/debug-tos-search — try to find ALL possible workflow files
+    if (path[0] === 'debug-tos-search') {
         const user = await getUserForGallery(request);
         if (!user?.id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
         
-        const results = [];
-        const checkedPaths = new Set();
-        // Paths to check:
-        const searchPaths = [
-            buildUserTosRoot(user.id) + '/workflows/',
-            'users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/',
-            'users/6fb972b9-8897-4c0c-8c90-a5e1ee47f15e/workflows/',
-            'users/anonymous/workflows/',
-            'workflows/'
+        const debug = [];
+        // Try all possible known user IDs
+        const possibleUserIds = [
+            user.id,
+            '6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1',
+            '6fb972b9-8897-4c0c-8c90-a5e1ee47f15e',
+            'anonymous'
         ];
         
-        for (const basePath of searchPaths) {
-            // First try to load index, and check all index entries
+        // First check index
+        debug.push('=== INDEX ===');
+        try {
             const index = await tosLoadIndex();
-            for (const indexEntry of index) {
-                if (checkedPaths.has(indexEntry.id)) continue;
-                checkedPaths.add(indexEntry.id);
-                
+            debug.push(`Index entries (${index.length}):`);
+            index.forEach(entry => {
+                debug.push(`  - ${JSON.stringify(entry)}`);
+            });
+        } catch (e) {
+            debug.push(`Index error: ${e.message}`);
+        }
+        
+        debug.push('\n=== TRYING RANDOM IDs FROM PREVIOUS SCREENSHOT ===');
+        const idsFromScreenshot = [
+            'wf_17804293267150x80pd',
+            'wf_1781175900371xn8',
+            'wf_1781197607153xcn',
+            'wf_1781697163709x6g',
+            'wf_1780426302876_80kpd',
+            'wf_1781175600071_mz7ud',
+            'wf_1781175716138_vm3om',
+            'wf_1781697163706_ob6z9'
+        ];
+        
+        for (const id of idsFromScreenshot) {
+            for (const uid of possibleUserIds) {
+                const path = `users/${uid}/workflows/${id}.json`;
                 try {
-                    let wf = await tosLoadWorkflow(indexEntry.id, { userId: user.id });
+                    const wf = await tosFetchJson(path);
                     if (wf) {
-                        wf.owner_id = user.id;
-                        wf.updated_at = new Date().toISOString();
-                        await tosSaveWorkflow(indexEntry.id, wf);
-                        results.push({ id: indexEntry.id, status: 'restored', name: wf.name });
+                        debug.push(`✅ FOUND: ${path} — name=${wf.name}`);
                     }
                 } catch (e) {
-                    console.error(`[Restore All] Error for ${indexEntry.id}`, e);
+                    debug.push(`❌ ${path}: ${e.message}`);
                 }
             }
         }
         
-        return NextResponse.json({ 
-            success: true, 
-            restored: results.filter(r => r.status === 'restored').length,
-            details: results 
-        });
+        return NextResponse.json({ success: true, debug });
     }
     
     // GET /api/workflow/restore-to-me?ids=id1,id2 — claims workflows for current user
