@@ -1445,13 +1445,20 @@ export default function ImageStudio({
       const batch = snap.batchSize || 1;
 
       // Add task to active tasks and set backwards-compatible states
+      // Find model name from model ID for correct display
+      const findModelName = (modelId) => {
+        const t2iMatch = t2iModels.find(m => m.id === modelId);
+        const i2iMatch = i2iModels.find(m => m.id === modelId);
+        return (t2iMatch?.name) || (i2iMatch?.name) || modelId;
+      };
+      
       setActiveTasks(prev => [
         ...prev,
         {
           id: taskId,
           prompt: promptTrim,
           model: snap.selectedModelId,
-          modelName: selectedModelName,
+          modelName: findModelName(snap.selectedModelId),
           batchSize: batch,
           status: 'generating',
           createdAt: Date.now()
@@ -1737,13 +1744,20 @@ export default function ImageStudio({
     }
 
     // Generation still in flight — add to active tasks and poll for the done signal.
+    // Find model name from model ID for correct display
+    const findModelName = (modelId) => {
+      const t2iMatch = t2iModels.find(m => m.id === modelId);
+      const i2iMatch = i2iModels.find(m => m.id === modelId);
+      return (t2iMatch?.name) || (i2iMatch?.name) || modelId;
+    };
+    
     setActiveTasks(prev => {
       const existing = prev.find(t => t.id === snap.requestId);
       const updated = existing ? prev : [...prev, {
         id: snap.requestId,
         prompt: snap.prompt || '',
         model: snap.selectedModelId,
-        modelName: snap.selectedModelId, // Fallback
+        modelName: findModelName(snap.selectedModelId), // Fallback
         batchSize: snap.batchSize || 1,
         status: 'generating',
         createdAt: snap.ts
