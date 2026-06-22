@@ -1851,15 +1851,17 @@ export async function GET(request, { params }) {
                 // Check index
                 const index = await tosLoadIndex();
                 debugInfo.push(`Index entries: ${JSON.stringify(index.slice(0, 10))}`);
-                // Try to load from any storage location
-                let wf = await tosLoadWorkflow(id, { userId: user.id });
-                if (wf) debugInfo.push(`tosLoadWorkflow (userId: ${user.id}) found`);
+                // First try legacy workflows/ folder (to get "Мои работы44")
+                let wf = await tosFetchJson(`workflows/${id}.json`);
+                if (wf) debugInfo.push(`✅ FOUND legacy path: workflows/${id}.json — name=${wf.name}`);
                 
-                // If not found, also try to load directly from:
-                // 1. Current user's folder
-                // 2. users/anonymous
-                // 3. Legacy path
-                // 4. The exact folder from your screenshot
+                // If not found, try tosLoadWorkflow
+                if (!wf) {
+                    wf = await tosLoadWorkflow(id, { userId: user.id });
+                    if (wf) debugInfo.push(`tosLoadWorkflow (userId: ${user.id}) found`);
+                }
+                
+                // If still not found, try all other paths
                 if (!wf) {
                     const path1 = `${buildUserTosRoot(user.id)}/workflows/${id}.json`;
                     wf = await tosFetchJson(path1);
@@ -1874,11 +1876,6 @@ export async function GET(request, { params }) {
                     const path3 = `users/anonymous/workflows/${id}.json`;
                     wf = await tosFetchJson(path3);
                     debugInfo.push(`Trying ${path3} → ${wf ? 'found' : 'not found'}`);
-                }
-                if (!wf) {
-                    const path4 = `workflows/${id}.json`;
-                    wf = await tosFetchJson(path4);
-                    debugInfo.push(`Trying ${path4} → ${wf ? 'found' : 'not found'}`);
                 }
                 
                 if (wf) {
