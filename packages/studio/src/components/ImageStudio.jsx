@@ -2521,19 +2521,9 @@ export default function ImageStudio({
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={generating}
-              className={`bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10 ${
-                generating 
-                  ? "opacity-50 cursor-not-allowed" 
-                  : "hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98]"
-              }`}
+              className={`bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10 hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98]`}
             >
-              {generating ? (
-                <>
-                  <span className="animate-spin inline-block text-black">◌</span>
-                  Создание...
-                </>
-              ) : generateError ? (
+              {generateError ? (
                 `Ошибка: ${generateError}`
               ) : (
                 <>
