@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Handle, Position } from "reactflow";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { Handle, Position, useReactFlow, useStore } from "reactflow";
 import { TfiText } from "react-icons/tfi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa";
 import { IoTrashOutline } from "react-icons/io5";
@@ -10,10 +10,61 @@ import NodeSendButton from "./NodeSendButton";
 import UploadNode from "./UploadNode";
 
 const TextGeneration = ({ id, data, selected }) => {
+  const { getNodes, getEdges } = useReactFlow();
+  const edges = useStore((state) => state.edges);
+  
   const formValues = data.formValues || {};
   const setFormValues = data.setFormValues || (() => {});
   const selectedModel = data.selectedModel || {};
   const loading = data.loading || false;
+  
+  // Auto-detect references wired into the video/image node this prompt node feeds,
+  // and surface them as clickable chips (with thumbnails) — like SeedancePromptNode.
+  const availableTags = useMemo(() => {
+    const allNodes = getNodes() || [];
+    const genIds = new Set(
+      edges.filter((e) => e.source === id)
+        .map((e) => e.target)
+        .filter((tid) => {
+          const n = allNodes.find((nn) => nn.id === tid);
+          return n && (n.type === "videoNode" || n.type === "imageNode");
+        }),
+    );
+    if (!genIds.size) return [];
+    const out = [];
+    const seen = new Set();
+    const counters = { images: 0, video: 0, audio: 0 };
+    for (const e of edges) {
+      if (!genIds.has(e.target) || e.source === id || seen.has(e.source)) continue;
+      seen.add(e.source);
+      const n = allNodes.find((nn) => nn.id === e.source);
+      if (!n) continue;
+      const d = n.data || {};
+      const fvN = d.formValues || {};
+      const rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl
+        || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url;
+      const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
+      if (n.type === "characterNode") {
+        counters.images += 1;
+        out.push({ id: n.id, label: `图片${counters.images}`, kind: "character", url, name: (fvN.character_name || "角色").trim() });
+      } else if (n.type === "videoNode") {
+        counters.video += 1;
+        out.push({ id: n.id, label: `视频${counters.video}`, kind: "video", url });
+      } else if (n.type === "audioNode") {
+        counters.audio += 1;
+        out.push({ id: n.id, label: `音频${counters.audio}`, kind: "audio", url });
+      } else {
+        counters.images += 1;
+        out.push({ id: n.id, label: `图片${counters.images}`, kind: "images", url });
+      }
+    }
+    return out;
+  }, [edges, id, getNodes]);
+  
+  const insertTag = (tag) => {
+    const newPrompt = (formValues.prompt || "") + tag + " ";
+    setFormValues({ ...formValues, prompt: newPrompt });
+  };
   
   const currentHistoryIndex = data.currentHistoryIndex !== undefined 
     ? data.currentHistoryIndex 
@@ -250,6 +301,58 @@ const TextGeneration = ({ id, data, selected }) => {
                   {formValues.prompt || "Ожидание данных..."}
                 </span>
               </div>
+            </div>
+          )}
+          
+          {/* Reference chips and prompt input — like SeedancePromptNode */}
+          {hasPrompt && (
+            <div className="mx-3 mt-3">
+              {availableTags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2 nodrag">
+                  {availableTags.map((t) => (
+                    <button
+                      key={`${t.id}-${t.label}`}
+                      type="button"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={() => insertTag(t.label)}
+                      title={`Вставить ${t.label} в промпт`}
+                      className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/30 border border-blue-500/30 text-blue-200 transition-colors"
+                    >
+                      {t.url ? (
+                        t.kind === "video" ? (
+                          <video
+                            src={t.url}
+                            className="w-6 h-6 rounded object-cover flex-shrink-0"
+                            muted
+                            preload="none"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        ) : (
+                          <img
+                            src={t.url}
+                            alt={t.label}
+                            className="w-6 h-6 rounded object-cover flex-shrink-0"
+                            onError={(e) => { e.target.style.display = 'none'; }}
+                          />
+                        )
+                      ) : (
+                        <span className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center text-[11px] flex-shrink-0">
+                          {t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"}
+                        </span>
+                      )}
+                      <span className="text-[10px]">{t.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              <textarea
+                ref={textareaRef}
+                value={formValues.prompt || ""}
+                onChange={(e) => setFormValues({ ...formValues, prompt: e.target.value })}
+                placeholder="Введите промпт здесь..."
+                rows={3}
+                className="w-full bg-black/30 border border-blue-500/20 rounded-lg px-2 py-1.5 text-xs text-white placeholder-blue-300/30 focus:outline-none focus:border-blue-500/50 resize-none nodrag nowheel"
+              />
             </div>
           )}
           
