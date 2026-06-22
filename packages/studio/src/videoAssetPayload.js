@@ -74,10 +74,13 @@ export function buildSeedanceStudioPayload({
     model,
     prompt: ensureFaceAssetPromptTag(prompt, faceValidation.asset),
     aspect_ratio: aspectRatio,
-    first_frame_image: uploadedImageUrl || undefined, // Explicit first frame
+    // first_frame_image больше не используем автоматически
     video_url: uploadedVideoUrl || undefined,
     audio_url: uploadedAudioUrl || undefined,
-    image_urls: readyRefs.filter((f) => f.kind === "image").map((f) => f.url),
+    image_urls: [
+      ...(uploadedImageUrl ? [uploadedImageUrl] : []),
+      ...readyRefs.filter((f) => f.kind === "image").map((f) => f.url),
+    ],
     video_urls: readyRefs.filter((f) => f.kind === "video").map((f) => f.url),
     audio_urls: readyRefs.filter((f) => f.kind === "audio").map((f) => f.url),
     face_asset: faceValidation.asset?.uri || undefined,
