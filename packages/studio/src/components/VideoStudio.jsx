@@ -3022,7 +3022,9 @@ export default function VideoStudio({
                     strokeWidth="2"
                     className="opacity-40 text-white"
                   >
-                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 3v4M12 17v4M3 12h4M17 12h4" />
                   </svg>
                   <input
                     type="number"
@@ -3054,19 +3056,23 @@ export default function VideoStudio({
               </button>
             )}
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between">
               {/* Cost estimate */}
               {isSeedanceArk && (
-                <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/[0.03] rounded-md border border-white/[0.03]">
                   {isLoadingCost ? (
-                    <span className="text-white/40 animate-pulse">Расчет стоимости...</span>
+                    <span className="text-white/40 animate-pulse text-xs font-medium">Расчет...</span>
                   ) : estimatedCost != null && estimatedCost > 0 ? (
-                    <span className="text-[#22d3ee] font-medium">
+                    <span className="text-[#22d3ee] font-medium text-xs">
                       ≈ {estimatedCost.toFixed(2)} ₽
                     </span>
-                  ) : null}
+                  ) : (
+                    <span className="text-white/30 text-xs font-medium">Бесплатно</span>
+                  )}
                 </div>
               )}
+            </div>
+            <div className="flex items-center gap-3 justify-end">
 
               {/* Generate button */}
               <button
