@@ -105,9 +105,25 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
     let source = 'estimated';
     const usage = data?.usage;
 
-    // Try to calculate cost from token counts first (MEMEFAST prices per 1M tokens)
+    // Try actual cost from MEMEFAST first (highest priority)
     if (usage) {
         console.log('MEMEFAST usage:', usage);
+        // If usage has cost in CNY, convert it to RUB
+        const cnyCost = usage.cost_in_cny_ticks ? usage.cost_in_cny_ticks / 1000000 : (usage.cost_cny || null);
+        const usdCost = usage.cost_in_usd_ticks ? usage.cost_in_usd_ticks / 1000000 : (usage.cost_usd || null);
+        if (cnyCost) {
+            await ensureCnyRate();
+            const markup = await loadPlatformMarkup(user?.id);
+            cost = cnyCost * CNY_TO_RUB * markup;
+            source = 'actual';
+            console.log('maybeChargeImageSuccess: actual cost (CNY)', cnyCost, '-> RUB', cost);
+        } else if (usdCost) {
+            console.log('maybeChargeImageSuccess: USD cost found, but no CNY rate for it', usdCost);
+        }
+    }
+
+    // If no actual cost, try to calculate cost from token counts (MEMEFAST prices per 1M tokens)
+    if (!(cost > 0) && usage) {
         const promptTokens = usage.prompt_tokens || 0;
         const completionTokens = usage.completion_tokens || 0;
         const totalTokens = usage.total_tokens || (promptTokens + completionTokens);
@@ -149,23 +165,6 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
                 cnyCost,
                 rubCost: cost
             });
-        }
-    }
-
-    // If no token-based cost, try actual cost from MEMEFAST
-    if (!(cost > 0) && usage) {
-        // If usage has cost in CNY or USD, convert it to RUB
-        const cnyCost = usage.cost_in_cny_ticks ? usage.cost_in_cny_ticks / 1000000 : (usage.cost_cny || null);
-        const usdCost = usage.cost_in_usd_ticks ? usage.cost_in_usd_ticks / 1000000 : (usage.cost_usd || null);
-        if (cnyCost) {
-            await ensureCnyRate();
-            const markup = await loadPlatformMarkup(user?.id);
-            cost = cnyCost * CNY_TO_RUB * markup;
-            source = 'actual';
-            console.log('maybeChargeImageSuccess: actual cost (CNY)', cnyCost, '-> RUB', cost);
-        } else if (usdCost) {
-            // If we have USD cost, we can convert it if we have rate, but for now, let's use estimated if no CNY
-            console.log('maybeChargeImageSuccess: USD cost found, but no CNY rate for it', usdCost);
         }
     }
 
