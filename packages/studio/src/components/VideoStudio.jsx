@@ -1230,6 +1230,27 @@ export default function VideoStudio({
     setTimeout(restoreScroll, 0);
   };
 
+  // Function to highlight tags in text
+  const renderHighlightedPrompt = () => {
+    if (!prompt) return "";
+    const tagRegex = /(图片\d+|视频\d+|音频\d+)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = tagRegex.exec(prompt)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(prompt.slice(lastIndex, match.index));
+      }
+      parts.push(`<span class="bg-blue-500/20 text-blue-300 rounded px-0.5 py-0.5">${match[0]}</span>`);
+      lastIndex = match.index + match[0].length;
+    }
+    if (lastIndex < prompt.length) {
+      parts.push(prompt.slice(lastIndex));
+    }
+    return parts.join("");
+  };
+
   // ── video upload ─────────────────────────────────────────────────────────
   const handleVideoFileChange = async (e) => {
     const file = e.target.files[0];
@@ -2684,7 +2705,13 @@ export default function VideoStudio({
             </>)}
 
             {/* Prompt textarea */}
-            <div className="flex-1 flex flex-col gap-1">
+            <div className="flex-1 flex flex-col gap-1 relative">
+              {/* Highlight layer */}
+              <div
+                className="absolute inset-0 pointer-events-none z-0 text-white text-sm pt-1 leading-relaxed min-h-[40px] overflow-hidden whitespace-pre-wrap break-words"
+                dangerouslySetInnerHTML={{ __html: renderHighlightedPrompt() }}
+              />
+              {/* Actual textarea */}
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -2692,7 +2719,7 @@ export default function VideoStudio({
                 placeholder={promptPlaceholder}
                 disabled={promptDisabled}
                 rows={1}
-                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto custom-scrollbar disabled:opacity-40"
+                className="relative z-10 w-full bg-transparent border-none text-transparent caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto custom-scrollbar disabled:opacity-40"
               />
             </div>
           </div>
