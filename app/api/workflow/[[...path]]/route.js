@@ -1790,7 +1790,9 @@ export async function GET(request, { params }) {
             'wf_1781697163706_ob6z9'
         ];
         
+        // Try all possible paths for each ID:
         for (const id of idsFromScreenshot) {
+            // 1. users/{userId}/workflows/
             for (const uid of possibleUserIds) {
                 const path = `users/${uid}/workflows/${id}.json`;
                 try {
@@ -1799,9 +1801,31 @@ export async function GET(request, { params }) {
                         debug.push(`✅ FOUND: ${path} — name=${wf.name}`);
                     }
                 } catch (e) {
-                    debug.push(`❌ ${path}: ${e.message}`);
+                    // debug.push(`❌ ${path}: ${e.message}`);
                 }
             }
+            // 2. workflows/ (legacy path)
+            const legacyPath = `workflows/${id}.json`;
+            try {
+                const wf = await tosFetchJson(legacyPath);
+                if (wf) {
+                    debug.push(`✅ FOUND: ${legacyPath} — name=${wf.name}`);
+                }
+            } catch (e) {
+                // debug.push(`❌ ${legacyPath}: ${e.message}`);
+            }
+        }
+        
+        // Also check if index.json is in root workflows folder:
+        debug.push('\n=== CHECKING ROOT workflows/ FOLDER ===');
+        try {
+            const index2 = await tosFetchJson('workflows/index.json');
+            if (index2) {
+                debug.push('✅ FOUND workflows/index.json');
+                debug.push(`Index entries: ${JSON.stringify(index2)}`);
+            }
+        } catch (e) {
+            debug.push(`workflows/index.json error: ${e.message}`);
         }
         
         return NextResponse.json({ success: true, debug });
