@@ -1507,10 +1507,29 @@ export async function GET(request, { params }) {
             ownerWorkflows = allIndex.filter(Boolean);
             console.log('Admin view: showing all index entries. Total:', ownerWorkflows.length);
         } else {
-            // For non-admins, show everything! Because users might lose workflows if owner_id doesn't match
-            // (like if they logged in differently, or owner_id wasn't saved properly)
-            ownerWorkflows = allIndex.filter(Boolean);
-            console.log('Non-admin view: showing all index entries to avoid lost workflows. Total:', ownerWorkflows.length);
+            // 1. Show user's own workflows (owner_id === user.id)
+            // 2. For any workflows with owner_id === null, let's check if we can claim them for the current user
+            //    (so that old workflows without an owner get assigned to the first user who opens them)
+            ownerWorkflows = allIndex.filter(entry => {
+                if (!entry) return false;
+                // If entry has owner_id === current user: keep it
+                if (entry.owner_id === user.id) return true;
+                // If entry has owner_id === null: claim it for current user!
+                if (entry.owner_id === null) {
+                    // Let's try to load the workflow and set owner_id to user.id
+                    tosLoadWorkflow(entry.id, { userId: user.id }).then(wf => {
+                        if (wf) {
+                            wf.owner_id = user.id;
+                            wf.updated_at = new Date().toISOString();
+                            tosSaveWorkflow(entry.id, wf).catch(() => {});
+                            console.log(`[Restore] Claimed workflow ${entry.id} for user ${user.id}`);
+                        }
+                    }).catch(() => {});
+                    return true; // Show it to user immediately
+                }
+                return false;
+            });
+            console.log('Non-admin view: showing user-owned and claimable workflows. Total:', ownerWorkflows.length);
         }
         console.log('Filtered workflows:', ownerWorkflows.map(i => i.id));
         
@@ -1997,12 +2016,14 @@ export async function POST(request, { params }) {
         if (existing?.owner_id && owner?.id && !access.hasAccess) {
             return NextResponse.json({ error: 'forbidden' }, { status: 403 });
         }
+        // If workflow has no owner and current user is logged in, claim it!
+        const newOwnerId = existing?.owner_id || owner?.id || null;
         const wf = {
             workflow_id: id, id,
             name: body.name || 'Untitled Workflow',
             nodes: stripBase64(body.data?.nodes || []),
             edges: body.edges || [],
-            owner_id: existing?.owner_id || owner?.id || null,
+            owner_id: newOwnerId,
             created_at: existing?.created_at || new Date().toISOString(),
             updated_at: new Date().toISOString(),
         };
