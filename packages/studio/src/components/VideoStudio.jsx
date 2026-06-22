@@ -1207,22 +1207,27 @@ export default function VideoStudio({
       return;
     }
     const savedScrollTop = el.scrollTop;
+    const savedScrollLeft = el.scrollLeft;
     const start = el.selectionStart;
     const end = el.selectionEnd;
-    // Сначала обновляем текст
+    
+    // Обновляем текст
     setPrompt((prev) => prev.slice(0, start) + token + " " + prev.slice(end));
-    // Затем восстанавливаем позицию и прокрутку
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-          textarea.scrollTop = savedScrollTop;
-          textarea.focus();
-          const pos = start + token.length + 1;
-          textarea.setSelectionRange(pos, pos);
-        }
-      });
-    });
+    
+    // Восстанавливаем прокрутку сразу и повторно через requestAnimationFrame
+    const restoreScroll = () => {
+      const textarea = textareaRef.current;
+      if (textarea) {
+        textarea.scrollTop = savedScrollTop;
+        textarea.scrollLeft = savedScrollLeft;
+        textarea.focus();
+        const pos = start + token.length + 1;
+        textarea.setSelectionRange(pos, pos);
+      }
+    };
+    restoreScroll();
+    requestAnimationFrame(restoreScroll);
+    setTimeout(restoreScroll, 0);
   };
 
   // ── video upload ─────────────────────────────────────────────────────────
