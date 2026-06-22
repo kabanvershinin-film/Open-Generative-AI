@@ -1752,6 +1752,50 @@ export async function GET(request, { params }) {
         }
     }
 
+    // GET /api/workflow/restore-all-to-me — restore ALL possible workflows to current user
+    if (path[0] === 'restore-all-to-me') {
+        const user = await getUserForGallery(request);
+        if (!user?.id) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+        
+        const results = [];
+        const checkedPaths = new Set();
+        // Paths to check:
+        const searchPaths = [
+            buildUserTosRoot(user.id) + '/workflows/',
+            'users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/',
+            'users/6fb972b9-8897-4c0c-8c90-a5e1ee47f15e/workflows/',
+            'users/anonymous/workflows/',
+            'workflows/'
+        ];
+        
+        for (const basePath of searchPaths) {
+            // First try to load index, and check all index entries
+            const index = await tosLoadIndex();
+            for (const indexEntry of index) {
+                if (checkedPaths.has(indexEntry.id)) continue;
+                checkedPaths.add(indexEntry.id);
+                
+                try {
+                    let wf = await tosLoadWorkflow(indexEntry.id, { userId: user.id });
+                    if (wf) {
+                        wf.owner_id = user.id;
+                        wf.updated_at = new Date().toISOString();
+                        await tosSaveWorkflow(indexEntry.id, wf);
+                        results.push({ id: indexEntry.id, status: 'restored', name: wf.name });
+                    }
+                } catch (e) {
+                    console.error(`[Restore All] Error for ${indexEntry.id}`, e);
+                }
+            }
+        }
+        
+        return NextResponse.json({ 
+            success: true, 
+            restored: results.filter(r => r.status === 'restored').length,
+            details: results 
+        });
+    }
+    
     // GET /api/workflow/restore-to-me?ids=id1,id2 — claims workflows for current user
     if (path[0] === 'restore-to-me') {
         const user = await getUserForGallery(request);
