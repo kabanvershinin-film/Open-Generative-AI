@@ -947,7 +947,7 @@ export default function VideoStudio({
     const savedScrollLeft = el.scrollLeft;
     setPrompt(e.target.value);
     el.style.height = "auto";
-    const maxH = window.innerWidth < 768 ? 150 : 250;
+    const maxH = window.innerWidth < 768 ? 300 : 400;
     el.style.height = Math.min(el.scrollHeight, maxH) + "px";
     el.scrollTop = savedScrollTop;
     el.scrollLeft = savedScrollLeft;
@@ -2722,7 +2722,7 @@ export default function VideoStudio({
                     ref.style.height = textareaRef.current.style.height || 'auto';
                   }
                 }}
-                className="absolute inset-0 pointer-events-none z-0 text-white text-sm pt-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto overflow-x-hidden custom-scrollbar whitespace-pre-wrap break-words"
+                className="absolute inset-0 pointer-events-none z-0 text-white text-sm pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto overflow-x-hidden custom-scrollbar whitespace-pre-wrap break-words"
                 dangerouslySetInnerHTML={{ __html: renderHighlightedPrompt() }}
               />
               {/* Actual textarea */}
@@ -2733,7 +2733,7 @@ export default function VideoStudio({
                 placeholder={promptPlaceholder}
                 disabled={promptDisabled}
                 rows={1}
-                className="relative z-10 w-full bg-transparent border-none text-transparent caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto custom-scrollbar disabled:opacity-40"
+                className="relative z-10 w-full bg-transparent border-none text-transparent caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
               />
             </div>
           </div>
