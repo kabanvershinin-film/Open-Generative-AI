@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate } from '../../_lib/pricing';
 import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund, isAdminUser, getEmailsForIds } from '../../_lib/balance';
-import { buildLegacyWorkflowStorageKey, buildUserMediaKey, buildWorkflowStorageKey } from '../../_lib/tosPaths';
+import { buildLegacyWorkflowStorageKey, buildUserMediaKey, buildWorkflowStorageKey, buildUserTosRoot } from '../../_lib/tosPaths';
 import { createClient } from '@supabase/supabase-js';
 import { buildContent } from '../../ark/seedance/logic';
 
