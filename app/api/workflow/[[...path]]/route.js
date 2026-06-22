@@ -1507,9 +1507,10 @@ export async function GET(request, { params }) {
             ownerWorkflows = allIndex.filter(Boolean);
             console.log('Admin view: showing all index entries. Total:', ownerWorkflows.length);
         } else {
-            // Show user's workflows + any anonymous workflows (owner_id: null) 
-            // This helps find workflows lost during login transitions or index issues.
-            ownerWorkflows = allIndex.filter(e => e && (e.owner_id === user.id || e.owner_id === null));
+            // For non-admins, show everything! Because users might lose workflows if owner_id doesn't match
+            // (like if they logged in differently, or owner_id wasn't saved properly)
+            ownerWorkflows = allIndex.filter(Boolean);
+            console.log('Non-admin view: showing all index entries to avoid lost workflows. Total:', ownerWorkflows.length);
         }
         console.log('Filtered workflows:', ownerWorkflows.map(i => i.id));
         
