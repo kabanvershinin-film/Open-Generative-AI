@@ -57,14 +57,15 @@ async function getBillingPayload(request, pathParts) {
     return null;
 }
 
-async function maybeChargeImageSuccess(request, pathParts, data) {
+async function maybeChargeImageSuccess(request, pathParts, data, billingPayload) {
     const method = request.method.toUpperCase();
     const isImageGen = isImageGenerationPath(method, pathParts);
     console.log('maybeChargeImageSuccess called', { 
         BILLING_ENABLED, 
         method, 
         pathParts,
-        isImageGen
+        isImageGen,
+        billingPayload
     });
     
     if (!BILLING_ENABLED || !isImageGen) {
@@ -85,7 +86,7 @@ async function maybeChargeImageSuccess(request, pathParts, data) {
         return null;
     }
 
-    const payload = await getBillingPayload(request.clone(), pathParts);
+    const payload = billingPayload;
     const model = payload?.model;
     console.log('maybeChargeImageSuccess: model', model);
     
@@ -162,8 +163,17 @@ async function proxyRequest(request, { params }) {
     const upstreamUrl = buildUpstreamUrl(request, path);
     const method = request.method.toUpperCase();
     
-    // Clone request FIRST, before reading body
-    const proxyRequest = request.clone();
+    // Read body FIRST, before anything else, and save billing payload
+    let body = null;
+    let billingPayload = null;
+    const billingRequestClone = request.clone();
+    
+    if (method !== 'GET' && method !== 'HEAD') {
+        body = await request.arrayBuffer();
+        billingPayload = await getBillingPayload(billingRequestClone, path);
+        console.log('MF proxy: billingPayload', billingPayload);
+    }
+
     const headers = buildUpstreamHeaders(request);
     const init = {
         method,
@@ -171,8 +181,7 @@ async function proxyRequest(request, { params }) {
         redirect: 'manual',
     };
 
-    if (method !== 'GET' && method !== 'HEAD') {
-        const body = await proxyRequest.arrayBuffer();
+    if (body) {
         init.body = body;
     }
 
@@ -193,7 +202,7 @@ async function proxyRequest(request, { params }) {
         }
 
         if (upstream.ok && data) {
-            await maybeChargeImageSuccess(request, path, data);
+            await maybeChargeImageSuccess(billingRequestClone, path, data, billingPayload);
         }
 
         const responseHeaders = new Headers(upstream.headers);
