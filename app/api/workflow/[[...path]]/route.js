@@ -1769,6 +1769,9 @@ export async function GET(request, { params }) {
                 debugInfo.push(`TOS_ENABLED: ${TOS_ENABLED}`);
                 debugInfo.push(`TOS_BUCKET: ${TOS_BUCKET}`);
                 debugInfo.push(`TOS_ENDPOINT: ${TOS_ENDPOINT}`);
+                // Check index
+                const index = await tosLoadIndex();
+                debugInfo.push(`Index entries: ${JSON.stringify(index.slice(0, 10))}`);
                 // Try to load from any storage location
                 let wf = await tosLoadWorkflow(id, { userId: user.id });
                 if (wf) debugInfo.push(`tosLoadWorkflow (userId: ${user.id}) found`);
