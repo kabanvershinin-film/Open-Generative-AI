@@ -7,7 +7,7 @@ import axios from "axios";
 import AudioPlayer from "./AudioPlayer";
 import VideoPlayer from "./VideoPlayer";
 import { IoImageOutline, IoTrashOutline } from "react-icons/io5";
-import { stableStringify } from "./utility";
+import { stableStringify } from "./stableStringify.js";
 
 const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loading, uploadType, acceptType }) => {
   const [uploading, setUploading] = useState(false);

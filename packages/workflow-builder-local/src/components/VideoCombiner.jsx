@@ -1,4 +1,6 @@
-import { downloadFile, stableStringify, videoCombinerModels } from "./utility";
+import { downloadFile } from "./file/downloadFile.js";
+import { stableStringify } from "./stableStringify.js";
+import { videoCombinerModels } from "./model-registry/videoCombinerModels.js";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { IoVideocamOutline, IoTrashOutline, IoPlay, IoPause, IoVolumeHigh, IoVolumeMute } from "react-icons/io5";
 import { Handle, Position, useReactFlow, useStore, useUpdateNodeInternals } from "reactflow";

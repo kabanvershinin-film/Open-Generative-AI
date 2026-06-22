@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Handle, Position, useReactFlow, useStore, useUpdateNodeInternals } from "reactflow";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import { downloadFile, imageModels, stableStringify } from "./utility";
+import { downloadFile } from "./file/downloadFile.js";
+import { imageModels } from "./model-registry/imageModels.js";
+import { stableStringify } from "./stableStringify.js";
 import { getRunId, getWorkflowId } from "./WorkflowStore";
 import axios from "axios";
 import { toast } from "react-hot-toast";

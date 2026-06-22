@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Handle, Position, useReactFlow, useStore, useUpdateNodeInternals } from "reactflow";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import { apiNodeModels, stableStringify } from "./utility";
+import { apiNodeModels } from "./model-registry/apiNodeModels.js";
+import { stableStringify } from "./stableStringify.js";
 import { getRunId, getWorkflowId } from "./WorkflowStore";
 import axios from "axios";
 import { toast } from "react-hot-toast";

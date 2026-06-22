@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { BILLING_ENABLED, getUser, spendBalance, refundBalanceRpc, signBill, verifyBill, verifyBillData, chargeForTask } from '../../_lib/balance';
+import { getUser, signBill, verifyBillData, chargeForTask } from '../../_lib/balance';
 import { priceRub, ensureCnyRate, seedance2RateCny, rubFromTokens } from '../../_lib/pricing';
 import { buildContent } from './logic';
 import { buildUserMediaKey } from '../../_lib/tosPaths';
-import { buildArkSubmitPayload, createRoundRobinPicker, normalizeArkResolution, parseEndpoints } from './route.helpers.js';
+import { createRoundRobinPicker, parseEndpoints } from './route.helpers.js';
+import { pollSeedanceTask, submitSeedanceTask } from './route.handlers.js';
 
 const TOS_AK = process.env.TOS_ACCESS_KEY || '';
 const TOS_SK = process.env.TOS_SECRET_KEY || '';
@@ -105,129 +106,31 @@ const rrIndex = {
 };
 const pickEndpoint = createRoundRobinPicker(FULL_ENDPOINTS, FAST_ENDPOINTS, rrIndex);
 
+const routeDeps = {
+  arkApiKey: ARK_API_KEY,
+  arkBase: ARK_BASE,
+  getUser,
+  resolvePublic,
+  buildContent,
+  ensureCnyRate,
+  priceRub,
+  seedance2RateCny,
+  signBill,
+  verifyBillData,
+  rubFromTokens,
+  chargeForTask,
+  pickEndpoint,
+  fetchImpl: fetch,
+  fastModelId: FAST_MODEL_ID,
+  stdModelId: STD_MODEL_ID,
+};
+
 // POST /api/ark/seedance — submit a generation task, returns { taskId, endpoint, bill, balance }
 export async function POST(request) {
-  if (!ARK_API_KEY) {
-    return NextResponse.json({ error: 'ARK_API_KEY not configured' }, { status: 503 });
-  }
   try {
     const body = await request.json();
-    const user = await getUser(request);
-    const userId = user?.id || null;
-
-    const {
-        fast = false,
-        prompt = '',
-        first_frame_image,
-        image_url, // for backward compatibility
-        image_urls,
-        video_url,
-        video_urls,
-        audio_url,
-        audio_urls,
-        resolution,
-        ratio,
-        duration,
-        generate_audio = true,
-        face_asset,
-        face_thumbnail,
-        last_image_url,
-        seed,
-        return_last_frame,
-    } = body;
-
-    // Resolve any base64 URLs (like face thumbnails or uploads) to public TOS URLs.
-    const resolvedFirstFrameImage = first_frame_image
-      ? (typeof first_frame_image === 'object' 
-          ? { ...first_frame_image, url: await resolvePublic(first_frame_image.url, userId) }
-          : await resolvePublic(first_frame_image, userId))
-      : undefined;
-    const resolvedImageUrl = image_url
-      ? (typeof image_url === 'object' 
-          ? { ...image_url, url: await resolvePublic(image_url.url, userId) }
-          : await resolvePublic(image_url, userId))
-      : undefined;
-    
-    const resolvedImageUrls = Array.isArray(image_urls)
-        ? await Promise.all(image_urls.map(async u => 
-            typeof u === 'object' ? { ...u, url: await resolvePublic(u.url, userId) } : await resolvePublic(u, userId)
-          ))
-        : undefined;
-
-    const content = buildContent({ 
-      prompt, 
-      first_frame_image: resolvedFirstFrameImage,
-      image_url: resolvedImageUrl, // for backward compatibility
-      image_urls: resolvedImageUrls, 
-      video_url, 
-      video_urls, 
-      audio_url, 
-      audio_urls,
-      face_asset,
-      face_thumbnail: face_asset ? await resolvePublic(body.face_thumbnail, userId) : undefined,
-      last_image_url: await resolvePublic(last_image_url, userId),
-    });
-    if (content.length === 0) {
-      return NextResponse.json({ error: 'Empty content' }, { status: 400 });
-    }
-
-    const modelId = fast ? FAST_MODEL_ID : STD_MODEL_ID;
-    const model = pickEndpoint(fast) || modelId;
-
-    // Billing: calculate estimate to check balance, but do NOT charge yet!
-    await ensureCnyRate();
-    const estimatedCost = await priceRub('video', modelId, { resolution, video_url, duration, generate_audio });
-    const hasVideoInput = !!(video_url);
-    let finalRes = normalizeArkResolution(resolution || '720p', fast) || '720p';
-    const rateCny = seedance2RateCny(modelId, finalRes, hasVideoInput);
-
-    // Verify user has enough for the estimate to avoid surprises later
-    // (we don't charge now, just sign a bill token with params for final calculation)
-    const bill = signBill(estimatedCost, { 
-      model: modelId, 
-      resolution: finalRes,
-      hasVideoInput,
-      userId 
-    });
-
-    const payload = buildArkSubmitPayload({
-      model,
-      content,
-      generateAudio: generate_audio,
-      faceAsset: face_asset,
-      resolution,
-      ratio,
-      duration,
-      seed,
-      returnLastFrame: return_last_frame,
-      fast,
-    });
-
-    try {
-      const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${ARK_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        return NextResponse.json(
-          { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
-          { status: r.status },
-        );
-      }
-      
-      // Return the taskId along with the bill token and remaining balance (no charge yet)
-      return NextResponse.json({ 
-        taskId: data.id, 
-        endpoint: model,
-        bill,
-        estimatedCost,
-        rateCny
-      });
-    } catch (e) {
-      throw e;
-    }
+    const result = await submitSeedanceTask(routeDeps, body, { request });
+    return NextResponse.json(result.body, { status: result.status });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
@@ -235,59 +138,14 @@ export async function POST(request) {
 
 // GET /api/ark/seedance?taskId=... — poll a task, returns { status, url }
 export async function GET(request) {
-  if (!ARK_API_KEY) {
-    return NextResponse.json({ error: 'ARK_API_KEY not configured' }, { status: 503 });
-  }
-  const { searchParams } = new URL(request.url);
-  const taskId = searchParams.get('taskId');
-  const bill = searchParams.get('bill');
-  if (!taskId) return NextResponse.json({ error: 'Missing taskId' }, { status: 400 });
-
   try {
-    const r = await fetch(`${ARK_BASE}/contents/generations/tasks/${taskId}`, {
-      headers: { Authorization: `Bearer ${ARK_API_KEY}` },
+    const { searchParams } = new URL(request.url);
+    const result = await pollSeedanceTask(routeDeps, {
+      request,
+      taskId: searchParams.get('taskId'),
+      bill: searchParams.get('bill'),
     });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) {
-      return NextResponse.json(
-        { error: data?.error?.message || data?.message || `Ark error ${r.status}` },
-        { status: r.status },
-      );
-    }
-    const status = (data.status || 'running').toLowerCase();
-    const url = data.content?.video_url || data.video_url || null;
-    const error = data.error?.message || data.message || null;
-    const totalTokens = data.usage?.total_tokens || 0;
-
-    // Charge REAL price when task succeeds!
-    if (status === 'succeeded' || status === 'success') {
-      if (bill) {
-        // Parse bill token to get params for final calculation
-        const billData = verifyBillData(bill);
-        if (billData) {
-          const { model, resolution, hasVideoInput, userId } = billData;
-          const rateCny = seedance2RateCny(model, resolution, hasVideoInput);
-          const finalCost = await rubFromTokens(totalTokens, rateCny, userId);
-          if (finalCost > 0) {
-            await chargeForTask(request, taskId, finalCost, `ark_seedance_${model}`, {
-              model,
-              taskId,
-              tokens: totalTokens
-            });
-          }
-        }
-      }
-    }
-
-    // (No need to refund on failure because we never charged upfront)
-    const lastFrameUrl = data.content?.last_frame_url || data.last_frame_url || null;
-    return NextResponse.json({ 
-        status, 
-        url, 
-        error, 
-        tokens: totalTokens,
-        last_frame_url: lastFrameUrl
-    });
+    return NextResponse.json(result.body, { status: result.status });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

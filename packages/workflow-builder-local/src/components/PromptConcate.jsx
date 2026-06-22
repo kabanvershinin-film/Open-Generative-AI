@@ -3,7 +3,8 @@ import { Handle, Position, useReactFlow, useStore, useUpdateNodeInternals } from
 import { getRunId, getWorkflowId } from "./WorkflowStore";
 import { toast } from "react-hot-toast";
 import { IoClose } from "react-icons/io5";
-import { concatModels, stableStringify } from "./utility";
+import { concatModels } from "./model-registry/concatModels.js";
+import { stableStringify } from "./stableStringify.js";
 import { TbArrowMerge } from "react-icons/tb";
 import NodeOptionsMenu from "./NodeOptionsMenu";
 

@@ -5,14 +5,12 @@ import { IoImageOutline, IoVideocamOutline, IoAddCircleOutline } from "react-ico
 import { TfiText } from "react-icons/tfi";
 import { MdAutoFixHigh, MdCrop, MdOutlineImage } from "react-icons/md";
 import { RiImageAiLine, RiVideoOnAiLine, RiRobot2Line } from "react-icons/ri";
-import {
-  imageModels,
-  videoModels,
-  textModels,
-  audioModels,
-  concatModels,
-  videoCombinerModels
-} from "./utility";
+import { imageModels } from "./model-registry/imageModels.js";
+import { videoModels } from "./model-registry/videoModels.js";
+import { textModels } from "./model-registry/textModels.js";
+import { audioModels } from "./model-registry/audioModels.js";
+import { concatModels } from "./model-registry/concatModels.js";
+import { videoCombinerModels } from "./model-registry/videoCombinerModels.js";
 import { TbArrowMerge } from "react-icons/tb";
 import { RiInputMethodLine } from "react-icons/ri";
 import { LuUpload } from "react-icons/lu";

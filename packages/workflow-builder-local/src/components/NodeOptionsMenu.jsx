@@ -3,7 +3,7 @@ import { BsThreeDots } from "react-icons/bs";
 import { IoDuplicateOutline, IoTrashOutline } from "react-icons/io5";
 import { MdOutlineFileDownload } from "react-icons/md";
 import { HiOutlinePhotograph } from "react-icons/hi";
-import { downloadFile } from "./utility";
+import { downloadFile } from "./file/downloadFile.js";
 
 const NodeOptionsMenu = ({ 
   nodeId, 

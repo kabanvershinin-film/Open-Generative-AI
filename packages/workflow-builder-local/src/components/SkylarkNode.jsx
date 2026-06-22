@@ -6,7 +6,7 @@ import { IoVideocamOutline, IoTrashOutline } from "react-icons/io5";
 import { TfiText } from "react-icons/tfi";
 import { FaAngleLeft, FaAngleRight, FaPlay } from "react-icons/fa6";
 import { RiRobot2Line } from "react-icons/ri";
-import { stableStringify } from "./utility";
+import { stableStringify } from "./stableStringify.js";
 import VideoPlayer from "./VideoPlayer";
 import NodeSendButton from "./NodeSendButton";
 import NodeOptionsMenu from "./NodeOptionsMenu";

@@ -3,7 +3,6 @@
   "version": "1.0.3",
   "description": "Shared UI components and utilities for my Next.js apps",
   "main": "dist/index.js",
-  "module": "dist/index.js",
   "files": [
     "src",
     "dist"

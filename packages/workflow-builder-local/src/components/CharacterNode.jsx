@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 import axios from "axios";
 import { FiUpload, FiLink } from "react-icons/fi";
 import { IoPersonCircleOutline, IoTrashOutline } from "react-icons/io5";
-import { stableStringify } from "./utility";
+import { stableStringify } from "./stableStringify.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog";
 
 // Shared with Video Studio's FaceAssetDialog — the same saved-faces library.

@@ -1,4 +1,6 @@
-import { downloadFile, videoModels, stableStringify } from "./utility";
+import { downloadFile } from "./file/downloadFile.js";
+import { videoModels } from "./model-registry/videoModels.js";
+import { stableStringify } from "./stableStringify.js";
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { BsArrowUpCircleFill } from "react-icons/bs";
 import { IoTimeOutline, IoVideocamOutline, IoTrashOutline, IoPlay, IoPause, IoVolumeHigh, IoVolumeMute } from "react-icons/io5";

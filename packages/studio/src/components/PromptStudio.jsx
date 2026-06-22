@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
-import { uploadFile, persistImageToTOS } from '../muapi.js';
 
 const CATEGORIES = [
   'Все',
@@ -483,4 +482,3 @@ export default function PromptStudio({ apiKey }) {
     </div>
   );
 }
-
