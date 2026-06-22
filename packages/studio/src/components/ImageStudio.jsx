@@ -1268,7 +1268,7 @@ export default function ImageStudio({
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    const maxHeight = window.innerWidth < 768 ? 150 : 250;
+    const maxHeight = window.innerWidth < 768 ? 300 : 400;
     el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
   };
 
@@ -2115,7 +2115,7 @@ export default function ImageStudio({
                 onInput={handleTextareaInput}
                 placeholder={placeholderText}
                 rows={1}
-                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto custom-scrollbar"
+                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar"
               />
             </div>
           </div>
