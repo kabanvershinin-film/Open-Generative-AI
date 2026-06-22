@@ -2361,49 +2361,6 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   const selectedNode = selectedNodes.length === 1 ? selectedNodes[0] : null;
   const { generationCost, isRefreshingCost } = useGenerationCost(selectedNode?.data?.selectedModel, selectedNode?.data?.formValues);
   
-  // Логика из SeedancePromptNode для поиска availableTags для выбранной ноды
-  const availableTagsForSelectedNode = useMemo(() => {
-    if (!selectedNode) return [];
-    const allNodes = getNodes() || [];
-    const genIds = new Set(
-      edges.filter((e) => e.source === selectedNode.id)
-        .map((e) => e.target)
-        .filter((tid) => {
-          const n = allNodes.find((nn) => nn.id === tid);
-          return n && (n.type === "videoNode" || n.type === "imageNode");
-        }),
-    );
-    if (!genIds.size) return [];
-    const out = [];
-    const seen = new Set();
-    const counters = { images: 0, video: 0, audio: 0 };
-    for (const e of edges) {
-      if (!genIds.has(e.target) || e.source === selectedNode.id || seen.has(e.source)) continue;
-      seen.add(e.source);
-      const n = allNodes.find((nn) => nn.id === e.source);
-      if (!n) continue;
-      const d = n.data || {};
-      const fvN = d.formValues || {};
-      const rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl
-        || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url;
-      const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
-      if (n.type === "characterNode") {
-        counters.images += 1;
-        out.push({ id: n.id, label: `图片${counters.images}`, kind: "character", url, name: (fvN.character_name || "角色").trim() });
-      } else if (n.type === "videoNode") {
-        counters.video += 1;
-        out.push({ id: n.id, label: `视频${counters.video}`, kind: "video", url });
-      } else if (n.type === "audioNode") {
-        counters.audio += 1;
-        out.push({ id: n.id, label: `音频${counters.audio}`, kind: "audio", url });
-      } else {
-        counters.images += 1;
-        out.push({ id: n.id, label: `图片${counters.images}`, kind: "images", url });
-      }
-    }
-    return out;
-  }, [selectedNode, edges, getNodes]);
-  
   const updateNodeFromPanel = useCallback((key, value) => {
     if (!selectedNode) return;
 
@@ -2838,57 +2795,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                       </div>
                     ) : (inputSchema?.properties || (inputSchema && Object.keys(inputSchema).length > 0)) ? (
                       (() => {
-                        const insertTag = (tag) => {
-                          const currentPrompt = selectedNode?.data?.formValues?.prompt || "";
-                          const insert = `${tag} `;
-                          updateNodeFromPanel("prompt", currentPrompt + insert);
-                        };
-
                         return (
                           <>
-                            {/* Если есть availableTags и поле prompt — показываем чипы */}
-                            {availableTagsForSelectedNode.length > 0 && (Object.keys(inputSchema?.properties || {}).includes("prompt") || Object.keys(inputSchema || {}).includes("prompt")) && (
-                              <div className="flex flex-col gap-1.5 mb-2">
-                                <label className="text-[10px] font-bold text-purple-500 text-start px-1 uppercase tracking-wider">Референсы для промпта</label>
-                                <div className="flex flex-wrap gap-1.5 nodrag">
-                                  {availableTagsForSelectedNode.map((t) => (
-                                    <button
-                                      key={`${t.id}-${t.label}`}
-                                      type="button"
-                                      onMouseDown={(e) => e.stopPropagation()}
-                                      onClick={() => insertTag(t.label)}
-                                      title={`Вставить ${t.label} в промпт`}
-                                      className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
-                                    >
-                                      {t.url ? (
-                                        t.kind === "video" ? (
-                                          <video
-                                            src={t.url}
-                                            className="w-6 h-6 rounded object-cover flex-shrink-0"
-                                            muted
-                                            preload="none"
-                                            onError={(e) => { e.target.style.display = 'none'; }}
-                                          />
-                                        ) : (
-                                          <img
-                                            src={t.url}
-                                            alt={t.label}
-                                            className="w-6 h-6 rounded object-cover flex-shrink-0"
-                                            onError={(e) => { e.target.style.display = 'none'; }}
-                                          />
-                                        )
-                                      ) : (
-                                        <span className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0">
-                                          {t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"}
-                                        </span>
-                                      )}
-                                      <span className="text-[10px]">{t.label}</span>
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
                             {Object.entries(inputSchema?.properties || inputSchema || {}).map(([key, meta], idx) => {
                               if (key === "schemas") return null;
                               // Hide the single image_url field on video nodes — connected
