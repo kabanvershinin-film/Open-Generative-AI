@@ -944,11 +944,20 @@ export default function VideoStudio({
   const handlePromptInput = (e) => {
     const el = e.target;
     const savedScrollTop = el.scrollTop;
+    const savedScrollLeft = el.scrollLeft;
     setPrompt(e.target.value);
     el.style.height = "auto";
     const maxH = window.innerWidth < 768 ? 150 : 250;
     el.style.height = Math.min(el.scrollHeight, maxH) + "px";
     el.scrollTop = savedScrollTop;
+    el.scrollLeft = savedScrollLeft;
+    
+    // Sync scroll with highlight div
+    const highlightDiv = el.parentElement?.querySelector('div.pointer-events-none');
+    if (highlightDiv) {
+      highlightDiv.scrollTop = savedScrollTop;
+      highlightDiv.scrollLeft = savedScrollLeft;
+    }
   };
 
   // ── image upload ─────────────────────────────────────────────────────────
@@ -2708,7 +2717,12 @@ export default function VideoStudio({
             <div className="flex-1 flex flex-col gap-1 relative">
               {/* Highlight layer */}
               <div
-                className="absolute inset-0 pointer-events-none z-0 text-white text-sm pt-1 leading-relaxed min-h-[40px] overflow-hidden whitespace-pre-wrap break-words"
+                ref={(ref) => {
+                  if (ref && textareaRef.current) {
+                    ref.style.height = textareaRef.current.style.height || 'auto';
+                  }
+                }}
+                className="absolute inset-0 pointer-events-none z-0 text-white text-sm pt-1 leading-relaxed min-h-[40px] max-h-[150px] md:max-h-[250px] overflow-y-auto overflow-x-hidden custom-scrollbar whitespace-pre-wrap break-words"
                 dangerouslySetInnerHTML={{ __html: renderHighlightedPrompt() }}
               />
               {/* Actual textarea */}
