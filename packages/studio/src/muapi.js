@@ -340,32 +340,25 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
     const initialImages = Array.isArray(params.image_urls) ? [...params.image_urls] : [];
     
     // Construct the final images array.
-    // In Seedance 2.0, character (trusted asset) MUST be 图片1 to be reliably recognized.
     let finalImages = [];
     
-    // 1. Primary character (if exists) -> Always 图片1
-    // Ark requires a valid HTTP URL in the 'url' field.
-    // We use the uploaded image as base, or the character's thumbnail if no upload.
-    // The 'face_asset' (asset://) provides the identity, but 'url' provides the pixels.
-    if (faceAsset) {
-        finalImages.push({ 
-            url: uploadedUrl || faceThumb || faceAsset, 
-            face_asset: faceAsset 
-        });
-    } else if (uploadedUrl) {
-        // No character, just use the main uploaded image as 图片1
+    // Add uploaded image (if exists)
+    if (uploadedUrl) {
         finalImages.push(typeof uploadedUrl === 'string' ? { url: uploadedUrl } : uploadedUrl);
-    } else if (faceThumb) {
-        // Fallback to thumbnail if no uploadedUrl and no faceAsset
-        finalImages.push({ url: faceThumb });
     }
     
-    // 2. Additional reference images from refFiles (initialImages)
+    // Add face asset with thumbnail (if exists)
+    if (faceAsset) {
+        finalImages.push({ 
+            url: faceThumb || faceAsset, 
+            face_asset: faceAsset 
+        });
+    }
+    
+    // Add additional reference images from refFiles (initialImages)
     initialImages.forEach(img => {
         const url = typeof img === 'string' ? img : img.url;
-        // Skip if this image was already used as the primary one
-        const primaryUrl = finalImages[0]?.url;
-        if (url && url !== primaryUrl && url !== faceThumb && url !== uploadedUrl) {
+        if (url) {
             finalImages.push(typeof img === 'string' ? { url: img } : img);
         }
     });
@@ -393,7 +386,7 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
     console.info('[muapi] Submit Ark Seedance task', {
         model: body.model,
         hasFaceAsset: !!body.face_asset,
-        imageRefs: [body.first_frame_image, ...(body.image_urls || [])].filter(Boolean).length,
+        imageRefs: (body.image_urls || []).length,
         videoRefs: [body.video_url, ...(body.video_urls || [])].filter(Boolean).length,
         audioRefs: [body.audio_url, ...(body.audio_urls || [])].filter(Boolean).length,
     });
