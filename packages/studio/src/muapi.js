@@ -288,11 +288,19 @@ async function generateChatImage(apiKey, modelId, params) {
 
 function formatApiError(error, fallback) {
     if (!error) return fallback;
-    if (typeof error === 'string') return error;
-    if (typeof error === 'object') {
-        return error.message || error.detail || error.error || error.code || JSON.stringify(error);
+    let msg;
+    if (typeof error === 'string') {
+        msg = error;
+    } else if (typeof error === 'object') {
+        msg = error.message || error.detail || error.error || error.code || JSON.stringify(error);
+    } else {
+        msg = String(error);
     }
-    return String(error);
+    // Переводим известные ошибки на русский
+    if (msg.includes('copyright restrictions') || msg.includes('content restrictions') || msg.includes('violates policy')) {
+        return 'Ошибка: видео не удалось создать — возможно, оно связано с авторскими правами или нарушением политики контента.';
+    }
+    return msg;
 }
 
 function notifyAuthRequired(status, message) {
