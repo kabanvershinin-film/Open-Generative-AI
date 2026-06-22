@@ -2,6 +2,14 @@ import { NextResponse } from 'next/server';
 import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../../_lib/pricing';
 import { BILLING_ENABLED, spendBalance, getUserForGallery, getUser } from '../../_lib/balance';
 
+// Debug: log env vars (without exposing secrets)
+console.log('MF route init', {
+  hasSupabaseUrl: !!process.env.SUPABASE_URL,
+  hasSupabaseAnonKey: !!process.env.SUPABASE_ANON_KEY,
+  hasSupabaseServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+  billingEnabled: BILLING_ENABLED
+});
+
 const MEMEFAST_BASE_URL = 'https://memefast.top';
 
 function normalizeModelId(raw) {
