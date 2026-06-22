@@ -997,10 +997,10 @@ export default function ImageStudio({
 
   // Notify parent when generation state changes (drives the corner indicator).
   // ImageStudio stays mounted across tabs, so this state is always accurate.
-  const hasActiveGenerations = activeTasks.some(task => task.status === 'generating');
   useEffect(() => {
+    const hasActiveGenerations = activeTasks.some(task => task.status === 'generating');
     onGeneratingChange?.(hasActiveGenerations);
-  }, [hasActiveGenerations, onGeneratingChange]);
+  }, [activeTasks, onGeneratingChange]);
 
   // ── Canvas / history state ──────────────────────────────────────────────
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
