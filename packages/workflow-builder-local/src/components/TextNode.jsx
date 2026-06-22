@@ -10,6 +10,7 @@ import NodeSendButton from "./NodeSendButton";
 import UploadNode from "./UploadNode";
 
 const TextGeneration = ({ id, data, selected }) => {
+  console.log('=== TextNode LOADED ===', { id });
   const { getNodes, getEdges } = useReactFlow();
   const edges = useStore((state) => state.edges);
   
@@ -372,44 +373,44 @@ const TextGeneration = ({ id, data, selected }) => {
           {/* Idea section — like SeedancePromptNode */}
           <div className="mx-3 mt-3">
             <label className="text-[9px] text-blue-400/60 uppercase tracking-wider mb-1 block">💡 ВАША ИДЕЯ</label>
-            {availableTags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-1 nodrag">
-                {availableTags.map((t) => (
-                  <button
-                    key={`${t.id}-${t.label}`}
-                    type="button"
-                    onMouseDown={(e) => e.stopPropagation()}
-                    onClick={() => insertTag(t.label)}
-                    title={`Вставить ${t.label} в промпт`}
-                    className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
-                  >
-                    {t.url ? (
-                      t.kind === "video" ? (
-                        <video
-                          src={t.url}
-                          className="w-6 h-6 rounded object-cover flex-shrink-0"
-                          muted
-                          preload="none"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      ) : (
-                        <img
-                          src={t.url}
-                          alt={t.label}
-                          className="w-6 h-6 rounded object-cover flex-shrink-0"
-                          onError={(e) => { e.target.style.display = 'none'; }}
-                        />
-                      )
+            <div className="flex flex-wrap gap-1.5 mb-1 nodrag">
+              {availableTags.length > 0 ? availableTags.map((t) => (
+                <button
+                  key={`${t.id}-${t.label}`}
+                  type="button"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={() => insertTag(t.label)}
+                  title={`Вставить ${t.label} в промпт`}
+                  className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
+                >
+                  {t.url ? (
+                    t.kind === "video" ? (
+                      <video
+                        src={t.url}
+                        className="w-6 h-6 rounded object-cover flex-shrink-0"
+                        muted
+                        preload="none"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
                     ) : (
-                      <span className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0">
-                        {t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"}
-                      </span>
-                    )}
-                    <span className="text-[10px]">{t.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+                      <img
+                        src={t.url}
+                        alt={t.label}
+                        className="w-6 h-6 rounded object-cover flex-shrink-0"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    )
+                  ) : (
+                    <span className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0">
+                      {t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"}
+                    </span>
+                  )}
+                  <span className="text-[10px]">{t.label}</span>
+                </button>
+              )) : (
+                <p className="text-[10px] text-zinc-500 italic">Подключи изображение/видео, чтобы появился тег</p>
+              )}
+            </div>
             {/* Prompt input */}
             {hasPrompt && (
               <textarea
