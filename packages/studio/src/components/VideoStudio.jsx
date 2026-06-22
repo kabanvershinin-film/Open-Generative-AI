@@ -3059,7 +3059,7 @@ export default function VideoStudio({
             <div className="flex items-center gap-3 justify-end">
               {/* Cost estimate */}
               {isSeedanceArk && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] rounded-md border border-white/[0.03]">
+                <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] rounded-md border border-white/[0.03] whitespace-nowrap">
                   {isLoadingCost ? (
                     <span className="text-white/40 animate-pulse text-xs font-medium">Расчет...</span>
                   ) : estimatedCost != null && estimatedCost > 0 ? (
