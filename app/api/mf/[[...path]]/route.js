@@ -50,15 +50,27 @@ async function getBillingPayload(request, pathParts) {
 }
 
 async function maybeChargeImageSuccess(request, pathParts, data) {
-    console.log('maybeChargeImageSuccess called', { BILLING_ENABLED, method: request.method, pathParts });
+    const method = request.method.toUpperCase();
+    const isImageGen = isImageGenerationPath(method, pathParts);
+    console.log('maybeChargeImageSuccess called', { 
+        BILLING_ENABLED, 
+        method, 
+        pathParts,
+        isImageGen
+    });
     
-    if (!BILLING_ENABLED || !isImageGenerationPath(request.method.toUpperCase(), pathParts)) {
-        console.log('maybeChargeImageSuccess: skipping (billing disabled or not image gen)');
+    if (!BILLING_ENABLED || !isImageGen) {
+        console.log('maybeChargeImageSuccess: skipping', {
+            billingDisabled: !BILLING_ENABLED,
+            notImageGen: !isImageGen
+        });
         return null;
     }
 
-    const user = await getUser(request);
-    console.log('maybeChargeImageSuccess: user', user?.id);
+    // Like workflow: get galleryUser first, then check if billing user exists
+    const galleryUser = await getUserForGallery(request);
+    const user = BILLING_ENABLED ? galleryUser : null;
+    console.log('maybeChargeImageSuccess: galleryUser', galleryUser?.id, 'billingUser', user?.id);
     
     if (!user?.id) {
         console.log('maybeChargeImageSuccess: no user');
