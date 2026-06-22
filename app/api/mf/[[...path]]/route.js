@@ -142,6 +142,8 @@ async function proxyRequest(request, { params }) {
     const upstreamUrl = buildUpstreamUrl(request, path);
     const method = request.method.toUpperCase();
     
+    // Clone request FIRST, before reading body
+    const proxyRequest = request.clone();
     const headers = buildUpstreamHeaders(request);
     const init = {
         method,
@@ -150,7 +152,7 @@ async function proxyRequest(request, { params }) {
     };
 
     if (method !== 'GET' && method !== 'HEAD') {
-        const body = await request.arrayBuffer();
+        const body = await proxyRequest.arrayBuffer();
         init.body = body;
     }
 
