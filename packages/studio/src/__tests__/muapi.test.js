@@ -497,6 +497,102 @@ test('workflow helpers return safe fallbacks on errors', async () => {
     assert.strictEqual(workflow.can_edit, true);
 });
 
+test('getWorkflowInputs extracts text and passthrough image inputs from workflow nodes', async () => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(() => Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({
+            name: 'Workflow Inputs',
+            data: {
+                nodes: [
+                    {
+                        id: 'promptNode',
+                        category: 'text',
+                        input_params: { prompt: 'Напиши историю' },
+                    },
+                    {
+                        id: 'uploadNode',
+                        type: 'uploadNode',
+                        category: 'image',
+                        model: 'image-passthrough',
+                        data: { formValues: { image_url: 'https://cdn.example.com/input.jpg' } },
+                    },
+                    {
+                        id: 'ignoredNode',
+                        category: 'video',
+                        model: 'seedance-2.0-t2v',
+                    },
+                ],
+            },
+        }),
+    }));
+
+    const result = await muapi.getWorkflowInputs('key', 'wf-inputs');
+
+    assert.deepStrictEqual(result, {
+        properties: {
+            promptNode: {
+                type: 'string',
+                title: 'promptNode',
+                description: 'Text input',
+                default: 'Напиши историю',
+                examples: ['Напиши историю'],
+            },
+            uploadNode: {
+                type: 'string',
+                title: 'uploadNode (image URL)',
+                description: 'Image URL',
+                field: 'image',
+                default: 'https://cdn.example.com/input.jpg',
+            },
+        },
+        required: [],
+    });
+});
+
+test('getWorkflowInputs returns empty schema when workflow loading fails', async () => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(() => Promise.resolve({
+        ok: false,
+        json: () => Promise.resolve({}),
+    }));
+
+    const result = await muapi.getWorkflowInputs('key', 'wf-missing');
+    assert.deepStrictEqual(result, { properties: {}, required: [] });
+});
+
+test('getAllNodeSchemas returns categories payload and safe fallback on invalid responses', async () => {
+    global.fetch.mock.resetCalls();
+    const responses = [
+        { ok: true, payload: { categories: { image: [{ id: 'node-1' }] } } },
+        { ok: true, payload: 'broken' },
+        { ok: false, payload: {} },
+    ];
+    global.fetch.mock.mockImplementation(() => {
+        const current = responses.shift();
+        return Promise.resolve({
+            ok: current.ok,
+            json: () => Promise.resolve(current.payload),
+        });
+    });
+
+    const success = await muapi.getAllNodeSchemas('key', 'wf-schema');
+    const invalid = await muapi.getAllNodeSchemas('key', 'wf-schema');
+    const failed = await muapi.getAllNodeSchemas('key', 'wf-schema');
+
+    assert.deepStrictEqual(success, { categories: { image: [{ id: 'node-1' }] } });
+    assert.deepStrictEqual(invalid, { categories: {} });
+    assert.deepStrictEqual(failed, { categories: {} });
+
+    const [schemaUrl] = global.fetch.mock.calls[0].arguments;
+    assert.strictEqual(schemaUrl, '/api/workflow/wf-schema/node-schemas');
+});
+
+test('getNodeSchemas and calculateDynamicCost keep stable zero-value fallbacks', async () => {
+    assert.deepStrictEqual(await muapi.getNodeSchemas('key'), { categories: {} });
+    assert.deepStrictEqual(await muapi.calculateDynamicCost('key'), { cost: 0 });
+});
+
 test('Seedance 2.0 Text-to-Video (T2V) generation', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {
