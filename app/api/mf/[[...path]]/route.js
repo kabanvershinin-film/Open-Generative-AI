@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { priceRub, ensureCnyRate } from '../../_lib/pricing';
+import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../../_lib/pricing';
 import { BILLING_ENABLED, spendBalance, getUserForGallery } from '../../_lib/balance';
 
 const MEMEFAST_BASE_URL = 'https://memefast.top';
@@ -57,27 +57,40 @@ async function maybeChargeImageSuccess(request, pathParts, data) {
     const user = await getUserForGallery(request);
     const payload = await getBillingPayload(request.clone(), pathParts);
     const model = payload?.model;
-    let cost = model ? await priceRub('image', model, payload?.params || {}, user?.id) : 0;
+    
+    let cost = 0;
+    let source = 'estimated';
+    const usage = data?.usage;
 
-    // Если MEMEFAST возвращает реальное количество токенов или стоимость - можно доработать
-    const usageTokens = data?.usage?.total_tokens;
-    console.log('MEMEFAST usage tokens:', usageTokens);
+    if (usage) {
+        console.log('MEMEFAST usage:', usage);
+        
+        // Попробуем получить фактическую стоимость
+        // Пока используем оценку, потом доработаем конвертацию cost_in_usd_ticks
+        // Например, cost_in_usd_ticks: 200000000 — нужно понять, как это конвертировать
+    }
+
+    // Если нет фактической стоимости — используем нашу оценку
+    if (!(cost > 0) && model) {
+        cost = await priceRub('image', model, payload?.params || {}, user?.id);
+        source = 'estimated';
+    }
 
     if (!(cost > 0)) return null;
 
     await ensureCnyRate();
     const charged = await spendBalance(request, cost, model, {
-        source: 'studio-image',
+        source: source,
         model,
         path: `/${pathParts.join('/')}`,
-        tokens: usageTokens,
+        usage: usage,
     });
 
     if (!charged?.ok) {
         console.error('Failed to charge for image generation:', charged.error);
     }
 
-    return { cost, model };
+    return { cost, model, source };
 }
 
 function buildUpstreamUrl(request, pathParts) {
@@ -115,20 +128,6 @@ async function proxyRequest(request, { params }) {
     const { path = [] } = await params;
     const upstreamUrl = buildUpstreamUrl(request, path);
     const method = request.method.toUpperCase();
-    
-    // Check balance upfront (but don't charge yet)
-    if (BILLING_ENABLED && isImageGenerationPath(method, path)) {
-        const user = await getUserForGallery(request);
-        const payload = await getBillingPayload(request.clone(), path);
-        const model = payload?.model;
-        const estimatedCost = model ? await priceRub('image', model, payload?.params || {}, user?.id) : 0;
-        
-        if (estimatedCost > 0) {
-            // Import checkBalance here (we need to add it to balance.js)
-            // For now, let's skip this part - since we need to modify balance.js
-            // But let's proceed with the main logic
-        }
-    }
     
     const headers = buildUpstreamHeaders(request);
     const init = {
