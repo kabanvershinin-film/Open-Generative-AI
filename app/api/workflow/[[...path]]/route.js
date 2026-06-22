@@ -1774,7 +1774,7 @@ export async function GET(request, { params }) {
                     debugInfo.push(`Trying ${path1} → ${wf ? 'found' : 'not found'}`);
                 }
                 if (!wf) {
-                    const path2 = `users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/${id}.json`;
+                    const path2 = `users/6fb972b9-8897-4c0c-8c90-a5e1ee47f15e/workflows/${id}.json`;
                     wf = await tosFetchJson(path2);
                     debugInfo.push(`Trying ${path2} → ${wf ? 'found' : 'not found'}`);
                 }
