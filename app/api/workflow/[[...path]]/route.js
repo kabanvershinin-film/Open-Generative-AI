@@ -1761,12 +1761,20 @@ export async function GET(request, { params }) {
                 // Try to load from any storage location
                 let wf = await tosLoadWorkflow(id, { userId: user.id });
                 
-                // If not found, also try to load directly from users/anonymous or legacy path
+                // If not found, also try to load directly from:
+                // 1. Current user's folder
+                // 2. users/anonymous
+                // 3. Legacy path
                 if (!wf) {
-                    console.log(`[Restore] Trying direct load for ${id}`);
+                    console.log(`[Restore] Trying direct load from current user's folder for ${id}`);
+                    wf = await tosFetchJson(`${buildUserTosRoot(user.id)}/workflows/${id}.json`);
+                }
+                if (!wf) {
+                    console.log(`[Restore] Trying direct load from users/anonymous for ${id}`);
                     wf = await tosFetchJson(`users/anonymous/workflows/${id}.json`);
                 }
                 if (!wf) {
+                    console.log(`[Restore] Trying direct load from legacy path for ${id}`);
                     wf = await tosFetchJson(`workflows/${id}.json`);
                 }
                 
