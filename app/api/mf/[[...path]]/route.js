@@ -21,6 +21,9 @@ function isImageGenerationPath(method, pathParts) {
     if (pathParts[0] === 'v1' && pathParts[1] === 'images' && ['generations', 'edits'].includes(pathParts[2])) {
         return true;
     }
+    if (pathParts[0] === 'v1' && pathParts[1] === 'chat' && pathParts[2] === 'completions') {
+        return true;
+    }
     if (pathParts[0] === 'v1beta' && pathParts[1] === 'models' && /generatecontent$/i.test(pathParts[2] || '')) {
         return /image/i.test(pathParts[2] || '');
     }
@@ -28,6 +31,13 @@ function isImageGenerationPath(method, pathParts) {
 }
 
 async function getBillingPayload(request, pathParts) {
+    if (pathParts[0] === 'v1' && pathParts[1] === 'chat' && pathParts[2] === 'completions') {
+        const body = await request.json().catch(() => null);
+        const model = normalizeModelId(body?.model);
+        if (!model) return null;
+        return { model, params: body || {} };
+    }
+
     if (pathParts[0] === 'v1' && pathParts[1] === 'images' && pathParts[2] === 'generations') {
         const body = await request.json().catch(() => null);
         const model = normalizeModelId(body?.model);
