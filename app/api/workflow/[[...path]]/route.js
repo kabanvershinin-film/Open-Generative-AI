@@ -1758,8 +1758,10 @@ export async function GET(request, { params }) {
         const results = [];
         for (const id of ids) {
             try {
+                const debugInfo = [];
                 // Try to load from any storage location
                 let wf = await tosLoadWorkflow(id, { userId: user.id });
+                if (wf) debugInfo.push(`tosLoadWorkflow (userId: ${user.id}) found`);
                 
                 // If not found, also try to load directly from:
                 // 1. Current user's folder
@@ -1767,20 +1769,24 @@ export async function GET(request, { params }) {
                 // 3. Legacy path
                 // 4. The exact folder from your screenshot
                 if (!wf) {
-                    console.log(`[Restore] Trying direct load from current user's folder for ${id}`);
-                    wf = await tosFetchJson(`${buildUserTosRoot(user.id)}/workflows/${id}.json`);
+                    const path1 = `${buildUserTosRoot(user.id)}/workflows/${id}.json`;
+                    wf = await tosFetchJson(path1);
+                    debugInfo.push(`Trying ${path1} → ${wf ? 'found' : 'not found'}`);
                 }
                 if (!wf) {
-                    console.log(`[Restore] Trying direct load from users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/ for ${id}`);
-                    wf = await tosFetchJson(`users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/${id}.json`);
+                    const path2 = `users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/${id}.json`;
+                    wf = await tosFetchJson(path2);
+                    debugInfo.push(`Trying ${path2} → ${wf ? 'found' : 'not found'}`);
                 }
                 if (!wf) {
-                    console.log(`[Restore] Trying direct load from users/anonymous for ${id}`);
-                    wf = await tosFetchJson(`users/anonymous/workflows/${id}.json`);
+                    const path3 = `users/anonymous/workflows/${id}.json`;
+                    wf = await tosFetchJson(path3);
+                    debugInfo.push(`Trying ${path3} → ${wf ? 'found' : 'not found'}`);
                 }
                 if (!wf) {
-                    console.log(`[Restore] Trying direct load from legacy path for ${id}`);
-                    wf = await tosFetchJson(`workflows/${id}.json`);
+                    const path4 = `workflows/${id}.json`;
+                    wf = await tosFetchJson(path4);
+                    debugInfo.push(`Trying ${path4} → ${wf ? 'found' : 'not found'}`);
                 }
                 
                 if (wf) {
@@ -1788,13 +1794,13 @@ export async function GET(request, { params }) {
                     wf.updated_at = new Date().toISOString();
                     // Save file with new owner (this also updates index)
                     await tosSaveWorkflow(id, wf);
-                    results.push({ id, status: 'restored', name: wf.name });
+                    results.push({ id, status: 'restored', name: wf.name, debug: debugInfo });
                 } else {
-                    results.push({ id, status: 'not_found' });
+                    results.push({ id, status: 'not_found', debug: debugInfo });
                 }
             } catch (e) {
                 console.error(`[Restore] Error for ${id}`, e);
-                results.push({ id, status: 'error', message: e.message });
+                results.push({ id, status: 'error', message: e.message, debug: debugInfo });
             }
         }
         
