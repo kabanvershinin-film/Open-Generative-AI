@@ -407,6 +407,96 @@ test('getUserWorkflows returns array', async (t) => {
     assert.deepEqual(workflows, mockWorkflows);
 });
 
+test('workflow community and CRUD helpers use expected endpoints', async () => {
+    global.fetch.mock.resetCalls();
+    const responses = [
+        [{ id: 'wf-public', name: 'Public workflow' }],
+        { id: 'wf-new', name: 'New workflow' },
+        { success: true, name: 'Renamed workflow' },
+        {
+            name: 'Workflow 1',
+            nodes: [{ id: 'node-1' }],
+            edges: [{ id: 'edge-1' }],
+            is_owner: false,
+            can_edit: false,
+        },
+        { success: true },
+        { run_id: 'run-1', status: 'queued' },
+    ];
+    global.fetch.mock.mockImplementation(() => {
+        const payload = responses.shift();
+        return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve(payload),
+        });
+    });
+
+    const published = await muapi.getPublishedWorkflows('key');
+    const created = await muapi.createWorkflow('key', { name: 'New workflow' });
+    const renamed = await muapi.updateWorkflowName('key', 'wf-new', 'Renamed workflow');
+    const workflow = await muapi.getWorkflowData('key', 'wf-new');
+    const removed = await muapi.deleteWorkflow('key', 'wf-new');
+    const execution = await muapi.executeWorkflow('key', 'wf-new', { prompt: 'кот' });
+
+    assert.deepStrictEqual(published, [{ id: 'wf-public', name: 'Public workflow' }]);
+    assert.deepStrictEqual(created, { id: 'wf-new', name: 'New workflow' });
+    assert.deepStrictEqual(renamed, { success: true, name: 'Renamed workflow' });
+    assert.strictEqual(workflow.name, 'Workflow 1');
+    assert.deepStrictEqual(workflow.data.nodes, [{ id: 'node-1' }]);
+    assert.deepStrictEqual(workflow.edges, [{ id: 'edge-1' }]);
+    assert.strictEqual(workflow.is_owner, false);
+    assert.strictEqual(workflow.can_edit, false);
+    assert.deepStrictEqual(removed, { success: true });
+    assert.deepStrictEqual(execution, { run_id: 'run-1', status: 'queued' });
+
+    const [communityUrl, communityOptions] = global.fetch.mock.calls[0].arguments;
+    const [createUrl, createOptions] = global.fetch.mock.calls[1].arguments;
+    const [renameUrl, renameOptions] = global.fetch.mock.calls[2].arguments;
+    const [getUrl] = global.fetch.mock.calls[3].arguments;
+    const [deleteUrl, deleteOptions] = global.fetch.mock.calls[4].arguments;
+    const [runUrl, runOptions] = global.fetch.mock.calls[5].arguments;
+
+    assert.strictEqual(communityUrl, '/api/workflow/community');
+    assert.strictEqual(communityOptions.headers.Authorization, 'Bearer key');
+    assert.strictEqual(createUrl, '/api/workflow/create');
+    assert.strictEqual(createOptions.method, 'POST');
+    assert.deepStrictEqual(JSON.parse(createOptions.body), { name: 'New workflow' });
+    assert.strictEqual(renameUrl, '/api/workflow/wf-new');
+    assert.strictEqual(renameOptions.method, 'POST');
+    assert.deepStrictEqual(JSON.parse(renameOptions.body), { name: 'Renamed workflow' });
+    assert.strictEqual(getUrl, '/api/workflow/wf-new');
+    assert.strictEqual(deleteUrl, '/api/workflow/wf-new');
+    assert.strictEqual(deleteOptions.method, 'DELETE');
+    assert.strictEqual(runUrl, '/api/workflow/wf-new/run');
+    assert.strictEqual(runOptions.method, 'POST');
+    assert.deepStrictEqual(JSON.parse(runOptions.body), { inputs: { prompt: 'кот' } });
+});
+
+test('workflow helpers return safe fallbacks on errors', async () => {
+    global.fetch.mock.resetCalls();
+    let callIndex = 0;
+    global.fetch.mock.mockImplementation(() => {
+        callIndex += 1;
+        if (callIndex === 1) return Promise.reject(new Error('network'));
+        return Promise.resolve({
+            ok: false,
+            json: () => Promise.resolve({}),
+        });
+    });
+
+    const published = await muapi.getPublishedWorkflows('key');
+    const renamed = await muapi.updateWorkflowName('key', 'wf-missing', 'Nope');
+    const workflow = await muapi.getWorkflowData('key', 'wf-missing');
+
+    assert.deepStrictEqual(published, []);
+    assert.deepStrictEqual(renamed, {});
+    assert.strictEqual(workflow.id, 'wf-missing');
+    assert.strictEqual(workflow.name, 'Untitled Workflow');
+    assert.deepStrictEqual(workflow.data.nodes, []);
+    assert.deepStrictEqual(workflow.edges, []);
+    assert.strictEqual(workflow.can_edit, true);
+});
+
 test('Seedance 2.0 Text-to-Video (T2V) generation', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {

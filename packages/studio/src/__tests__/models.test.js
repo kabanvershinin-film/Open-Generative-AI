@@ -2,40 +2,109 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as models from '../models.js';
 
-test('getModelById returns correct model', () => {
+test('image model getters return exact known model metadata', () => {
     const model = models.getModelById('gpt-image-2');
+    assert.ok(model);
     assert.strictEqual(model.name, 'GPT Image 2');
     assert.strictEqual(model.apiId, 'gpt-image-2');
+    assert.deepStrictEqual(models.getResolutionsForModel('gpt-image-2'), [
+        '1024x1024',
+        '1536x1024',
+        '1024x1536',
+        '2048x2048',
+        '2048x1152',
+        '3840x2160',
+        '2160x3840',
+    ]);
+    assert.strictEqual(models.getQualityFieldForModel('gpt-image-2'), 'size');
 });
 
-test('getVideoModelById returns correct model from t2v or i2v', () => {
-    // Test a T2V model
+test('image input option helpers expose shared options and defaults', () => {
+    assert.deepStrictEqual(models.getAspectRatiosForModel('gemini-3.1-flash-image-preview'), [
+        '1:1',
+        '16:9',
+        '9:16',
+        '4:3',
+        '3:4',
+        '2:3',
+        '3:2',
+        '4:5',
+        '5:4',
+        '1:4',
+        '4:1',
+        '1:8',
+        '8:1',
+        '21:9',
+    ]);
+    assert.deepStrictEqual(models.getImageInputOptions('gpt-image-2', 'format'), ['jpeg', 'png', 'webp']);
+    assert.strictEqual(models.getImageInputDefault('gpt-image-2', 'format'), 'jpeg');
+    assert.strictEqual(models.getImageInputDefault('gpt-image-2-edit', 'background'), 'auto');
+    assert.deepStrictEqual(models.getImageInputOptions('unknown-model', 'format'), []);
+    assert.strictEqual(models.getImageInputDefault('unknown-model', 'format'), null);
+});
+
+test('video model getters expose exact capabilities for t2v and i2v models', () => {
     const t2v = models.getVideoModelById('seedance-2.0-t2v');
-    assert.ok(t2v);
-    
-    // Test an I2V model
     const i2v = models.getVideoModelById('seedance-2.0-i2v');
+
+    assert.ok(t2v);
     assert.ok(i2v);
+    assert.strictEqual(t2v.provider, 'ark');
+    assert.strictEqual(t2v.platform, 'unified');
+    assert.strictEqual(i2v.provider, 'ark');
+    assert.strictEqual(i2v.platform, 'unified');
+
+    assert.deepStrictEqual(models.getAspectRatiosForVideoModel('seedance-2.0-fast-t2v'), [
+        'adaptive',
+        '16:9',
+        '9:16',
+        '1:1',
+        '4:3',
+        '3:4',
+        '21:9',
+    ]);
+    assert.deepStrictEqual(models.getResolutionsForVideoModel('seedance-2.0-fast-t2v'), ['720p', '480p']);
+    assert.deepStrictEqual(models.getDurationsForModel('seedance-2.0-fast-t2v'), [4, 5, 6, 8, 10, 12, 15]);
+
+    assert.deepStrictEqual(models.getAspectRatiosForI2VModel('seedance-2.0-i2v'), [
+        'adaptive',
+        '16:9',
+        '9:16',
+        '1:1',
+        '4:3',
+        '3:4',
+        '21:9',
+    ]);
+    assert.deepStrictEqual(models.getResolutionsForI2VModel('seedance-2.0-i2v'), ['720p', '1080p', '480p']);
+    assert.deepStrictEqual(models.getDurationsForI2VModel('seedance-2.0-i2v'), [4, 5, 6, 8, 10, 12, 15]);
 });
 
-test('getAspectRatiosForModel returns enums or empty array', () => {
-    const ar = models.getAspectRatiosForModel('gpt-image-2');
-    assert.ok(Array.isArray(ar));
+test('unknown model ids safely return empty option lists', () => {
+    assert.deepStrictEqual(models.getAspectRatiosForModel('missing'), []);
+    assert.deepStrictEqual(models.getAspectRatiosForI2IModel('missing'), []);
+    assert.deepStrictEqual(models.getAspectRatiosForVideoModel('missing'), ['16:9', '9:16', '1:1']);
+    assert.deepStrictEqual(models.getDurationsForModel('missing'), []);
+    assert.deepStrictEqual(models.getResolutionsForVideoModel('missing'), []);
+    assert.deepStrictEqual(models.getResolutionsForI2VModel('missing'), []);
+    assert.deepStrictEqual(models.getModesForModel('missing'), []);
 });
 
-test('getDurationsForModel handles unified and sora platforms', () => {
-    const seedanceDuration = models.getDurationsForModel('seedance-2.0-t2v');
-    assert.ok(seedanceDuration.includes(5));
-    assert.ok(seedanceDuration.includes(10));
+test('video model catalog has no duplicate ids and keeps ark contract', () => {
+    const videoModels = [...models.getT2vModels(), ...models.getI2vModels()];
+    const ids = videoModels.map((model) => model.id);
+    const uniqueIds = new Set(ids);
+
+    assert.strictEqual(uniqueIds.size, ids.length);
+    assert.ok(videoModels.length >= 4);
+    assert.ok(videoModels.every((model) => model.provider === 'ark'));
+    assert.ok(videoModels.every((model) => model.platform === 'unified'));
+    assert.ok(videoModels.every((model) => Array.isArray(model.inputs?.aspect_ratio?.enum)));
 });
 
-test('getResolutionsForVideoModel returns defaults for unified platform', () => {
-    const res = models.getResolutionsForVideoModel('seedance-2.0-t2v');
-    assert.ok(res.includes('720p'));
-    assert.ok(res.includes('1080p'));
-});
-
-test('getModesForModel returns modes if present', () => {
-    const modes = models.getModesForModel('seedance-2.0-t2v');
-    assert.ok(Array.isArray(modes));
+test('mode and effect helpers stay empty for current seedance catalog', () => {
+    assert.deepStrictEqual(models.getModesForModel('seedance-2.0-t2v'), []);
+    assert.deepStrictEqual(models.getEffectsForI2IModel('gpt-image-2-edit'), []);
+    assert.strictEqual(models.getDefaultEffectForI2IModel('gpt-image-2-edit'), null);
+    assert.deepStrictEqual(models.getEffectsForI2VModel('seedance-2.0-i2v'), []);
+    assert.strictEqual(models.getDefaultEffectForI2VModel('seedance-2.0-i2v'), null);
 });

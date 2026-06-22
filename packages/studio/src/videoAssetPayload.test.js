@@ -42,6 +42,8 @@ test('buildSeedanceStudioPayload carries face_asset and ready references', () =>
     ],
     faceAsset: { uri: 'asset://character1', name: 'Hero', thumbnail: 'https://cdn.example.com/thumb.jpg', status: 'Active' },
     isI2V: false,
+    seed: 42,
+    returnLastFrame: true,
   });
 
   assert.strictEqual(payload.prompt, 'cinematic driving scene 图片1');
@@ -52,6 +54,9 @@ test('buildSeedanceStudioPayload carries face_asset and ready references', () =>
   assert.deepStrictEqual(payload.audio_urls, ['https://cdn.example.com/a1.mp3']);
   assert.strictEqual(payload.video_url, 'https://cdn.example.com/ref.mp4');
   assert.strictEqual(payload.audio_url, 'https://cdn.example.com/ref.mp3');
+  assert.strictEqual(payload.seed, 42);
+  assert.strictEqual(payload.return_last_frame, true);
+  assert.strictEqual('first_frame_image' in payload, false);
 });
 
 test('buildSeedanceStudioPayload works without face asset', () => {
@@ -77,6 +82,21 @@ test('buildSeedanceStudioPayload works in I2V mode', () => {
 
   assert.strictEqual(payload.is_i2v, true);
   assert.deepStrictEqual(payload.image_urls, ['https://cdn.example.com/input.jpg']);
+});
+
+test('buildSeedanceStudioPayload omits optional fields when they are not provided', () => {
+  const payload = buildSeedanceStudioPayload({
+    model: 'seedance-2.0-fast-t2v',
+    prompt: 'minimal prompt',
+    refFiles: [{ kind: 'image', url: 'https://cdn.example.com/ready.jpg', uploading: false }],
+  });
+
+  assert.deepStrictEqual(payload.image_urls, ['https://cdn.example.com/ready.jpg']);
+  assert.deepStrictEqual(payload.video_urls, []);
+  assert.deepStrictEqual(payload.audio_urls, []);
+  assert.strictEqual(payload.seed, undefined);
+  assert.strictEqual(payload.return_last_frame, undefined);
+  assert.strictEqual('first_frame_image' in payload, false);
 });
 
 test('validateFaceAsset rejects invalid formats and non-ready statuses', () => {
