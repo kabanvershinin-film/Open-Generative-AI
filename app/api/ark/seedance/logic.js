@@ -1,4 +1,4 @@
-export function buildContent({ prompt, first_frame_image, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, last_image_url }) {
+export function buildContent({ prompt, first_frame_image, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, face_thumbnail, last_image_url }) {
     const content = [];
     
     // Process all reference images (no explicit first frame)
@@ -24,7 +24,8 @@ export function buildContent({ prompt, first_frame_image, image_url, image_urls,
         const finalUrl = isAsset ? effectiveFace : url;
 
         const item = { 
-            type: 'image_url', 
+            type: 'image_url',
+            role: 'reference_image',
             image_url: { 
                 url: finalUrl,
                 ...(effectiveFace ? { face_asset: effectiveFace } : {})
@@ -36,6 +37,20 @@ export function buildContent({ prompt, first_frame_image, image_url, image_urls,
         content.push(item);
     });
 
+    // Add face asset as separate reference if present and not already added
+    if (face_asset) {
+        const item = { 
+            type: 'image_url',
+            role: 'reference_image',
+            image_url: { 
+                url: face_thumbnail || face_asset,
+                face_asset: face_asset
+            }
+        };
+        item.face_asset = face_asset;
+        content.push(item);
+    }
+
     // Optional last frame control
     if (last_image_url) {
         content.push({
@@ -44,8 +59,8 @@ export function buildContent({ prompt, first_frame_image, image_url, image_urls,
         });
     }
     
-    videos.forEach((u) => content.push({ type: 'video_url', video_url: { url: u } }));
-    audios.forEach((u) => content.push({ type: 'audio_url', audio_url: { url: u } }));
+    videos.forEach((u) => content.push({ type: 'video_url', role: 'reference_video', video_url: { url: u } }));
+    audios.forEach((u) => content.push({ type: 'audio_url', role: 'reference_audio', audio_url: { url: u } }));
     
     // Text prompt at the end
     if (prompt) content.push({ type: 'text', text: prompt });

@@ -141,6 +141,7 @@ export async function POST(request) {
         duration,
         generate_audio = true,
         face_asset,
+        face_thumbnail,
         last_image_url,
         seed,
         return_last_frame,
@@ -174,6 +175,7 @@ export async function POST(request) {
       audio_url, 
       audio_urls,
       face_asset,
+      face_thumbnail: face_asset ? await resolvePublic(body.face_thumbnail, userId) : undefined,
       last_image_url: await resolvePublic(last_image_url, userId),
     });
     if (content.length === 0) {

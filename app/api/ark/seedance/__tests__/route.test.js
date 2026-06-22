@@ -12,7 +12,7 @@ test('buildContent forms correct content with single image (pure I2V)', () => {
     assert.strictEqual(content.length, 2);
     assert.strictEqual(content[0].type, 'image_url');
     assert.strictEqual(content[0].image_url.url, 'http://example.com/img.jpg');
-    assert.strictEqual(content[0].role, 'first_frame');
+    assert.strictEqual(content[0].role, 'reference_image');
     assert.strictEqual(content[1].type, 'text');
     assert.strictEqual(content[1].text, 'a cat');
 });
@@ -28,7 +28,6 @@ test('buildContent handles last_image_url', () => {
     // start image + end image + text
     assert.strictEqual(content.length, 3);
     assert.strictEqual(content[0].role, 'reference_image');
-    assert.strictEqual(content[1].role, 'last_frame');
     assert.strictEqual(content[1].image_url.url, 'http://example.com/end.jpg');
     assert.strictEqual(content[2].type, 'text');
 });
@@ -38,25 +37,31 @@ test('buildContent handles multiple images and face_asset', () => {
         prompt: 'a cat',
         image_url: 'http://example.com/img1.jpg',
         image_urls: ['http://example.com/img2.jpg'],
-        face_asset: 'asset://character1'
+        face_asset: 'asset://character1',
+        face_thumbnail: 'http://example.com/char.jpg'
     };
     const content = route.buildContent(params);
     
-    // image_url + image_urls + text
-    assert.strictEqual(content.length, 3);
+    // image_url + image_urls + face asset + text
+    assert.strictEqual(content.length, 4);
     
-    // First image (index 0) should have url as asset:// and face_asset inside image_url
+    // First image is uploaded image
     assert.strictEqual(content[0].type, 'image_url');
-    assert.strictEqual(content[0].image_url.url, 'asset://character1'); 
-    assert.strictEqual(content[0].image_url.face_asset, 'asset://character1');
-    assert.strictEqual(content[0].face_asset, 'asset://character1');
+    assert.strictEqual(content[0].image_url.url, 'http://example.com/img1.jpg'); 
     assert.strictEqual(content[0].role, 'reference_image');
     
-    // Second image should also have role: reference_image
+    // Second image is from image_urls
     assert.strictEqual(content[1].type, 'image_url');
     assert.strictEqual(content[1].role, 'reference_image');
     
-    assert.strictEqual(content[2].type, 'text');
+    // Third image is face asset
+    assert.strictEqual(content[2].type, 'image_url');
+    assert.strictEqual(content[2].image_url.url, 'http://example.com/char.jpg'); 
+    assert.strictEqual(content[2].image_url.face_asset, 'asset://character1');
+    assert.strictEqual(content[2].face_asset, 'asset://character1');
+    assert.strictEqual(content[2].role, 'reference_image');
+    
+    assert.strictEqual(content[3].type, 'text');
 });
 
 test('buildContent handles video and audio references', () => {

@@ -179,7 +179,8 @@ test('generateSeedanceArk forms correct request body and polls', async (t) => {
     assert.strictEqual(submitOptions.method, 'POST');
     const body = JSON.parse(submitOptions.body);
     assert.strictEqual(body.prompt, 'test prompt');
-    assert.strictEqual(body.first_frame_image.url, 'http://example.com/input.jpg');
+    assert.strictEqual(body.image_urls.length, 1);
+    assert.strictEqual(body.image_urls[0].url, 'http://example.com/input.jpg');
 
     // Check poll call
     const [pollUrl] = global.fetch.mock.calls[1].arguments;
@@ -607,7 +608,7 @@ test('Seedance 2.0 Total up to 12 files (image + video + audio)', async (t) => {
     global.fetch.mock.mockImplementation(async (url, options) => {
         if (options?.method === 'POST') {
             const body = JSON.parse(options.body);
-            const sentImageCount = [body.first_frame_image, ...(body.image_urls || [])].filter(Boolean).length;
+            const sentImageCount = (body.image_urls || []).length;
             const sentVideoCount = [body.video_url, ...(body.video_urls || [])].filter(Boolean).length;
             const sentAudioCount = [body.audio_url, ...(body.audio_urls || [])].filter(Boolean).length;
             assert.strictEqual(sentImageCount + sentVideoCount + sentAudioCount, 12);
@@ -645,7 +646,8 @@ test('Seedance 2.0 @ syntax in prompt', async (t) => {
         if (options?.method === 'POST') {
             const body = JSON.parse(options.body);
             assert.strictEqual(body.prompt, '@image1 is the character, @video1 controls camera, @audio1 is background music');
-            assert.strictEqual(body.first_frame_image.url, 'https://cdn.example.com/char.jpg');
+            assert.strictEqual(body.image_urls.length, 1);
+            assert.strictEqual(body.image_urls[0].url, 'https://cdn.example.com/char.jpg');
             assert.strictEqual(body.video_url, 'https://cdn.example.com/cam.mp4');
             assert.strictEqual(body.audio_url, 'https://cdn.example.com/music.mp3');
             return {
