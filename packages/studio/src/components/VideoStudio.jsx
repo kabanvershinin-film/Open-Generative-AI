@@ -1239,6 +1239,13 @@ export default function VideoStudio({
     setTimeout(restoreScroll, 0);
   };
 
+  // Function to escape HTML special characters
+  const escapeHtml = (text) => {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+
   // Function to highlight tags in text
   const renderHighlightedPrompt = () => {
     if (!prompt) return "";
@@ -1249,13 +1256,13 @@ export default function VideoStudio({
     
     while ((match = tagRegex.exec(prompt)) !== null) {
       if (match.index > lastIndex) {
-        parts.push(prompt.slice(lastIndex, match.index));
+        parts.push(escapeHtml(prompt.slice(lastIndex, match.index)));
       }
-      parts.push(`<span class="bg-blue-500/20 text-blue-300 rounded px-0 py-0">${match[0]}</span>`);
+      parts.push(`<span class="bg-blue-500/20 text-blue-300 rounded px-0 py-0">${escapeHtml(match[0])}</span>`);
       lastIndex = match.index + match[0].length;
     }
     if (lastIndex < prompt.length) {
-      parts.push(prompt.slice(lastIndex));
+      parts.push(escapeHtml(prompt.slice(lastIndex)));
     }
     return parts.join("");
   };
