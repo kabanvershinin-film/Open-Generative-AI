@@ -990,6 +990,8 @@ export default function ImageStudio({
 
   // ── UI state ────────────────────────────────────────────────────────────
   const [dropdownOpen, setDropdownOpen] = useState(null); // 'model' | 'ar' | 'quality' | null
+  const [generating, setGenerating] = useState(false); // Backwards compatibility
+  const [generatingPrompt, setGeneratingPrompt] = useState(""); // Backwards compatibility
   const [activeTasks, setActiveTasks] = useState([]); // Array of { id, prompt, model, batchSize, status: 'generating' | 'completed' | 'error' }
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
@@ -1442,7 +1444,7 @@ export default function ImageStudio({
       const promptTrim = (snap.prompt || "").trim();
       const batch = snap.batchSize || 1;
 
-      // Add task to active tasks
+      // Add task to active tasks and set backwards-compatible states
       setActiveTasks(prev => [
         ...prev,
         {
@@ -1455,7 +1457,8 @@ export default function ImageStudio({
           createdAt: Date.now()
         }
       ]);
-
+      setGenerating(true);
+      setGeneratingPrompt(promptTrim);
       setGenerateError(null);
 
       try {
@@ -1571,9 +1574,16 @@ export default function ImageStudio({
           .finally(() => {
             try { localStorage.removeItem(PENDING_KEY); } catch {}
             // Mark task as completed
-            setActiveTasks(prev => prev.map(t => 
-              t.id === taskId ? { ...t, status: 'completed' } : t
-            ));
+            setActiveTasks(prev => {
+              const updated = prev.map(t => 
+                t.id === taskId ? { ...t, status: 'completed' } : t
+              );
+              // Update backwards-compatible generating state
+              const hasActive = updated.some(t => t.status === 'generating');
+              setGenerating(hasActive);
+              if (!hasActive) setGeneratingPrompt('');
+              return updated;
+            });
             // Remove task after short delay
             setTimeout(() => {
               setActiveTasks(prev => prev.filter(t => t.id !== taskId));
@@ -1586,9 +1596,16 @@ export default function ImageStudio({
         // On error there are no TOS IIFEs to remove PENDING_KEY, so do it here.
         try { localStorage.removeItem(PENDING_KEY); } catch {}
         // Mark task as error
-        setActiveTasks(prev => prev.map(t => 
-          t.id === taskId ? { ...t, status: 'error' } : t
-        ));
+        setActiveTasks(prev => {
+          const updated = prev.map(t => 
+            t.id === taskId ? { ...t, status: 'error' } : t
+          );
+          // Update backwards-compatible generating state
+          const hasActive = updated.some(t => t.status === 'generating');
+          setGenerating(hasActive);
+          if (!hasActive) setGeneratingPrompt('');
+          return updated;
+        });
         // Remove task after short delay
         setTimeout(() => {
           setActiveTasks(prev => prev.filter(t => t.id !== taskId));
@@ -1722,8 +1739,7 @@ export default function ImageStudio({
     // Generation still in flight — add to active tasks and poll for the done signal.
     setActiveTasks(prev => {
       const existing = prev.find(t => t.id === snap.requestId);
-      if (existing) return prev;
-      return [...prev, {
+      const updated = existing ? prev : [...prev, {
         id: snap.requestId,
         prompt: snap.prompt || '',
         model: snap.selectedModelId,
@@ -1732,6 +1748,11 @@ export default function ImageStudio({
         status: 'generating',
         createdAt: snap.ts
       }];
+      // Update backwards-compatible states
+      const hasActive = updated.some(t => t.status === 'generating');
+      setGenerating(hasActive);
+      if (hasActive) setGeneratingPrompt(snap.prompt || '');
+      return updated;
     });
 
     let cancelled = false;
@@ -1752,9 +1773,15 @@ export default function ImageStudio({
           try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
         }
         // Mark task as completed and remove
-        setActiveTasks(prev => prev.map(t => 
-          t.id === snap.requestId ? { ...t, status: 'completed' } : t
-        ));
+        setActiveTasks(prev => {
+          const updated = prev.map(t => 
+            t.id === snap.requestId ? { ...t, status: 'completed' } : t
+          );
+          const hasActive = updated.some(t => t.status === 'generating');
+          setGenerating(hasActive);
+          if (!hasActive) setGeneratingPrompt('');
+          return updated;
+        });
         setTimeout(() => {
           setActiveTasks(prev => prev.filter(t => t.id !== snap.requestId));
         }, 500);
@@ -1765,9 +1792,15 @@ export default function ImageStudio({
         clearInterval(intervalId);
         try { localStorage.removeItem(PENDING_KEY); } catch {}
         // Mark task as error and remove
-        setActiveTasks(prev => prev.map(t => 
-          t.id === snap.requestId ? { ...t, status: 'error' } : t
-        ));
+        setActiveTasks(prev => {
+          const updated = prev.map(t => 
+            t.id === snap.requestId ? { ...t, status: 'error' } : t
+          );
+          const hasActive = updated.some(t => t.status === 'generating');
+          setGenerating(hasActive);
+          if (!hasActive) setGeneratingPrompt('');
+          return updated;
+        });
         setTimeout(() => {
           setActiveTasks(prev => prev.filter(t => t.id !== snap.requestId));
         }, 2000);
@@ -1838,12 +1871,13 @@ export default function ImageStudio({
       
       {/* ── CENTRAL GALLERY AREA ── */}
       <div className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2">
-        {(activeTasks.length > 0 || history.length > 0) ? (
+        {(activeTasks.length > 0 || generating || history.length > 0) ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 w-full pt-4 animate-fade-in-up">
             {/* Generating card(s) — appear first while image(s) are being created */}
-            {activeTasks.map((task) => (
-              Array.from({ length: task.batchSize }).map((_, i) => (
-                <div key={`gen-${task.id}-${i}`} className="relative rounded-lg overflow-hidden border border-primary/40 bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
+            {activeTasks.length > 0 ? (
+              activeTasks.map((task) => (
+                Array.from({ length: task.batchSize }).map((_, i) => (
+                  <div key={`gen-${task.id}-${i}`} className="relative rounded-lg overflow-hidden border border-primary/40 bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
                   {/* Shimmer thumbnail */}
                   <div className="w-full aspect-square bg-gradient-to-br from-black via-primary/5 to-black relative flex items-center justify-center overflow-hidden">
                     <div className="absolute inset-0 bg-primary/5 animate-pulse" />
@@ -1874,7 +1908,40 @@ export default function ImageStudio({
                   </div>
                 </div>
               ))
-            ))}
+            )) : (generating ? (
+              Array.from({ length: batchSize }).map((_, i) => (
+                <div key={`gen-compat-${i}`} className="relative rounded-lg overflow-hidden border border-primary/40 bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
+                  {/* Shimmer thumbnail */}
+                  <div className="w-full aspect-square bg-gradient-to-br from-black via-primary/5 to-black relative flex items-center justify-center overflow-hidden">
+                    <div className="absolute inset-0 bg-primary/5 animate-pulse" />
+                    <div className="absolute inset-0" style={{
+                      background: "linear-gradient(105deg, transparent 40%, rgba(34,211,238,0.06) 50%, transparent 60%)",
+                      backgroundSize: "200% 100%",
+                      animation: "shimmer 2s infinite linear",
+                    }} />
+                    <div className="relative z-10 flex flex-col items-center gap-3">
+                      <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
+                        <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                      </svg>
+                      <span className="text-[11px] font-semibold text-primary/80 tracking-widest uppercase">Генерация…</span>
+                    </div>
+                  </div>
+                  {/* Card footer */}
+                  <div className="p-3 bg-black/80 border-t border-primary/10 flex flex-col gap-2">
+                    <p className="text-white/50 text-xs line-clamp-2 leading-relaxed italic">
+                      {generatingPrompt || "Создаётся изображение…"}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20">
+                        {selectedModelName}
+                      </span>
+                      <span className="text-[10px] text-white/30 animate-pulse">● обработка</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : null)}
             {history.map((entry, idx) => (
               <div
                 key={entry.id || idx}
