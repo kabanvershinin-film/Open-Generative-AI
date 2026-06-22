@@ -238,9 +238,8 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     return tags;
   }, [rfEdges, rfNodes, id, uploadType]);
 
-  // Image tags: если этот текст-нод кормит видео/изображение-ноду, к которой
-  // подключён Image-нод (image-passthrough), показываем кликабельный чип с превью.
-  // Клик вставляет @image в промпт.
+  // Image/video tags: если этот текст-нод кормит видео/изображение-ноду, к которой
+  // подключен любая Image/Video/Character/Audio-нода, показываем кликабельные чипы с превью.
   const imageTags = useMemo(() => {
     if (uploadType !== "text") return [];
     const nodesArr = rfNodes ? Array.from(rfNodes.values()) : [];
@@ -252,32 +251,38 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
       })
     );
     if (!targetSet.size) return [];
-    const mediaIds = new Set(
-      rfEdges
-        .filter((e) => targetSet.has(e.target))
-        .map((e) => e.source)
-        .filter((sid) => {
-          const n = nodesArr.find((nn) => nn.id === sid);
-          if (!n) return false;
-          const mid = n?.data?.modelId || n?.data?.selectedModel?.id;
-          return (n.type === "imageNode" && mid === "image-passthrough") ||
-                 (n.type === "videoNode" && mid === "video-passthrough");
-        })
-    );
-    const tags = [];
-    for (const iid of mediaIds) {
-      const inode = nodesArr.find((nn) => nn.id === iid);
-      const fv = inode?.data?.formValues || {};
-      const isVideo = inode?.type === "videoNode";
-      const url = isVideo ? (fv.video_url || null) : (fv.image_url || null);
-      if (url) tags.push({ id: iid, url, isVideo });
+    const out = [];
+    const seen = new Set();
+    const counters = { images: 0, video: 0, audio: 0 };
+    for (const e of rfEdges) {
+      if (!targetSet.has(e.target) || e.source === id || seen.has(e.source)) continue;
+      seen.add(e.source);
+      const n = nodesArr.find((nn) => nn.id === e.source);
+      if (!n) continue;
+      const d = n.data || {};
+      const fvN = d.formValues || {};
+      const rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl
+        || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url || fvN.video_url;
+      const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
+      if (n.type === "characterNode") {
+        counters.images += 1;
+        out.push({ id: n.id, label: `图片${counters.images}`, kind: "character", url, name: (fvN.character_name || "角色").trim(), isVideo: false });
+      } else if (n.type === "videoNode") {
+        counters.video += 1;
+        out.push({ id: n.id, label: `视频${counters.video}`, kind: "video", url, isVideo: true });
+      } else if (n.type === "audioNode") {
+        counters.audio += 1;
+        out.push({ id: n.id, label: `音频${counters.audio}`, kind: "audio", url, isVideo: false });
+      } else if (n.type === "imageNode") {
+        counters.images += 1;
+        out.push({ id: n.id, label: `图片${counters.images}`, kind: "images", url, isVideo: false });
+      }
     }
-    return tags;
+    return out;
   }, [rfEdges, rfNodes, id, uploadType]);
 
-  const insertImageTag = (url) => {
-    const filename = url.split("/").pop()?.split("?")[0] || "image";
-    const token = "@" + filename.replace(/\.[^.]+$/, "").slice(0, 20) + " ";
+  const insertImageTag = (tag) => {
+    const token = tag + " ";
     const ta = textareaRef.current;
     const cur = formValues?.prompt || "";
     if (!ta) {
@@ -328,40 +333,40 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
       <div className="flex flex-col items-center justify-center w-full h-full flex-1">
         {uploadType === "text" ? (
           <div className="flex flex-col w-full h-full gap-1.5">
-            {(characterTags.length > 0 || imageTags.length > 0) && (
-              <div className="flex flex-wrap gap-1.5">
-                {characterTags.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => insertCharTag(t.name)}
-                    title={`Вставить @${t.name} в промпт`}
-                    className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
-                  >
-                    {t.thumb ? (
-                      <img src={t.thumb} alt={t.name} className="w-7 h-7 rounded-md object-cover flex-shrink-0" />
-                    ) : (
-                      <span className="w-7 h-7 rounded-md bg-purple-500/20 flex items-center justify-center text-[12px] flex-shrink-0">🙂</span>
-                    )}
-                    <span className="text-[10px]">@{t.name}</span>
-                  </button>
-                ))}
+            {imageTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 nodrag">
                 {imageTags.map((t) => (
                   <button
-                    key={t.id}
+                    key={`${t.id}-${t.label}`}
                     type="button"
-                    onClick={() => insertImageTag(t.url)}
-                    title={t.isVideo ? "Вставить ссылку на видео в промпт" : "Вставить ссылку на изображение в промпт"}
-                    className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-200 transition-colors"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => insertImageTag(t.url || t.label)}
+                    title={`Вставить ${t.label} в промпт`}
+                    className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
                   >
-                    {t.isVideo ? (
-                      <span className="w-7 h-7 rounded-md bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
-                        <MdVideocam size={14} />
-                      </span>
+                    {t.url ? (
+                      t.isVideo ? (
+                        <video
+                          src={t.url}
+                          className="w-6 h-6 rounded object-cover flex-shrink-0"
+                          muted
+                          preload="none"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      ) : (
+                        <img
+                          src={t.url}
+                          alt={t.label}
+                          className="w-6 h-6 rounded object-cover flex-shrink-0"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      )
                     ) : (
-                      <img src={t.url} alt="image" className="w-7 h-7 rounded-md object-cover flex-shrink-0 border border-emerald-500/30" />
+                      <span className="w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0">
+                        {t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"}
+                      </span>
                     )}
-                    <span className="text-[10px]">{t.isVideo ? "@video" : "@image"}</span>
+                    <span className="text-[10px]">{t.label}</span>
                   </button>
                 ))}
               </div>
