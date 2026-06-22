@@ -951,13 +951,6 @@ export default function VideoStudio({
     el.style.height = Math.min(el.scrollHeight, maxH) + "px";
     el.scrollTop = savedScrollTop;
     el.scrollLeft = savedScrollLeft;
-    
-    // Sync scroll with highlight div
-    const highlightDiv = el.parentElement?.querySelector('div.pointer-events-none');
-    if (highlightDiv) {
-      highlightDiv.scrollTop = savedScrollTop;
-      highlightDiv.scrollLeft = savedScrollLeft;
-    }
   };
 
   // ── image upload ─────────────────────────────────────────────────────────
@@ -2721,18 +2714,7 @@ export default function VideoStudio({
             </>)}
 
             {/* Prompt textarea */}
-            <div className="flex-1 flex flex-col gap-1 relative">
-              {/* Highlight layer */}
-              <div
-                ref={(ref) => {
-                  if (ref && textareaRef.current) {
-                    ref.style.height = textareaRef.current.style.height || 'auto';
-                  }
-                }}
-                className="absolute inset-0 pointer-events-none z-0 text-white text-sm pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto overflow-x-hidden custom-scrollbar whitespace-pre-wrap break-words"
-                dangerouslySetInnerHTML={{ __html: renderHighlightedPrompt() }}
-              />
-              {/* Actual textarea */}
+            <div className="flex-1 flex flex-col gap-1">
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -2740,7 +2722,7 @@ export default function VideoStudio({
                 placeholder={promptPlaceholder}
                 disabled={promptDisabled}
                 rows={1}
-                className="relative z-10 w-full bg-transparent border-none text-transparent caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
+                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
               />
             </div>
           </div>
