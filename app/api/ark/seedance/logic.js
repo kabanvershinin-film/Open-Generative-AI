@@ -1,29 +1,10 @@
 export function buildContent({ prompt, first_frame_image, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, last_image_url }) {
     const content = [];
     
-    // First, process explicit first frame image (if present)
-    if (first_frame_image || image_url) { // keep backward compatibility with image_url
-        const u = first_frame_image || image_url;
-        const url = typeof u === 'string' ? u : (u.url || u.image_url);
-        const face = typeof u === 'object' ? u.face_asset : null;
-        const effectiveFace = face || (typeof face_asset === 'string' ? face_asset : null);
-        const isAsset = effectiveFace && effectiveFace.startsWith('asset://');
-        const finalUrl = isAsset ? effectiveFace : url;
-        const item = { 
-            type: 'image_url', 
-            image_url: { 
-                url: finalUrl,
-                ...(effectiveFace ? { face_asset: effectiveFace } : {})
-            }
-        };
-        if (effectiveFace) {
-            item.face_asset = effectiveFace;
-        }
-        content.push(item);
-    }
-
-    // Process reference images
+    // Process all reference images (no explicit first frame)
     const refImages = [];
+    if (first_frame_image) refImages.push(first_frame_image);
+    if (image_url) refImages.push(image_url);
     if (Array.isArray(image_urls)) refImages.push(...image_urls.filter(Boolean));
 
     const videos = [];
