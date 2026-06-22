@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../../_lib/pricing';
-import { BILLING_ENABLED, spendBalance, getUserForGallery } from '../../_lib/balance';
+import { BILLING_ENABLED, spendBalance, getUserForGallery, getUser } from '../../_lib/balance';
 
 const MEMEFAST_BASE_URL = 'https://memefast.top';
 
@@ -50,13 +50,24 @@ async function getBillingPayload(request, pathParts) {
 }
 
 async function maybeChargeImageSuccess(request, pathParts, data) {
+    console.log('maybeChargeImageSuccess called', { BILLING_ENABLED, method: request.method, pathParts });
+    
     if (!BILLING_ENABLED || !isImageGenerationPath(request.method.toUpperCase(), pathParts)) {
+        console.log('maybeChargeImageSuccess: skipping (billing disabled or not image gen)');
         return null;
     }
 
-    const user = await getUserForGallery(request);
+    const user = await getUser(request);
+    console.log('maybeChargeImageSuccess: user', user?.id);
+    
+    if (!user?.id) {
+        console.log('maybeChargeImageSuccess: no user');
+        return null;
+    }
+
     const payload = await getBillingPayload(request.clone(), pathParts);
     const model = payload?.model;
+    console.log('maybeChargeImageSuccess: model', model);
     
     let cost = 0;
     let source = 'estimated';
@@ -64,21 +75,21 @@ async function maybeChargeImageSuccess(request, pathParts, data) {
 
     if (usage) {
         console.log('MEMEFAST usage:', usage);
-        
-        // Попробуем получить фактическую стоимость
-        // Пока используем оценку, потом доработаем конвертацию cost_in_usd_ticks
-        // Например, cost_in_usd_ticks: 200000000 — нужно понять, как это конвертировать
     }
 
-    // Если нет фактической стоимости — используем нашу оценку
     if (!(cost > 0) && model) {
         cost = await priceRub('image', model, payload?.params || {}, user?.id);
         source = 'estimated';
+        console.log('maybeChargeImageSuccess: estimated cost', cost);
     }
 
-    if (!(cost > 0)) return null;
+    if (!(cost > 0)) {
+        console.log('maybeChargeImageSuccess: no cost');
+        return null;
+    }
 
     await ensureCnyRate();
+    console.log('maybeChargeImageSuccess: spending balance', cost);
     const charged = await spendBalance(request, cost, model, {
         source: source,
         model,
@@ -87,7 +98,9 @@ async function maybeChargeImageSuccess(request, pathParts, data) {
     });
 
     if (!charged?.ok) {
-        console.error('Failed to charge for image generation:', charged.error);
+        console.error('maybeChargeImageSuccess: failed to charge', charged);
+    } else {
+        console.log('maybeChargeImageSuccess: charged successfully', charged);
     }
 
     return { cost, model, source };
