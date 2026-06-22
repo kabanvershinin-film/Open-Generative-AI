@@ -462,10 +462,17 @@ async function tosFetchJson(key) {
     if (!TOS_ENABLED || !key) return null;
     try {
         const url = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/${key}`;
+        console.log(`[tosFetchJson] Trying ${url}`);
         const r = await fetch(url, { cache: 'no-store' });
+        console.log(`[tosFetchJson] Response status for ${key}: ${r.status}`);
         if (!r.ok) return null;
-        return await r.json();
-    } catch { return null; }
+        const data = await r.json();
+        console.log(`[tosFetchJson] Successfully fetched ${key}`);
+        return data;
+    } catch (e) { 
+        console.log(`[tosFetchJson] Error for ${key}:`, e.message);
+        return null; 
+    }
 }
 
 // Load workflow from TOS. Prefer the current user's folder, then the indexed
@@ -1759,6 +1766,9 @@ export async function GET(request, { params }) {
         for (const id of ids) {
             try {
                 const debugInfo = [];
+                debugInfo.push(`TOS_ENABLED: ${TOS_ENABLED}`);
+                debugInfo.push(`TOS_BUCKET: ${TOS_BUCKET}`);
+                debugInfo.push(`TOS_ENDPOINT: ${TOS_ENDPOINT}`);
                 // Try to load from any storage location
                 let wf = await tosLoadWorkflow(id, { userId: user.id });
                 if (wf) debugInfo.push(`tosLoadWorkflow (userId: ${user.id}) found`);
