@@ -1765,9 +1765,14 @@ export async function GET(request, { params }) {
                 // 1. Current user's folder
                 // 2. users/anonymous
                 // 3. Legacy path
+                // 4. The exact folder from your screenshot
                 if (!wf) {
                     console.log(`[Restore] Trying direct load from current user's folder for ${id}`);
                     wf = await tosFetchJson(`${buildUserTosRoot(user.id)}/workflows/${id}.json`);
+                }
+                if (!wf) {
+                    console.log(`[Restore] Trying direct load from users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/ for ${id}`);
+                    wf = await tosFetchJson(`users/6b7b2589-837c-4c3e-bc5a-1e0a41f2e9a1/workflows/${id}.json`);
                 }
                 if (!wf) {
                     console.log(`[Restore] Trying direct load from users/anonymous for ${id}`);
