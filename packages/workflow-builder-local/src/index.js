@@ -1,4 +1,4 @@
-export { default as WorkflowBuilder } from "./WorkflowBuilder.jsx";
-export { default as TextNode } from "./components/TextNode.jsx";
-export { default as ImageNode } from "./components/ImageNode.jsx";
-export { default as VideoNode } from "./components/VideoNode.jsx";
+export { default as WorkflowBuilder } from "./WorkflowBuilder";
+export { default as TextNode } from "./components/TextNode";
+export { default as ImageNode } from "./components/ImageNode";
+export { default as VideoNode } from "./components/VideoNode";
