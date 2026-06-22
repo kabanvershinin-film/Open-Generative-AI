@@ -75,7 +75,8 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
         method, 
         pathParts,
         isImageGen,
-        billingPayload
+        billingPayload,
+        data
     });
     
     if (!BILLING_ENABLED || !isImageGen) {
@@ -104,10 +105,24 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
     let source = 'estimated';
     const usage = data?.usage;
 
+    // Try to get actual cost from MEMEFAST
     if (usage) {
         console.log('MEMEFAST usage:', usage);
+        // If usage has cost in CNY or USD, convert it to RUB
+        const cnyCost = usage.cost_in_cny_ticks ? usage.cost_in_cny_ticks / 1000000 : (usage.cost_cny || null);
+        const usdCost = usage.cost_in_usd_ticks ? usage.cost_in_usd_ticks / 1000000 : (usage.cost_usd || null);
+        if (cnyCost) {
+            await ensureCnyRate();
+            cost = cnyCost * CNY_TO_RUB;
+            source = 'actual';
+            console.log('maybeChargeImageSuccess: actual cost (CNY)', cnyCost, '-> RUB', cost);
+        } else if (usdCost) {
+            // If we have USD cost, we can convert it if we have rate, but for now, let's use estimated if no CNY
+            console.log('maybeChargeImageSuccess: USD cost found, but no CNY rate for it', usdCost);
+        }
     }
 
+    // If no actual cost, use estimated
     if (!(cost > 0) && model) {
         cost = await priceRub('image', model, payload?.params || {}, user?.id);
         source = 'estimated';
@@ -120,7 +135,7 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
     }
 
     await ensureCnyRate();
-    console.log('maybeChargeImageSuccess: spending balance', cost);
+    console.log('maybeChargeImageSuccess: spending balance', cost, 'source', source);
     const charged = await spendBalance(request, cost, model, {
         source: source,
         model,
