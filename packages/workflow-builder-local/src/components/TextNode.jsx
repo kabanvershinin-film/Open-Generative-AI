@@ -31,7 +31,6 @@ const TextGeneration = ({ id, data, selected }) => {
         }),
     );
     console.log('TextNode availableTags debug:', { id, edges, genIds, allNodes: allNodes.map(n => ({ id: n.id, type: n.type })) });
-    if (!genIds.size) return [];
     const out = [];
     const seen = new Set();
     const counters = { images: 0, video: 0, audio: 0 };
@@ -62,7 +61,7 @@ const TextGeneration = ({ id, data, selected }) => {
     }
     console.log('Final availableTags:', out);
     return out;
-  }, [edges, id, getNodes]);
+  }, [edges, id]);
   
   const insertTag = (tag) => {
     const newPrompt = (formValues.prompt || "") + tag + " ";
@@ -307,10 +306,11 @@ const TextGeneration = ({ id, data, selected }) => {
             </div>
           )}
           
-          {/* Reference chips — like SeedancePromptNode */}
-          {availableTags.length > 0 && (
-            <div className="mx-3 mt-3 mb-2">
-              <div className="flex flex-wrap gap-1.5 nodrag">
+          {/* Idea section — like SeedancePromptNode */}
+          <div className="mx-3 mt-3">
+            <label className="text-[9px] text-blue-400/60 uppercase tracking-wider mb-1 block">💡 ВАША ИДЕЯ</label>
+            {availableTags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-1 nodrag">
                 {availableTags.map((t) => (
                   <button
                     key={`${t.id}-${t.label}`}
@@ -346,11 +346,9 @@ const TextGeneration = ({ id, data, selected }) => {
                   </button>
                 ))}
               </div>
-            </div>
-          )}
-          {/* Prompt input */}
-          {hasPrompt && (
-            <div className="mx-3">
+            )}
+            {/* Prompt input */}
+            {hasPrompt && (
               <textarea
                 ref={textareaRef}
                 value={formValues.prompt || ""}
@@ -359,8 +357,8 @@ const TextGeneration = ({ id, data, selected }) => {
                 rows={3}
                 className="w-full bg-black/30 border border-blue-500/20 rounded-lg px-2 py-1.5 text-xs text-white placeholder-blue-300/30 focus:outline-none focus:border-blue-500/50 resize-none nodrag nowheel"
               />
-            </div>
-          )}
+            )}
+          </div>
           
           <div className="flex items-center justify-center flex-1 w-full h-full p-3">
             {data.isLoading ? (
