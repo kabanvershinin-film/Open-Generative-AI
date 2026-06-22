@@ -9,6 +9,7 @@
 //   PLATFORM_MARKUP  — platform margin, default 1.15 (+15%)
 
 import { createClient } from '@supabase/supabase-js';
+import { SEEDANCE2_DIMS, SEEDANCE2_RATES, isSeedance2Model, rubFromTokensValue, seedance2RateCny } from './pricingCore.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -175,16 +176,6 @@ const PRICE_MODEL_ALIAS = {
 
 function round2(n) { return Math.round(n * 100) / 100; }
 
-// ── Seedance 2.0 token-based pricing (Volcano Engine ARK) ───────────────────
-// Source: https://www.volcengine.com/docs/82379/1099320
-// tokens = (inputSec + outputSec) × width × height × 24fps / 1024
-// generate_audio=true doubles tokens (audio = same compute as video)
-const SEEDANCE2_RATES = {
-    standard: { sd: { noVideo: 46, withVideo: 28 }, hd: { noVideo: 51, withVideo: 31 } },
-    fast:     { sd: { noVideo: 37, withVideo: 22 }, hd: { noVideo: 41, withVideo: 25 } },
-};
-const SEEDANCE2_DIMS = { '480p': [864, 496], '720p': [1280, 720], '1080p': [1920, 1080] };
-
 // Mirrors creator-club's calculateCost (video branch) exactly:
 //   tier   = 1080p → hd, else sd
 //   rate   = hasVideoInput ? withVideo : noVideo   (¥ per 1M tokens)
@@ -206,31 +197,17 @@ async function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, 
     return round2((tokens / 1_000_000) * rate * CNY_TO_RUB * markup);
 }
 
-function isSeedance2(model) {
-    return /doubao-seedance-2-0/.test(model);
-}
-
 // The ARK token rate (¥ per 1M tokens) for a Seedance 2.0 run — needed to turn
 // the actual usage.total_tokens reported by ARK into a final ruble price.
-function seedance2RateCny(model, resolution, hasVideoInput) {
-    if (!isSeedance2(model)) return 0;
-    const variant = model.includes('fast') ? 'fast' : 'standard';
-    const tier = resolution === '1080p' ? 'hd' : 'sd';
-    const r = SEEDANCE2_RATES[variant][tier];
-    return hasVideoInput ? r.withVideo : r.noVideo;
-}
-
-// Exact price from the real token count ARK billed: tokens × rate × курс × наценка.
 async function rubFromTokens(tokens, rateCny, userId = null) {
     const markup = await loadPlatformMarkup(userId);
-    if (!(tokens > 0) || !(rateCny > 0)) return 0;
-    return round2((tokens / 1_000_000) * rateCny * CNY_TO_RUB * markup);
+    return rubFromTokensValue(tokens, rateCny, CNY_TO_RUB, markup);
 }
 
 async function videoPriceRub(model, durationSec, params, userId = null) {
     const markup = await loadPlatformMarkup(userId);
     // Seedance 2.0 — token-based ARK pricing (matches creator-club).
-    if (isSeedance2(model)) {
+    if (isSeedance2Model(model)) {
         const res = params?.resolution || '720p';
         // hasVideoInput = a real reference VIDEO (video-to-video), not an image
         // first frame — only that switches to the cheaper withVideo rate.

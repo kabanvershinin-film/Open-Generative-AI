@@ -1,82 +1,64 @@
 import test from 'node:test';
-import assert from 'node:assert';
-import * as route from '../logic.js';
+import assert from 'node:assert/strict';
+import {
+    buildArkSubmitPayload,
+    clampArkDuration,
+    createRoundRobinPicker,
+    normalizeArkResolution,
+    parseEndpoints,
+} from '../route.helpers.js';
 
-test('buildContent forms correct content with single image (pure I2V)', () => {
-    const params = {
-        prompt: 'a cat',
-        image_url: 'http://example.com/img.jpg'
-    };
-    const content = route.buildContent(params);
-    
-    assert.strictEqual(content.length, 2);
-    assert.strictEqual(content[0].type, 'image_url');
-    assert.strictEqual(content[0].image_url.url, 'http://example.com/img.jpg');
-    assert.strictEqual(content[0].role, 'reference_image');
-    assert.strictEqual(content[1].type, 'text');
-    assert.strictEqual(content[1].text, 'a cat');
+test('parseEndpoints trims values and falls back to defaults', () => {
+    assert.deepStrictEqual(parseEndpoints(' ep-a, ,ep-b ', ['fallback']), ['ep-a', 'ep-b']);
+    assert.deepStrictEqual(parseEndpoints('', ['fallback']), ['fallback']);
 });
 
-test('buildContent handles last_image_url', () => {
-    const params = {
-        prompt: 'a cat',
-        image_url: 'http://example.com/start.jpg',
-        last_image_url: 'http://example.com/end.jpg'
-    };
-    const content = route.buildContent(params);
-    
-    // start image + end image + text
-    assert.strictEqual(content.length, 3);
-    assert.strictEqual(content[0].role, 'reference_image');
-    assert.strictEqual(content[1].image_url.url, 'http://example.com/end.jpg');
-    assert.strictEqual(content[2].type, 'text');
+test('createRoundRobinPicker rotates full and fast pools independently', () => {
+    const pickEndpoint = createRoundRobinPicker(['full-1', 'full-2'], ['fast-1', 'fast-2'], { full: 1, fast: 0 });
+
+    assert.strictEqual(pickEndpoint(false), 'full-2');
+    assert.strictEqual(pickEndpoint(false), 'full-1');
+    assert.strictEqual(pickEndpoint(true), 'fast-1');
+    assert.strictEqual(pickEndpoint(true), 'fast-2');
 });
 
-test('buildContent handles multiple images and face_asset', () => {
-    const params = {
-        prompt: 'a cat',
-        image_url: 'http://example.com/img1.jpg',
-        image_urls: ['http://example.com/img2.jpg'],
-        face_asset: 'asset://character1',
-        face_thumbnail: 'http://example.com/char.jpg'
-    };
-    const content = route.buildContent(params);
-    
-    // image_url + image_urls + face asset + text
-    assert.strictEqual(content.length, 4);
-    
-    // First image is uploaded image
-    assert.strictEqual(content[0].type, 'image_url');
-    assert.strictEqual(content[0].image_url.url, 'http://example.com/img1.jpg'); 
-    assert.strictEqual(content[0].role, 'reference_image');
-    
-    // Second image is from image_urls
-    assert.strictEqual(content[1].type, 'image_url');
-    assert.strictEqual(content[1].role, 'reference_image');
-    
-    // Third image is face asset
-    assert.strictEqual(content[2].type, 'image_url');
-    assert.strictEqual(content[2].image_url.url, 'http://example.com/char.jpg'); 
-    assert.strictEqual(content[2].image_url.face_asset, 'asset://character1');
-    assert.strictEqual(content[2].face_asset, 'asset://character1');
-    assert.strictEqual(content[2].role, 'reference_image');
-    
-    assert.strictEqual(content[3].type, 'text');
+test('normalizeArkResolution downgrades fast 1080p to 720p', () => {
+    assert.strictEqual(normalizeArkResolution('1080p', true), '720p');
+    assert.strictEqual(normalizeArkResolution('1080P', false), '1080p');
+    assert.strictEqual(normalizeArkResolution(undefined, false), undefined);
 });
 
-test('buildContent handles video and audio references', () => {
-    const params = {
-        prompt: 'a cat',
-        video_url: 'http://example.com/vid.mp4',
-        audio_url: 'http://example.com/aud.mp3'
-    };
-    const content = route.buildContent(params);
-    
-    // video + audio + text
-    assert.strictEqual(content.length, 3);
-    assert.strictEqual(content[0].type, 'video_url');
-    assert.strictEqual(content[0].role, 'reference_video');
-    assert.strictEqual(content[1].type, 'audio_url');
-    assert.strictEqual(content[1].role, 'reference_audio');
-    assert.strictEqual(content[2].type, 'text');
+test('clampArkDuration keeps value within supported range', () => {
+    assert.strictEqual(clampArkDuration(2), 4);
+    assert.strictEqual(clampArkDuration(20), 15);
+    assert.strictEqual(clampArkDuration('7'), 7);
+    assert.strictEqual(clampArkDuration(''), undefined);
+});
+
+test('buildArkSubmitPayload normalizes resolution and optional fields', () => {
+    const payload = buildArkSubmitPayload({
+        model: 'ep-fast',
+        content: [{ type: 'text', text: 'drive' }],
+        generateAudio: false,
+        faceAsset: 'asset://hero',
+        resolution: '1080p',
+        ratio: '16:9',
+        duration: 20,
+        seed: 42,
+        returnLastFrame: true,
+        fast: true,
+    });
+
+    assert.deepStrictEqual(payload, {
+        model: 'ep-fast',
+        content: [{ type: 'text', text: 'drive' }],
+        generate_audio: false,
+        watermark: false,
+        face_asset: 'asset://hero',
+        resolution: '720p',
+        ratio: '16:9',
+        duration: 15,
+        seed: 42,
+        return_last_frame: true,
+    });
 });

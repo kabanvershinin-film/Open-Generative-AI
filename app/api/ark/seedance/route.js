@@ -3,6 +3,7 @@ import { BILLING_ENABLED, getUser, spendBalance, refundBalanceRpc, signBill, ver
 import { priceRub, ensureCnyRate, seedance2RateCny, rubFromTokens } from '../../_lib/pricing';
 import { buildContent } from './logic';
 import { buildUserMediaKey } from '../../_lib/tosPaths';
+import { buildArkSubmitPayload, createRoundRobinPicker, normalizeArkResolution, parseEndpoints } from './route.helpers.js';
 
 const TOS_AK = process.env.TOS_ACCESS_KEY || '';
 const TOS_SK = process.env.TOS_SECRET_KEY || '';
@@ -74,11 +75,6 @@ async function resolvePublic(u, userId = null) {
 const ARK_BASE = 'https://ark.cn-beijing.volces.com/api/v3';
 const ARK_API_KEY = process.env.ARK_API_KEY || '';
 
-function parseEndpoints(envVal, fallback) {
-  const list = (envVal || '').split(',').map((s) => s.trim()).filter(Boolean);
-  return list.length > 0 ? list : fallback;
-}
-
 // Two separate endpoint pools — Seedance 2.0 (full) and Seedance 2.0 Fast.
 // Each is round-robin load-balanced. Override via env (comma-separated ep- ids):
 //   ARK_SEEDANCE_ENDPOINTS       — full (Doubao-Seedance-2.0)
@@ -107,14 +103,7 @@ const rrIndex = {
   full: Math.floor(Math.random() * Math.max(1, FULL_ENDPOINTS.length)),
   fast: Math.floor(Math.random() * Math.max(1, FAST_ENDPOINTS.length)),
 };
-function pickEndpoint(fast) {
-  const pool = fast ? FAST_ENDPOINTS : FULL_ENDPOINTS;
-  const key  = fast ? 'fast' : 'full';
-  if (pool.length === 0) return null;
-  const ep = pool[rrIndex[key] % pool.length];
-  rrIndex[key] = (rrIndex[key] + 1) % pool.length;
-  return ep;
-}
+const pickEndpoint = createRoundRobinPicker(FULL_ENDPOINTS, FAST_ENDPOINTS, rrIndex);
 
 // POST /api/ark/seedance — submit a generation task, returns { taskId, endpoint, bill, balance }
 export async function POST(request) {
@@ -189,8 +178,7 @@ export async function POST(request) {
     await ensureCnyRate();
     const estimatedCost = await priceRub('video', modelId, { resolution, video_url, duration, generate_audio });
     const hasVideoInput = !!(video_url);
-    let finalRes = String(resolution || '720p').toLowerCase();
-    if (fast && finalRes === '1080p') finalRes = '720p';
+    let finalRes = normalizeArkResolution(resolution || '720p', fast) || '720p';
     const rateCny = seedance2RateCny(modelId, finalRes, hasVideoInput);
 
     // Verify user has enough for the estimate to avoid surprises later
@@ -202,23 +190,18 @@ export async function POST(request) {
       userId 
     });
 
-    const payload = {
-        model,
-        content,
-        generate_audio,
-        watermark: false,
-        // Pass face_asset at top level for some Ark versions
-        ...(face_asset ? { face_asset } : {}),
-    };
-    if (resolution) {
-        let res = String(resolution).toLowerCase();
-        if (fast && res === '1080p') res = '720p';
-        payload.resolution = res;
-    }
-    if (ratio) payload.ratio = ratio;
-    if (duration != null && duration !== '') payload.duration = Math.max(4, Math.min(15, Number(duration) || 5));
-    if (seed !== undefined && seed !== null) payload.seed = seed;
-    if (return_last_frame !== undefined && return_last_frame !== null) payload.return_last_frame = return_last_frame;
+    const payload = buildArkSubmitPayload({
+      model,
+      content,
+      generateAudio: generate_audio,
+      faceAsset: face_asset,
+      resolution,
+      ratio,
+      duration,
+      seed,
+      returnLastFrame: return_last_frame,
+      fast,
+    });
 
     try {
       const r = await fetch(`${ARK_BASE}/contents/generations/tasks`, {

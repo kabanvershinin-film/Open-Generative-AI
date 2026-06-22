@@ -11,7 +11,7 @@
 // (so the app keeps working until auth + top-up are wired in the UI).
 
 import { createClient } from '@supabase/supabase-js';
-import { createHmac } from 'crypto';
+import { isAdminUser, signBillToken, verifyBillAmount, verifyBillDataToken } from './balanceCore.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
@@ -76,10 +76,6 @@ async function getUserForGallery(request) {
 }
 
 // ── Admin helpers ─────────────────────────────────────────────────────────────
-const ADMIN_EMAILS = ['kaban.vershinin@gmail.com', 'didig.vershinin@yandex.ru'];
-function isAdminUser(user) {
-    return !!(user?.email && ADMIN_EMAILS.some(e => e.toLowerCase() === user.email.toLowerCase()));
-}
 // Resolve user ids → emails (admin/service-role read of profiles). Returns {} on
 // any failure or when billing/service-role isn't configured.
 async function getEmailsForIds(ids) {
@@ -281,31 +277,18 @@ async function refundBalanceRpc(request, amount, reason) {
 // `extra` carries additional signed fields (e.g. the token rate `r`) used to
 // reconcile the pre-charge against actual usage when the task finishes.
 function signBill(cost, extra = {}) {
-    if (!BILLING_ENABLED || !(cost > 0)) return '';
-    const payload = Buffer.from(JSON.stringify({ c: round2(cost), e: Date.now() + 3600_000, ...extra })).toString('base64url');
-    const sig = createHmac('sha256', SUPABASE_SERVICE_ROLE_KEY).update(payload).digest('base64url');
-    return `${payload}.${sig}`;
+    return signBillToken(cost, SUPABASE_SERVICE_ROLE_KEY, BILLING_ENABLED, extra);
 }
 
 // Verify a bill token and return its full signed payload ({ c, e, ...extra }),
 // or null if invalid/expired. Tamper-proof: the HMAC is checked first.
 function verifyBillData(token) {
-    if (!BILLING_ENABLED || !token || typeof token !== 'string') return null;
-    const [payload, sig] = token.split('.');
-    if (!payload || !sig) return null;
-    const expect = createHmac('sha256', SUPABASE_SERVICE_ROLE_KEY).update(payload).digest('base64url');
-    if (sig !== expect) return null;
-    try {
-        const data = JSON.parse(Buffer.from(payload, 'base64url').toString());
-        if (!data.e || Date.now() > data.e) return null;
-        return data;
-    } catch { return null; }
+    return verifyBillDataToken(token, SUPABASE_SERVICE_ROLE_KEY, BILLING_ENABLED);
 }
 
 // Verify a bill token and return just the charged amount (0 if invalid/expired).
 function verifyBill(token) {
-    const d = verifyBillData(token);
-    return d ? (Number(d.c) || 0) : 0;
+    return verifyBillAmount(token, SUPABASE_SERVICE_ROLE_KEY, BILLING_ENABLED);
 }
 
 // Read the authenticated user's current balance (in RUB). Returns null when
