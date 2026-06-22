@@ -105,15 +105,62 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
     let source = 'estimated';
     const usage = data?.usage;
 
-    // Try to get actual cost from MEMEFAST
+    // Try to calculate cost from token counts first (MEMEFAST prices per 1M tokens)
     if (usage) {
         console.log('MEMEFAST usage:', usage);
+        const promptTokens = usage.prompt_tokens || 0;
+        const completionTokens = usage.completion_tokens || 0;
+        const totalTokens = usage.total_tokens || (promptTokens + completionTokens);
+        
+        // Token-based pricing (¥ per 1M tokens) for common models
+        let promptRateCny = 0; // ¥ per 1M prompt tokens
+        let completionRateCny = 0; // ¥ per 1M completion tokens
+        
+        // Set rates based on model (from MEMEFAST docs)
+        if (model?.includes('gpt-image-2')) {
+            promptRateCny = 5.0; // ¥5 / 1M
+            completionRateCny = 30.0; // ¥30 / 1M
+        } else if (model?.includes('gemini')) {
+            promptRateCny = 4.0; // Example rate for Gemini
+            completionRateCny = 24.0;
+        } else if (model?.includes('flux')) {
+            promptRateCny = 3.0;
+            completionRateCny = 18.0;
+        }
+        
+        if (promptRateCny > 0 && completionRateCny > 0) {
+            await ensureCnyRate();
+            const markup = await loadPlatformMarkup(user?.id);
+            
+            // Calculate cost: (promptTokens / 1e6 * promptRate) + (completionTokens / 1e6 * completionRate)
+            const cnyCost = 
+                (promptTokens / 1_000_000 * promptRateCny) + 
+                (completionTokens / 1_000_000 * completionRateCny);
+            
+            cost = cnyCost * CNY_TO_RUB * markup;
+            source = 'tokens';
+            
+            console.log('maybeChargeImageSuccess: token cost', {
+                promptTokens,
+                completionTokens,
+                totalTokens,
+                promptRateCny,
+                completionRateCny,
+                cnyCost,
+                rubCost: cost
+            });
+        }
+    }
+
+    // If no token-based cost, try actual cost from MEMEFAST
+    if (!(cost > 0) && usage) {
         // If usage has cost in CNY or USD, convert it to RUB
         const cnyCost = usage.cost_in_cny_ticks ? usage.cost_in_cny_ticks / 1000000 : (usage.cost_cny || null);
         const usdCost = usage.cost_in_usd_ticks ? usage.cost_in_usd_ticks / 1000000 : (usage.cost_usd || null);
         if (cnyCost) {
             await ensureCnyRate();
-            cost = cnyCost * CNY_TO_RUB;
+            const markup = await loadPlatformMarkup(user?.id);
+            cost = cnyCost * CNY_TO_RUB * markup;
             source = 'actual';
             console.log('maybeChargeImageSuccess: actual cost (CNY)', cnyCost, '-> RUB', cost);
         } else if (usdCost) {
