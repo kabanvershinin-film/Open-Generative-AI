@@ -1251,7 +1251,7 @@ export default function VideoStudio({
       if (match.index > lastIndex) {
         parts.push(prompt.slice(lastIndex, match.index));
       }
-      parts.push(`<span class="bg-blue-500/20 text-blue-300 rounded px-0.5 py-0.5">${match[0]}</span>`);
+      parts.push(`<span class="bg-blue-500/20 text-blue-300 rounded px-0 py-0">${match[0]}</span>`);
       lastIndex = match.index + match[0].length;
     }
     if (lastIndex < prompt.length) {
