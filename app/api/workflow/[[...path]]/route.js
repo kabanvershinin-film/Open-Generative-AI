@@ -1759,17 +1759,28 @@ export async function GET(request, { params }) {
         for (const id of ids) {
             try {
                 // Try to load from any storage location
-                const wf = await tosLoadWorkflow(id, { userId: user.id });
+                let wf = await tosLoadWorkflow(id, { userId: user.id });
+                
+                // If not found, also try to load directly from users/anonymous or legacy path
+                if (!wf) {
+                    console.log(`[Restore] Trying direct load for ${id}`);
+                    wf = await tosFetchJson(`users/anonymous/workflows/${id}.json`);
+                }
+                if (!wf) {
+                    wf = await tosFetchJson(`workflows/${id}.json`);
+                }
+                
                 if (wf) {
                     wf.owner_id = user.id;
                     wf.updated_at = new Date().toISOString();
-                    // Save file with new owner
+                    // Save file with new owner (this also updates index)
                     await tosSaveWorkflow(id, wf);
                     results.push({ id, status: 'restored', name: wf.name });
                 } else {
                     results.push({ id, status: 'not_found' });
                 }
             } catch (e) {
+                console.error(`[Restore] Error for ${id}`, e);
                 results.push({ id, status: 'error', message: e.message });
             }
         }
