@@ -11,6 +11,7 @@ export const SEEDANCE2_DIMS = {
   "480p": [864, 496],
   "720p": [1280, 720],
   "1080p": [1920, 1080],
+  "2160p": [4096, 2160],
 };
 
 export function isSeedance2Model(model) {
@@ -20,7 +21,7 @@ export function isSeedance2Model(model) {
 export function seedance2RateCny(model, resolution, hasVideoInput) {
   if (!isSeedance2Model(model)) return 0;
   const variant = String(model || "").includes("fast") ? "fast" : "standard";
-  const tier = resolution === "1080p" ? "hd" : "sd";
+  const tier = (resolution === "1080p" || resolution === "2160p") ? "hd" : "sd";
   const rate = SEEDANCE2_RATES[variant][tier];
   return hasVideoInput ? rate.withVideo : rate.noVideo;
 }

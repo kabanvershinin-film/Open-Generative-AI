@@ -184,7 +184,7 @@ function round2(n) { return Math.round(n * 100) / 100; }
 async function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, generateAudio, inputVideoSec, userId = null) {
     const markup = await loadPlatformMarkup(userId);
     const variant = model.includes('fast') ? 'fast' : 'standard';
-    const tier = resolution === '1080p' ? 'hd' : 'sd';
+    const tier = (resolution === '1080p' || resolution === '2160p') ? 'hd' : 'sd';
     const rate = hasVideoInput
         ? SEEDANCE2_RATES[variant][tier].withVideo
         : SEEDANCE2_RATES[variant][tier].noVideo;
@@ -193,7 +193,7 @@ async function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, 
     const inputSec = hasVideoInput ? (inputVideoSec || 0) : 0;
     const outputSec = durationSec || 5;
     const base = Math.round(((inputSec + outputSec) * w * h * 24) / 1024);
-    const tokens = generateAudio ? base * 2 : base;
+    const tokens = base;
     return round2((tokens / 1_000_000) * rate * CNY_TO_RUB * markup);
 }
 
