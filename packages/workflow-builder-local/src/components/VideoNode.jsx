@@ -16,6 +16,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import NodeOptionsMenu from "./NodeOptionsMenu";
 import { useGenerationCost } from "./useGenerationCost";
 import VideoPlayer from "./VideoPlayer";
+import { buildSeedanceWorkflowBody } from "./seedanceWorkflowPayload.js";
 
 const inputHandles = [
   "videoInput",   // prompt
@@ -402,72 +403,21 @@ const VideoGeneration = ({ id, data, selected }) => {
     const fast = /fast/.test(`${selectedModel?.id || ""} ${selectedModel?.name || ""}`.toLowerCase());
     const src = formValues || {};
     
-    // Construct final images list for Seedance 2.0
-    let finalImages = [];
-    
-    // If we have a face asset, we want to apply it to an image.
-    if (connectedFaceAssets.length > 0) {
-      const primaryFace = connectedFaceAssets[0];
-      
-      // If there's a connected image (e.g. from an uploadNode), use it as 图片1 and attach the face.
-      if (connectedImages.length > 0) {
-        finalImages.push({
-          ...connectedImages[0],
-          face_asset: primaryFace.uri
-        });
-        // Add other connected images
-        finalImages.push(...connectedImages.slice(1));
-      } 
-      // User says "pass the asset... not the photo". 
-      // But Ark requires a valid HTTP URL in 'url' field for validation.
-      // So we use the thumbnail as the visual base, and the asset URI as the face_asset.
-      else {
-        finalImages.push({
-          url: primaryFace.thumbnail || primaryFace.uri,
-          face_asset: primaryFace.uri
-        });
-      }
-    } else {
-      // No face assets, just use connected images
-      finalImages.push(...connectedImages);
-    }
-    
-    // Add main node image_url if not already present
-    if (src.image_url) {
-      const url = typeof src.image_url === 'string' ? src.image_url : src.image_url.url;
-      if (url && !finalImages.some(img => (typeof img === 'string' ? img : img.url) === url)) {
-        finalImages.push(typeof src.image_url === 'string' ? { url } : src.image_url);
-      }
-    }
+    const body = buildSeedanceWorkflowBody({
+      fast,
+      prompt: src.prompt || "",
+      connectedImages,
+      connectedFaceAssets,
+      uniqueVideos,
+      uniqueAudios,
+      formValues: src,
+    });
+    const finalImages = body.image_urls || [];
 
     if (finalImages.length > 0) {
       const facesFound = finalImages.filter(img => img.face_asset).length;
       toast(`Использую: ${facesFound} лиц, ${finalImages.length} фото`, { icon: "🎨" });
     }
-
-    // Ensure the character tag is present in the prompt if a character is connected.
-    let finalPrompt = src.prompt || "";
-    if (finalImages.some(img => img.face_asset)) {
-      const tag = "图片1";
-      const tagRegex = new RegExp(tag, "i");
-      if (!tagRegex.test(finalPrompt)) {
-        finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
-      }
-    }
-    
-    const body = {
-      fast,
-      prompt: finalPrompt,
-      image_urls: finalImages.length > 0 ? finalImages : undefined,
-      video_url: uniqueVideos[0] || src.video_url || undefined,
-      video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
-      audio_url: uniqueAudios[0] || src.audio_url || undefined,
-      audio_urls: uniqueAudios.length > 1 ? uniqueAudios.slice(1) : undefined,
-      resolution: src.resolution || undefined,
-      ratio: src.aspect_ratio || src.ratio || undefined,
-      duration: src.duration || undefined,
-      face_asset: connectedFaceAssets[0]?.uri || undefined,
-    };
     
     console.log('[VideoNode] Submitting to Ark:', body);
 
