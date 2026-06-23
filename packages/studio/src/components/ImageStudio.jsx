@@ -1576,25 +1576,26 @@ export default function ImageStudio({
           throw new Error("Изображение не получено. Попробуйте другую модель.");
         }
 
+        // Mark task as completed immediately when images are shown
+        setActiveTasks(prev => {
+          const updated = prev.map(t => 
+            t.id === taskId ? { ...t, status: 'completed' } : t
+          );
+          // Update backwards-compatible generating state right away
+          const hasActive = updated.some(t => t.status === 'generating');
+          setGenerating(hasActive);
+          if (!hasActive) setGeneratingPrompt('');
+          return updated;
+        });
+        // Remove task after short delay
+        setTimeout(() => {
+          setActiveTasks(prev => prev.filter(t => t.id !== taskId));
+        }, 500);
+
         Promise.allSettled(postProcessTasks)
           .catch(() => {})
           .finally(() => {
             try { localStorage.removeItem(PENDING_KEY); } catch {}
-            // Mark task as completed
-            setActiveTasks(prev => {
-              const updated = prev.map(t => 
-                t.id === taskId ? { ...t, status: 'completed' } : t
-              );
-              // Update backwards-compatible generating state
-              const hasActive = updated.some(t => t.status === 'generating');
-              setGenerating(hasActive);
-              if (!hasActive) setGeneratingPrompt('');
-              return updated;
-            });
-            // Remove task after short delay
-            setTimeout(() => {
-              setActiveTasks(prev => prev.filter(t => t.id !== taskId));
-            }, 500);
           });
       } catch (e) {
         console.error("[ImageStudio] Generation failed:", e);

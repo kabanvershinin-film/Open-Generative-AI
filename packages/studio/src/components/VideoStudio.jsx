@@ -16,6 +16,8 @@ import {
   getEffectsForI2VModel,
   getDefaultEffectForI2VModel,
   getModesForModel,
+  getCharacterOrientationForModel,
+  getKeepOriginalSoundForModel,
 } from "../models.js";
 import { useModelConfig } from "../useModelConfig.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
