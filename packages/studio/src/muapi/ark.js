@@ -2,20 +2,12 @@ import { fetchWithTimeout, formatApiError, notifyAuthRequired } from './core.js'
 
 async function generateSeedanceArk(apiKey, modelInfo, params) {
     const fast = /fast/.test(modelInfo?.apiId || modelInfo?.id || '');
-    const faceAsset = params.face_asset;
-    const faceThumb = params.face_thumbnail;
     const uploadedUrl = params.image_url;
     const initialImages = Array.isArray(params.image_urls) ? [...params.image_urls] : [];
 
     const finalImages = [];
     if (uploadedUrl) {
         finalImages.push(typeof uploadedUrl === 'string' ? { url: uploadedUrl } : uploadedUrl);
-    }
-    if (faceAsset) {
-        finalImages.push({
-            url: faceThumb || faceAsset,
-            face_asset: faceAsset,
-        });
     }
     initialImages.forEach((img) => {
         const url = typeof img === 'string' ? img : img.url;
@@ -37,7 +29,6 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
         resolution: fast ? '720p' : (params.resolution || undefined),
         ratio: params.aspect_ratio || undefined,
         duration: params.duration || undefined,
-        face_asset: params.face_asset || undefined,
         last_image_url: params.last_image_url || undefined,
         generate_audio: params.generate_audio || undefined,
         seed: params.seed !== undefined ? params.seed : undefined,
@@ -46,7 +37,7 @@ async function generateSeedanceArk(apiKey, modelInfo, params) {
 
     console.info('[muapi] Submit Ark Seedance task', {
         model: body.model,
-        hasFaceAsset: !!body.face_asset,
+        assetRefs: (body.image_urls || []).filter((item) => String(item?.url || "").startsWith('asset://')).length,
         imageRefs: (body.image_urls || []).length,
         videoRefs: [body.video_url, ...(body.video_urls || [])].filter(Boolean).length,
         audioRefs: [body.audio_url, ...(body.audio_urls || [])].filter(Boolean).length,

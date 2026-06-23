@@ -1703,8 +1703,7 @@ export default function VideoStudio({
           };
           console.info("[VideoStudio] Seedance asset payload", {
             model: taskModel,
-            hasFaceAsset: !!params.face_asset,
-            faceAsset: params.face_asset,
+            assetRefs: (params.image_urls || []).filter((item) => String((typeof item === "string" ? item : item?.url) || "").startsWith("asset://")).length,
             imageRefs: [params.image_url, ...(params.image_urls || [])].filter(Boolean).length,
             videoRefs: [params.video_url, ...(params.video_urls || [])].filter(Boolean).length,
             audioRefs: [params.audio_url, ...(params.audio_urls || [])].filter(Boolean).length,

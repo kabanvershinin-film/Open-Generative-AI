@@ -1,5 +1,7 @@
 export function buildContent({ prompt, first_frame_image, image_url, image_urls, video_url, video_urls, audio_url, audio_urls, face_asset, face_thumbnail, last_image_url }) {
     const content = [];
+
+    const seenAssetRefs = new Set();
     
     // Process all reference images (no explicit first frame)
     const refImages = [];
@@ -18,36 +20,32 @@ export function buildContent({ prompt, first_frame_image, image_url, image_urls,
     refImages.forEach((u) => {
         const url = typeof u === 'string' ? u : (u.url || u.image_url);
         const face = typeof u === 'object' ? u.face_asset : null;
-        const effectiveFace = face;
-
-        const isAsset = effectiveFace && effectiveFace.startsWith('asset://');
-        const finalUrl = isAsset ? effectiveFace : url;
+        const directAssetUrl = typeof url === 'string' && url.startsWith('asset://') ? url : null;
+        const fallbackAssetUrl = typeof face === 'string' && face.startsWith('asset://') ? face : null;
+        const finalUrl = directAssetUrl || fallbackAssetUrl || url;
+        if (!finalUrl) return;
+        if (finalUrl.startsWith('asset://')) seenAssetRefs.add(finalUrl);
 
         const item = { 
             type: 'image_url',
             role: 'reference_image',
             image_url: { 
                 url: finalUrl,
-                ...(effectiveFace ? { face_asset: effectiveFace } : {})
             }
         };
-        if (effectiveFace) {
-            item.face_asset = effectiveFace;
-        }
         content.push(item);
     });
 
-    // Add face asset as separate reference if present and not already added
-    if (face_asset) {
+    // Backward compatibility: if callers still pass a top-level face_asset, map it
+    // to an Ark asset URI reference image instead of duplicating thumbnail + asset fields.
+    if (face_asset && !seenAssetRefs.has(face_asset)) {
         const item = { 
             type: 'image_url',
             role: 'reference_image',
             image_url: { 
-                url: face_thumbnail || face_asset,
-                face_asset: face_asset
+                url: face_asset
             }
         };
-        item.face_asset = face_asset;
         content.push(item);
     }
 

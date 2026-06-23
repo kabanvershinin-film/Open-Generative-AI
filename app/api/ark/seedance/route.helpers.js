@@ -38,7 +38,6 @@ export function buildArkSubmitPayload({
   model,
   content,
   generateAudio = true,
-  faceAsset,
   resolution,
   ratio,
   duration,
@@ -51,7 +50,6 @@ export function buildArkSubmitPayload({
     content,
     generate_audio: generateAudio,
     watermark: false,
-    ...(faceAsset ? { face_asset: faceAsset } : {}),
   };
 
   const normalizedResolution = normalizeArkResolution(resolution, fast);

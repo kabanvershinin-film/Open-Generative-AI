@@ -5,12 +5,16 @@ function normalizeImageValue(image) {
   return null;
 }
 
+function isAssetUri(value) {
+  return typeof value === "string" && value.startsWith("asset://");
+}
+
 function dedupeImages(images) {
   const seen = new Set();
   const result = [];
   for (const image of images) {
     if (!image?.url) continue;
-    const key = `${image.url}::${image.face_asset || ""}`;
+    const key = image.url;
     if (seen.has(key)) continue;
     seen.add(key);
     result.push(image);
@@ -25,31 +29,12 @@ export function buildSeedanceWorkflowImages({ connectedImages = [], connectedFac
 
   const finalImages = [];
 
-  if (connectedFaceAssets.length > 0) {
-    const pairedCount = Math.min(normalizedImages.length, connectedFaceAssets.length);
-
-    for (let index = 0; index < pairedCount; index += 1) {
-      finalImages.push({
-        ...normalizedImages[index],
-        face_asset: connectedFaceAssets[index].uri,
-      });
-    }
-
-    if (normalizedImages.length > pairedCount) {
-      finalImages.push(...normalizedImages.slice(pairedCount));
-    }
-
-    if (connectedFaceAssets.length > pairedCount) {
-      for (const face of connectedFaceAssets.slice(pairedCount)) {
-        finalImages.push({
-          url: face.thumbnail || face.uri,
-          face_asset: face.uri,
-        });
-      }
-    }
-  } else {
-    finalImages.push(...normalizedImages);
-  }
+  finalImages.push(
+    ...connectedFaceAssets
+      .map((face) => (face?.uri ? { url: face.uri, thumbnail: face.thumbnail || null } : null))
+      .filter(Boolean)
+  );
+  finalImages.push(...normalizedImages);
 
   const normalizedImageUrl = normalizeImageValue(imageUrl);
   if (normalizedImageUrl) {
@@ -60,7 +45,7 @@ export function buildSeedanceWorkflowImages({ connectedImages = [], connectedFac
 }
 
 export function ensureSeedanceFaceTags(prompt, images) {
-  const faceCount = images.filter((image) => image?.face_asset).length;
+  const faceCount = images.filter((image) => isAssetUri(image?.url)).length;
   if (faceCount === 0) return prompt || "";
 
   const tagsToAdd = [];
@@ -102,6 +87,5 @@ export function buildSeedanceWorkflowBody({
     resolution: formValues.resolution || undefined,
     ratio: formValues.aspect_ratio || formValues.ratio || undefined,
     duration: formValues.duration || undefined,
-    face_asset: connectedFaceAssets.length === 1 ? connectedFaceAssets[0].uri : undefined,
   };
 }

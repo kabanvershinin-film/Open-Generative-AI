@@ -36,17 +36,35 @@ test('buildContent creates content for I2V with one image', () => {
   assert.strictEqual(content[1].text, 'animate this image');
 });
 
-test('buildContent handles face asset', () => {
+test('buildContent maps top-level face asset to asset uri reference', () => {
   const content = buildContent({
     prompt: '图片1 is driving a car',
     image_url: { url: 'https://cdn.example.com/thumb.jpg', face_asset: 'asset://character1' },
     face_asset: 'asset://character1',
   });
 
-  // Now we add the image_url item and the face_asset item (so length is 3 + 1 text = 4?)
-  assert.ok(content.some(item => item.type === 'image_url' && item.face_asset === 'asset://character1'));
+  const imageItems = content.filter((item) => item.type === 'image_url');
+  assert.strictEqual(imageItems.length, 1);
+  assert.strictEqual(imageItems[0].image_url.url, 'asset://character1');
   assert.strictEqual(content[content.length - 1].type, 'text');
   assert.strictEqual(content[content.length - 1].text, '图片1 is driving a car');
+});
+
+test('buildContent keeps multiple asset uris as separate reference images', () => {
+  const content = buildContent({
+    prompt: '图片1和图片2一起说话',
+    image_urls: [
+      { url: 'asset://character1' },
+      { url: 'asset://character2' },
+    ],
+  });
+
+  const imageItems = content.filter((item) => item.type === 'image_url');
+  assert.strictEqual(imageItems.length, 2);
+  assert.deepStrictEqual(imageItems.map((item) => item.image_url.url), [
+    'asset://character1',
+    'asset://character2',
+  ]);
 });
 
 test('buildContent handles up to 9 reference images', () => {

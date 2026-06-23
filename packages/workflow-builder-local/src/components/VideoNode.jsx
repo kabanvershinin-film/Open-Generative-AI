@@ -422,7 +422,7 @@ const VideoGeneration = ({ id, data, selected }) => {
     const finalImages = body.image_urls || [];
 
     if (finalImages.length > 0) {
-      const facesFound = finalImages.filter(img => img.face_asset).length;
+      const facesFound = finalImages.filter((img) => String(img?.url || "").startsWith("asset://")).length;
       toast(`Использую: ${facesFound} лиц, ${finalImages.length} фото`, { icon: "🎨" });
     }
     

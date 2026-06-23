@@ -26,7 +26,7 @@ test('ensureFaceAssetPromptTag appends or replaces character reference with 图�
   assert.strictEqual(ensureFaceAssetPromptTag('ведёт машину', null), 'ведёт машину');
 });
 
-test('buildSeedanceStudioPayload carries face_asset and ready references', () => {
+test('buildSeedanceStudioPayload places asset uri into image references', () => {
   const payload = buildSeedanceStudioPayload({
     model: 'seedance-2.0-fast-t2v',
     prompt: 'cinematic driving scene',
@@ -47,9 +47,11 @@ test('buildSeedanceStudioPayload carries face_asset and ready references', () =>
   });
 
   assert.strictEqual(payload.prompt, 'cinematic driving scene 图片1');
-  assert.strictEqual(payload.face_asset, 'asset://character1');
-  assert.strictEqual(payload.face_thumbnail, 'https://cdn.example.com/thumb.jpg');
-  assert.deepStrictEqual(payload.image_urls, ['https://cdn.example.com/base.jpg', 'https://cdn.example.com/i1.jpg']);
+  assert.deepStrictEqual(payload.image_urls, [
+    { url: 'asset://character1' },
+    'https://cdn.example.com/base.jpg',
+    'https://cdn.example.com/i1.jpg',
+  ]);
   assert.deepStrictEqual(payload.video_urls, ['https://cdn.example.com/v1.mp4']);
   assert.deepStrictEqual(payload.audio_urls, ['https://cdn.example.com/a1.mp3']);
   assert.strictEqual(payload.video_url, 'https://cdn.example.com/ref.mp4');
@@ -68,8 +70,7 @@ test('buildSeedanceStudioPayload works without face asset', () => {
   });
 
   assert.strictEqual(payload.prompt, 'cinematic scene');
-  assert.strictEqual(payload.face_asset, undefined);
-  assert.strictEqual(payload.face_thumbnail, undefined);
+  assert.deepStrictEqual(payload.image_urls, []);
 });
 
 test('buildSeedanceStudioPayload works in I2V mode', () => {
