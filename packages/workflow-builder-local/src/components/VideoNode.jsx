@@ -17,6 +17,7 @@ import NodeOptionsMenu from "./NodeOptionsMenu";
 import { useGenerationCost } from "./useGenerationCost";
 import VideoPlayer from "./VideoPlayer";
 import { buildSeedanceWorkflowBody } from "./seedanceWorkflowPayload.js";
+import { collectConnectedCharacterReferences } from "./connectedCharacterReferences.js";
 
 const inputHandles = [
   "videoInput",   // prompt
@@ -343,12 +344,12 @@ const VideoGeneration = ({ id, data, selected }) => {
   // "GENERATING…"); the short submit + poll requests here never hang.
   const runArkSeedanceBrowser = async () => {
     const { getNodes, getEdges } = data.reactFlowInstance || {};
-    const nodes = getNodes ? getNodes() : [];
-    const edges = getEdges ? getEdges() : [];
+    const nodes = data.graphState?.nodes || (getNodes ? getNodes() : []);
+    const edges = data.graphState?.edges || (getEdges ? getEdges() : []);
 
     const findConnectedAssets = () => {
       const incoming = edges.filter(e => e.target === id);
-      const assets = { images: [], videos: [], audios: [], faceAssets: [] };
+      const assets = { images: [], videos: [], audios: [] };
       const seen = new Set();
       
       const processSource = (sourceId) => {
@@ -358,17 +359,10 @@ const VideoGeneration = ({ id, data, selected }) => {
         if (!sourceNode) return;
         
         if (sourceNode.type === "characterNode") {
-          const fv = sourceNode.data?.formValues || {};
-          const rawAsset = fv.face_asset || sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
-          const asset = toAssetUri(rawAsset);
-          
-          if (asset) {
-            assets.faceAssets.push({
-              uri: asset,
-              thumbnail: fv.character_photo || null
-            });
-          }
-        } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
+          return;
+        }
+
+        if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
           const url = sourceNode.data?.resultUrl || sourceNode.data?.outputs?.[0]?.value;
           if (url) assets.images.push({ url });
         } else if (sourceNode.type === "videoNode") {
@@ -389,7 +383,20 @@ const VideoGeneration = ({ id, data, selected }) => {
 
     const allAssets = findConnectedAssets();
     const connectedImages = allAssets.images;
-    const connectedFaceAssets = allAssets.faceAssets;
+    const connectedFaceAssets = collectConnectedCharacterReferences({
+      nodeId: id,
+      nodes,
+      edges,
+    })
+      .map((character) => {
+        const asset = toAssetUri(character.asset || character.photo || "");
+        if (!asset) return null;
+        return {
+          uri: asset,
+          thumbnail: character.photo || null,
+        };
+      })
+      .filter(Boolean);
     const uniqueVideos = Array.from(new Set(allAssets.videos));
     const uniqueAudios = Array.from(new Set(allAssets.audios));
 

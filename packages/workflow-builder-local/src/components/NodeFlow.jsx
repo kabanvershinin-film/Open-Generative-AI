@@ -53,6 +53,7 @@ import CharacterNode from "./CharacterNode";
 import SeedancePromptNode from "./SeedancePromptNode";
 import SkylarkNode from "./SkylarkNode";
 import { useGenerationCost } from "./useGenerationCost";
+import { collectConnectedCharacterReferences } from "./connectedCharacterReferences.js";
 
 const nodeTypes = {
   textNode: TextGeneration,
@@ -1952,6 +1953,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       nodeSchemas,
       onDataChange,
       reactFlowInstance: { getNodes, getEdges },
+      graphState: { nodes, edges },
       setFormValues: (updater) => {
         setNodes((nds) => nds.map((n) => {
           if (n.id === node.id) {
@@ -2946,46 +2948,12 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             })()}
             {/* Face reference gallery — show all CharacterNodes feeding into this node */}
             {(selectedNode?.type === "videoNode" || selectedNode?.type === "skylarkNode" || selectedNode?.type === "seedancePromptNode") && (() => {
-              // Gather all character nodes that are connected to this node (directly or through utility nodes)
-              const findCharacters = (nodeId, visited = new Set()) => {
-                if (visited.has(nodeId)) return [];
-                visited.add(nodeId);
-                
-                const incomingEdges = edges.filter(e => e.target === nodeId);
-                let chars = [];
-                
-                incomingEdges.forEach(edge => {
-                  const sourceNode = nodes.find(n => n.id === edge.source);
-                  if (sourceNode) {
-                    if (sourceNode.type === "characterNode") {
-                      chars.push(sourceNode);
-                    } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
-                      chars = [...chars, ...findCharacters(sourceNode.id, visited)];
-                    }
-                  }
-                });
-                return chars;
-              };
-
-              const connectedChars = findCharacters(selectedNode.id);
-              if (!connectedChars.length) return null;
-
-              // Deduplicate by asset/photo to avoid showing the same character twice if multiple paths exist
-              const uniqueChars = [];
-              const seen = new Set();
-              connectedChars.forEach(c => {
-                const fv = c.data?.formValues || {};
-                const id = fv.face_asset || fv.character_photo || c.id;
-                if (!seen.has(id)) {
-                  seen.add(id);
-                  uniqueChars.push({
-                    nodeId: c.id,
-                    name: fv.character_name || "Персонаж",
-                    asset: fv.face_asset,
-                    photo: fv.character_photo || fv.face_thumbnail || (!String(fv.face_asset).startsWith("asset://") ? fv.face_asset : null)
-                  });
-                }
+              const uniqueChars = collectConnectedCharacterReferences({
+                nodeId: selectedNode.id,
+                nodes,
+                edges,
               });
+              if (!uniqueChars.length) return null;
 
               return (
                 <div className="px-4 pb-3">
