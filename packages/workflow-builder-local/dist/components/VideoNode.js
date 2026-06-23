@@ -525,75 +525,77 @@ var VideoGeneration = function VideoGeneration(_ref) {
               uniqueAudios: uniqueAudios
             });
             fast = /fast/.test("".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "").toLowerCase());
-            src = formValues || {}; // Construct final images list for Seedance 2.0
-            finalImages = []; // If we have a face asset, we want to apply it to an image.
-            if (connectedFaceAssets.length > 0) {
-              primaryFace = connectedFaceAssets[0]; // If there's a connected image (e.g. from an uploadNode), use it as 图片1 and attach the face.
-              if (connectedImages.length > 0) {
-                finalImages.push(_objectSpread(_objectSpread({}, connectedImages[0]), {}, {
-                  face_asset: primaryFace.uri
-                }));
-                // Add other connected images
-                finalImages.push.apply(finalImages, _toConsumableArray(connectedImages.slice(1)));
-              }
-              // User says "pass the asset... not the photo". 
-              // But Ark requires a valid HTTP URL in 'url' field for validation.
-              // So we use the thumbnail as the visual base, and the asset URI as the face_asset.
-              else {
+            src = formValues || {};
+            finalImages = [];
+            connectedFaceAssets.forEach(function (face) {
+              if (face !== null && face !== void 0 && face.uri) {
                 finalImages.push({
-                  url: primaryFace.thumbnail || primaryFace.uri,
-                  face_asset: primaryFace.uri
+                  url: face.uri,
+                  thumbnail: face.thumbnail || null
                 });
               }
-            } else {
-              // No face assets, just use connected images
-              finalImages.push.apply(finalImages, _toConsumableArray(connectedImages));
-            }
-
-            // Add main node image_url if not already present
+            });
+            connectedImages.forEach(function (image) {
+              if (!image) return;
+              if (typeof image === "string") {
+                finalImages.push({
+                  url: image
+                });
+                return;
+              }
+              if (image.url) {
+                finalImages.push(image);
+              }
+            });
             if (src.image_url) {
               url = typeof src.image_url === 'string' ? src.image_url : src.image_url.url;
               if (url && !finalImages.some(function (img) {
-                return (typeof img === 'string' ? img : img.url) === url;
+                return (img === null || img === void 0 ? void 0 : img.url) === url;
               })) {
                 finalImages.push(typeof src.image_url === 'string' ? {
                   url: url
                 } : src.image_url);
               }
             }
+            finalImages = finalImages.filter(function (img) {
+              return !!(img !== null && img !== void 0 && img.url);
+            }).filter(function (img, index, arr) {
+              return arr.findIndex(function (other) {
+                return (other === null || other === void 0 ? void 0 : other.url) === img.url;
+              }) === index;
+            });
             if (finalImages.length > 0) {
               facesFound = finalImages.filter(function (img) {
-                return img.face_asset;
+                return String((img === null || img === void 0 ? void 0 : img.url) || "").startsWith("asset://");
               }).length;
               (0, _reactHotToast.toast)("\u0418\u0441\u043F\u043E\u043B\u044C\u0437\u0443\u044E: ".concat(facesFound, " \u043B\u0438\u0446, ").concat(finalImages.length, " \u0444\u043E\u0442\u043E"), {
                 icon: "🎨"
               });
             }
-
-            // Ensure the character tag is present in the prompt if a character is connected.
             finalPrompt = src.prompt || "";
-            if (finalImages.some(function (img) {
-              return img.face_asset;
-            })) {
-              tag = "图片1";
-              tagRegex = new RegExp(tag, "i");
-              if (!tagRegex.test(finalPrompt)) {
-                finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
+            facesFound = finalImages.filter(function (img) {
+              return String((img === null || img === void 0 ? void 0 : img.url) || "").startsWith("asset://");
+            }).length;
+            if (facesFound > 0) {
+              for (var faceIndex = 1; faceIndex <= facesFound; faceIndex += 1) {
+                tag = "图片".concat(faceIndex);
+                tagRegex = new RegExp(tag, "i");
+                if (!tagRegex.test(finalPrompt)) {
+                  finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
+                }
               }
             }
             body = {
               fast: fast,
               prompt: finalPrompt,
-              image_url: finalImages[0] || undefined,
-              image_urls: finalImages.length > 1 ? finalImages.slice(1) : undefined,
+              image_urls: finalImages.length > 0 ? finalImages : undefined,
               video_url: uniqueVideos[0] || src.video_url || undefined,
               video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
               audio_url: uniqueAudios[0] || src.audio_url || undefined,
               audio_urls: uniqueAudios.length > 1 ? uniqueAudios.slice(1) : undefined,
               resolution: src.resolution || undefined,
               ratio: src.aspect_ratio || src.ratio || undefined,
-              duration: src.duration || undefined,
-              face_asset: ((_connectedFaceAssets$ = connectedFaceAssets[0]) === null || _connectedFaceAssets$ === void 0 ? void 0 : _connectedFaceAssets$.uri) || undefined
+              duration: src.duration || undefined
             };
             console.log('[VideoNode] Submitting to Ark:', body);
 
