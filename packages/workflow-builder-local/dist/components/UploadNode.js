@@ -14,7 +14,7 @@ var _axios = _interopRequireDefault(require("axios"));
 var _AudioPlayer = _interopRequireDefault(require("./AudioPlayer"));
 var _VideoPlayer = _interopRequireDefault(require("./VideoPlayer"));
 var _io = require("react-icons/io5");
-var _utility = require("./utility");
+var _stableStringify = require("./stableStringify.js");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
@@ -246,7 +246,7 @@ var UploadNode = function UploadNode(_ref) {
         value: resultUrl
       }];
     }
-    if ((0, _utility.stableStringify)(prevFormValues.current) === (0, _utility.stableStringify)(formValues)) return;
+    if ((0, _stableStringify.stableStringify)(prevFormValues.current) === (0, _stableStringify.stableStringify)(formValues)) return;
     prevFormValues.current = formValues;
     data === null || data === void 0 || (_data$onDataChange = data.onDataChange) === null || _data$onDataChange === void 0 || _data$onDataChange.call(data, id, {
       selectedModel: selectedModel,
@@ -362,9 +362,8 @@ var UploadNode = function UploadNode(_ref) {
     return tags;
   }, [rfEdges, rfNodes, id, uploadType]);
 
-  // Image tags: если этот текст-нод кормит видео/изображение-ноду, к которой
-  // подключён Image-нод (image-passthrough), показываем кликабельный чип с превью.
-  // Клик вставляет @image в промпт.
+  // Image/video tags: если этот текст-нод кормит видео/изображение-ноду, к которой
+  // подключен любая Image/Video/Character/Audio-нода, показываем кликабельные чипы с превью.
   var imageTags = (0, _react.useMemo)(function () {
     if (uploadType !== "text") return [];
     var nodesArr = rfNodes ? Array.from(rfNodes.values()) : [];
@@ -380,52 +379,83 @@ var UploadNode = function UploadNode(_ref) {
       return (n === null || n === void 0 ? void 0 : n.type) === "videoNode" || (n === null || n === void 0 ? void 0 : n.type) === "imageNode" || (n === null || n === void 0 ? void 0 : n.type) === "skylarkNode";
     }));
     if (!targetSet.size) return [];
-    var mediaIds = new Set(rfEdges.filter(function (e) {
-      return targetSet.has(e.target);
-    }).map(function (e) {
-      return e.source;
-    }).filter(function (sid) {
-      var _n$data, _n$data2;
-      var n = nodesArr.find(function (nn) {
-        return nn.id === sid;
-      });
-      if (!n) return false;
-      var mid = (n === null || n === void 0 || (_n$data = n.data) === null || _n$data === void 0 ? void 0 : _n$data.modelId) || (n === null || n === void 0 || (_n$data2 = n.data) === null || _n$data2 === void 0 || (_n$data2 = _n$data2.selectedModel) === null || _n$data2 === void 0 ? void 0 : _n$data2.id);
-      return n.type === "imageNode" && mid === "image-passthrough" || n.type === "videoNode" && mid === "video-passthrough";
-    }));
-    var tags = [];
-    var _iterator3 = _createForOfIteratorHelper(mediaIds),
+    var out = [];
+    var seen = new Set();
+    var counters = {
+      images: 0,
+      video: 0,
+      audio: 0
+    };
+    var _iterator3 = _createForOfIteratorHelper(rfEdges),
       _step3;
     try {
       var _loop3 = function _loop3() {
-        var _inode$data;
-        var iid = _step3.value;
-        var inode = nodesArr.find(function (nn) {
-          return nn.id === iid;
-        });
-        var fv = (inode === null || inode === void 0 || (_inode$data = inode.data) === null || _inode$data === void 0 ? void 0 : _inode$data.formValues) || {};
-        var isVideo = (inode === null || inode === void 0 ? void 0 : inode.type) === "videoNode";
-        var url = isVideo ? fv.video_url || null : fv.image_url || null;
-        if (url) tags.push({
-          id: iid,
-          url: url,
-          isVideo: isVideo
-        });
-      };
+          var _d$outputs$;
+          var e = _step3.value;
+          if (!targetSet.has(e.target) || e.source === id || seen.has(e.source)) return 0; // continue
+          seen.add(e.source);
+          var n = nodesArr.find(function (nn) {
+            return nn.id === e.source;
+          });
+          if (!n) return 0; // continue
+          var d = n.data || {};
+          var fvN = d.formValues || {};
+          var rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl || Array.isArray(d.outputs) && ((_d$outputs$ = d.outputs[0]) === null || _d$outputs$ === void 0 ? void 0 : _d$outputs$.value) || fvN.image_url || fvN.video_url;
+          var url = typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg") ? rawThumb : undefined;
+          if (n.type === "characterNode") {
+            counters.images += 1;
+            out.push({
+              id: n.id,
+              label: "\u56FE\u7247".concat(counters.images),
+              kind: "character",
+              url: url,
+              name: (fvN.character_name || "角色").trim(),
+              isVideo: false
+            });
+          } else if (n.type === "videoNode") {
+            counters.video += 1;
+            out.push({
+              id: n.id,
+              label: "\u89C6\u9891".concat(counters.video),
+              kind: "video",
+              url: url,
+              isVideo: true
+            });
+          } else if (n.type === "audioNode") {
+            counters.audio += 1;
+            out.push({
+              id: n.id,
+              label: "\u97F3\u9891".concat(counters.audio),
+              kind: "audio",
+              url: url,
+              isVideo: false
+            });
+          } else if (n.type === "imageNode") {
+            counters.images += 1;
+            out.push({
+              id: n.id,
+              label: "\u56FE\u7247".concat(counters.images),
+              kind: "images",
+              url: url,
+              isVideo: false
+            });
+          }
+        },
+        _ret2;
       for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
-        _loop3();
+        _ret2 = _loop3();
+        if (_ret2 === 0) continue;
       }
     } catch (err) {
       _iterator3.e(err);
     } finally {
       _iterator3.f();
     }
-    return tags;
+    return out;
   }, [rfEdges, rfNodes, id, uploadType]);
-  var insertImageTag = function insertImageTag(url) {
-    var _url$split$pop, _ta$selectionStart, _ta$selectionEnd;
-    var filename = ((_url$split$pop = url.split("/").pop()) === null || _url$split$pop === void 0 ? void 0 : _url$split$pop.split("?")[0]) || "image";
-    var token = "@" + filename.replace(/\.[^.]+$/, "").slice(0, 20) + " ";
+  var insertImageTag = function insertImageTag(tag) {
+    var _ta$selectionStart, _ta$selectionEnd;
+    var token = tag + " ";
     var ta = textareaRef.current;
     var cur = (formValues === null || formValues === void 0 ? void 0 : formValues.prompt) || "";
     if (!ta) {
@@ -491,46 +521,40 @@ var UploadNode = function UploadNode(_ref) {
     className: "flex flex-col items-center justify-center w-full h-full flex-1"
   }, uploadType === "text" ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col w-full h-full gap-1.5"
-  }, (characterTags.length > 0 || imageTags.length > 0) && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-wrap gap-1.5"
-  }, characterTags.map(function (t) {
+  }, imageTags.length > 0 && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-wrap gap-1.5 nodrag"
+  }, imageTags.map(function (t) {
     return /*#__PURE__*/_react["default"].createElement("button", {
-      key: t.id,
+      key: "".concat(t.id, "-").concat(t.label),
       type: "button",
-      onClick: function onClick() {
-        return insertCharTag(t.name);
+      onMouseDown: function onMouseDown(e) {
+        return e.stopPropagation();
       },
-      title: "\u0412\u0441\u0442\u0430\u0432\u0438\u0442\u044C @".concat(t.name, " \u0432 \u043F\u0440\u043E\u043C\u043F\u0442"),
-      className: "flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
-    }, t.thumb ? /*#__PURE__*/_react["default"].createElement("img", {
-      src: t.thumb,
-      alt: t.name,
-      className: "w-7 h-7 rounded-md object-cover flex-shrink-0"
-    }) : /*#__PURE__*/_react["default"].createElement("span", {
-      className: "w-7 h-7 rounded-md bg-purple-500/20 flex items-center justify-center text-[12px] flex-shrink-0"
-    }, "\uD83D\uDE42"), /*#__PURE__*/_react["default"].createElement("span", {
-      className: "text-[10px]"
-    }, "@", t.name));
-  }), imageTags.map(function (t) {
-    return /*#__PURE__*/_react["default"].createElement("button", {
-      key: t.id,
-      type: "button",
       onClick: function onClick() {
-        return insertImageTag(t.url);
+        return insertImageTag(t.label);
       },
-      title: t.isVideo ? "Вставить ссылку на видео в промпт" : "Вставить ссылку на изображение в промпт",
-      className: "flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-200 transition-colors"
-    }, t.isVideo ? /*#__PURE__*/_react["default"].createElement("span", {
-      className: "w-7 h-7 rounded-md bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0"
-    }, /*#__PURE__*/_react["default"].createElement(_md.MdVideocam, {
-      size: 14
-    })) : /*#__PURE__*/_react["default"].createElement("img", {
+      title: "\u0412\u0441\u0442\u0430\u0432\u0438\u0442\u044C ".concat(t.label, " \u0432 \u043F\u0440\u043E\u043C\u043F\u0442"),
+      className: "flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
+    }, t.url ? t.isVideo ? /*#__PURE__*/_react["default"].createElement("video", {
       src: t.url,
-      alt: "image",
-      className: "w-7 h-7 rounded-md object-cover flex-shrink-0 border border-emerald-500/30"
-    }), /*#__PURE__*/_react["default"].createElement("span", {
+      className: "w-6 h-6 rounded object-cover flex-shrink-0",
+      muted: true,
+      preload: "none",
+      onError: function onError(e) {
+        e.target.style.display = 'none';
+      }
+    }) : /*#__PURE__*/_react["default"].createElement("img", {
+      src: t.url,
+      alt: t.label,
+      className: "w-6 h-6 rounded object-cover flex-shrink-0",
+      onError: function onError(e) {
+        e.target.style.display = 'none';
+      }
+    }) : /*#__PURE__*/_react["default"].createElement("span", {
+      className: "w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0"
+    }, t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"), /*#__PURE__*/_react["default"].createElement("span", {
       className: "text-[10px]"
-    }, t.isVideo ? "@video" : "@image"));
+    }, t.label));
   })), /*#__PURE__*/_react["default"].createElement("textarea", {
     ref: textareaRef,
     className: "bg-transparent border border-gray-800 w-full h-full max-h-96 p-2 text-xs text-white resize-none overflow-y-auto custom-scrollbar",

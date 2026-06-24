@@ -5,7 +5,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports["default"] = void 0;
-var _utility = require("./utility");
+var _downloadFile = require("./file/downloadFile.js");
+var _stableStringify = require("./stableStringify.js");
+var _videoCombinerModels = require("./model-registry/videoCombinerModels.js");
 var _react = _interopRequireWildcard(require("react"));
 var _io = require("react-icons/io5");
 var _reactflow = require("reactflow");
@@ -186,7 +188,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
       if (((_data$formValues = data.formValues) === null || _data$formValues === void 0 ? void 0 : _data$formValues[k]) !== undefined) merged[k] = data.formValues[k];
     });
     setFormValues(function (prev) {
-      return (0, _utility.stableStringify)(prev) === (0, _utility.stableStringify)(merged) ? prev : merged;
+      return (0, _stableStringify.stableStringify)(prev) === (0, _stableStringify.stableStringify)(merged) ? prev : merged;
     });
   };
   (0, _react.useEffect)(function () {
@@ -224,7 +226,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
     if (!data.formValues) return;
     // Key-order-independent compare so a parent rebuild with the same content
     // doesn't look "different" and pull us into a sync loop (React #185).
-    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
+    if ((0, _stableStringify.stableStringify)(data.formValues) === (0, _stableStringify.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
         setFormValues(data.formValues);
@@ -238,8 +240,8 @@ var VideoCombiner = function VideoCombiner(_ref) {
   (0, _react.useEffect)(function () {
     var _data$selectedModel;
     if (!(data !== null && data !== void 0 && data.onDataChange)) return;
-    var localSig = (0, _utility.stableStringify)(formValues);
-    var parentSig = (0, _utility.stableStringify)(data.formValues || {});
+    var localSig = (0, _stableStringify.stableStringify)(formValues);
+    var parentSig = (0, _stableStringify.stableStringify)(data.formValues || {});
     var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === ((_data$selectedModel = data.selectedModel) === null || _data$selectedModel === void 0 ? void 0 : _data$selectedModel.id);
 
     // Echo suppression: if the parent already holds exactly this state, sending
@@ -323,7 +325,6 @@ var VideoCombiner = function VideoCombiner(_ref) {
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref1 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var _nodeSchemas$categori2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _error$response, _t;
@@ -418,9 +419,7 @@ var VideoCombiner = function VideoCombiner(_ref) {
       }, _callee, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref1.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref1.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {

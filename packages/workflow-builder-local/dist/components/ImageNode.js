@@ -8,7 +8,9 @@ exports["default"] = void 0;
 var _react = _interopRequireWildcard(require("react"));
 var _reactflow = require("reactflow");
 var _fa = require("react-icons/fa6");
-var _utility = require("./utility");
+var _downloadFile = require("./file/downloadFile.js");
+var _imageModels = require("./model-registry/imageModels.js");
+var _stableStringify = require("./stableStringify.js");
 var _WorkflowStore = require("./WorkflowStore");
 var _axios = _interopRequireDefault(require("axios"));
 var _reactHotToast = require("react-hot-toast");
@@ -192,7 +194,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
       if (((_data$formValues = data.formValues) === null || _data$formValues === void 0 ? void 0 : _data$formValues[k]) !== undefined) merged[k] = data.formValues[k];
     });
     setFormValues(function (prev) {
-      return (0, _utility.stableStringify)(prev) === (0, _utility.stableStringify)(merged) ? prev : merged;
+      return (0, _stableStringify.stableStringify)(prev) === (0, _stableStringify.stableStringify)(merged) ? prev : merged;
     });
   };
   (0, _react.useEffect)(function () {
@@ -237,7 +239,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
     if (!data.formValues) return;
     // Key-order-independent compare so a parent rebuild with the same content
     // doesn't look "different" and pull us into a sync loop.
-    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
+    if ((0, _stableStringify.stableStringify)(data.formValues) === (0, _stableStringify.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
         setFormValues(data.formValues);
@@ -251,8 +253,8 @@ var ImageGeneration = function ImageGeneration(_ref) {
   (0, _react.useEffect)(function () {
     var _data$selectedModel2, _data$selectedModel3;
     if (!(data !== null && data !== void 0 && data.onDataChange) || (data === null || data === void 0 || (_data$selectedModel2 = data.selectedModel) === null || _data$selectedModel2 === void 0 ? void 0 : _data$selectedModel2.id) === "image-passthrough") return;
-    var localSig = (0, _utility.stableStringify)(formValues);
-    var parentSig = (0, _utility.stableStringify)(data.formValues || {});
+    var localSig = (0, _stableStringify.stableStringify)(formValues);
+    var parentSig = (0, _stableStringify.stableStringify)(data.formValues || {});
     var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === ((_data$selectedModel3 = data.selectedModel) === null || _data$selectedModel3 === void 0 ? void 0 : _data$selectedModel3.id);
 
     // Echo suppression: if the parent already holds exactly this state, sending
@@ -446,7 +448,6 @@ var ImageGeneration = function ImageGeneration(_ref) {
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
       var _nodeSchemas$categori2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _val, _error$response, _t;
@@ -543,9 +544,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
       }, _callee2, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref10.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref10.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {

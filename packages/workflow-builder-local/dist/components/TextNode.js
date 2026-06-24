@@ -17,11 +17,6 @@ var _NodeSendButton = _interopRequireDefault(require("./NodeSendButton"));
 var _UploadNode = _interopRequireDefault(require("./UploadNode"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t2 in e) "default" !== _t2 && {}.hasOwnProperty.call(e, _t2) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t2)) && (i.get || i.set) ? o(f, _t2, i) : f[_t2] = e[_t2]); return f; })(e, t); }
-function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
-function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
-function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
-function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
-function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
 function _iterableToArray(r) { if ("undefined" != typeof Symbol && null != r[Symbol.iterator] || null != r["@@iterator"]) return Array.from(r); }
@@ -32,19 +27,260 @@ function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
 function _slicedToArray(r, e) { return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest(); }
 function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
-function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
-function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 function _iterableToArrayLimit(r, l) { var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (null != t) { var e, n, i, u, a = [], f = !0, o = !1; try { if (i = (t = t.call(r)).next, 0 === l) { if (Object(t) !== t) return; f = !1; } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0); } catch (r) { o = !0, n = r; } finally { try { if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return; } finally { if (o) throw n; } } return a; } }
 function _arrayWithHoles(r) { if (Array.isArray(r)) return r; }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
+function _unsupportedIterableToArray(r, a) { if (r) { if ("string" == typeof r) return _arrayLikeToArray(r, a); var t = {}.toString.call(r).slice(8, -1); return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0; } }
+function _arrayLikeToArray(r, a) { (null == a || a > r.length) && (a = r.length); for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e]; return n; }
 var TextGeneration = function TextGeneration(_ref) {
   var _data$nodeSchemas, _data$nodeSchemas2, _selectedModel$id, _outputHistory$curren, _currentOutputList$cu, _currentOutputList$, _data$selectedModel;
   var id = _ref.id,
     data = _ref.data,
     selected = _ref.selected;
+  console.log('=== TextNode LOADED ===', {
+    id: id
+  });
+  var _useReactFlow = (0, _reactflow.useReactFlow)(),
+    getNodes = _useReactFlow.getNodes,
+    getEdges = _useReactFlow.getEdges;
+  var edges = (0, _reactflow.useStore)(function (state) {
+    return state.edges;
+  });
   var formValues = data.formValues || {};
   var setFormValues = data.setFormValues || function () {};
   var selectedModel = data.selectedModel || {};
   var loading = data.loading || false;
+
+  // Auto-detect references wired into the video/image node this prompt node feeds,
+  // and surface them as clickable chips (with thumbnails) — like SeedancePromptNode.
+  var availableTags = (0, _react.useMemo)(function () {
+    console.log('=== TextNode availableTags debug ===');
+    var allNodes = getNodes() || [];
+    console.log('1. allNodes:', allNodes.map(function (n) {
+      return {
+        id: n.id,
+        type: n.type
+      };
+    }));
+    console.log('2. edges:', edges.map(function (e) {
+      return {
+        source: e.source,
+        target: e.target
+      };
+    }));
+    var genIds = new Set(edges.filter(function (e) {
+      return e.source === id;
+    }).map(function (e) {
+      return e.target;
+    }).filter(function (tid) {
+      var n = allNodes.find(function (nn) {
+        return nn.id === tid;
+      });
+      console.log("   - checking edge target ".concat(tid, ":"), n === null || n === void 0 ? void 0 : n.type);
+      return n && (n.type === "videoNode" || n.type === "imageNode");
+    }));
+    console.log('3. genIds:', Array.from(genIds));
+    var out = [];
+    var seen = new Set();
+    var counters = {
+      images: 0,
+      video: 0,
+      audio: 0
+    };
+
+    // First add references connected directly to TextNode
+    console.log('4. Adding direct references to TextNode');
+    var _iterator = _createForOfIteratorHelper(edges),
+      _step;
+    try {
+      var _loop = function _loop() {
+          var _d$outputs$;
+          var e = _step.value;
+          if (e.target !== id) {
+            return 0; // continue
+          } // Skip edges not targeting TextNode
+          if (seen.has(e.source)) {
+            return 0; // continue
+          }
+          seen.add(e.source);
+          var n = allNodes.find(function (nn) {
+            return nn.id === e.source;
+          });
+          if (!n) {
+            console.log('     - no node found for direct ref');
+            return 0; // continue
+          }
+          var d = n.data || {};
+          var fvN = d.formValues || {};
+          var rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl || Array.isArray(d.outputs) && ((_d$outputs$ = d.outputs[0]) === null || _d$outputs$ === void 0 ? void 0 : _d$outputs$.value) || fvN.image_url;
+          var url = typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg") ? rawThumb : undefined;
+          console.log("   - Found direct reference node:", {
+            sourceId: e.source,
+            type: n.type,
+            url: url,
+            rawThumb: rawThumb
+          });
+          if (n.type === "characterNode") {
+            counters.images += 1;
+            out.push({
+              id: n.id,
+              label: "\u56FE\u7247".concat(counters.images),
+              kind: "character",
+              url: url,
+              name: (fvN.character_name || "角色").trim()
+            });
+          } else if (n.type === "videoNode") {
+            counters.video += 1;
+            out.push({
+              id: n.id,
+              label: "\u89C6\u9891".concat(counters.video),
+              kind: "video",
+              url: url
+            });
+          } else if (n.type === "audioNode") {
+            counters.audio += 1;
+            out.push({
+              id: n.id,
+              label: "\u97F3\u9891".concat(counters.audio),
+              kind: "audio",
+              url: url
+            });
+          } else if (n.type === "imageNode") {
+            counters.images += 1;
+            out.push({
+              id: n.id,
+              label: "\u56FE\u7247".concat(counters.images),
+              kind: "images",
+              url: url
+            });
+          }
+        },
+        _ret;
+      for (_iterator.s(); !(_step = _iterator.n()).done;) {
+        _ret = _loop();
+        if (_ret === 0) continue;
+      }
+
+      // Then add references connected to the node that TextNode feeds
+    } catch (err) {
+      _iterator.e(err);
+    } finally {
+      _iterator.f();
+    }
+    console.log('5. Adding references to connected gen node');
+    var _iterator2 = _createForOfIteratorHelper(edges),
+      _step2;
+    try {
+      var _loop2 = function _loop2() {
+          var _d$outputs$2;
+          var e = _step2.value;
+          console.log("   - checking edge: source=".concat(e.source, ", target=").concat(e.target));
+          if (!genIds.has(e.target)) {
+            console.log('     - target not in genIds');
+            return 0; // continue
+          }
+          if (e.source === id) {
+            console.log('     - source is self');
+            return 0; // continue
+          }
+          if (seen.has(e.source)) {
+            console.log('     - already seen');
+            return 0; // continue
+          }
+          seen.add(e.source);
+          var n = allNodes.find(function (nn) {
+            return nn.id === e.source;
+          });
+          if (!n) {
+            console.log('     - no node found');
+            return 0; // continue
+          }
+          var d = n.data || {};
+          var fvN = d.formValues || {};
+          var rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl || Array.isArray(d.outputs) && ((_d$outputs$2 = d.outputs[0]) === null || _d$outputs$2 === void 0 ? void 0 : _d$outputs$2.value) || fvN.image_url;
+          var url = typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg") ? rawThumb : undefined;
+          console.log("   - Found gen reference node:", {
+            sourceId: e.source,
+            type: n.type,
+            url: url,
+            rawThumb: rawThumb
+          });
+          if (n.type === "characterNode") {
+            counters.images += 1;
+            out.push({
+              id: n.id,
+              label: "\u56FE\u7247".concat(counters.images),
+              kind: "character",
+              url: url,
+              name: (fvN.character_name || "角色").trim()
+            });
+          } else if (n.type === "videoNode") {
+            counters.video += 1;
+            out.push({
+              id: n.id,
+              label: "\u89C6\u9891".concat(counters.video),
+              kind: "video",
+              url: url
+            });
+          } else if (n.type === "audioNode") {
+            counters.audio += 1;
+            out.push({
+              id: n.id,
+              label: "\u97F3\u9891".concat(counters.audio),
+              kind: "audio",
+              url: url
+            });
+          } else if (n.type === "imageNode") {
+            counters.images += 1;
+            out.push({
+              id: n.id,
+              label: "\u56FE\u7247".concat(counters.images),
+              kind: "images",
+              url: url
+            });
+          }
+        },
+        _ret2;
+      for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
+        _ret2 = _loop2();
+        if (_ret2 === 0) continue;
+      }
+    } catch (err) {
+      _iterator2.e(err);
+    } finally {
+      _iterator2.f();
+    }
+    console.log('6. Final availableTags:', out);
+    return out;
+  }, [edges, id, getNodes]);
+  var insertTag = function insertTag(tag) {
+    var _ta$selectionStart, _ta$selectionEnd;
+    var ta = textareaRef.current;
+    var insertText = tag + " ";
+    if (!ta) {
+      var _newPrompt = (formValues.prompt || "") + insertText;
+      setFormValues(_objectSpread(_objectSpread({}, formValues), {}, {
+        prompt: _newPrompt
+      }));
+      return;
+    }
+    var start = (_ta$selectionStart = ta.selectionStart) !== null && _ta$selectionStart !== void 0 ? _ta$selectionStart : (formValues.prompt || "").length;
+    var end = (_ta$selectionEnd = ta.selectionEnd) !== null && _ta$selectionEnd !== void 0 ? _ta$selectionEnd : (formValues.prompt || "").length;
+    var newPrompt = (formValues.prompt || "").slice(0, start) + insertText + (formValues.prompt || "").slice(end);
+    setFormValues(_objectSpread(_objectSpread({}, formValues), {}, {
+      prompt: newPrompt
+    }));
+    requestAnimationFrame(function () {
+      ta.focus();
+      var newPos = start + insertText.length;
+      ta.setSelectionRange(newPos, newPos);
+    });
+  };
   var currentHistoryIndex = data.currentHistoryIndex !== undefined ? data.currentHistoryIndex : data.outputHistory ? data.outputHistory.length - 1 : -1;
   var setCurrentHistoryIndex = function setCurrentHistoryIndex(idx) {
     if (data.updateNodeData) {
@@ -272,6 +508,57 @@ var TextGeneration = function TextGeneration(_ref) {
   }, formValues.face_thumbnail ? "Персонаж подключен" : "Входящий текст подключен"), /*#__PURE__*/_react["default"].createElement("span", {
     className: "text-[8px] text-blue-300/60 truncate max-w-[200px]"
   }, formValues.prompt || "Ожидание данных..."))), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "mx-3 mt-3"
+  }, /*#__PURE__*/_react["default"].createElement("label", {
+    className: "text-[9px] text-blue-400/60 uppercase tracking-wider mb-1 block"
+  }, "\uD83D\uDCA1 \u0412\u0410\u0428\u0410 \u0418\u0414\u0415\u042F"), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-wrap gap-1.5 mb-1 nodrag"
+  }, availableTags.length > 0 ? availableTags.map(function (t) {
+    return /*#__PURE__*/_react["default"].createElement("button", {
+      key: "".concat(t.id, "-").concat(t.label),
+      type: "button",
+      onMouseDown: function onMouseDown(e) {
+        return e.stopPropagation();
+      },
+      onClick: function onClick() {
+        return insertTag(t.label);
+      },
+      title: "\u0412\u0441\u0442\u0430\u0432\u0438\u0442\u044C ".concat(t.label, " \u0432 \u043F\u0440\u043E\u043C\u043F\u0442"),
+      className: "flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/30 border border-purple-500/30 text-purple-200 transition-colors"
+    }, t.url ? t.kind === "video" ? /*#__PURE__*/_react["default"].createElement("video", {
+      src: t.url,
+      className: "w-6 h-6 rounded object-cover flex-shrink-0",
+      muted: true,
+      preload: "none",
+      onError: function onError(e) {
+        e.target.style.display = 'none';
+      }
+    }) : /*#__PURE__*/_react["default"].createElement("img", {
+      src: t.url,
+      alt: t.label,
+      className: "w-6 h-6 rounded object-cover flex-shrink-0",
+      onError: function onError(e) {
+        e.target.style.display = 'none';
+      }
+    }) : /*#__PURE__*/_react["default"].createElement("span", {
+      className: "w-6 h-6 rounded bg-purple-500/20 flex items-center justify-center text-[11px] flex-shrink-0"
+    }, t.kind === "video" ? "🎬" : t.kind === "audio" ? "🎵" : t.kind === "character" ? "🧑" : "🖼"), /*#__PURE__*/_react["default"].createElement("span", {
+      className: "text-[10px]"
+    }, t.label));
+  }) : /*#__PURE__*/_react["default"].createElement("p", {
+    className: "text-[10px] text-zinc-500 italic"
+  }, "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0438 \u0438\u0437\u043E\u0431\u0440\u0430\u0436\u0435\u043D\u0438\u0435/\u0432\u0438\u0434\u0435\u043E, \u0447\u0442\u043E\u0431\u044B \u043F\u043E\u044F\u0432\u0438\u043B\u0441\u044F \u0442\u0435\u0433")), hasPrompt && /*#__PURE__*/_react["default"].createElement("textarea", {
+    ref: textareaRef,
+    value: formValues.prompt || "",
+    onChange: function onChange(e) {
+      return setFormValues(_objectSpread(_objectSpread({}, formValues), {}, {
+        prompt: e.target.value
+      }));
+    },
+    placeholder: "\u0412\u0432\u0435\u0434\u0438\u0442\u0435 \u043F\u0440\u043E\u043C\u043F\u0442 \u0437\u0434\u0435\u0441\u044C...",
+    rows: 3,
+    className: "w-full bg-black/30 border border-blue-500/20 rounded-lg px-2 py-1.5 text-xs text-white placeholder-blue-300/30 focus:outline-none focus:border-blue-500/50 resize-none nodrag nowheel"
+  })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-center flex-1 w-full h-full p-3"
   }, data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-2.5 w-full h-full overflow-hidden animate-pulse"

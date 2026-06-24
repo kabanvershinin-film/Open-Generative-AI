@@ -8,7 +8,8 @@ exports["default"] = void 0;
 var _react = _interopRequireWildcard(require("react"));
 var _reactflow = require("reactflow");
 var _fa = require("react-icons/fa6");
-var _utility = require("./utility");
+var _apiNodeModels = require("./model-registry/apiNodeModels.js");
+var _stableStringify = require("./stableStringify.js");
 var _WorkflowStore = require("./WorkflowStore");
 var _axios = _interopRequireDefault(require("axios"));
 var _reactHotToast = require("react-hot-toast");
@@ -44,7 +45,7 @@ var ApiNode = function ApiNode(_ref) {
   var id = _ref.id,
     data = _ref.data,
     selected = _ref.selected;
-  var _useState = (0, _react.useState)(data.selectedModel || _utility.apiNodeModels[0]),
+  var _useState = (0, _react.useState)(data.selectedModel || _apiNodeModels.apiNodeModels[0]),
     _useState2 = _slicedToArray(_useState, 2),
     selectedModel = _useState2[0],
     setSelectedModel = _useState2[1];
@@ -60,7 +61,7 @@ var ApiNode = function ApiNode(_ref) {
     _useState8 = _slicedToArray(_useState7, 2),
     formValues = _useState8[0],
     setFormValues = _useState8[1];
-  var _useState9 = (0, _react.useState)(((_apiNodeModels$0$inpu = _utility.apiNodeModels[0].input_params) === null || _apiNodeModels$0$inpu === void 0 ? void 0 : _apiNodeModels$0$inpu.properties) || {}),
+  var _useState9 = (0, _react.useState)(((_apiNodeModels$0$inpu = _apiNodeModels.apiNodeModels[0].input_params) === null || _apiNodeModels$0$inpu === void 0 ? void 0 : _apiNodeModels$0$inpu.properties) || {}),
     _useState0 = _slicedToArray(_useState9, 2),
     taskData = _useState0[0],
     setTaskData = _useState0[1];
@@ -389,7 +390,7 @@ var ApiNode = function ApiNode(_ref) {
   (0, _react.useEffect)(function () {
     // Key-order-independent compare so a parent rebuild with the same content
     // doesn't look "different" and pull us into a sync loop (React #185).
-    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
+    if ((0, _stableStringify.stableStringify)(data.formValues) === (0, _stableStringify.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
         setFormValues(data.formValues);
@@ -403,11 +404,11 @@ var ApiNode = function ApiNode(_ref) {
   (0, _react.useEffect)(function () {
     var _data$selectedModel;
     if (!(data !== null && data !== void 0 && data.onDataChange)) return;
-    var localSig = (0, _utility.stableStringify)({
+    var localSig = (0, _stableStringify.stableStringify)({
       fv: formValues,
       td: taskData
     });
-    var parentSig = (0, _utility.stableStringify)({
+    var parentSig = (0, _stableStringify.stableStringify)({
       fv: data.formValues || {},
       td: data.taskData
     });
@@ -499,7 +500,6 @@ var ApiNode = function ApiNode(_ref) {
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref15 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var workflow_id, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, filteredInputParams, response, _r, _nd, _lt, _o, _error$response2, _t;
@@ -599,9 +599,7 @@ var ApiNode = function ApiNode(_ref) {
       }, _callee, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref15.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref15.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {

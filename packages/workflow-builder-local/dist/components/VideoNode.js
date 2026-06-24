@@ -5,7 +5,9 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports["default"] = void 0;
-var _utility = require("./utility");
+var _downloadFile = require("./file/downloadFile.js");
+var _videoModels = require("./model-registry/videoModels.js");
+var _stableStringify = require("./stableStringify.js");
 var _react = _interopRequireWildcard(require("react"));
 var _bs = require("react-icons/bs");
 var _io = require("react-icons/io5");
@@ -21,6 +23,8 @@ var _fa = require("react-icons/fa6");
 var _NodeOptionsMenu = _interopRequireDefault(require("./NodeOptionsMenu"));
 var _useGenerationCost2 = require("./useGenerationCost");
 var _VideoPlayer = _interopRequireDefault(require("./VideoPlayer"));
+var _seedanceWorkflowPayload = require("./seedanceWorkflowPayload.js");
+var _connectedCharacterReferences = require("./connectedCharacterReferences.js");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t7 in e) "default" !== _t7 && {}.hasOwnProperty.call(e, _t7) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t7)) && (i.get || i.set) ? o(f, _t7, i) : f[_t7] = e[_t7]); return f; })(e, t); }
 function _toConsumableArray(r) { return _arrayWithoutHoles(r) || _iterableToArray(r) || _unsupportedIterableToArray(r) || _nonIterableSpread(); }
@@ -312,7 +316,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
     if (!data.formValues) return;
     // Key-order-independent compare so a parent rebuild with the same content
     // doesn't look "different" and pull us into a sync loop (React #185).
-    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
+    if ((0, _stableStringify.stableStringify)(data.formValues) === (0, _stableStringify.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
         setFormValues(data.formValues);
@@ -326,8 +330,8 @@ var VideoGeneration = function VideoGeneration(_ref) {
   (0, _react.useEffect)(function () {
     var _data$selectedModel, _data$selectedModel2;
     if (!(data !== null && data !== void 0 && data.onDataChange) || (data === null || data === void 0 || (_data$selectedModel = data.selectedModel) === null || _data$selectedModel === void 0 ? void 0 : _data$selectedModel.id) === "video-passthrough") return;
-    var localSig = (0, _utility.stableStringify)(formValues);
-    var parentSig = (0, _utility.stableStringify)(data.formValues || {});
+    var localSig = (0, _stableStringify.stableStringify)(formValues);
+    var parentSig = (0, _stableStringify.stableStringify)(data.formValues || {});
     var sameModel = (selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) === ((_data$selectedModel2 = data.selectedModel) === null || _data$selectedModel2 === void 0 ? void 0 : _data$selectedModel2.id);
 
     // Echo suppression: if the parent already holds exactly this state, sending
@@ -448,14 +452,14 @@ var VideoGeneration = function VideoGeneration(_ref) {
   // "GENERATING…"); the short submit + poll requests here never hang.
   var runArkSeedanceBrowser = /*#__PURE__*/function () {
     var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
-      var _connectedFaceAssets$, _submit$data, _submit$data2, _submit$data3, _data$selectedModel3;
-      var _ref11, getNodes, getEdges, nodes, edges, findConnectedAssets, allAssets, connectedImages, connectedFaceAssets, uniqueVideos, uniqueAudios, fast, src, finalImages, primaryFace, url, facesFound, finalPrompt, tag, tagRegex, body, submit, _e$response, _e$response2, _e$response3, _e$response4, _d$required, _d$balance, d, apiError, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response5, status, histId, output, newHistory, _t2, _t3;
+      var _data$graphState, _data$graphState2, _submit$data, _submit$data2, _submit$data3, _data$selectedModel3;
+      var _ref11, getNodes, getEdges, nodes, edges, findConnectedAssets, allAssets, connectedImages, connectedFaceAssets, uniqueVideos, uniqueAudios, fast, src, body, finalImages, facesFound, submit, _e$response, _e$response2, _e$response3, _e$response4, _d$required, _d$balance, d, apiError, taskId, bill, billQs, finishedUrl, pollErrors, attempt, _pd, pd, poll, _e$response5, status, histId, output, newHistory, _t2, _t3;
       return _regenerator().w(function (_context3) {
         while (1) switch (_context3.p = _context3.n) {
           case 0:
             _ref11 = data.reactFlowInstance || {}, getNodes = _ref11.getNodes, getEdges = _ref11.getEdges;
-            nodes = getNodes ? getNodes() : [];
-            edges = getEdges ? getEdges() : [];
+            nodes = ((_data$graphState = data.graphState) === null || _data$graphState === void 0 ? void 0 : _data$graphState.nodes) || (getNodes ? getNodes() : []);
+            edges = ((_data$graphState2 = data.graphState) === null || _data$graphState2 === void 0 ? void 0 : _data$graphState2.edges) || (getEdges ? getEdges() : []);
             findConnectedAssets = function findConnectedAssets() {
               var incoming = edges.filter(function (e) {
                 return e.target === id;
@@ -463,8 +467,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
               var assets = {
                 images: [],
                 videos: [],
-                audios: [],
-                faceAssets: []
+                audios: []
               };
               var seen = new Set();
               var _processSource = function processSource(sourceId) {
@@ -475,29 +478,21 @@ var VideoGeneration = function VideoGeneration(_ref) {
                 });
                 if (!sourceNode) return;
                 if (sourceNode.type === "characterNode") {
-                  var _sourceNode$data, _sourceNode$data2, _sourceNode$data3;
-                  var fv = ((_sourceNode$data = sourceNode.data) === null || _sourceNode$data === void 0 ? void 0 : _sourceNode$data.formValues) || {};
-                  var rawAsset = fv.face_asset || ((_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.resultUrl) || ((_sourceNode$data3 = sourceNode.data) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3.outputs) === null || _sourceNode$data3 === void 0 || (_sourceNode$data3 = _sourceNode$data3[0]) === null || _sourceNode$data3 === void 0 ? void 0 : _sourceNode$data3.value);
-                  var asset = toAssetUri(rawAsset);
-                  if (asset) {
-                    assets.faceAssets.push({
-                      uri: asset,
-                      thumbnail: fv.character_photo || null
-                    });
-                  }
-                } else if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
-                  var _sourceNode$data4, _sourceNode$data5;
-                  var url = ((_sourceNode$data4 = sourceNode.data) === null || _sourceNode$data4 === void 0 ? void 0 : _sourceNode$data4.resultUrl) || ((_sourceNode$data5 = sourceNode.data) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5.outputs) === null || _sourceNode$data5 === void 0 || (_sourceNode$data5 = _sourceNode$data5[0]) === null || _sourceNode$data5 === void 0 ? void 0 : _sourceNode$data5.value);
+                  return;
+                }
+                if (sourceNode.type === "imageNode" || sourceNode.type === "uploadNode") {
+                  var _sourceNode$data, _sourceNode$data2;
+                  var url = ((_sourceNode$data = sourceNode.data) === null || _sourceNode$data === void 0 ? void 0 : _sourceNode$data.resultUrl) || ((_sourceNode$data2 = sourceNode.data) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2.outputs) === null || _sourceNode$data2 === void 0 || (_sourceNode$data2 = _sourceNode$data2[0]) === null || _sourceNode$data2 === void 0 ? void 0 : _sourceNode$data2.value);
                   if (url) assets.images.push({
                     url: url
                   });
                 } else if (sourceNode.type === "videoNode") {
-                  var _sourceNode$data6, _sourceNode$data7;
-                  var _url = ((_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.resultUrl) || ((_sourceNode$data7 = sourceNode.data) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7.outputs) === null || _sourceNode$data7 === void 0 || (_sourceNode$data7 = _sourceNode$data7[0]) === null || _sourceNode$data7 === void 0 ? void 0 : _sourceNode$data7.value);
+                  var _sourceNode$data3, _sourceNode$data4;
+                  var _url = ((_sourceNode$data3 = sourceNode.data) === null || _sourceNode$data3 === void 0 ? void 0 : _sourceNode$data3.resultUrl) || ((_sourceNode$data4 = sourceNode.data) === null || _sourceNode$data4 === void 0 || (_sourceNode$data4 = _sourceNode$data4.outputs) === null || _sourceNode$data4 === void 0 || (_sourceNode$data4 = _sourceNode$data4[0]) === null || _sourceNode$data4 === void 0 ? void 0 : _sourceNode$data4.value);
                   if (_url) assets.videos.push(_url);
                 } else if (sourceNode.type === "audioNode") {
-                  var _sourceNode$data8, _sourceNode$data9;
-                  var _url2 = ((_sourceNode$data8 = sourceNode.data) === null || _sourceNode$data8 === void 0 ? void 0 : _sourceNode$data8.resultUrl) || ((_sourceNode$data9 = sourceNode.data) === null || _sourceNode$data9 === void 0 || (_sourceNode$data9 = _sourceNode$data9.outputs) === null || _sourceNode$data9 === void 0 || (_sourceNode$data9 = _sourceNode$data9[0]) === null || _sourceNode$data9 === void 0 ? void 0 : _sourceNode$data9.value);
+                  var _sourceNode$data5, _sourceNode$data6;
+                  var _url2 = ((_sourceNode$data5 = sourceNode.data) === null || _sourceNode$data5 === void 0 ? void 0 : _sourceNode$data5.resultUrl) || ((_sourceNode$data6 = sourceNode.data) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6.outputs) === null || _sourceNode$data6 === void 0 || (_sourceNode$data6 = _sourceNode$data6[0]) === null || _sourceNode$data6 === void 0 ? void 0 : _sourceNode$data6.value);
                   if (_url2) assets.audios.push(_url2);
                 } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
                   var subEdges = edges.filter(function (e) {
@@ -515,7 +510,18 @@ var VideoGeneration = function VideoGeneration(_ref) {
             };
             allAssets = findConnectedAssets();
             connectedImages = allAssets.images;
-            connectedFaceAssets = allAssets.faceAssets;
+            connectedFaceAssets = (0, _connectedCharacterReferences.collectConnectedCharacterReferences)({
+              nodeId: id,
+              nodes: nodes,
+              edges: edges
+            }).map(function (character) {
+              var asset = toAssetUri(character.asset || character.photo || "");
+              if (!asset) return null;
+              return {
+                uri: asset,
+                thumbnail: character.photo || null
+              };
+            }).filter(Boolean);
             uniqueVideos = Array.from(new Set(allAssets.videos));
             uniqueAudios = Array.from(new Set(allAssets.audios));
             console.log('[VideoNode] Connected assets found:', {
@@ -526,44 +532,16 @@ var VideoGeneration = function VideoGeneration(_ref) {
             });
             fast = /fast/.test("".concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.id) || "", " ").concat((selectedModel === null || selectedModel === void 0 ? void 0 : selectedModel.name) || "").toLowerCase());
             src = formValues || {};
-            finalImages = [];
-            connectedFaceAssets.forEach(function (face) {
-              if (face !== null && face !== void 0 && face.uri) {
-                finalImages.push({
-                  url: face.uri,
-                  thumbnail: face.thumbnail || null
-                });
-              }
+            body = (0, _seedanceWorkflowPayload.buildSeedanceWorkflowBody)({
+              fast: fast,
+              prompt: src.prompt || "",
+              connectedImages: connectedImages,
+              connectedFaceAssets: connectedFaceAssets,
+              uniqueVideos: uniqueVideos,
+              uniqueAudios: uniqueAudios,
+              formValues: src
             });
-            connectedImages.forEach(function (image) {
-              if (!image) return;
-              if (typeof image === "string") {
-                finalImages.push({
-                  url: image
-                });
-                return;
-              }
-              if (image.url) {
-                finalImages.push(image);
-              }
-            });
-            if (src.image_url) {
-              url = typeof src.image_url === 'string' ? src.image_url : src.image_url.url;
-              if (url && !finalImages.some(function (img) {
-                return (img === null || img === void 0 ? void 0 : img.url) === url;
-              })) {
-                finalImages.push(typeof src.image_url === 'string' ? {
-                  url: url
-                } : src.image_url);
-              }
-            }
-            finalImages = finalImages.filter(function (img) {
-              return !!(img !== null && img !== void 0 && img.url);
-            }).filter(function (img, index, arr) {
-              return arr.findIndex(function (other) {
-                return (other === null || other === void 0 ? void 0 : other.url) === img.url;
-              }) === index;
-            });
+            finalImages = body.image_urls || [];
             if (finalImages.length > 0) {
               facesFound = finalImages.filter(function (img) {
                 return String((img === null || img === void 0 ? void 0 : img.url) || "").startsWith("asset://");
@@ -572,31 +550,6 @@ var VideoGeneration = function VideoGeneration(_ref) {
                 icon: "🎨"
               });
             }
-            finalPrompt = src.prompt || "";
-            facesFound = finalImages.filter(function (img) {
-              return String((img === null || img === void 0 ? void 0 : img.url) || "").startsWith("asset://");
-            }).length;
-            if (facesFound > 0) {
-              for (var faceIndex = 1; faceIndex <= facesFound; faceIndex += 1) {
-                tag = "图片".concat(faceIndex);
-                tagRegex = new RegExp(tag, "i");
-                if (!tagRegex.test(finalPrompt)) {
-                  finalPrompt = (finalPrompt ? finalPrompt + " " : "") + tag;
-                }
-              }
-            }
-            body = {
-              fast: fast,
-              prompt: finalPrompt,
-              image_urls: finalImages.length > 0 ? finalImages : undefined,
-              video_url: uniqueVideos[0] || src.video_url || undefined,
-              video_urls: uniqueVideos.length > 1 ? uniqueVideos.slice(1) : undefined,
-              audio_url: uniqueAudios[0] || src.audio_url || undefined,
-              audio_urls: uniqueAudios.length > 1 ? uniqueAudios.slice(1) : undefined,
-              resolution: src.resolution || undefined,
-              ratio: src.aspect_ratio || src.ratio || undefined,
-              duration: src.duration || undefined
-            };
             console.log('[VideoNode] Submitting to Ark:', body);
 
             // Step 1: submit — fast, just creates the Ark task and returns a taskId.
@@ -978,9 +931,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
       }, _callee4, null, [[4, 6], [3, 13, 14, 15]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref13.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref13.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {

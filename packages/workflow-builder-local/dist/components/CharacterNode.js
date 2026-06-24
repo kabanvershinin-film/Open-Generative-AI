@@ -12,7 +12,7 @@ var _reactHotToast = require("react-hot-toast");
 var _axios = _interopRequireDefault(require("axios"));
 var _fi = require("react-icons/fi");
 var _io = require("react-icons/io5");
-var _utility = require("./utility");
+var _stableStringify = require("./stableStringify.js");
 var _FaceRegistrationDialog = _interopRequireDefault(require("./FaceRegistrationDialog"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
@@ -149,7 +149,7 @@ var CharacterNode = function CharacterNode(_ref) {
       outputs: outputs,
       resultUrl: faceValue || null
     };
-    var sig = (0, _utility.stableStringify)(payload);
+    var sig = (0, _stableStringify.stableStringify)(payload);
     if (sig === prevSig.current) return;
     prevSig.current = sig;
     data === null || data === void 0 || (_data$onDataChange = data.onDataChange) === null || _data$onDataChange === void 0 || _data$onDataChange.call(data, id, payload);

@@ -13,7 +13,7 @@ var _io = require("react-icons/io5");
 var _tfi = require("react-icons/tfi");
 var _fa = require("react-icons/fa6");
 var _ri = require("react-icons/ri");
-var _utility = require("./utility");
+var _stableStringify = require("./stableStringify.js");
 var _VideoPlayer = _interopRequireDefault(require("./VideoPlayer"));
 var _NodeSendButton = _interopRequireDefault(require("./NodeSendButton"));
 var _NodeOptionsMenu = _interopRequireDefault(require("./NodeOptionsMenu"));
@@ -81,14 +81,14 @@ var SkylarkNode = function SkylarkNode(_ref) {
 
   // Sync with parent data
   (0, _react.useEffect)(function () {
-    if (data.formValues && (0, _utility.stableStringify)(data.formValues) !== (0, _utility.stableStringify)(formValues)) {
+    if (data.formValues && (0, _stableStringify.stableStringify)(data.formValues) !== (0, _stableStringify.stableStringify)(formValues)) {
       setFormValues(data.formValues);
     }
   }, [data.formValues]);
 
   // Push changes to parent
   (0, _react.useEffect)(function () {
-    if (data.onDataChange && (0, _utility.stableStringify)(data.formValues) !== (0, _utility.stableStringify)(formValues)) {
+    if (data.onDataChange && (0, _stableStringify.stableStringify)(data.formValues) !== (0, _stableStringify.stableStringify)(formValues)) {
       data.onDataChange(id, {
         formValues: formValues
       });

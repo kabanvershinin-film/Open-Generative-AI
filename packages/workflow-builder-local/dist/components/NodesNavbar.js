@@ -12,7 +12,12 @@ var _io = require("react-icons/io5");
 var _tfi = require("react-icons/tfi");
 var _md = require("react-icons/md");
 var _ri = require("react-icons/ri");
-var _utility = require("./utility");
+var _imageModels = require("./model-registry/imageModels.js");
+var _videoModels = require("./model-registry/videoModels.js");
+var _textModels = require("./model-registry/textModels.js");
+var _audioModels = require("./model-registry/audioModels.js");
+var _concatModels = require("./model-registry/concatModels.js");
+var _videoCombinerModels = require("./model-registry/videoCombinerModels.js");
 var _tb = require("react-icons/tb");
 var _lu = require("react-icons/lu");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
@@ -111,7 +116,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     var utilityModels = _toConsumableArray(rawUtilityModels);
 
     // Add local models if they are not in the backend response
-    [].concat(_toConsumableArray(_utility.concatModels), _toConsumableArray(_utility.videoCombinerModels)).forEach(function (m) {
+    [].concat(_toConsumableArray(_concatModels.concatModels), _toConsumableArray(_videoCombinerModels.videoCombinerModels)).forEach(function (m) {
       if (!utilityModels.find(function (um) {
         return um.id === m.id;
       })) {

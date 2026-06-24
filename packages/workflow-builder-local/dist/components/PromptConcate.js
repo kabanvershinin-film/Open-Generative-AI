@@ -10,7 +10,8 @@ var _reactflow = require("reactflow");
 var _WorkflowStore = require("./WorkflowStore");
 var _reactHotToast = require("react-hot-toast");
 var _io = require("react-icons/io5");
-var _utility = require("./utility");
+var _concatModels = require("./model-registry/concatModels.js");
+var _stableStringify = require("./stableStringify.js");
 var _tb = require("react-icons/tb");
 var _NodeOptionsMenu = _interopRequireDefault(require("./NodeOptionsMenu"));
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
@@ -33,7 +34,7 @@ var PromptConcate = function PromptConcate(_ref) {
   var id = _ref.id,
     data = _ref.data,
     selected = _ref.selected;
-  var _useState = (0, _react.useState)(_utility.concatModels[0]),
+  var _useState = (0, _react.useState)(_concatModels.concatModels[0]),
     _useState2 = _slicedToArray(_useState, 2),
     selectedModel = _useState2[0],
     setSelectedModel = _useState2[1];
@@ -141,7 +142,7 @@ var PromptConcate = function PromptConcate(_ref) {
       if (((_data$formValues = data.formValues) === null || _data$formValues === void 0 ? void 0 : _data$formValues[k]) !== undefined) merged[k] = data.formValues[k];
     });
     setFormValues(function (prev) {
-      return (0, _utility.stableStringify)(prev) === (0, _utility.stableStringify)(merged) ? prev : merged;
+      return (0, _stableStringify.stableStringify)(prev) === (0, _stableStringify.stableStringify)(merged) ? prev : merged;
     });
   }, [selectedModel]);
   (0, _react.useEffect)(function () {
@@ -149,7 +150,7 @@ var PromptConcate = function PromptConcate(_ref) {
   }, [formValues, id]);
   (0, _react.useEffect)(function () {
     if (!data.formValues) return;
-    if ((0, _utility.stableStringify)(data.formValues) === (0, _utility.stableStringify)(formValues)) return;
+    if ((0, _stableStringify.stableStringify)(data.formValues) === (0, _stableStringify.stableStringify)(formValues)) return;
     var timer = setTimeout(function () {
       if (Object.entries(data.formValues || {}).length > 0) {
         setFormValues(data.formValues);
@@ -162,8 +163,8 @@ var PromptConcate = function PromptConcate(_ref) {
   var lastSentRef = (0, _react.useRef)(null);
   (0, _react.useEffect)(function () {
     if (!(data !== null && data !== void 0 && data.onDataChange)) return;
-    var localSig = (0, _utility.stableStringify)(formValues);
-    var parentSig = (0, _utility.stableStringify)(data.formValues || {});
+    var localSig = (0, _stableStringify.stableStringify)(formValues);
+    var parentSig = (0, _stableStringify.stableStringify)(data.formValues || {});
     if (localSig === parentSig) {
       lastSentRef.current = localSig;
       return;

@@ -6,8 +6,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports["default"] = void 0;
 var _react = _interopRequireWildcard(require("react"));
-var _navigation = require("next/navigation");
 var _reactflow = _interopRequireWildcard(require("reactflow"));
+var _navigation = require("next/navigation");
 var _bs = require("react-icons/bs");
 var _fi = require("react-icons/fi");
 var _tfi = require("react-icons/tfi");
@@ -22,7 +22,14 @@ var _TextNode = _interopRequireDefault(require("./TextNode"));
 var _ImageNode = _interopRequireDefault(require("./ImageNode"));
 var _VideoNode = _interopRequireDefault(require("./VideoNode"));
 var _WorkflowStore = require("./WorkflowStore");
-var _utility = require("./utility");
+var _audioModels = require("./model-registry/audioModels.js");
+var _concatModels = require("./model-registry/concatModels.js");
+var _imageModels = require("./model-registry/imageModels.js");
+var _textModels = require("./model-registry/textModels.js");
+var _videoModels = require("./model-registry/videoModels.js");
+var _videoCombinerModels = require("./model-registry/videoCombinerModels.js");
+var _apiNodeModels = require("./model-registry/apiNodeModels.js");
+var _index = require("./presets/index.js");
 var _link = _interopRequireDefault(require("next/link"));
 var _RenderField = _interopRequireDefault(require("./RenderField"));
 var _PromptConcate = _interopRequireDefault(require("./PromptConcate"));
@@ -39,6 +46,7 @@ var _CharacterNode = _interopRequireDefault(require("./CharacterNode"));
 var _SeedancePromptNode = _interopRequireDefault(require("./SeedancePromptNode"));
 var _SkylarkNode = _interopRequireDefault(require("./SkylarkNode"));
 var _useGenerationCost2 = require("./useGenerationCost");
+var _connectedCharacterReferences = require("./connectedCharacterReferences.js");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t0 in e) "default" !== _t0 && {}.hasOwnProperty.call(e, _t0) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t0)) && (i.get || i.set) ? o(f, _t0, i) : f[_t0] = e[_t0]); return f; })(e, t); }
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -209,7 +217,7 @@ var getModelObjStatic = function getModelObjStatic(category, modelId, nodeSchema
     // but we can compute it on the fly or just return null and let useEffect handle it if needed.
     // For now, let's just use the shared logic.
     var apiModelsFromBackend = nodeSchemas !== null && nodeSchemas !== void 0 && (_nodeSchemas$categori = nodeSchemas.categories) !== null && _nodeSchemas$categori !== void 0 && (_nodeSchemas$categori = _nodeSchemas$categori.api) !== null && _nodeSchemas$categori !== void 0 && _nodeSchemas$categori.models ? Object.keys(nodeSchemas.categories.api.models) : [];
-    var filtered = _utility.apiNodeModels.filter(function (model) {
+    var filtered = _apiNodeModels.apiNodeModels.filter(function (model) {
       return apiModelsFromBackend.includes(model.id);
     });
     return filtered.find(function (m) {
@@ -500,7 +508,7 @@ var NodeFlow = function NodeFlow(_ref) {
     rfSetEdges = _useReactFlow.setEdges,
     setViewport = _useReactFlow.setViewport;
   var apiModelsFromBackend = nodeSchemas !== null && nodeSchemas !== void 0 && (_nodeSchemas$categori3 = nodeSchemas.categories) !== null && _nodeSchemas$categori3 !== void 0 && (_nodeSchemas$categori3 = _nodeSchemas$categori3.api) !== null && _nodeSchemas$categori3 !== void 0 && _nodeSchemas$categori3.models ? Object.keys(nodeSchemas.categories.api.models) : [];
-  var filteredApiNodeModels = _utility.apiNodeModels.filter(function (model) {
+  var filteredApiNodeModels = _apiNodeModels.apiNodeModels.filter(function (model) {
     return apiModelsFromBackend.includes(model.id);
   });
   var loadPreset = function loadPreset(preset) {
@@ -2249,6 +2257,10 @@ var NodeFlow = function NodeFlow(_ref) {
           getNodes: getNodes,
           getEdges: getEdges
         },
+        graphState: {
+          nodes: nodes,
+          edges: edges
+        },
         setFormValues: function setFormValues(updater) {
           setNodes(function (nds) {
             return nds.map(function (n) {
@@ -3125,41 +3137,43 @@ var NodeFlow = function NodeFlow(_ref) {
           }
         }
       });
-    })) : inputSchema !== null && inputSchema !== void 0 && inputSchema.properties || inputSchema && Object.keys(inputSchema).length > 0 ? Object.entries((inputSchema === null || inputSchema === void 0 ? void 0 : inputSchema.properties) || inputSchema || {}).map(function (_ref17, idx) {
-      var _selectedNode$data12, _selectedNode$data13;
-      var _ref18 = _slicedToArray(_ref17, 2),
-        key = _ref18[0],
-        meta = _ref18[1];
-      if (key === "schemas") return null;
-      // Hide the single image_url field on video nodes — connected
-      // images are shown together in the combined gallery below.
-      if (key === "image_url" && selectedNode.type === "videoNode") return null;
-      return /*#__PURE__*/_react["default"].createElement(_RenderField["default"], {
-        key: key,
-        fieldName: key,
-        meta: meta,
-        idx: idx,
-        formValues: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data12 = selectedNode.data) === null || _selectedNode$data12 === void 0 ? void 0 : _selectedNode$data12.formValues) || {},
-        setFormValues: function setFormValues(newValues) {
-          setNodes(function (nds) {
-            return nds.map(function (node) {
-              if (node.id === (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.id)) {
-                var _node$data13;
-                return _objectSpread(_objectSpread({}, node), {}, {
-                  data: _objectSpread(_objectSpread({}, node.data), {}, {
-                    formValues: typeof newValues === 'function' ? newValues(((_node$data13 = node.data) === null || _node$data13 === void 0 ? void 0 : _node$data13.formValues) || {}) : newValues
-                  })
-                });
-              }
-              return node;
+    })) : inputSchema !== null && inputSchema !== void 0 && inputSchema.properties || inputSchema && Object.keys(inputSchema).length > 0 ? function () {
+      return /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, Object.entries((inputSchema === null || inputSchema === void 0 ? void 0 : inputSchema.properties) || inputSchema || {}).map(function (_ref17, idx) {
+        var _selectedNode$data12, _selectedNode$data13;
+        var _ref18 = _slicedToArray(_ref17, 2),
+          key = _ref18[0],
+          meta = _ref18[1];
+        if (key === "schemas") return null;
+        // Hide the single image_url field on video nodes — connected
+        // images are shown together in the combined gallery below.
+        if (key === "image_url" && selectedNode.type === "videoNode") return null;
+        return /*#__PURE__*/_react["default"].createElement(_RenderField["default"], {
+          key: key,
+          fieldName: key,
+          meta: meta,
+          idx: idx,
+          formValues: (selectedNode === null || selectedNode === void 0 || (_selectedNode$data12 = selectedNode.data) === null || _selectedNode$data12 === void 0 ? void 0 : _selectedNode$data12.formValues) || {},
+          setFormValues: function setFormValues(newValues) {
+            setNodes(function (nds) {
+              return nds.map(function (node) {
+                if (node.id === (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.id)) {
+                  var _node$data13;
+                  return _objectSpread(_objectSpread({}, node), {}, {
+                    data: _objectSpread(_objectSpread({}, node.data), {}, {
+                      formValues: typeof newValues === 'function' ? newValues(((_node$data13 = node.data) === null || _node$data13 === void 0 ? void 0 : _node$data13.formValues) || {}) : newValues
+                    })
+                  });
+                }
+                return node;
+              });
             });
-          });
-        },
-        handleChange: updateNodeFromPanel,
-        data: inputSchema,
-        modelName: selectedNode === null || selectedNode === void 0 || (_selectedNode$data13 = selectedNode.data) === null || _selectedNode$data13 === void 0 || (_selectedNode$data13 = _selectedNode$data13.selectedModel) === null || _selectedNode$data13 === void 0 ? void 0 : _selectedNode$data13.name
-      });
-    }).filter(Boolean) : /*#__PURE__*/_react["default"].createElement("div", {
+          },
+          handleChange: updateNodeFromPanel,
+          data: inputSchema,
+          modelName: selectedNode === null || selectedNode === void 0 || (_selectedNode$data13 = selectedNode.data) === null || _selectedNode$data13 === void 0 || (_selectedNode$data13 = _selectedNode$data13.selectedModel) === null || _selectedNode$data13 === void 0 ? void 0 : _selectedNode$data13.name
+        });
+      }).filter(Boolean));
+    }() : /*#__PURE__*/_react["default"].createElement("div", {
       className: "text-center py-8"
     }, /*#__PURE__*/_react["default"].createElement("p", {
       className: "text-sm text-gray-400"
@@ -3272,49 +3286,12 @@ var NodeFlow = function NodeFlow(_ref) {
       }, "\xD7"));
     })));
   }(), ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "skylarkNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "seedancePromptNode") && function () {
-    // Gather all character nodes that are connected to this node (directly or through utility nodes)
-    var _findCharacters = function findCharacters(nodeId) {
-      var visited = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : new Set();
-      if (visited.has(nodeId)) return [];
-      visited.add(nodeId);
-      var incomingEdges = edges.filter(function (e) {
-        return e.target === nodeId;
-      });
-      var chars = [];
-      incomingEdges.forEach(function (edge) {
-        var sourceNode = nodes.find(function (n) {
-          return n.id === edge.source;
-        });
-        if (sourceNode) {
-          if (sourceNode.type === "characterNode") {
-            chars.push(sourceNode);
-          } else if (["concatNode", "seedancePromptNode"].includes(sourceNode.type)) {
-            chars = [].concat(_toConsumableArray(chars), _toConsumableArray(_findCharacters(sourceNode.id, visited)));
-          }
-        }
-      });
-      return chars;
-    };
-    var connectedChars = _findCharacters(selectedNode.id);
-    if (!connectedChars.length) return null;
-
-    // Deduplicate by asset/photo to avoid showing the same character twice if multiple paths exist
-    var uniqueChars = [];
-    var seen = new Set();
-    connectedChars.forEach(function (c) {
-      var _c$data;
-      var fv = ((_c$data = c.data) === null || _c$data === void 0 ? void 0 : _c$data.formValues) || {};
-      var id = fv.face_asset || fv.character_photo || c.id;
-      if (!seen.has(id)) {
-        seen.add(id);
-        uniqueChars.push({
-          nodeId: c.id,
-          name: fv.character_name || "Персонаж",
-          asset: fv.face_asset,
-          photo: fv.character_photo || fv.face_thumbnail || (!String(fv.face_asset).startsWith("asset://") ? fv.face_asset : null)
-        });
-      }
+    var uniqueChars = (0, _connectedCharacterReferences.collectConnectedCharacterReferences)({
+      nodeId: selectedNode.id,
+      nodes: nodes,
+      edges: edges
     });
+    if (!uniqueChars.length) return null;
     return /*#__PURE__*/_react["default"].createElement("div", {
       className: "px-4 pb-3"
     }, /*#__PURE__*/_react["default"].createElement("p", {
