@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../../_lib/pricing';
-import { BILLING_ENABLED, spendBalance, getUserForGallery, getUser } from '../../_lib/balance';
+import { BILLING_ENABLED, spendBalance, getUserForGallery } from '../../_lib/balance';
 import { saveGalleryEntry } from '../../_lib/tosGallery';
+import { buildImageChargeMeta } from '../helpers.js';
 
 // Debug: log env vars (without exposing secrets)
 console.log('MF route init', {
@@ -118,12 +119,12 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
 
     await ensureCnyRate();
     console.log('maybeChargeImageSuccess: spending balance', cost, 'source', source);
-    const charged = await spendBalance(request, cost, model, {
-        source: source,
+    const charged = await spendBalance(
+        request,
+        cost,
         model,
-        path: `/${pathParts.join('/')}`,
-        usage: usage,
-    });
+        buildImageChargeMeta(pathParts, model, data),
+    );
 
     if (!charged?.ok) {
         console.error('maybeChargeImageSuccess: failed to charge', charged);
@@ -220,7 +221,11 @@ async function proxyRequest(request, { params }) {
         }
 
         if (upstream.ok && data) {
-            await maybeChargeImageSuccess(billingRequestClone, path, data, billingPayload);
+            try {
+                await maybeChargeImageSuccess(billingRequestClone, path, data, billingPayload);
+            } catch (postProcessError) {
+                console.error('Image post-processing failed:', postProcessError);
+            }
         }
 
         const responseHeaders = new Headers(upstream.headers);
