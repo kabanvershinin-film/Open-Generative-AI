@@ -5,6 +5,7 @@ import { BILLING_ENABLED, getUser, getUserForGallery, getBalance, deduct, refund
 import { buildLegacyWorkflowStorageKey, buildUserMediaKey, buildWorkflowStorageKey, buildUserTosRoot } from '../../_lib/tosPaths';
 import { createClient } from '@supabase/supabase-js';
 import { buildContent } from '../../ark/seedance/logic';
+import { filterVisibleOwnerWorkflows } from './workflowListAccess.js';
 
 // Supabase client for workflow shares
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -1510,36 +1511,21 @@ export async function GET(request, { params }) {
         }
         
         const admin = isAdminUser(user);
-        let ownerWorkflows;
-        if (admin) {
-            // Admins see everything in the index to help find missing/anonymous workflows
-            ownerWorkflows = allIndex.filter(Boolean);
-            console.log('Admin view: showing all index entries. Total:', ownerWorkflows.length);
-        } else {
-            // 1. Show user's own workflows (owner_id === user.id)
-            // 2. For any workflows with owner_id === null, let's check if we can claim them for the current user
-            //    (so that old workflows without an owner get assigned to the first user who opens them)
-            ownerWorkflows = allIndex.filter(entry => {
-                if (!entry) return false;
-                // If entry has owner_id === current user: keep it
-                if (entry.owner_id === user.id) return true;
-                // If entry has owner_id === null: claim it for current user!
-                if (entry.owner_id === null) {
-                    // Let's try to load the workflow and set owner_id to user.id
-                    tosLoadWorkflow(entry.id, { userId: user.id }).then(wf => {
-                        if (wf) {
-                            wf.owner_id = user.id;
-                            wf.updated_at = new Date().toISOString();
-                            tosSaveWorkflow(entry.id, wf).catch(() => {});
-                            console.log(`[Restore] Claimed workflow ${entry.id} for user ${user.id}`);
-                        }
-                    }).catch(() => {});
-                    return true; // Show it to user immediately
+        let ownerWorkflows = filterVisibleOwnerWorkflows(allIndex, user.id);
+        ownerWorkflows = ownerWorkflows.filter(entry => {
+            if (entry?.owner_id !== null) return true;
+            // Let's try to load the workflow and set owner_id to user.id
+            tosLoadWorkflow(entry.id, { userId: user.id }).then(wf => {
+                if (wf) {
+                    wf.owner_id = user.id;
+                    wf.updated_at = new Date().toISOString();
+                    tosSaveWorkflow(entry.id, wf).catch(() => {});
+                    console.log(`[Restore] Claimed workflow ${entry.id} for user ${user.id}`);
                 }
-                return false;
-            });
-            console.log('Non-admin view: showing user-owned and claimable workflows. Total:', ownerWorkflows.length);
-        }
+            }).catch(() => {});
+            return true; // Show it to user immediately
+        });
+        console.log(`${admin ? 'Admin' : 'Non-admin'} view: showing only own and claimable workflows. Total:`, ownerWorkflows.length);
         console.log('Filtered workflows:', ownerWorkflows.map(i => i.id));
         
         let sharedWorkflows = [];
