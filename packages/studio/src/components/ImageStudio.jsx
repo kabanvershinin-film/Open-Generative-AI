@@ -31,6 +31,7 @@ import {
 } from "../models.js";
 import { useModelConfig } from "../useModelConfig.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
+import { mergeImageHistoryEntries } from "./imageHistory.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -915,23 +916,10 @@ export default function ImageStudio({
     }
   }, []);
 
-  const mergeHistoryEntries = useCallback((primary, secondary = []) => {
-    const seenIds = new Set();
-    const seenUrls = new Set();
-    const merged = [];
-    for (const entry of [...(Array.isArray(primary) ? primary : []), ...(Array.isArray(secondary) ? secondary : [])]) {
-      if (!entry?.url) continue;
-      const keyId = entry.id || null;
-      const keyUrl = entry.url;
-      if ((keyId && seenIds.has(keyId)) || seenUrls.has(keyUrl)) continue;
-      if (keyId) seenIds.add(keyId);
-      seenUrls.add(keyUrl);
-      merged.push(entry);
-    }
-    return merged
-      .sort((a, b) => new Date(b.timestamp || b.created_at || 0) - new Date(a.timestamp || a.created_at || 0))
-      .slice(0, 50);
-  }, []);
+  const mergeHistoryEntries = useCallback(
+    (primary, secondary = []) => mergeImageHistoryEntries(primary, secondary),
+    [],
+  );
 
   const upsertPendingResults = useCallback((requestId, entries) => {
     if (!requestId || !Array.isArray(entries) || entries.length === 0) return;
@@ -1393,25 +1381,6 @@ export default function ImageStudio({
     }
   }, [sanitizeHistoryForStorage, writePersistentState, writeRecentResults]);
 
-  const saveImageToGallery = useCallback(async (url, model, promptText) => {
-    if (!url) return { ok: false, reason: "missing-url" };
-    try {
-      const r = await fetch("/api/gallery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-        body: JSON.stringify({ url, type: "image", model, prompt: promptText }),
-      });
-      if (!r.ok) {
-        const err = await r.json().catch(() => ({}));
-        return { ok: false, reason: err.error || String(r.status) };
-      }
-      return { ok: true };
-    } catch (error) {
-      return { ok: false, reason: error?.message || "network-error" };
-    }
-  }, []);
-
   // ── View state ─────────────────────────────────────
 
   const resetToPrompt = () => {
@@ -1557,10 +1526,6 @@ export default function ImageStudio({
               // even if the component was unmounted and the save-effect ran in between.
               upsertPendingResults(snap.requestId, [finalEntry]);
 
-              const gallerySave = await saveImageToGallery(permUrl, snap.selectedModelId, promptTrim);
-              if (!gallerySave?.ok) {
-                console.warn("[ImageStudio] Gallery save skipped:", gallerySave?.reason);
-              }
               onGenerationComplete?.({
                 url: permUrl,
                 model: snap.selectedModelId,
@@ -1622,7 +1587,7 @@ export default function ImageStudio({
         }, 2000);
       }
     },
-    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, saveImageToGallery, upsertPendingResults, writeRecentResults, selectedModelName],
+    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, upsertPendingResults, writeRecentResults, selectedModelName],
   );
 
   const handleGenerate = () => {
@@ -1725,14 +1690,6 @@ export default function ImageStudio({
             setCurrentImageUrl((cur) => (cur === entry.url ? permUrl : cur));
             persistEntryToStorage(finalEntry);
             upsertPendingResults(snap.requestId, [finalEntry]);
-            const gallerySave = await saveImageToGallery(
-              permUrl,
-              finalEntry.model,
-              finalEntry.prompt || "",
-            );
-            if (!gallerySave?.ok) {
-              console.warn("[ImageStudio] Pending gallery save skipped:", gallerySave?.reason);
-            }
           }
         } finally {
           if (cancelled) return;
