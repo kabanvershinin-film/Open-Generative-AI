@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
-import { getUser } from '../_lib/balance';
+import { getUserForGallery } from '../_lib/balance';
 import { buildUserMediaKey } from '../_lib/tosPaths';
 import { paginateGalleryEntries } from './pagination.js';
+import { saveGalleryEntry } from '../_lib/tosGallery';
 
 // Allow time to download the generated video from the CDN and re-upload to TOS.
 // Videos cross two regions (ARK CDN in China → Vercel → TOS in China), so 60s was
@@ -227,7 +228,7 @@ async function appendToIndex(host, userId, entry) {
 
 export async function GET(request) {
     try {
-        const user = await getUser(request);
+        const user = await getUserForGallery(request);
         if (!user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         if (!TOS_READ_ENABLED) return NextResponse.json({ entries: [] });
 
@@ -285,7 +286,7 @@ export async function GET(request) {
 
 export async function POST(request) {
     try {
-        const user = await getUser(request);
+        const user = await getUserForGallery(request);
         logStep('POST start', { user: user?.id || null, tosEnabled: TOS_ENABLED });
         if (!user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         if (!TOS_ENABLED) { logStep('POST aborted: TOS not enabled'); return NextResponse.json({ error: 'TOS not enabled' }, { status: 503 }); }
@@ -294,30 +295,11 @@ export async function POST(request) {
         const { url, type = 'video', model = '', prompt = '' } = body;
         logStep('POST body', { type, model, hasUrl: !!url, promptLen: (prompt || '').length });
         if (!url) return NextResponse.json({ error: 'url required' }, { status: 400 });
-
-        const permanentUrl = await maybeUploadMediaToTOS(url, type, user.id);
-        if (type === 'video' && !permanentUrl) {
-            logStep('POST abort: video not mirrored', { model });
-            return NextResponse.json({ error: 'Не удалось сохранить видео в постоянное хранилище' }, { status: 502 });
+        const entry = await saveGalleryEntry({ userId: user.id, url, type, model, prompt });
+        if (!entry) {
+            logStep('POST entry write failed', { type, model });
+            return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 });
         }
-        const finalUrl = permanentUrl || url;
-        logStep('POST mirror result', { mirrored: !!permanentUrl, fallbackToSource: !permanentUrl });
-
-        const entry = {
-            id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-            type, url: finalUrl, model, prompt,
-            mirrored_to_tos: !!permanentUrl,
-            created_at: new Date().toISOString(),
-        };
-
-        const key = `gallery/${user.id}/entries/${entry.id}.json`;
-        const result = await tosUpload(key, Buffer.from(JSON.stringify(entry)), 'application/json');
-        if (!result) { logStep('POST entry write failed', { key }); return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 }); }
-
-        // Also record the entry in the single index file so it shows even when the
-        // TOS key cannot ListObjects (the per-file write above would be invisible).
-        const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-        await appendToIndex(host, user.id, entry);
 
         logStep('POST ok', { id: entry.id, type });
         return NextResponse.json({ success: true, entry });

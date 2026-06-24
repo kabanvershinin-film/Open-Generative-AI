@@ -2,7 +2,17 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { toast } from "react-hot-toast";
-import { generateVideo, generateI2V, processV2V, uploadFile, pollArkTask } from "../muapi.js";
+import {
+  generateVideo,
+  generateI2V,
+  processV2V,
+  uploadFile,
+  pollArkTask,
+  listPendingGenerations,
+  savePendingGeneration,
+  updatePendingGeneration,
+  resumeVideoGeneration,
+} from "../muapi.js";
 import {
   getT2vModels,
   getI2vModels,
@@ -1497,6 +1507,81 @@ export default function VideoStudio({
     setShowCanvas(true);
   }, []);
 
+  useEffect(() => {
+    if (!apiKey) return;
+    let cancelled = false;
+
+    const restorePending = async () => {
+      let tasks = [];
+      try {
+        tasks = await listPendingGenerations({ studio: "video", statuses: ["pending", "running"] });
+      } catch {
+        return;
+      }
+
+      for (const task of tasks) {
+        if (cancelled) return;
+        const tempId = task.id || task.task_id || task.request_id || `pending_${Date.now()}`;
+        addTask({ id: tempId, prompt: task.prompt, model: task.model });
+        try {
+          const res = task.provider === "ark"
+            ? await pollArkTask(task.task_id, task.bill)
+            : await resumeVideoGeneration(apiKey, task);
+          if (!res?.url) throw new Error("API не вернул ссылку на видео");
+
+          const nextEntry = {
+            id: res.id || task.request_id || task.task_id || tempId,
+            url: res.url,
+            prompt: task.prompt || "",
+            model: task.model,
+            aspect_ratio: task.meta?.aspect_ratio || null,
+            duration: task.meta?.duration || null,
+            timestamp: new Date().toISOString(),
+            last_frame_url: res.last_frame_url || null,
+          };
+          const updateResult = await updatePendingGeneration({
+            ...task,
+            status: "completed",
+            entry: nextEntry,
+          }).catch(() => null);
+          const finalUrl = updateResult?.entry?.url || updateResult?.task?.entry?.url || nextEntry.url;
+          const finalEntry = { ...nextEntry, url: finalUrl };
+
+          if (cancelled) return;
+          if (task.model?.startsWith("seedance-2.0")) {
+            setLastGenerationId(finalEntry.id);
+            setLastGenerationModel(task.model);
+          }
+          addToLocalHistory(finalEntry);
+          persistVideoEntryToStorage(finalEntry);
+          showVideoInCanvas(finalEntry.url, task.model);
+          fetchRemoteHistory({ reset: true });
+          if (onGenerationComplete) {
+            onGenerationComplete({
+              url: finalEntry.url,
+              model: task.model,
+              prompt: finalEntry.prompt,
+              type: "video",
+            });
+          }
+        } catch (e) {
+          if (!cancelled) {
+            updatePendingGeneration({
+              ...task,
+              status: "failed",
+              error: e.message || "Ошибка генерации",
+            }).catch(() => {});
+          }
+        } finally {
+          if (!cancelled) removeTask(tempId);
+        }
+      }
+    };
+
+    restorePending();
+    return () => { cancelled = true; };
+  }, [apiKey, addTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, fetchRemoteHistory, onGenerationComplete]);
+
   // ── resume an ARK task that survived navigation ───────────────────────────
   // If the user navigated away mid-generation the polling promise kept running
   // in the background, but the React state was lost. On remount we check
@@ -1715,6 +1800,22 @@ export default function VideoStudio({
 
     // ── Internal async executor ──
     const execute = async () => {
+      let pendingTaskPromise = null;
+      let pendingTaskId = null;
+      let pendingExternalId = null;
+      let pendingBill = null;
+      const basePendingTask = {
+        studio: "video",
+        type: "video",
+        model: taskModel,
+        prompt: taskPrompt,
+        meta: {
+          aspect_ratio: selectedAr,
+          duration: selectedDuration,
+          resolution: selectedResolution || null,
+        },
+      };
+
       try {
         // ── Seedance 2.0 (Ark) multimodal path ──
         if (currentModel?.provider === "ark") {
@@ -1734,16 +1835,19 @@ export default function VideoStudio({
           });
           params.onTaskId = (arkTaskId, bill) => {
             updateTask(taskId, { arkTaskId, bill });
-            try {
-              localStorage.setItem(ARK_TASK_KEY, JSON.stringify({
-                taskId: arkTaskId,
-                bill,
-                model: taskModel,
-                prompt: taskPrompt,
-                aspect_ratio: selectedAr,
-                duration: selectedDuration,
-              }));
-            } catch {}
+            pendingExternalId = arkTaskId;
+            pendingBill = bill;
+            pendingTaskPromise = savePendingGeneration({
+              ...basePendingTask,
+              id: arkTaskId,
+              provider: "ark",
+              task_id: arkTaskId,
+              bill,
+              status: "running",
+            }).then((task) => {
+              pendingTaskId = task?.id || arkTaskId;
+              return task;
+            }).catch(() => null);
           };
           console.info("[VideoStudio] Seedance asset payload", {
             model: taskModel,
@@ -1764,7 +1868,7 @@ export default function VideoStudio({
           if (!res?.url) throw new Error("No video URL returned by API");
 
           const genId = res.id || Date.now().toString();
-          localStorage.removeItem(ARK_TASK_KEY);
+          if (pendingTaskPromise) await pendingTaskPromise;
           
           const entry = {
             id: genId, 
@@ -1784,31 +1888,53 @@ export default function VideoStudio({
             addToLocalHistory(entry);
             persistVideoEntryToStorage(entry);
             showVideoInCanvas(res.url, taskModel);
-            persistVideoToGallery(entry).then(() => {
-              fetchRemoteHistory({ reset: true });
-            });
+            const pendingResult = pendingTaskId
+              ? await updatePendingGeneration({
+                ...basePendingTask,
+                id: pendingTaskId,
+                provider: "ark",
+                task_id: pendingExternalId || pendingTaskId,
+                bill: pendingBill,
+                status: "completed",
+                entry,
+              }).catch(() => null)
+              : null;
+            const finalUrl = pendingResult?.entry?.url || pendingResult?.task?.entry?.url || entry.url;
+            if (finalUrl !== entry.url) {
+              replaceVideoEntryUrl(entry.id, finalUrl);
+              setCanvasUrl((prev) => (prev === entry.url ? finalUrl : prev));
+            } else if (!pendingTaskId) {
+              persistVideoToGallery(entry).then(() => {
+                fetchRemoteHistory({ reset: true });
+              });
+            }
+            fetchRemoteHistory({ reset: true });
             if (onGenerationComplete)
-              onGenerationComplete({ url: res.url, model: taskModel, prompt: taskPrompt, type: "video" });
+              onGenerationComplete({ url: finalUrl, model: taskModel, prompt: taskPrompt, type: "video" });
           }
           removeTask(taskId);
           return;
         }
 
         // ── Non-Ark path ──
-        const pendingSnap = {
-          requestId: taskId,
-          model: taskModel,
-          prompt: taskPrompt,
-          ts: Date.now(),
-        };
-        try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
-        try { localStorage.setItem(PENDING_KEY, JSON.stringify(pendingSnap)); } catch {}
-
         let res;
         if (v2vMode) {
           const v2vParams = {
             model: taskModel,
             video_url: uploadedVideoUrl,
+          };
+          v2vParams.onRequestId = (requestId) => {
+            pendingExternalId = requestId;
+            pendingTaskPromise = savePendingGeneration({
+              ...basePendingTask,
+              id: requestId,
+              provider: currentModel?.platform || currentModel?.provider || "unified",
+              request_id: requestId,
+              status: "running",
+            }).then((task) => {
+              pendingTaskId = task?.id || requestId;
+              return task;
+            }).catch(() => null);
           };
           if (currentModel?.imageField && uploadedImageUrl) {
             v2vParams.image_url = uploadedImageUrl;
@@ -1819,6 +1945,19 @@ export default function VideoStudio({
           res = await processV2V(apiKey, v2vParams);
         } else if (imageMode) {
           const i2vParams = { model: taskModel, image_url: uploadedImageUrl };
+          i2vParams.onRequestId = (requestId) => {
+            pendingExternalId = requestId;
+            pendingTaskPromise = savePendingGeneration({
+              ...basePendingTask,
+              id: requestId,
+              provider: currentModel?.platform || currentModel?.provider || "unified",
+              request_id: requestId,
+              status: "running",
+            }).then((task) => {
+              pendingTaskId = task?.id || requestId;
+              return task;
+            }).catch(() => null);
+          };
           if (taskPrompt) i2vParams.prompt = taskPrompt;
           i2vParams.aspect_ratio = selectedAr;
           const i2vModel = i2vModels.find((m) => m.id === taskModel);
@@ -1839,6 +1978,19 @@ export default function VideoStudio({
           res = await generateI2V(apiKey, i2vParams);
         } else {
           const params = { model: taskModel };
+          params.onRequestId = (requestId) => {
+            pendingExternalId = requestId;
+            pendingTaskPromise = savePendingGeneration({
+              ...basePendingTask,
+              id: requestId,
+              provider: currentModel?.platform || currentModel?.provider || "unified",
+              request_id: requestId,
+              status: "running",
+            }).then((task) => {
+              pendingTaskId = task?.id || requestId;
+              return task;
+            }).catch(() => null);
+          };
           if (taskPrompt) params.prompt = taskPrompt;
           if (isExtendMode) {
             params.request_id = lastGenerationId;
@@ -1862,6 +2014,7 @@ export default function VideoStudio({
         }
 
         if (!res?.url) throw new Error("No video URL returned by API");
+        if (pendingTaskPromise) await pendingTaskPromise;
 
         const genId = res.id || Date.now().toString();
         const entry = {
@@ -1884,17 +2037,29 @@ export default function VideoStudio({
           }
           addToLocalHistory(entry);
           persistVideoEntryToStorage(entry);
-          persistVideoToGallery(entry).then(() => {
-            fetchRemoteHistory({ reset: true });
-          });
-          try {
-            localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify({ requestId: taskId, entry }));
-            localStorage.removeItem(PENDING_KEY);
-          } catch {}
-          showVideoInCanvas(res.url, taskModel);
+          const pendingResult = pendingTaskId
+            ? await updatePendingGeneration({
+              ...basePendingTask,
+              id: pendingTaskId,
+              provider: currentModel?.platform || currentModel?.provider || "unified",
+              request_id: pendingExternalId || pendingTaskId,
+              status: "completed",
+              entry,
+            }).catch(() => null)
+            : null;
+          const finalUrl = pendingResult?.entry?.url || pendingResult?.task?.entry?.url || entry.url;
+          if (finalUrl !== entry.url) {
+            replaceVideoEntryUrl(entry.id, finalUrl);
+          } else if (!pendingTaskId) {
+            persistVideoToGallery(entry).then(() => {
+              fetchRemoteHistory({ reset: true });
+            });
+          }
+          fetchRemoteHistory({ reset: true });
+          showVideoInCanvas(finalUrl, taskModel);
           if (onGenerationComplete)
             onGenerationComplete({
-              url: res.url,
+              url: finalUrl,
               model: taskModel,
               prompt: entry.prompt,
               type: "video",
@@ -1926,7 +2091,21 @@ export default function VideoStudio({
           setGenerateError(null);
           removeTask(taskId);
         }, 4000);
-        try { localStorage.removeItem(PENDING_KEY); } catch {}
+        if (pendingTaskPromise) {
+          await pendingTaskPromise.catch(() => null);
+        }
+        if (pendingTaskId) {
+          updatePendingGeneration({
+            ...basePendingTask,
+            id: pendingTaskId,
+            provider: currentModel?.provider === "ark" ? "ark" : currentModel?.platform || currentModel?.provider || "unified",
+            request_id: currentModel?.provider === "ark" ? null : (pendingExternalId || pendingTaskId),
+            task_id: currentModel?.provider === "ark" ? (pendingExternalId || pendingTaskId) : null,
+            bill: currentModel?.provider === "ark" ? pendingBill : null,
+            status: "failed",
+            error: e.message || "Ошибка генерации",
+          }).catch(() => {});
+        }
       }
     };
 

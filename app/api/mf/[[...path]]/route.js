@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../../_lib/pricing';
 import { BILLING_ENABLED, spendBalance, getUserForGallery, getUser } from '../../_lib/balance';
+import { saveGalleryEntry } from '../../_lib/tosGallery';
 
 // Debug: log env vars (without exposing secrets)
 console.log('MF route init', {
@@ -14,6 +15,11 @@ const MEMEFAST_BASE_URL = 'https://memefast.top';
 
 function normalizeModelId(raw) {
     return String(raw || '').split(':')[0].trim();
+}
+
+function extractFirstImageUrl(data) {
+    const item = Array.isArray(data?.data) ? data.data[0] : null;
+    return item?.url || data?.url || data?.output?.url || data?.outputs?.[0] || '';
 }
 
 function isImageGenerationPath(method, pathParts) {
@@ -123,6 +129,17 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
         console.error('maybeChargeImageSuccess: failed to charge', charged);
     } else {
         console.log('maybeChargeImageSuccess: charged successfully', charged);
+    }
+
+    const imageUrl = extractFirstImageUrl(data);
+    if (galleryUser?.id && imageUrl) {
+        saveGalleryEntry({
+            userId: galleryUser.id,
+            url: imageUrl,
+            type: 'image',
+            model: model || '',
+            prompt: payload?.params?.prompt || '',
+        }).catch(() => {});
     }
 
     return { cost, model, source };

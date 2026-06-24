@@ -53,6 +53,14 @@ test('WorkflowStudio contracts remain available with stable fallbacks', async ()
     assert.deepStrictEqual(await muapi.getTemplateWorkflows('key'), []);
 });
 
+test('TOS-реестр pending-задач экспортируется для студий', () => {
+    assert.strictEqual(typeof muapi.listPendingGenerations, 'function');
+    assert.strictEqual(typeof muapi.savePendingGeneration, 'function');
+    assert.strictEqual(typeof muapi.updatePendingGeneration, 'function');
+    assert.strictEqual(typeof muapi.deletePendingGeneration, 'function');
+    assert.strictEqual(typeof muapi.resumeVideoGeneration, 'function');
+});
+
 test('AgentStudio and AppsStudio wrapper contracts are exported', () => {
     assert.strictEqual(typeof muapi.getTemplateAgents, 'function');
     assert.strictEqual(typeof muapi.getUserAgents, 'function');

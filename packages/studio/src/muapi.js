@@ -7,3 +7,4 @@ export * from './muapi/assets.js';
 export * from './muapi/workflows.js';
 export * from './muapi/user.js';
 export * from './muapi/extras.js';
+export * from './muapi/pending.js';

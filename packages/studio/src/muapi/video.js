@@ -275,3 +275,46 @@ export async function processV2V(apiKey, params) {
     if (params.mode) payload.mode = params.mode;
     return submitUnifiedVideo(apiKey, payload, params.onRequestId);
 }
+
+export async function resumeVideoGeneration(apiKey, params) {
+    const modelInfo = getVideoModelById(params.model) || getI2VModelById(params.model);
+    const platform = modelInfo?.platform || 'unified';
+    const requestId = params.request_id || params.id || params.task_id;
+    if (!requestId) throw new Error('Отсутствует идентификатор задачи для восстановления.');
+
+    if (modelInfo?.provider === 'ark') {
+        throw new Error('Ark-задачи нужно восстанавливать через pollArkTask.');
+    }
+
+    if (platform === 'kling') {
+        return pollKling(apiKey, requestId);
+    }
+
+    if (platform === 'luma') {
+        return pollLuma(apiKey, requestId);
+    }
+
+    if (platform === 'sora') {
+        return pollSora(apiKey, requestId);
+    }
+
+    return pollUnifiedVideo(apiKey, requestId);
+}
+
+async function pollUnifiedVideo(apiKey, requestId) {
+    for (let attempt = 0; attempt < 300; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const poll = await fetch(`/api/mf/v1/video/generations/${requestId}`, {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        });
+        const data = await poll.json().catch(() => ({}));
+        if (!poll.ok) continue;
+        if (data.status === 'succeeded' || data.status === 'success') {
+            return { url: data.output?.url || data.url, id: requestId };
+        }
+        if (data.status === 'failed' || data.status === 'error') {
+            throw new Error(data.error || 'Generation failed');
+        }
+    }
+    throw new Error('Timeout');
+}
