@@ -386,6 +386,20 @@ test('generateImage formats object API errors', async (t) => {
     );
 });
 
+test('generateImage показывает ошибку нехватки средств', async () => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementationOnce(async () => ({
+        ok: false,
+        status: 402,
+        json: async () => ({ required: 100, balance: 0 }),
+    }));
+
+    await assert.rejects(
+        muapi.generateImage('key', { model: 'gpt-image-2', prompt: 'кот' }),
+        /Недостаточно средств/,
+    );
+});
+
 test('getUserBalance returns numeric balance', async (t) => {
     global.fetch.mock.mockImplementationOnce(() => Promise.resolve({
         ok: true,

@@ -30,6 +30,7 @@ import {
   routingLabels,
 } from "../models.js";
 import { useModelConfig } from "../useModelConfig.js";
+import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -996,6 +997,7 @@ export default function ImageStudio({
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
   const [copiedPromptId, setCopiedPromptId] = useState(null);
+  const generateErrorNotice = formatGenerationErrorNotice(generateError);
 
   // Notify parent when generation state changes (drives the corner indicator).
   // ImageStudio stays mounted across tabs, so this state is always accurate.
@@ -2538,17 +2540,30 @@ export default function ImageStudio({
               onClick={handleGenerate}
               className={`bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10 hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98]`}
             >
-              {generateError ? (
-                `Ошибка: ${generateError}`
-              ) : (
-                <>
-                  <span>Создать</span>
-                </>
-              )}
+              <span>Создать</span>
             </button>
 
             {/* Face Registration moved to Video Studio (bound to Seedance). */}
           </div>
+          {generateErrorNotice && (
+            <div
+              className={`flex items-start gap-3 rounded-md border px-3 py-2 text-xs ${
+                generateErrorNotice.tone === "warning"
+                  ? "border-amber-400/30 bg-amber-400/10 text-amber-100"
+                  : "border-red-400/30 bg-red-500/10 text-red-100"
+              }`}
+            >
+              <div className="pt-0.5">
+                {generateErrorNotice.tone === "warning" ? "!" : "×"}
+              </div>
+              <div className="min-w-0">
+                <div className="font-bold">{generateErrorNotice.title}</div>
+                <div className="mt-1 break-words opacity-90">
+                  {generateErrorNotice.description}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

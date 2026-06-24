@@ -33,6 +33,7 @@ import { useModelConfig } from "../useModelConfig.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
 import { buildSeedanceStudioPayload, validateFaceAsset } from "../videoAssetPayload.js";
+import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const HISTORY_PAGE_SIZE = 18;
@@ -472,6 +473,7 @@ export default function VideoStudio({
   const [generateError, setGenerateError] = useState(null);
   const [fullscreenUrl, setFullscreenUrl] = useState(null);
   const [copiedPromptId, setCopiedPromptId] = useState(null);
+  const generateErrorNotice = formatGenerationErrorNotice(generateError);
   const [canvasUrl, setCanvasUrl] = useState(null);
   const [canvasModel, setCanvasModel] = useState(null);
   const [showCanvas, setShowCanvas] = useState(false);
@@ -3442,15 +3444,28 @@ export default function VideoStudio({
                 onClick={handleGenerate}
                 className="bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {generateError ? (
-                  `Error: ${generateError}`
-                ) : (
-                  <>
-                    <span>Создать</span>
-                  </>
-                )}
+                <span>Создать</span>
               </button>
             </div>
+            {generateErrorNotice && (
+              <div
+                className={`flex items-start gap-3 rounded-md border px-3 py-2 text-xs ${
+                  generateErrorNotice.tone === "warning"
+                    ? "border-amber-400/30 bg-amber-400/10 text-amber-100"
+                    : "border-red-400/30 bg-red-500/10 text-red-100"
+                }`}
+              >
+                <div className="pt-0.5">
+                  {generateErrorNotice.tone === "warning" ? "!" : "×"}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-bold">{generateErrorNotice.title}</div>
+                  <div className="mt-1 break-words opacity-90">
+                    {generateErrorNotice.description}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
