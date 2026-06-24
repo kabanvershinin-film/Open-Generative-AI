@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 export default function TermsPage() {
     const sections = [
         {
@@ -97,10 +99,10 @@ export default function TermsPage() {
                 </div>
                 
                 <div className="mt-16 flex items-center justify-between">
-                    <a href="/" className="group flex items-center gap-2 text-white/40 hover:text-white transition-colors text-sm">
+                    <Link href="/" className="group flex items-center gap-2 text-white/40 hover:text-white transition-colors text-sm">
                         <span className="group-hover:-translate-x-1 transition-transform">←</span> 
                         Вернуться в студию
-                    </a>
+                    </Link>
                     <p className="text-[10px] text-white/20 uppercase tracking-widest">© 2026 Сапог AI</p>
                 </div>
             </div>
