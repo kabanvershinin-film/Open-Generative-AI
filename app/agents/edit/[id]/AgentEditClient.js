@@ -1,62 +1,20 @@
 "use client";
 
-import { EditAgentPage } from "ai-agent";
-import "ai-agent/dist/tailwind.css";
-import { useCallback, useEffect, useRef } from "react";
-import axios from "axios";
-
-const STORAGE_KEY = "muapi_key";
-
 export default function AgentEditClient({ userData }) {
-  const interceptorRef = useRef(null);
-
-  useEffect(() => {
-    const getKey = () => {
-      if (typeof window === "undefined") return null;
-      const fromStorage = localStorage.getItem(STORAGE_KEY);
-      if (fromStorage) return fromStorage;
-      const match = document.cookie.match(/muapi_key=([^;]+)/);
-      return match ? match[1] : null;
-    };
-
-    const apiKey = getKey();
-    if (!apiKey) return;
-
-    interceptorRef.current = axios.interceptors.request.use((config) => {
-      const isRelative = config.url.startsWith("/") || !config.url.startsWith("http");
-      const isInternalProxy = config.url.includes('/api/app') || config.url.includes('/api/workflow') || config.url.includes('/api/agents') || config.url.includes('/api/api') || config.url.includes('/api/v1');
-      
-      if (isRelative || isInternalProxy) {
-        config.headers["x-api-key"] = apiKey;
-      }
-      return config;
-    });
-
-    return () => {
-      if (interceptorRef.current !== null) {
-        axios.interceptors.request.eject(interceptorRef.current);
-      }
-    };
-  }, []);
-
-  const useUser = useCallback(
-    () => ({
-      user: {
-        username: userData?.email?.split("@")[0] || "Studio User",
-        name: userData?.email?.split("@")[0] || "Studio User",
-        email: userData?.email || null,
-        profile_photo: null,
-        balance: userData?.balance || 0,
-      },
-      isAuthorized: !!userData,
-    }),
-    [userData]
-  );
-
   return (
-    <EditAgentPage
-      useUser={useUser}
-      usedIn="studio"
-    />
+    <div className="flex min-h-screen items-center justify-center bg-black px-6">
+      <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-white/5 p-8 text-white shadow-2xl shadow-black/30 backdrop-blur">
+        <div className="mb-3 text-sm uppercase tracking-[0.2em] text-white/40">
+          Редактирование агента
+        </div>
+        <h1 className="mb-3 text-2xl font-semibold">Раздел временно отключён</h1>
+        <p className="mb-6 text-sm leading-6 text-white/65">
+          Редактирование агентов временно недоступно и исключено из активного функционала сайта.
+        </p>
+        <div className="rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/55">
+          Пользователь: {userData?.email || "не авторизован"}
+        </div>
+      </div>
+    </div>
   );
 }
