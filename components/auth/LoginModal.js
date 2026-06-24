@@ -234,6 +234,30 @@ export default function LoginModal() {
                             </button>
                         )}
 
+                        {vkAuthEnabled && (
+                            <button
+                                type="button"
+                                onClick={() => startOAuth(loginWithVK)}
+                                disabled={busy}
+                                className="w-full mt-3 py-3 rounded-xl bg-[#0077FF] hover:bg-[#1984ff] border border-[#4da0ff] text-white text-sm font-medium flex items-center justify-center gap-2 transition-all shadow-lg shadow-[#0077FF]/25"
+                            >
+                                <span className="text-base font-black leading-none">VK</span>
+                                Войти через ВКонтакте
+                            </button>
+                        )}
+
+                        <button
+                            type="button"
+                            disabled
+                            className="w-full mt-3 py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white/70 text-sm font-medium flex items-center justify-center gap-2 opacity-80 cursor-not-allowed"
+                        >
+                            <span className="text-base font-black leading-none">TG</span>
+                            Войти через Telegram
+                            <span className="ml-1 rounded-full bg-purple-500/20 border border-purple-400/20 px-2 py-0.5 text-[10px] uppercase tracking-wide text-purple-200">
+                                Скоро
+                            </span>
+                        </button>
+
                         {!isPhone && (
                             <div className="text-center text-sm text-white/45 mt-5">
                                 {isRegister ? (
