@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthProvider';
@@ -93,10 +94,13 @@ export default function LoginModal() {
         <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-md">
             {/* Background Image */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <img
+                <Image
                     src="/auth-bg.png"
-                    className="absolute min-w-full min-h-full object-cover opacity-40"
-                    alt="Background"
+                    alt="Фон авторизации"
+                    fill
+                    priority
+                    sizes="100vw"
+                    className="object-cover opacity-40"
                 />
             </div>
             

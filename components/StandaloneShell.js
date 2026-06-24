@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { ImageStudio, VideoStudio, ClippingStudio, VibeMotionStudio, LipSyncStudio, CinemaStudio, MarketingStudio, WorkflowStudio, AgentStudio, AppsStudio, getUserBalance, PromptStudio } from 'studio';
@@ -37,7 +37,10 @@ const STORAGE_KEY = 'muapi_key';
 export default function StandaloneShell() {
   const params = useParams();
   const router = useRouter();
-  const slug = params?.slug || []; 
+  const slug = useMemo(
+    () => (Array.isArray(params?.slug) ? params.slug : []),
+    [params?.slug]
+  );
   const idFromParams = params?.id;
   const tabFromParams = params?.tab;
 
