@@ -931,9 +931,7 @@ var VideoGeneration = function VideoGeneration(_ref) {
       }, _callee4, null, [[4, 6], [3, 13, 14, 15]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref13.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref13.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {

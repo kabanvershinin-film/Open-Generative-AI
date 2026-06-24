@@ -500,7 +500,6 @@ var ApiNode = function ApiNode(_ref) {
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref15 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee() {
       var workflow_id, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, filteredInputParams, response, _r, _nd, _lt, _o, _error$response2, _t;
@@ -600,9 +599,7 @@ var ApiNode = function ApiNode(_ref) {
       }, _callee, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref15.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref15.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {

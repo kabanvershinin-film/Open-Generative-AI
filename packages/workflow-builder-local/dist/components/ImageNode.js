@@ -448,7 +448,6 @@ var ImageGeneration = function ImageGeneration(_ref) {
     _check();
     interval = setInterval(_check, 500);
   };
-  var inFlightRef = (0, _react.useRef)(false);
   var handleRunSingleNode = /*#__PURE__*/function () {
     var _ref10 = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
       var _nodeSchemas$categori2, workflow_id, modelSchema, params, inputSchema, localSources, _i, _Object$entries, _Object$entries$_i, key, meta, _meta$default2, response, _r, _nd, _lt, _o, _val, _error$response, _t;
@@ -545,9 +544,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
       }, _callee2, null, [[0, 5]]);
     }));
     return function handleRunSingleNode() {
-      if (inFlightRef.current) return Promise.resolve();
-      inFlightRef.current = true;
-      return _ref10.apply(this, arguments)["finally"](function () { inFlightRef.current = false; });
+      return _ref10.apply(this, arguments);
     };
   }();
   var handleDeleteNode = function handleDeleteNode() {
