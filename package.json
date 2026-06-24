@@ -19,7 +19,7 @@
     "test": "node --test",
     "build:studio": "npm run build -w studio",
     "build:workflow": "npm run build -w workflow-builder-local",
-    "build:agent": "npm run build -w ai-agent",
+    "build:agent": "node -e \"const fs=require('fs'); const {execSync}=require('child_process'); const path='packages/Open-Poe-AI/packages/agents/package.json'; if (fs.existsSync(path)) { execSync('npm run build -w ai-agent', { stdio: 'inherit' }); } else { console.log('Skip build:agent: пакет ai-agent временно недоступен'); }\"",
     "build:packages": "npm run build:workflow && npm run build:agent && npm run build:studio",
     "setup": "git submodule update --init --recursive && npm install && npm run build:packages",
     "vite:dev": "vite",
