@@ -56,6 +56,19 @@ function getQualitiesForModel(modelList, modelId) {
   return model?.inputs?.quality?.enum || [];
 }
 
+async function reportAdminIncident(payload) {
+  try {
+    await fetch("/api/admin/notifications/report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {}),
+      keepalive: true,
+    });
+  } catch {
+    // Мониторинг не должен ломать пользовательский сценарий.
+  }
+}
+
 async function downloadFile(url, filename) {
   try {
     const response = await fetch(url);
@@ -1501,7 +1514,7 @@ export default function VideoStudio({
     // and all of them would fire gallery saves when the task eventually finishes).
     let cancelled = false;
 
-    const showResult = (url, genId) => {
+    const showResult = (url, genId, billingError = null) => {
       if (cancelled) return;
       localStorage.removeItem(ARK_TASK_KEY);
       setLastGenerationId(genId);
@@ -1517,6 +1530,23 @@ export default function VideoStudio({
       persistVideoToGallery(entry).then(() => {
         fetchRemoteHistory({ reset: true }); // Refresh remote history after saving to gallery, bypassing cache
       });
+      if (billingError) {
+        reportAdminIncident({
+          type: "billing_failed",
+          message: billingError,
+          dedupeKey: `video-billing:${genId || stored.taskId || "unknown"}`,
+          payload: {
+            studio: "video",
+            provider: "ark",
+            phase: "resume",
+            model: stored.model,
+            taskId: stored.taskId || null,
+            generationId: genId || null,
+            prompt: stored.prompt || "",
+            billing_error: billingError,
+          },
+        });
+      }
     };
 
     // Task already finished while we were away — show result immediately.
@@ -1530,10 +1560,24 @@ export default function VideoStudio({
     addTask({ id: tempId, prompt: stored.prompt, model: stored.model });
 
     pollArkTask(stored.taskId, stored.bill)
-      .then((res) => showResult(res.url, res.id || stored.taskId))
+      .then((res) => showResult(res.url, res.id || stored.taskId, res.billing_error || null))
       .catch((e) => {
         if (cancelled) return;
         localStorage.removeItem(ARK_TASK_KEY);
+        reportAdminIncident({
+          type: "generation_failed",
+          message: e.message || "Ошибка восстановления генерации",
+          dedupeKey: `video-resume-ark:${stored.taskId || tempId}`,
+          payload: {
+            studio: "video",
+            provider: "ark",
+            phase: "resume_poll",
+            model: stored.model,
+            taskId: stored.taskId || null,
+            bill: stored.bill || null,
+            error: e.message || "Ошибка генерации",
+          },
+        });
         setGenerateError(e.message?.slice(0, 80) || "Ошибка генерации");
         updateTask(tempId, { status: 'error', error: e.message });
         setTimeout(() => {
@@ -1859,6 +1903,23 @@ export default function VideoStudio({
         removeTask(taskId);
       } catch (e) {
         console.error("[VideoStudio]", e);
+        reportAdminIncident({
+          type: "generation_failed",
+          message: e.message || "Ошибка генерации",
+          dedupeKey: `video-generate:${taskId}`,
+          payload: {
+            studio: "video",
+            provider: currentModel?.provider || currentModel?.platform || "unknown",
+            phase: "generate",
+            model: taskModel,
+            taskId,
+            prompt: taskPrompt,
+            aspect_ratio: selectedAr,
+            duration: selectedDuration,
+            resolution: selectedResolution,
+            error: e.message || "Ошибка генерации",
+          },
+        });
         setGenerateError(e.message?.slice(0, 80) || "Ошибка генерации");
         updateTask(taskId, { status: 'error', error: e.message });
         setTimeout(() => {

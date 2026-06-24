@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isAdminEmail } from '@/lib/admin';
+import { isIncidentNotification } from '@/lib/adminNotifications';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://hsyuvhvjrjxdpvuzivvv.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_9bCiI4pZI45ObKbC2W1xvw_bscZtpFJ';
@@ -17,6 +18,7 @@ function formatStoredNotification(item) {
         email: item.email,
         title: item.title,
         message: item.message,
+        payload: item.payload || {},
     };
 }
 
@@ -39,12 +41,20 @@ function formatAuthNotification(item, profile) {
     };
 }
 
-async function loadStoredNotifications(admin) {
-    const { data, error } = await admin
+async function loadStoredNotifications(admin, scope = 'registrations') {
+    let query = admin
         .from('admin_notifications')
-        .select('id, type, created_at, user_id, full_name, email, title, message')
+        .select('id, type, created_at, user_id, full_name, email, title, message, payload')
         .order('created_at', { ascending: false })
         .limit(MAX_NOTIFICATIONS);
+
+    if (scope === 'registrations') {
+        query = query.eq('type', 'user_registered');
+    } else if (scope === 'incidents') {
+        query = query.neq('type', 'user_registered');
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return (data || []).map(formatStoredNotification);
@@ -112,18 +122,23 @@ export async function GET(request) {
 
     try {
         const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+        const { searchParams } = new URL(request.url);
+        const scope = searchParams.get('scope') || 'registrations';
         let notifications;
 
         try {
-            notifications = await loadStoredNotifications(admin);
+            notifications = await loadStoredNotifications(admin, scope);
         } catch (error) {
             if (!isMissingNotificationsTable(error)) throw error;
-            notifications = await loadAuthFallbackNotifications(admin);
+            notifications = scope === 'all' || scope === 'registrations'
+                ? await loadAuthFallbackNotifications(admin)
+                : [];
         }
 
         return NextResponse.json({
             notifications,
             latestCreatedAt: notifications[0]?.createdAt || null,
+            incidentCount: notifications.filter((item) => isIncidentNotification(item.type)).length,
         });
     } catch (error) {
         console.error('admin/notifications error:', error.message);
