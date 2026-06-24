@@ -33,6 +33,11 @@ import { useModelConfig } from "../useModelConfig.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { saveMediaToGallery } from "./gallerySave.js";
 import { mergeImageHistoryEntries } from "./imageHistory.js";
+import {
+  addSelectedUploadEntry,
+  replaceSelectedUploadEntry,
+  getDisplayUploadUrls,
+} from "./uploadPreviewState.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -57,17 +62,22 @@ const IMAGE_UPLOAD_ACCEPT = "image/jpeg,image/png,image/tiff,.jpg,.jpeg,.png,.ti
 
 // ─── UploadButton (inline picker) ───────────────────────────────────────────
 
-function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }) {
+function UploadButton({ apiKey, maxImages, onSelect, onPreviewChange, onClear, onUploadStateChange, initialUrls = [] }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [isMobileUploadUi, setIsMobileUploadUi] = useState(false);
   const [selectedEntries, setSelectedEntries] = useState([]); // [{url, thumbnail}]
   const [uploadHistory, setUploadHistory] = useState([]); // [{id, name, url, thumbnail}]
   const [lastUploadProgress, setLastUploadProgress] = useState(0);
+  const selectedEntriesRef = useRef([]);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const panelRef = useRef(null);
   const triggerRef = useRef(null);
+
+  useEffect(() => {
+    selectedEntriesRef.current = selectedEntries;
+  }, [selectedEntries]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -97,25 +107,28 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
 
   // Sync initialUrls from parent (e.g. restored from localStorage)
   useEffect(() => {
-    if (initialUrls && initialUrls.length > 0) {
-      // Avoid infinite loops by only updating if URLs actually changed
-      const currentUrls = selectedEntries.map(e => e.url);
-      const isSame = initialUrls.length === currentUrls.length && initialUrls.every(u => currentUrls.includes(u));
-      if (isSame) return;
+    const nextUrls = Array.isArray(initialUrls) ? initialUrls : [];
+    const currentUrls = selectedEntriesRef.current.map((entry) => entry?.url).filter(Boolean);
+    const isSame =
+      nextUrls.length === currentUrls.length
+      && nextUrls.every((url) => currentUrls.includes(url));
 
-      const newEntries = initialUrls.map(url => ({ url }));
-      setSelectedEntries(newEntries);
-      
-      // Also ensure they are in the history panel
-      setUploadHistory(prev => {
-        const existingUrls = prev.map(h => h.url);
-        const missing = initialUrls
-          .filter(u => !existingUrls.includes(u))
-          .map(u => ({ id: `restored-${u}`, name: "Restored Image", url: u, progress: 100 }));
-        return [...missing, ...prev];
-      });
-    }
-  }, [initialUrls]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (isSame) return;
+
+    const newEntries = nextUrls.map((url) => ({ url }));
+    setSelectedEntries(newEntries);
+    selectedEntriesRef.current = newEntries;
+
+    if (nextUrls.length === 0) return;
+
+    setUploadHistory((prev) => {
+      const existingUrls = prev.map((entry) => entry.url);
+      const missing = nextUrls
+        .filter((url) => !existingUrls.includes(url))
+        .map((url) => ({ id: `restored-${url}`, name: "Restored Image", url, progress: 100 }));
+      return [...missing, ...prev];
+    });
+  }, [initialUrls]);
 
   // When maxImages changes, trim excess selections
   useEffect(() => {
@@ -136,6 +149,31 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
       onSelect({ url: urls[0], urls, thumbnail: entries[0].url });
     },
     [onSelect],
+  );
+
+  const fireOnPreviewChange = useCallback(
+    (entries) => {
+      if (!entries.length) return;
+      const urls = entries.map((entry) => entry.url);
+      onPreviewChange?.({
+        url: urls[0],
+        urls,
+        thumbnail: entries[0].localUrl || entries[0].url,
+      });
+    },
+    [onPreviewChange],
+  );
+
+  const commitSelection = useCallback(
+    (entries) => {
+      if (!entries.length) return;
+      if (entries.some((entry) => entry?.pending || String(entry?.url || "").startsWith("blob:"))) {
+        fireOnPreviewChange(entries);
+        return;
+      }
+      fireOnSelect(entries);
+    },
+    [fireOnPreviewChange, fireOnSelect],
   );
 
   const handleFileChange = async (e) => {
@@ -159,6 +197,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     }
 
     setUploading(true);
+    onUploadStateChange?.(true);
     try {
       const toUpload =
         maxImages === 1
@@ -170,8 +209,19 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
           const id = Date.now().toString() + Math.random();
 
           const objectUrl = URL.createObjectURL(file);
-          const placeholder = { id, name: file.name, url: null, localUrl: objectUrl, progress: 0 };
+          const placeholder = { id, name: file.name, url: objectUrl, localUrl: objectUrl, progress: 0, pending: true };
           setUploadHistory((prev) => [placeholder, ...prev]);
+
+          const previewEntry = { url: objectUrl, localUrl: objectUrl, pending: true };
+          const previewSelected = addSelectedUploadEntry(selectedEntriesRef.current, previewEntry, maxImages);
+          if (previewSelected !== selectedEntriesRef.current) {
+            selectedEntriesRef.current = previewSelected;
+            setSelectedEntries(previewSelected);
+            fireOnPreviewChange(previewSelected);
+            if (maxImages === 1) {
+              setPanelOpen(false);
+            }
+          }
 
           try {
             const processedFile = await optimizeImageUploadFile(file);
@@ -181,33 +231,42 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
                 prev.map((h) => (h.id === id ? { ...h, progress: pct } : h)),
               );
             });
-            if (placeholder.localUrl && placeholder.localUrl !== uploadedUrl) {
-              URL.revokeObjectURL(placeholder.localUrl);
-            }
 
             // Update history with real URL and Mark as 100%
             setUploadHistory((prev) =>
               prev.map((h) => {
                 if (h.id === id) {
-                  return { ...h, url: uploadedUrl, progress: 100 };
+                  return { ...h, url: uploadedUrl, progress: 100, pending: false };
                 }
                 return h;
               }),
             );
 
-            // Auto-select if there's room
-            if (selectedEntries.length < maxImages) {
-              const newEntry = { url: uploadedUrl, localUrl: objectUrl };
-              setSelectedEntries((prev) => [...prev, newEntry]);
+            const uploadedSelected = replaceSelectedUploadEntry(
+              selectedEntriesRef.current,
+              objectUrl,
+              { url: uploadedUrl, pending: false },
+            );
+            selectedEntriesRef.current = uploadedSelected;
+            setSelectedEntries(uploadedSelected);
 
-              if (maxImages === 1) {
-                fireOnSelect([newEntry]);
-                setPanelOpen(false);
-              }
+            if (uploadedSelected.some((entry) => entry.url === uploadedUrl)) {
+              fireOnPreviewChange(uploadedSelected);
+              commitSelection(uploadedSelected);
+            }
+
+            if (placeholder.localUrl && placeholder.localUrl !== uploadedUrl) {
+              URL.revokeObjectURL(placeholder.localUrl);
             }
           } catch (err) {
             console.error("[UploadButton] Upload failed for", file.name, err);
             setUploadHistory((prev) => prev.filter((h) => h.id !== id));
+            const nextSelected = selectedEntriesRef.current.filter((entry) => entry?.url !== objectUrl);
+            selectedEntriesRef.current = nextSelected;
+            setSelectedEntries(nextSelected);
+            if (nextSelected.length === 0) onClear?.();
+            else fireOnPreviewChange(nextSelected);
+            if (placeholder.localUrl) URL.revokeObjectURL(placeholder.localUrl);
             throw err;
           }
         }),
@@ -217,6 +276,7 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     } finally {
       setUploading(false);
       setLastUploadProgress(0);
+      onUploadStateChange?.(false);
     }
   };
 
@@ -228,9 +288,10 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     if (atMax) return;
 
     if (maxImages === 1) {
-      const newSelected = [{ url: entry.url, localUrl: entry.localUrl }];
+      const newSelected = [{ url: entry.url, localUrl: entry.localUrl, pending: entry.pending }];
       setSelectedEntries(newSelected);
-      fireOnSelect(newSelected);
+      selectedEntriesRef.current = newSelected;
+      commitSelection(newSelected);
       setPanelOpen(false);
     } else {
       let next;
@@ -240,10 +301,12 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
       } else {
         next = [
           ...selectedEntries,
-          { url: entry.url, localUrl: entry.localUrl },
+          { url: entry.url, localUrl: entry.localUrl, pending: entry.pending },
         ];
       }
       setSelectedEntries(next);
+      selectedEntriesRef.current = next;
+      if (next.length > 0) fireOnPreviewChange(next);
     }
   };
 
@@ -255,13 +318,15 @@ function UploadButton({ apiKey, maxImages, onSelect, onClear, initialUrls = [] }
     const next = selectedEntries.filter((s) => s.url !== entry.url);
     if (next.length !== selectedEntries.length) {
       setSelectedEntries(next);
+      selectedEntriesRef.current = next;
       if (next.length === 0) onClear?.();
+      else fireOnPreviewChange(next);
     }
   };
 
   const handleDone = (e) => {
     e.stopPropagation();
-    fireOnSelect(selectedEntries);
+    commitSelection(selectedEntries);
     setPanelOpen(false);
   };
 
@@ -977,6 +1042,8 @@ export default function ImageStudio({
   // ── Prompt / upload state ───────────────────────────────────────────────
   const [prompt, setPrompt] = useState("");
   const [uploadedImageUrls, setUploadedImageUrls] = useState([]);
+  const [previewImageUrls, setPreviewImageUrls] = useState([]);
+  const [referenceUploadsPending, setReferenceUploadsPending] = useState(false);
 
   // ── UI state ────────────────────────────────────────────────────────────
   const [dropdownOpen, setDropdownOpen] = useState(null); // 'model' | 'ar' | 'quality' | null
@@ -1264,40 +1331,54 @@ export default function ImageStudio({
   };
 
   // ── Upload picker callbacks ──────────────────────────────────────────────
+  const ensureImageModeForUploads = useCallback(() => {
+    if (imageMode || !selectedModelId) return;
+    const currentT2I = t2iModels.find((m) => m.id === selectedModelId);
+    const matchedI2I =
+      (currentT2I && i2iModels.find((m) => m.apiId === currentT2I.apiId)) ||
+      i2iModels[0];
+    if (!matchedI2I) return;
+
+    const ars = getAspectRatiosForI2IModel(matchedI2I.id);
+    const resolutions = getResolutionsForI2IModel(matchedI2I.id);
+    const effects = getEffectsForI2IModel(matchedI2I.id);
+    setImageMode(true);
+    setSelectedModelId(matchedI2I.id);
+    setSelectedModelName(matchedI2I.name);
+    setSelectedAr(ars[0] || "1:1");
+    setSelectedQuality(resolutions[0] || null);
+    setSelectedQualityOpt(getImageInputDefault(matchedI2I.id, "quality"));
+    setSelectedFormat(getImageInputDefault(matchedI2I.id, "format"));
+    setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
+    setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
+    setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
+    setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
+    setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
+  }, [i2iModels, imageMode, selectedModelId, t2iModels]);
+
+  const handleUploadPreviewChange = useCallback(
+    ({ url, urls }) => {
+      const newUrls = urls || [url];
+      setPreviewImageUrls(newUrls);
+      if (newUrls.length > 0) ensureImageModeForUploads();
+    },
+    [ensureImageModeForUploads],
+  );
+
   const handleUploadSelect = useCallback(
     ({ url, urls }) => {
       const newUrls = urls || [url];
       setUploadedImageUrls(newUrls);
-
-      if (!imageMode && selectedModelId) {
-        const currentT2I = t2iModels.find((m) => m.id === selectedModelId);
-        const matchedI2I =
-          (currentT2I && i2iModels.find((m) => m.apiId === currentT2I.apiId)) ||
-          i2iModels[0];
-        if (matchedI2I) {
-          const ars = getAspectRatiosForI2IModel(matchedI2I.id);
-          const resolutions = getResolutionsForI2IModel(matchedI2I.id);
-          const effects = getEffectsForI2IModel(matchedI2I.id);
-          setImageMode(true);
-          setSelectedModelId(matchedI2I.id);
-          setSelectedModelName(matchedI2I.name);
-          setSelectedAr(ars[0] || "1:1");
-          setSelectedQuality(resolutions[0] || null);
-          setSelectedQualityOpt(getImageInputDefault(matchedI2I.id, "quality"));
-          setSelectedFormat(getImageInputDefault(matchedI2I.id, "format"));
-          setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
-          setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
-          setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
-          setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
-          setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
-        }
-      }
+      setPreviewImageUrls(newUrls);
+      if (newUrls.length > 0) ensureImageModeForUploads();
     },
-    [imageMode, selectedModelId],
+    [ensureImageModeForUploads],
   );
 
   const handleUploadClear = useCallback(() => {
+    setPreviewImageUrls([]);
     setUploadedImageUrls([]);
+    setReferenceUploadsPending(false);
     setImageMode(false);
     const firstT2I = t2iModels[0];
     if (firstT2I) {
@@ -1636,6 +1717,10 @@ export default function ImageStudio({
   );
 
   const handleGenerate = () => {
+    if (referenceUploadsPending) {
+      alert("Подождите, пока загрузится изображение.");
+      return;
+    }
 
     if (imageMode) {
       if (uploadedImageUrls.length === 0) {
@@ -1835,8 +1920,8 @@ export default function ImageStudio({
   }, [apiKey, persistEntryToStorage, saveImageToGallery, upsertPendingResults]);
 
   const placeholderText =
-    uploadedImageUrls.length > 1
-      ? `${uploadedImageUrls.length} изображений выбрано — опишите трансформацию (необязательно)`
+    getDisplayUploadUrls(previewImageUrls, uploadedImageUrls).length > 1
+      ? `${getDisplayUploadUrls(previewImageUrls, uploadedImageUrls).length} изображений выбрано — опишите трансформацию (необязательно)`
       : imageMode
         ? "Опишите как трансформировать изображение (необязательно)"
         : "Опишите изображение, которое хотите создать";
@@ -2124,8 +2209,10 @@ export default function ImageStudio({
               apiKey={apiKey}
               maxImages={maxImages}
               onSelect={handleUploadSelect}
+              onPreviewChange={handleUploadPreviewChange}
               onClear={handleUploadClear}
-              initialUrls={uploadedImageUrls}
+              onUploadStateChange={setReferenceUploadsPending}
+              initialUrls={getDisplayUploadUrls(previewImageUrls, uploadedImageUrls)}
             />
             <div className="flex-1 flex flex-col gap-2">
               <textarea
@@ -2541,9 +2628,10 @@ export default function ImageStudio({
             <button
               type="button"
               onClick={handleGenerate}
-              className={`bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10 hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98]`}
+              disabled={referenceUploadsPending}
+              className={`bg-[#22d3ee] text-black px-4 py-2 rounded-md font-medium text-sm transition-all flex items-center justify-center gap-2 w-full sm:w-auto shadow-lg shadow-[#22d3ee]/10 z-10 hover:bg-[#e5ff33] hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#22d3ee] disabled:hover:scale-100`}
             >
-              <span>Создать</span>
+              <span>{referenceUploadsPending ? "Загрузка..." : "Создать"}</span>
             </button>
 
             {/* Face Registration moved to Video Studio (bound to Seedance). */}
