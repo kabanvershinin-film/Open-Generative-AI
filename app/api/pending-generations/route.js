@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { getUserForGallery } from '../_lib/balance';
 import { isTosPendingEnabled, listPendingTasks, removePendingTask, upsertPendingTask } from '../_lib/tosPending';
 import { saveGalleryEntry } from '../_lib/tosGallery';
+import {
+    applySavedPendingGalleryEntry,
+    buildPendingGallerySaveInput,
+    parsePendingGenerationFilters,
+} from './logic';
 
 function unauthorized() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -12,12 +17,7 @@ export async function GET(request) {
         const user = await getUserForGallery(request);
         if (!user?.id) return unauthorized();
         if (!isTosPendingEnabled()) return NextResponse.json({ tasks: [] });
-        const { searchParams } = new URL(request.url);
-        const studio = searchParams.get('studio') || undefined;
-        const statuses = (searchParams.get('statuses') || '')
-            .split(',')
-            .map((item) => item.trim())
-            .filter(Boolean);
+        const { studio, statuses } = parsePendingGenerationFilters(request.url);
         const tasks = await listPendingTasks(user.id, { studio, statuses });
         return NextResponse.json({ tasks });
     } catch (error) {
@@ -47,23 +47,12 @@ export async function PATCH(request) {
         const body = await request.json().catch(() => ({}));
         const nextBody = { ...(body || {}) };
         let savedEntry = null;
-        if (nextBody.status === 'completed' && nextBody.entry?.url) {
-            const galleryEntry = await saveGalleryEntry({
-                userId: user.id,
-                url: nextBody.entry.url,
-                type: nextBody.entry.type || nextBody.type || 'video',
-                model: nextBody.entry.model || nextBody.model || '',
-                prompt: nextBody.entry.prompt || nextBody.prompt || '',
-            });
-            if (galleryEntry) {
-                savedEntry = galleryEntry;
-                nextBody.entry = {
-                    ...nextBody.entry,
-                    id: nextBody.entry.id || galleryEntry.id,
-                    url: galleryEntry.url,
-                    created_at: galleryEntry.created_at,
-                };
-            }
+        const gallerySaveInput = buildPendingGallerySaveInput(user.id, nextBody);
+        if (gallerySaveInput) {
+            const galleryEntry = await saveGalleryEntry(gallerySaveInput);
+            const result = applySavedPendingGalleryEntry(nextBody, galleryEntry);
+            savedEntry = result.savedEntry;
+            Object.assign(nextBody, result.nextBody);
         }
         const task = await upsertPendingTask(user.id, nextBody);
         if (!task) return NextResponse.json({ error: 'Не удалось обновить задачу' }, { status: 500 });

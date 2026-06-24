@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { getUserForGallery } from '../_lib/balance';
 import { buildUserMediaKey } from '../_lib/tosPaths';
+import { buildUploadTarget, isExistingTosUrl, resolveUploadSource } from './logic';
 
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
 const TOS_BUCKET   = process.env.TOS_BUCKET   || '';
@@ -116,41 +117,26 @@ export async function POST(request) {
         
         const body = await request.json();
         const src = body.image || body.url;
-        if (!src || typeof src !== 'string') {
-            return NextResponse.json({ error: 'Missing image/url' }, { status: 400 });
-        }
         const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-        if (src.startsWith(`https://${tosHost}/`)) {
+        if (isExistingTosUrl(src, tosHost)) {
             return NextResponse.json({ url: src });
         }
 
-        let buffer;
-        let contentType;
-        const m = src.match(/^data:([^;]+);base64,(.+)$/s);
-        if (m) {
-            contentType = m[1];
-            buffer = Buffer.from(m[2], 'base64');
-            console.log('[upload-file] Received base64 image, contentType:', contentType, 'size:', buffer.length);
-        } else {
-            const r = await fetch(src);
-            if (!r.ok) return NextResponse.json({ error: 'Fetch failed' }, { status: 502 });
-            contentType = r.headers.get('content-type') || 'image/png';
-            buffer = Buffer.from(await r.arrayBuffer());
-            console.log('[upload-file] Fetched URL, contentType:', contentType, 'size:', buffer.length);
-        }
+        const { contentType, buffer } = await resolveUploadSource(src, fetch);
+        console.log('[upload-file] Resolved source, contentType:', contentType, 'size:', buffer.length);
 
-        const ext = (contentType.split('/')[1] || 'png').split('+')[0];
-        const folder = contentType.startsWith('video/') ? 'videos'
-                     : contentType.startsWith('audio/') ? 'audio'
-                     : 'images';
-        const key = buildUserMediaKey(user?.id || null, folder, ext);
+        const { key } = buildUploadTarget({
+            contentType,
+            userId: user?.id || null,
+            buildKey: buildUserMediaKey,
+        });
         console.log('[upload-file] key:', key);
         const publicUrl = await tosUpload(key, buffer, contentType);
         if (!publicUrl) return NextResponse.json({ error: 'Upload failed' }, { status: 502 });
         return NextResponse.json({ url: publicUrl });
     } catch (e) {
         console.error('[upload-file] POST error:', e);
-        return NextResponse.json({ error: e.message }, { status: 500 });
+        return NextResponse.json({ error: e.message }, { status: e?.status || 500 });
     }
 }
 
@@ -164,12 +150,12 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const filename = searchParams.get('filename') || 'upload';
     const contentType = searchParams.get('type') || 'application/octet-stream';
-
-    const ext = filename.split('.').pop()?.toLowerCase() || 'bin';
-    const folder = contentType.startsWith('video/') ? 'videos'
-                 : contentType.startsWith('audio/') ? 'audio'
-                 : 'images';
-    const key = buildUserMediaKey(user?.id || null, folder, ext);
+    const { key } = buildUploadTarget({
+        filename,
+        contentType,
+        userId: user?.id || null,
+        buildKey: buildUserMediaKey,
+    });
 
     const putUrl = presignedPutUrl(key, contentType);
     const publicUrl = `https://${TOS_BUCKET}.${TOS_ENDPOINT}/${key}`;
