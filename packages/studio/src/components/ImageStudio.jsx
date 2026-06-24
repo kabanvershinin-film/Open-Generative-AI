@@ -31,6 +31,7 @@ import {
 } from "../models.js";
 import { useModelConfig } from "../useModelConfig.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
+import { saveMediaToGallery } from "./gallerySave.js";
 import { mergeImageHistoryEntries } from "./imageHistory.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -1409,6 +1410,21 @@ export default function ImageStudio({
     }
   }, [sanitizeHistoryForStorage, writePersistentState, writeRecentResults]);
 
+  const saveImageToGallery = useCallback(async (url, promptText = "", modelId = "") => {
+    if (!url || typeof url !== "string") return null;
+    try {
+      return await saveMediaToGallery({
+        url,
+        type: "image",
+        model: modelId || "",
+        prompt: promptText || "",
+      });
+    } catch (err) {
+      toast.error(`Не удалось сохранить в галерею: ${err.message || "ошибка"}`);
+      return null;
+    }
+  }, []);
+
   // ── View state ─────────────────────────────────────
 
   const resetToPrompt = () => {
@@ -1549,6 +1565,7 @@ export default function ImageStudio({
                 );
               }
               persistEntryToStorage(finalEntry);
+              await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model);
 
               // Write to dedicated result key so the resume-poll can find the entry
               // even if the component was unmounted and the save-effect ran in between.
@@ -1615,7 +1632,7 @@ export default function ImageStudio({
         }, 2000);
       }
     },
-    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, upsertPendingResults, writeRecentResults, selectedModelName],
+    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, saveImageToGallery, upsertPendingResults, writeRecentResults, selectedModelName],
   );
 
   const handleGenerate = () => {
@@ -1717,6 +1734,7 @@ export default function ImageStudio({
             );
             setCurrentImageUrl((cur) => (cur === entry.url ? permUrl : cur));
             persistEntryToStorage(finalEntry);
+            await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model);
             upsertPendingResults(snap.requestId, [finalEntry]);
           }
         } finally {
