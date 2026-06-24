@@ -1502,6 +1502,42 @@ export default function VideoStudio({
     setActiveHistoryIdx(0);
   }, []);
 
+  const deleteHistoryEntry = useCallback(async (entry, entryIdx) => {
+    const deleteId = entry?.id || "local-media";
+    const deleteUrl = typeof entry?.url === "string" ? entry.url : "";
+
+    if (deleteUrl) {
+      try {
+        const response = await fetch(`/api/gallery/${encodeURIComponent(deleteId)}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: deleteUrl }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload?.error || `HTTP ${response.status}`);
+        }
+      } catch (err) {
+        toast.error(`Не удалось удалить видео: ${err.message || "ошибка"}`, { duration: 4000 });
+        return;
+      }
+    }
+
+    setLocalHistory((prev) => prev.filter((item) => item?.id !== entry?.id && item?.url !== entry?.url));
+    setRemoteHistory((prev) => prev.filter((item) => item?.id !== entry?.id && item?.url !== entry?.url));
+
+    const nextHistory = history.filter((_, idx) => idx !== entryIdx);
+    if (canvasUrl === entry?.url) {
+      const nextEntry = nextHistory[0] || null;
+      setCanvasUrl(nextEntry?.url || null);
+      setCanvasModel(nextEntry?.model || null);
+      setShowCanvas(!!nextEntry);
+      setActiveHistoryIdx(0);
+    }
+
+    toast.success("Удалено", { duration: 2000 });
+  }, [canvasUrl, history]);
+
   // ── show result in canvas ─────────────────────────────────────────────────
   const showVideoInCanvas = useCallback((url, model) => {
     setCanvasUrl(url);
@@ -2459,6 +2495,20 @@ export default function VideoStudio({
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      title="Удалить"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteHistoryEntry(entry, idx);
+                      }}
+                      className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-red-500 hover:text-white transition-all border border-white/10"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
                       </svg>
                     </button>
                     {isSeedance2 && (

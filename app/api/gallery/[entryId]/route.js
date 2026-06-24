@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { getUser } from '../../_lib/balance';
+import { getManagedGalleryObjectKeys } from './mediaCleanup';
 
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
 const TOS_BUCKET   = process.env.TOS_BUCKET   || '';
@@ -86,6 +87,59 @@ async function tosDeleteObj(key) {
     }
 }
 
+async function tosGetSignedJson(host, key) {
+    if (!TOS_ENABLED) return null;
+    const { date, datetime } = tosDateParts();
+    const path = '/' + key.split('/').map(encodeURIComponent).join('/');
+    const canonHeaders = `host:${host}\nx-tos-content-sha256:${EMPTY_SHA256}\nx-tos-date:${datetime}\n`;
+    const signedHeaders = 'host;x-tos-content-sha256;x-tos-date';
+    const canonical = `GET\n${path}\n\n${canonHeaders}\n${signedHeaders}\n${EMPTY_SHA256}`;
+    const scope = `${date}/${TOS_REGION}/tos/request`;
+    const strToSign = `TOS4-HMAC-SHA256\n${datetime}\n${scope}\n${sha256hex(canonical)}`;
+    const sig = createHmac('sha256', tosSigningKey(date)).update(strToSign).digest('hex');
+    const auth = `TOS4-HMAC-SHA256 Credential=${TOS_AK}/${scope}, SignedHeaders=${signedHeaders}, Signature=${sig}`;
+    const res = await fetch(`https://${host}${path}`, {
+        headers: { 'Authorization': auth, 'X-Tos-Content-Sha256': EMPTY_SHA256, 'X-Tos-Date': datetime },
+    });
+    if (!res.ok) return null;
+    return res.json();
+}
+
+async function readGalleryEntry(host, userId, entryId, fallbackUrl = '') {
+    const key = `gallery/${userId}/entries/${entryId}.json`;
+    try {
+        const response = await fetch(`https://${host}/${key}`);
+        if (response.ok) {
+            const entry = await response.json();
+            if (entry?.id === entryId) return entry;
+        }
+    } catch {
+        // Игнорируем и пробуем подписанное чтение ниже.
+    }
+
+    try {
+        const entry = await tosGetSignedJson(host, key);
+        if (entry?.id === entryId) return entry;
+    } catch {
+        // Перейдём к legacy-индексу.
+    }
+
+    try {
+        const legacyKey = `gallery/${userId}/entries.json`;
+        const response = await fetch(`https://${host}/${legacyKey}`);
+        let entries = null;
+        if (response.ok) entries = await response.json();
+        else entries = await tosGetSignedJson(host, legacyKey);
+        if (Array.isArray(entries)) {
+            return entries.find((entry) => entry?.id === entryId || (fallbackUrl && entry?.url === fallbackUrl)) || null;
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+}
+
 export async function DELETE(request, { params }) {
     try {
         const user = await getUser(request);
@@ -95,20 +149,37 @@ export async function DELETE(request, { params }) {
 
         const { entryId } = await params;
         const host = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
+        const body = await request.json().catch(() => null);
+        const fallbackUrl = typeof body?.url === 'string' ? body.url : '';
+        const entry = await readGalleryEntry(host, user.id, entryId, fallbackUrl);
+        const resolvedEntryId = entry?.id || entryId;
+        const mediaKeys = getManagedGalleryObjectKeys(entry, { host, userId: user.id });
 
-        // NEW per-file format: delete the single object.
-        const ok = await tosDeleteObj(`gallery/${user.id}/entries/${entryId}.json`);
-        logStep('DELETE per-file', { entryId, ok });
+        if (fallbackUrl && mediaKeys.length === 0) {
+            mediaKeys.push(...getManagedGalleryObjectKeys({ url: fallbackUrl }, { host, userId: user.id }));
+        }
+
+        for (const mediaKey of mediaKeys) {
+            const deleted = await tosDeleteObj(mediaKey);
+            logStep('DELETE media', { entryId: resolvedEntryId, mediaKey, deleted });
+            if (!deleted) {
+                return NextResponse.json({ error: 'Не удалось удалить файл из хранилища' }, { status: 500 });
+            }
+        }
+
+        const ok = await tosDeleteObj(`gallery/${user.id}/entries/${resolvedEntryId}.json`);
+        logStep('DELETE per-file', { entryId: resolvedEntryId, ok });
+        if (!ok) return NextResponse.json({ error: 'Не удалось удалить запись галереи' }, { status: 500 });
 
         // MIGRATION fallback (remove after ~1 week): drop id from old entries.json too.
         try {
             const r = await fetch(`https://${host}/gallery/${user.id}/entries.json`);
             if (r.ok) {
                 let entries = await r.json();
-                if (Array.isArray(entries) && entries.some((e) => e.id === entryId)) {
-                    entries = entries.filter((e) => e.id !== entryId);
+                if (Array.isArray(entries) && entries.some((e) => e.id === resolvedEntryId || (fallbackUrl && e.url === fallbackUrl))) {
+                    entries = entries.filter((e) => e.id !== resolvedEntryId && (!fallbackUrl || e.url !== fallbackUrl));
                     await tosUpload(`gallery/${user.id}/entries.json`, Buffer.from(JSON.stringify(entries)), 'application/json');
-                    logStep('DELETE legacy updated', { entryId });
+                    logStep('DELETE legacy updated', { entryId: resolvedEntryId });
                 }
             }
         } catch { /* no legacy file */ }

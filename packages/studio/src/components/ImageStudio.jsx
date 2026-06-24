@@ -1343,13 +1343,41 @@ export default function ImageStudio({
   };
 
   // ── History helpers ──────────────────────────────────────────────────────
-  const removeFromHistory = useCallback((entryId, entryIdx) => {
-    if (historyItems !== undefined) {
-      onHistoryChange?.(historyItems.filter(e => e.id !== entryId && historyItems.indexOf(e) !== entryIdx));
-    } else {
-      setLocalHistory(prev => prev.filter((_, idx) => idx !== entryIdx));
+  const removeFromHistory = useCallback(async (entry, entryIdx) => {
+    const deleteId = entry?.id || "local-media";
+    const deleteUrl = typeof entry?.url === "string" ? entry.url : "";
+
+    if (deleteUrl) {
+      try {
+        const response = await fetch(`/api/gallery/${encodeURIComponent(deleteId)}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: deleteUrl }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload?.error || `HTTP ${response.status}`);
+        }
+      } catch (err) {
+        toast.error(`Не удалось удалить файл: ${err.message || "ошибка"}`);
+        return;
+      }
     }
-  }, [historyItems, onHistoryChange]);
+
+    const nextEntries = history.filter((_, idx) => idx !== entryIdx);
+    if (historyItems !== undefined) {
+      onHistoryChange?.(historyItems.filter((item, idx) => idx !== entryIdx && item?.id !== entry?.id && item?.url !== entry?.url));
+    } else {
+      setLocalHistory((prev) => prev.filter((item, idx) => idx !== entryIdx && item?.id !== entry?.id && item?.url !== entry?.url));
+    }
+
+    if (currentImageUrl === entry?.url) {
+      setCurrentImageUrl(nextEntries[0]?.url || null);
+      setActiveHistoryIdx(0);
+    }
+
+    toast.success("Удалено");
+  }, [currentImageUrl, history, historyItems, onHistoryChange]);
 
   const addToHistory = useCallback(
     (entry) => {
@@ -1962,7 +1990,7 @@ export default function ImageStudio({
                     title="Удалить"
                     onClick={(e) => {
                       e.stopPropagation();
-                      removeFromHistory(entry.id, idx);
+                      removeFromHistory(entry, idx);
                     }}
                     className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-red-500 hover:text-white transition-all border border-white/10"
                   >
