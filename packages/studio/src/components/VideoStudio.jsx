@@ -34,6 +34,7 @@ import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
 import { buildSeedanceStudioPayload, validateFaceAsset } from "../videoAssetPayload.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
+import { pickCompatibleControlValue } from "../videoStudioControls.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const HISTORY_PAGE_SIZE = 18;
@@ -579,7 +580,7 @@ export default function VideoStudio({
 
   // ── update controls when model/mode changes ──────────────────────────────
   const applyControlsForModel = useCallback(
-    (modelId, isImageMode, isV2vMode) => {
+    (modelId, isImageMode, isV2vMode, preservedSelections = {}) => {
       if (isV2vMode) {
         setShowAr(false);
         setShowDuration(false);
@@ -592,12 +593,22 @@ export default function VideoStudio({
 
       const modelList = isImageMode ? i2vModels : t2vModels;
       const model = modelList.find((m) => m.id === modelId);
+      const getPreservedSelection = (key, previousValue) =>
+        Object.prototype.hasOwnProperty.call(preservedSelections, key)
+          ? preservedSelections[key]
+          : previousValue;
 
       const ars = isImageMode
         ? getAspectRatiosForI2VModel(modelId)
         : getAspectRatiosForVideoModel(modelId);
       if (ars.length > 0) {
-        setSelectedAr(ars[0]);
+        setSelectedAr((previousValue) =>
+          pickCompatibleControlValue(
+            ars,
+            getPreservedSelection("selectedAr", previousValue),
+            model?.inputs?.aspect_ratio?.default,
+          ),
+        );
         setShowAr(true);
       } else {
         setShowAr(false);
@@ -607,7 +618,13 @@ export default function VideoStudio({
         ? getDurationsForI2VModel(modelId)
         : getDurationsForModel(modelId);
       if (durations.length > 0) {
-        setSelectedDuration(durations[0]);
+        setSelectedDuration((previousValue) =>
+          pickCompatibleControlValue(
+            durations,
+            getPreservedSelection("selectedDuration", previousValue),
+            model?.inputs?.duration?.default,
+          ),
+        );
         setShowDuration(true);
       } else {
         setShowDuration(false);
@@ -617,7 +634,13 @@ export default function VideoStudio({
         ? getResolutionsForI2VModel(modelId)
         : getResolutionsForVideoModel(modelId);
       if (resolutions.length > 0) {
-        setSelectedResolution(resolutions[0]);
+        setSelectedResolution((previousValue) =>
+          pickCompatibleControlValue(
+            resolutions,
+            getPreservedSelection("selectedResolution", previousValue),
+            model?.inputs?.resolution?.default,
+          ),
+        );
         setShowResolution(true);
       } else {
         setShowResolution(false);
@@ -625,7 +648,13 @@ export default function VideoStudio({
 
       const qualities = getQualitiesForModel(modelList, modelId);
       if (qualities.length > 0) {
-        setSelectedQuality(model?.inputs?.quality?.default || qualities[0]);
+        setSelectedQuality((previousValue) =>
+          pickCompatibleControlValue(
+            qualities,
+            getPreservedSelection("selectedQuality", previousValue),
+            model?.inputs?.quality?.default,
+          ) || "",
+        );
         setShowQuality(true);
       } else {
         setSelectedQuality("");
@@ -634,7 +663,13 @@ export default function VideoStudio({
 
       const modes = getModesForModel(modelId);
       if (modes.length > 0) {
-        setSelectedMode(model?.inputs?.mode?.default || modes[0]);
+        setSelectedMode((previousValue) =>
+          pickCompatibleControlValue(
+            modes,
+            getPreservedSelection("selectedMode", previousValue),
+            model?.inputs?.mode?.default,
+          ) || "",
+        );
         setShowMode(true);
       } else {
         setSelectedMode("");
@@ -643,7 +678,13 @@ export default function VideoStudio({
 
       const effects = isImageMode ? getEffectsForI2VModel(modelId) : [];
       if (effects.length > 0) {
-        setSelectedEffect(getDefaultEffectForI2VModel(modelId) || effects[0]);
+        setSelectedEffect((previousValue) =>
+          pickCompatibleControlValue(
+            effects,
+            getPreservedSelection("selectedEffect", previousValue),
+            getDefaultEffectForI2VModel(modelId),
+          ) || "",
+        );
         setShowEffect(true);
       } else {
         setSelectedEffect("");
@@ -652,7 +693,13 @@ export default function VideoStudio({
 
       // Check for character_orientation and keep_original_sound in model inputs
       if (model?.inputs?.character_orientation?.enum?.length > 0) {
-        setSelectedCharacterOrientation(model.inputs.character_orientation.default || model.inputs.character_orientation.enum[0]);
+        setSelectedCharacterOrientation((previousValue) =>
+          pickCompatibleControlValue(
+            model.inputs.character_orientation.enum,
+            getPreservedSelection("selectedCharacterOrientation", previousValue),
+            model.inputs.character_orientation.default,
+          ) || "",
+        );
         setShowCharacterOrientation(true);
       } else {
         setSelectedCharacterOrientation("");
@@ -660,7 +707,13 @@ export default function VideoStudio({
       }
 
       if (model?.inputs?.keep_original_sound?.enum?.length > 0) {
-        setSelectedKeepOriginalSound(model.inputs.keep_original_sound.default || model.inputs.keep_original_sound.enum[0]);
+        setSelectedKeepOriginalSound((previousValue) =>
+          pickCompatibleControlValue(
+            model.inputs.keep_original_sound.enum,
+            getPreservedSelection("selectedKeepOriginalSound", previousValue),
+            model.inputs.keep_original_sound.default,
+          ) || "",
+        );
         setShowKeepOriginalSound(true);
       } else {
         setSelectedKeepOriginalSound("");
@@ -722,7 +775,17 @@ export default function VideoStudio({
           applyControlsForModel(
             data.selectedModel || defaultModel.id,
             !!data.imageMode,
-            !!data.v2vMode
+            !!data.v2vMode,
+            {
+              selectedAr: data.selectedAr,
+              selectedDuration: data.selectedDuration,
+              selectedResolution: data.selectedResolution,
+              selectedQuality: data.selectedQuality,
+              selectedMode: data.selectedMode,
+              selectedEffect: data.selectedEffect,
+              selectedCharacterOrientation: data.selectedCharacterOrientation,
+              selectedKeepOriginalSound: data.selectedKeepOriginalSound,
+            },
           );
       }
     } catch (err) {
