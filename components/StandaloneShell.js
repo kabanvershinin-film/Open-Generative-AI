@@ -3,20 +3,29 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { ImageStudio, VideoStudio, ClippingStudio, VibeMotionStudio, LipSyncStudio, CinemaStudio, MarketingStudio, WorkflowStudio, AgentStudio, AppsStudio, getUserBalance, PromptStudio } from 'studio';
+import { getUserBalance } from '../packages/studio/src/muapi.js';
 
-const DesignAgentStudio = () => (
-  <div className="h-full w-full bg-black flex items-center justify-center text-white/40">
-    Модуль `design-agent` недоступен в этой сборке.
-  </div>
-);
+const ImageStudio = dynamic(() => import('../packages/studio/src/components/ImageStudio.jsx'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-black flex items-center justify-center text-white/20">Загрузка студии фото...</div>
+});
 
-const GalleryStudio = dynamic(() => import('studio').then(mod => mod.GalleryStudio), {
+const VideoStudio = dynamic(() => import('../packages/studio/src/components/VideoStudio.jsx'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-black flex items-center justify-center text-white/20">Загрузка студии видео...</div>
+});
+
+const WorkflowStudio = dynamic(() => import('../packages/studio/src/components/WorkflowStudio.jsx'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-black flex items-center justify-center text-white/20">Загрузка процессов...</div>
+});
+
+const GalleryStudio = dynamic(() => import('../packages/studio/src/components/GalleryStudio.jsx'), {
   ssr: false,
   loading: () => <div className="h-full w-full bg-black flex items-center justify-center text-white/20">Загрузка галереи...</div>
 });
 
-const PromptStudioTab = dynamic(() => import('studio').then(mod => mod.PromptStudio), {
+const PromptStudioTab = dynamic(() => import('../packages/studio/src/components/PromptStudio.jsx'), {
   ssr: false,
   loading: () => <div className="h-full w-full bg-black flex items-center justify-center text-white/20">Загрузка базы промтов...</div>
 });
