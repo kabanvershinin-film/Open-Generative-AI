@@ -1274,6 +1274,50 @@ export default function ImageStudio({
     [imageMode, maxImages, selectedModelId, t2iModels, i2iModels],
   );
 
+  const ensureImageModeForUploads = useCallback(() => {
+    if (imageMode || !selectedModelId) return;
+    const currentT2I = t2iModels.find((m) => m.id === selectedModelId);
+    const matchedI2I =
+      (currentT2I && i2iModels.find((m) => m.apiId === currentT2I.apiId)) ||
+      i2iModels[0];
+    if (!matchedI2I) return;
+
+    const ars = getAspectRatiosForI2IModel(matchedI2I.id);
+    const resolutions = getResolutionsForI2IModel(matchedI2I.id);
+    const effects = getEffectsForI2IModel(matchedI2I.id);
+    setImageMode(true);
+    setSelectedModelId(matchedI2I.id);
+    setSelectedModelName(matchedI2I.name);
+    setSelectedAr(ars[0] || "1:1");
+    setSelectedQuality(resolutions[0] || null);
+    setSelectedQualityOpt(getImageInputDefault(matchedI2I.id, "quality"));
+    setSelectedFormat(getImageInputDefault(matchedI2I.id, "format"));
+    setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
+    setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
+    setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
+    setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
+    setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
+  }, [i2iModels, imageMode, selectedModelId, t2iModels]);
+
+  const handleUploadPreviewChange = useCallback(
+    ({ url, urls }) => {
+      const newUrls = urls || [url];
+      setPreviewImageUrls(newUrls);
+      if (newUrls.length > 0) ensureImageModeForUploads();
+    },
+    [ensureImageModeForUploads],
+  );
+
+  const handleUploadSelect = useCallback(
+    ({ url, urls }) => {
+      const newUrls = urls || [url];
+      setUploadedImageUrls(newUrls);
+      setPreviewImageUrls(newUrls);
+      if (newUrls.length > 0) ensureImageModeForUploads();
+    },
+    [ensureImageModeForUploads],
+  );
+
   const processDroppedImages = useCallback(async (files) => {
     const invalid = files.find((file) => {
       try {
@@ -1339,49 +1383,6 @@ export default function ImageStudio({
   };
 
   // ── Upload picker callbacks ──────────────────────────────────────────────
-  const ensureImageModeForUploads = useCallback(() => {
-    if (imageMode || !selectedModelId) return;
-    const currentT2I = t2iModels.find((m) => m.id === selectedModelId);
-    const matchedI2I =
-      (currentT2I && i2iModels.find((m) => m.apiId === currentT2I.apiId)) ||
-      i2iModels[0];
-    if (!matchedI2I) return;
-
-    const ars = getAspectRatiosForI2IModel(matchedI2I.id);
-    const resolutions = getResolutionsForI2IModel(matchedI2I.id);
-    const effects = getEffectsForI2IModel(matchedI2I.id);
-    setImageMode(true);
-    setSelectedModelId(matchedI2I.id);
-    setSelectedModelName(matchedI2I.name);
-    setSelectedAr(ars[0] || "1:1");
-    setSelectedQuality(resolutions[0] || null);
-    setSelectedQualityOpt(getImageInputDefault(matchedI2I.id, "quality"));
-    setSelectedFormat(getImageInputDefault(matchedI2I.id, "format"));
-    setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
-    setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
-    setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
-    setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
-    setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
-  }, [i2iModels, imageMode, selectedModelId, t2iModels]);
-
-  const handleUploadPreviewChange = useCallback(
-    ({ url, urls }) => {
-      const newUrls = urls || [url];
-      setPreviewImageUrls(newUrls);
-      if (newUrls.length > 0) ensureImageModeForUploads();
-    },
-    [ensureImageModeForUploads],
-  );
-
-  const handleUploadSelect = useCallback(
-    ({ url, urls }) => {
-      const newUrls = urls || [url];
-      setUploadedImageUrls(newUrls);
-      setPreviewImageUrls(newUrls);
-      if (newUrls.length > 0) ensureImageModeForUploads();
-    },
-    [ensureImageModeForUploads],
-  );
 
   const handleUploadClear = useCallback(() => {
     setPreviewImageUrls([]);
