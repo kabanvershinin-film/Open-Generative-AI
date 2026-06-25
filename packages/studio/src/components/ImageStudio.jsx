@@ -2213,7 +2213,7 @@ export default function ImageStudio({
       >
         <div className="w-full bg-[#0a0a0a]/80 backdrop-blur-3xl rounded-md border border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
           {/* Top row: upload picker + textarea */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-start gap-2">
             <UploadButton
               apiKey={apiKey}
               maxImages={uploadPickerMaxImages}
@@ -2223,7 +2223,8 @@ export default function ImageStudio({
               onUploadStateChange={setReferenceUploadsPending}
               initialUrls={getDisplayUploadUrls(previewImageUrls, uploadedImageUrls)}
             />
-            <div className="flex-1 flex flex-col gap-2 relative">
+            <div className="flex-1 flex items-start gap-2">
+              <div className="flex-1 flex flex-col gap-2">
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -2231,24 +2232,30 @@ export default function ImageStudio({
                 onInput={handleTextareaInput}
                 placeholder={placeholderText}
                 rows={1}
-                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 pr-10 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar"
+                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar"
               />
+              </div>
               {prompt.trim() && (
-                <button
-                  type="button"
-                  title="Очистить промт"
-                  aria-label="Очистить промт"
-                  onClick={() => {
-                    setPrompt("");
-                    textareaRef.current?.focus();
-                  }}
-                  className="absolute top-1 right-1 w-7 h-7 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                    <path d="M18 6L6 18" />
-                    <path d="M6 6l12 12" />
-                  </svg>
-                </button>
+                <div className="relative shrink-0 group">
+                  <button
+                    type="button"
+                    title="Удалить промт"
+                    aria-label="Удалить промт"
+                    onClick={() => {
+                      setPrompt("");
+                      textareaRef.current?.focus();
+                    }}
+                    className="mt-1 w-9 h-9 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500 hover:text-white hover:border-red-400 transition-all flex items-center justify-center shadow-lg shadow-red-500/10"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                      <path d="M18 6L6 18" />
+                      <path d="M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <div className="pointer-events-none absolute right-0 bottom-full mb-2 whitespace-nowrap rounded-md border border-white/10 bg-black/90 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                    Удалить промт
+                  </div>
+                </div>
               )}
             </div>
           </div>
