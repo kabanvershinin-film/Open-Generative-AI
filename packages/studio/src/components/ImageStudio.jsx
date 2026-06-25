@@ -1274,6 +1274,7 @@ export default function ImageStudio({
         selectedModelId,
         t2iModels,
         i2iModels,
+        getMaxImagesForModel: getMaxImagesForI2IModel,
       }),
     [imageMode, maxImages, selectedModelId, t2iModels, i2iModels],
   );

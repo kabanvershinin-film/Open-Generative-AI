@@ -1,11 +1,10 @@
-import { getMaxImagesForI2IModel } from "./models.js";
-
 export function getUploadPickerMaxImages({
   imageMode = false,
   maxImages = 1,
   selectedModelId = "",
   t2iModels = [],
   i2iModels = [],
+  getMaxImagesForModel = () => 1,
 } = {}) {
   if (imageMode) {
     return Math.max(1, maxImages || 1);
@@ -23,5 +22,5 @@ export function getUploadPickerMaxImages({
     : null;
   if (!matchedI2I) return 1;
 
-  return Math.max(1, getMaxImagesForI2IModel(matchedI2I.id));
+  return Math.max(1, getMaxImagesForModel(matchedI2I.id));
 }
