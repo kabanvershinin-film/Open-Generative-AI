@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import {
@@ -33,6 +33,7 @@ import { useModelConfig } from "../useModelConfig.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { saveMediaToGallery } from "./gallerySave.js";
 import { mergeImageHistoryEntries } from "./imageHistory.js";
+import { getUploadPickerMaxImages } from "../imageStudioUploadConfig.js";
 import {
   addSelectedUploadEntry,
   replaceSelectedUploadEntry,
@@ -1217,7 +1218,7 @@ export default function ImageStudio({
     }
   }, [currentImageUrl, generating, historyItems, localHistory.length, mergeHistoryEntries, readRecentResults]);
 
-  const processDroppedImages = async (files) => {
+  const processDroppedImages = useCallback(async (files) => {
     const invalid = files.find((file) => {
       try {
         validateImageReferenceUploadFile(file);
@@ -1236,7 +1237,7 @@ export default function ImageStudio({
     setGenerating(true); // Show as generating/busy
     try {
       const toUpload =
-        maxImages === 1 ? files.slice(0, 1) : files.slice(0, maxImages);
+        uploadPickerMaxImages === 1 ? files.slice(0, 1) : files.slice(0, uploadPickerMaxImages);
       const urls = await Promise.all(
         toUpload.map(async (file) => {
           try {
@@ -1259,7 +1260,7 @@ export default function ImageStudio({
     } finally {
       setGenerating(false);
     }
-  };
+  }, [apiKey, handleUploadSelect, uploadPickerMaxImages]);
 
   // ── Handle Dropped Files ────────────────────────────────────────────────
   useEffect(() => {
@@ -1320,6 +1321,17 @@ export default function ImageStudio({
   const currentBackgroundOptions = selectedModelId ? getImageInputOptions(selectedModelId, "background") : [];
   const currentModerationOptions = selectedModelId ? getImageInputOptions(selectedModelId, "moderation") : [];
   const currentImageSizeOptions = selectedModelId ? getImageInputOptions(selectedModelId, "imageSize") : [];
+  const uploadPickerMaxImages = useMemo(
+    () =>
+      getUploadPickerMaxImages({
+        imageMode,
+        maxImages,
+        selectedModelId,
+        t2iModels,
+        i2iModels,
+      }),
+    [imageMode, maxImages, selectedModelId, t2iModels, i2iModels],
+  );
 
   // ── Textarea auto-resize ─────────────────────────────────────────────────
   const handleTextareaInput = () => {
@@ -1713,7 +1725,7 @@ export default function ImageStudio({
         }, 2000);
       }
     },
-    [apiKey, addToHistory, history, onGenerationComplete, persistEntryToStorage, saveImageToGallery, upsertPendingResults, writeRecentResults, selectedModelName],
+    [apiKey, addToHistory, history, i2iModels, onGenerationComplete, persistEntryToStorage, saveImageToGallery, t2iModels, upsertPendingResults, writeRecentResults],
   );
 
   const handleGenerate = () => {
@@ -2207,7 +2219,7 @@ export default function ImageStudio({
           <div className="flex items-center gap-2">
             <UploadButton
               apiKey={apiKey}
-              maxImages={maxImages}
+              maxImages={uploadPickerMaxImages}
               onSelect={handleUploadSelect}
               onPreviewChange={handleUploadPreviewChange}
               onClear={handleUploadClear}
