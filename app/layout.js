@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://open-generative-ai-sand.vercel.app';
-const siteTitle = 'Сапог AI — студия генерации фото, видео и workflow';
-const siteDescription = 'AI-платформа для генерации фото и видео, работы с workflow и 200+ моделями: Flux, Midjourney, Kling, Veo, Seedance и другими.';
+const siteTitle = 'Сапог AI — платформа для создания видео и фото';
+const siteDescription = 'Сапог AI — платформа для создания видео и фото.';
 
 export const metadata = {
     metadataBase: new URL(siteUrl),
