@@ -1218,61 +1218,6 @@ export default function ImageStudio({
     }
   }, [currentImageUrl, generating, historyItems, localHistory.length, mergeHistoryEntries, readRecentResults]);
 
-  const processDroppedImages = useCallback(async (files) => {
-    const invalid = files.find((file) => {
-      try {
-        validateImageReferenceUploadFile(file);
-        return false;
-      } catch {
-        return true;
-      }
-    });
-    if (invalid) {
-      alert(
-        `Формат файла не поддерживается: ${invalid.name || "без имени"}. Поддерживаются JPG, PNG, TIFF и RAW до 50 МБ.`
-      );
-      return;
-    }
-
-    setGenerating(true); // Show as generating/busy
-    try {
-      const toUpload =
-        uploadPickerMaxImages === 1 ? files.slice(0, 1) : files.slice(0, uploadPickerMaxImages);
-      const urls = await Promise.all(
-        toUpload.map(async (file) => {
-          try {
-            const processedFile = await optimizeImageUploadFile(file);
-            return await uploadFile(apiKey, processedFile);
-          } catch (err) {
-            console.error(
-              "[ImageStudio] Drop upload failed for",
-              file.name,
-              err
-            );
-            throw err;
-          }
-        })
-      );
-
-      handleUploadSelect({ urls });
-    } catch (err) {
-      alert(`Ошибка загрузки изображения: ${err.message}`);
-    } finally {
-      setGenerating(false);
-    }
-  }, [apiKey, handleUploadSelect, uploadPickerMaxImages]);
-
-  // ── Handle Dropped Files ────────────────────────────────────────────────
-  useEffect(() => {
-    if (droppedFiles && droppedFiles.length > 0) {
-      const imageFiles = droppedFiles.filter(f => f.type.startsWith('image/'));
-      if (imageFiles.length > 0) {
-        processDroppedImages(imageFiles);
-      }
-      onFilesHandled?.();
-    }
-  }, [droppedFiles, onFilesHandled, processDroppedImages]);
-
   // ── Derived: current model lists & helpers ───────────────────────────────
   const currentModels = imageMode ? i2iModels : t2iModels;
   const currentAspectRatios = imageMode && selectedModelId
@@ -1332,6 +1277,61 @@ export default function ImageStudio({
       }),
     [imageMode, maxImages, selectedModelId, t2iModels, i2iModels],
   );
+
+  const processDroppedImages = useCallback(async (files) => {
+    const invalid = files.find((file) => {
+      try {
+        validateImageReferenceUploadFile(file);
+        return false;
+      } catch {
+        return true;
+      }
+    });
+    if (invalid) {
+      alert(
+        `Формат файла не поддерживается: ${invalid.name || "без имени"}. Поддерживаются JPG, PNG, TIFF и RAW до 50 МБ.`
+      );
+      return;
+    }
+
+    setGenerating(true); // Show as generating/busy
+    try {
+      const toUpload =
+        uploadPickerMaxImages === 1 ? files.slice(0, 1) : files.slice(0, uploadPickerMaxImages);
+      const urls = await Promise.all(
+        toUpload.map(async (file) => {
+          try {
+            const processedFile = await optimizeImageUploadFile(file);
+            return await uploadFile(apiKey, processedFile);
+          } catch (err) {
+            console.error(
+              "[ImageStudio] Drop upload failed for",
+              file.name,
+              err
+            );
+            throw err;
+          }
+        })
+      );
+
+      handleUploadSelect({ urls });
+    } catch (err) {
+      alert(`Ошибка загрузки изображения: ${err.message}`);
+    } finally {
+      setGenerating(false);
+    }
+  }, [apiKey, handleUploadSelect, uploadPickerMaxImages]);
+
+  // ── Handle Dropped Files ────────────────────────────────────────────────
+  useEffect(() => {
+    if (droppedFiles && droppedFiles.length > 0) {
+      const imageFiles = droppedFiles.filter(f => f.type.startsWith('image/'));
+      if (imageFiles.length > 0) {
+        processDroppedImages(imageFiles);
+      }
+      onFilesHandled?.();
+    }
+  }, [droppedFiles, onFilesHandled, processDroppedImages]);
 
   // ── Textarea auto-resize ─────────────────────────────────────────────────
   const handleTextareaInput = () => {
