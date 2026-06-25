@@ -41,6 +41,10 @@ test('image input option helpers expose shared options and defaults', () => {
     assert.strictEqual(models.getImageInputDefault('gpt-image-2-edit', 'background'), 'auto');
     assert.deepStrictEqual(models.getImageInputOptions('unknown-model', 'format'), []);
     assert.strictEqual(models.getImageInputDefault('unknown-model', 'format'), null);
+    assert.strictEqual(models.getMaxImagesForI2IModel('gpt-image-2-edit'), 16);
+    assert.strictEqual(models.getMaxImagesForI2IModel('gemini-3.1-flash-image-preview-edit'), 14);
+    assert.strictEqual(models.getMaxImagesForI2IModel('gemini-3-pro-image-preview-edit'), 8);
+    assert.strictEqual(models.getMaxImagesForI2IModel('unknown-model'), 1);
 });
 
 test('video model getters expose exact capabilities for t2v and i2v models', () => {

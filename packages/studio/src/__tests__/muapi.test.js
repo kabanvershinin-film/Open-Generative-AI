@@ -314,6 +314,43 @@ test('generateI2I downloads http image references and sends them as file blobs',
     assert.ok(imageEntries[0] instanceof Blob);
 });
 
+test('generateI2I sends additional references through image[] fields', async () => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async (url) => {
+        if (url === '/api/mf/v1/images/edits') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({ id: 'edit-multi', data: [{ url: 'http://example.com/edit-multi.jpg' }] }),
+            };
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const firstImage = new Blob(['first-image'], { type: 'image/jpeg' });
+    const secondImage = new Blob(['second-image'], { type: 'image/png' });
+    const thirdImage = new Blob(['third-image'], { type: 'image/webp' });
+
+    const result = await muapi.generateI2I('key', {
+        model: 'gpt-image-2-edit',
+        prompt: 'смешай несколько референсов',
+        image_url: firstImage,
+        images_list: [firstImage, secondImage, thirdImage],
+    });
+
+    assert.strictEqual(result.url, 'http://example.com/edit-multi.jpg');
+
+    const [, editOptions] = global.fetch.mock.calls[0].arguments;
+    const primaryImages = editOptions.body.getAll('image');
+    const extraImages = editOptions.body.getAll('image[]');
+
+    assert.strictEqual(primaryImages.length, 1);
+    assert.strictEqual(extraImages.length, 2);
+    assert.ok(primaryImages[0] instanceof Blob);
+    assert.ok(extraImages[0] instanceof Blob);
+    assert.ok(extraImages[1] instanceof Blob);
+});
+
 test('generateImage routes Gemini image models to chat completions', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementationOnce(async () => ({

@@ -63,6 +63,7 @@ export const _i2iModelsAll = [
     apiId: "gpt-image-2",
     editEndpoint: true,
     acceptsImage: true,
+    maxImages: 16,
     inputs: {
       prompt: { type: "string" },
       size: { enum: ["1024x1024", "1536x1024", "1024x1536", "2048x2048", "2048x1152", "3840x2160", "2160x3840"], default: "1024x1024" },
@@ -77,6 +78,7 @@ export const _i2iModelsAll = [
     name: "Nano Banana 2",
     apiId: "gemini-3.1-flash-image-preview",
     acceptsImage: true,
+    maxImages: 14,
     inputs: {
       prompt: { type: "string" },
       aspect_ratio: { enum: GEMINI_AR, default: "1:1" },
@@ -88,6 +90,7 @@ export const _i2iModelsAll = [
     name: "Nano Banana Pro",
     apiId: "gemini-3-pro-image-preview",
     acceptsImage: true,
+    maxImages: 8,
     inputs: {
       prompt: { type: "string" },
       aspect_ratio: { enum: GEMINI_AR, default: "1:1" },
@@ -273,7 +276,10 @@ export const getImageInputDefault = (id, field) => {
   return m?.inputs?.[field]?.default ?? null;
 };
 
-export const getMaxImagesForI2IModel    = (id) => 1;
+export const getMaxImagesForI2IModel    = (id) => {
+  const m = i2iModels.find(x => x.id === id);
+  return m?.maxImages || 1;
+};
 export const getEffectsForI2IModel      = (id) => [];
 export const getDefaultEffectForI2IModel = (id) => null;
 
