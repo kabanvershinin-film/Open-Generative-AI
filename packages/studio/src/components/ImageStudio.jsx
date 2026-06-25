@@ -2223,7 +2223,7 @@ export default function ImageStudio({
               onUploadStateChange={setReferenceUploadsPending}
               initialUrls={getDisplayUploadUrls(previewImageUrls, uploadedImageUrls)}
             />
-            <div className="flex-1 flex flex-col gap-2">
+            <div className="flex-1 flex flex-col gap-2 relative">
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -2231,8 +2231,25 @@ export default function ImageStudio({
                 onInput={handleTextareaInput}
                 placeholder={placeholderText}
                 rows={1}
-                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar"
+                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 pr-10 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar"
               />
+              {prompt.trim() && (
+                <button
+                  type="button"
+                  title="Очистить промт"
+                  aria-label="Очистить промт"
+                  onClick={() => {
+                    setPrompt("");
+                    textareaRef.current?.focus();
+                  }}
+                  className="absolute top-1 right-1 w-7 h-7 rounded-full bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                    <path d="M18 6L6 18" />
+                    <path d="M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
 
