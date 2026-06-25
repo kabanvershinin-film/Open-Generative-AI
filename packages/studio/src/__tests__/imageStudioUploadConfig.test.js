@@ -11,6 +11,11 @@ const i2iModels = [
   { id: "gpt-image-2-edit", apiId: "gpt-image-2", maxImages: 16 },
 ];
 
+function getMaxImagesForModel(modelId) {
+  const model = i2iModels.find((item) => item.id === modelId);
+  return model?.maxImages || 1;
+}
+
 test("до первой загрузки использует лимит связанной i2i-модели", () => {
   const maxImages = getUploadPickerMaxImages({
     imageMode: false,
@@ -18,6 +23,7 @@ test("до первой загрузки использует лимит свя�
     selectedModelId: "gpt-image-2",
     t2iModels,
     i2iModels,
+    getMaxImagesForModel,
   });
 
   assert.strictEqual(maxImages, 16);
@@ -30,6 +36,7 @@ test("в imageMode сохраняет уже активный лимит ред�
     selectedModelId: "gpt-image-2-edit",
     t2iModels,
     i2iModels,
+    getMaxImagesForModel,
   });
 
   assert.strictEqual(maxImages, 14);
@@ -42,6 +49,7 @@ test("без i2i-пары оставляет одиночный выбор", () 
     selectedModelId: "single-only",
     t2iModels,
     i2iModels,
+    getMaxImagesForModel,
   });
 
   assert.strictEqual(maxImages, 1);
