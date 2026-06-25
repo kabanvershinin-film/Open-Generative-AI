@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { getUserBalance } from '../packages/studio/src/muapi.js';
+import { getUserBalance } from '../packages/studio/src/muapi/user.js';
 
 const ImageStudio = dynamic(() => import('../packages/studio/src/components/ImageStudio.jsx'), {
   ssr: false,

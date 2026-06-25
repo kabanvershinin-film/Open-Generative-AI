@@ -3,15 +3,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
-import {
-  generateImage,
-  generateI2I,
-  optimizeImageUploadFile,
-  uploadFile,
-  persistImageToTOS,
-  getUserWorkflows,
-  validateImageReferenceUploadFile,
-} from "../muapi.js";
+import { generateImage, generateI2I } from "../muapi/image.js";
+import { optimizeImageUploadFile, validateImageReferenceUploadFile } from "../muapi/files.js";
+import { uploadFile, persistImageToTOS } from "../muapi/assets.js";
+import { getUserWorkflows } from "../muapi/workflows.js";
 import {
   getT2iModels,
   getI2iModels,
