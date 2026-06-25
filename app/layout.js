@@ -23,20 +23,11 @@ export const metadata = {
         siteName: 'Сапог AI',
         locale: 'ru_RU',
         type: 'website',
-        images: [
-            {
-                url: '/banner.png',
-                width: 1200,
-                height: 630,
-                alt: 'Сапог AI',
-            },
-        ],
     },
     twitter: {
-        card: 'summary_large_image',
+        card: 'summary',
         title: siteTitle,
         description: siteDescription,
-        images: ['/banner.png'],
     },
     links: [
         { rel: 'preload', href: 'https://open-generative-ai.tos-cn-beijing.volces.com/gallery/compressed_02178111753742700000000000000000000ffffac1485021a8cd2.mp4', as: 'video', type: 'video/mp4', crossOrigin: 'anonymous' },
