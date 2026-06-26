@@ -375,8 +375,8 @@ const CharacterNode = ({ id, data, selected }) => {
         type="source"
         position={Position.Right}
         id="characterOutput"
-        style={{ top: 100, width: 12, height: 12, transition: "all 0.2s ease-in-out" }}
-        className={`!rounded-full !border-[3px] !right-[-8px] transition-all
+        style={{ top: 100, width: 16, height: 16, transition: "all 0.2s ease-in-out" }}
+        className={`!rounded-full !border-[3px] !right-[-10px] transition-all
           ${data.connectedOutputs?.characterOutput
             ? "!bg-purple-600 !border-zinc-900 shadow-[0_0_15px_rgba(168,85,247,0.8)]"
             : "!bg-zinc-900 !border-purple-600/50 hover:!border-purple-600 shadow-sm"}`}

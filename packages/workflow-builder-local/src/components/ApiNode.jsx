@@ -788,11 +788,11 @@ const ApiNode = ({ id, data, selected }) => {
             id="apiOutput" 
             style={{ 
               top: 100,
-              width: 12,
-              height: 12,
+              width: 16,
+              height: 16,
               transition: 'all 0.2s ease-in-out',
             }} 
-            className={`!rounded-full !border-2 transition-all duration-200 !right-[-7px]
+            className={`!rounded-full !border-2 transition-all duration-200 !right-[-9px]
               ${connectedOutputs.apiOutput 
                 ? activeClass
                 : inactiveClass

@@ -689,12 +689,12 @@ const TextGeneration = ({ id, data, selected }) => {
         id="textOutput" 
         style={{ 
           top: 100,
-          width: 14,
-          height: 14,
+          width: 16,
+          height: 16,
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }} 
         className={`
-          !rounded-full !border-[3px] !right-[-8px] transition-all
+          !rounded-full !border-[3px] !right-[-10px] transition-all
           ${connectedOutputs.textOutput 
             ? '!bg-blue-500 !border-zinc-900 shadow-[0_0_15px_rgba(59,130,246,0.8)]' 
             : '!bg-zinc-900 !border-blue-500/50 hover:!border-blue-500 shadow-sm'

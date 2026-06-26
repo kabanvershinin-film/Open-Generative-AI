@@ -560,11 +560,11 @@ const VideoCombiner = ({ id, data, selected }) => {
         id="videoOutput" 
         style={{ 
           top: 100,
-          width: 12,
-          height: 12,
+          width: 16,
+          height: 16,
           transition: 'all 0.2s ease-in-out',
         }} 
-        className={`!rounded-full !border-[3px] !right-[-8px] transition-all
+        className={`!rounded-full !border-[3px] !right-[-10px] transition-all
           ${connectedOutputs.videoOutput 
             ? '!bg-orange-600 !border-zinc-900 shadow-[0_0_15px_rgba(249,115,22,0.8)]' 
             : '!bg-zinc-900 !border-orange-600/50 hover:!border-orange-600 shadow-sm'

@@ -715,11 +715,11 @@ const AudioGeneration = ({ id, data, selected }) => {
         id="audioOutput" 
         style={{ 
           top: 100,
-          width: 12,
-          height: 12,
+          width: 16,
+          height: 16,
           transition: 'all 0.2s ease-in-out',
         }} 
-        className={`!rounded-full !border-[3px] !right-[-8px] transition-all
+        className={`!rounded-full !border-[3px] !right-[-10px] transition-all
           ${connectedOutputs.audioOutput 
             ? '!bg-yellow-500 !border-zinc-900 shadow-[0_0_15px_rgba(234,179,8,0.8)]' 
             : '!bg-zinc-900 !border-yellow-500/50 hover:!border-yellow-500 shadow-sm'

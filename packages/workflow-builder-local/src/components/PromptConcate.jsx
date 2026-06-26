@@ -275,11 +275,11 @@ const PromptConcate = ({ id, data, selected }) => {
         id="concatOutput" 
         style={{ 
           top: 100,
-          width: 12,
-          height: 12,
+          width: 16,
+          height: 16,
           transition: 'all 0.2s ease-in-out',
         }} 
-        className={`!rounded-full !border-2 transition-all duration-200 !right-[-7px]
+        className={`!rounded-full !border-2 transition-all duration-200 !right-[-9px]
           ${connectedOutputs.concatOutput 
             ? '!bg-blue-500 !border-white shadow-[0_0_20px_rgba(59,130,246,1)]' 
             : '!bg-black !border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.5)]'

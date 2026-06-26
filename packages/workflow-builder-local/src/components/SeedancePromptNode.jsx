@@ -340,7 +340,7 @@ const SeedancePromptNode = ({ id, data }) => {
       <Handle type="target" position={Position.Left} id="camera" style={{ top: "50%" }} className="!bg-teal-500 !w-3 !h-3" title="🎬 Подключи ноду Камера" />
       {/* Prompt output — uses textOutput id so it reads as a blue text output and
           connects to a video/image node's prompt input via the standard edge map. */}
-      <Handle type="source" position={Position.Right} id="textOutput" className={`!w-3 !h-3 ${outputConnected ? "!bg-purple-400" : "!bg-purple-500"}`} />
+      <Handle type="source" position={Position.Right} id="textOutput" className={`!w-4 !h-4 ${outputConnected ? "!bg-purple-400" : "!bg-purple-500"}`} />
     </div>
   );
 };
