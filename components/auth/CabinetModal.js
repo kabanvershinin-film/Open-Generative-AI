@@ -184,6 +184,14 @@ export default function CabinetModal() {
 
                 <div className="space-y-3">
                     <div className="text-sm text-white/70">Пополнить баланс</div>
+                    <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-center">
+                        <div className="text-base font-bold uppercase tracking-wide text-amber-300">
+                            Пополнение только через российский банк
+                        </div>
+                        <div className="mt-1 text-sm font-medium text-amber-100">
+                            Поддерживаются только карты российских банков и СБП
+                        </div>
+                    </div>
                     <div className="grid grid-cols-4 gap-2">
                         {PRESETS.map(p => (
                             <button key={p} onClick={() => setAmount(String(p))}
@@ -203,7 +211,7 @@ export default function CabinetModal() {
                             className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors">
                         {busy ? '...' : 'Пополнить'}
                     </button>
-                    <div className="text-xs text-white/30 text-center">Карта или СБП · от 100 ₽</div>
+                    <div className="text-sm font-semibold text-amber-300 text-center">Только российский банк · карта РФ или СБП · от 100 ₽</div>
                 </div>
 
                 <div className="space-y-2">

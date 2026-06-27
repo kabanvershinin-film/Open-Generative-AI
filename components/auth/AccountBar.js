@@ -32,6 +32,14 @@ function InsufficientFundsDialog() {
                         className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-colors">
                     Пополнить баланс
                 </button>
+                <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-center">
+                    <div className="text-sm font-bold uppercase tracking-wide text-amber-300">
+                        Пополнение только через российский банк
+                    </div>
+                    <div className="mt-1 text-xs font-medium text-amber-100">
+                        Карта российского банка или СБП
+                    </div>
+                </div>
             </div>
         </div>
     );
