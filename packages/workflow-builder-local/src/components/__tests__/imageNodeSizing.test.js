@@ -22,6 +22,13 @@ test("normalizeImageNodeSize ограничивает размер минима�
   );
 });
 
+test("normalizeImageNodeSize выравнивает старый большой размер к единому размеру ноды", () => {
+  assert.deepStrictEqual(
+    normalizeImageNodeSize({ width: 720, height: 920 }),
+    DEFAULT_IMAGE_NODE_SIZE,
+  );
+});
+
 test("buildWorkflowNodeData добавляет размер только для фото-ноды", () => {
   assert.deepStrictEqual(
     buildWorkflowNodeData("imageNode", { foo: 1 }),

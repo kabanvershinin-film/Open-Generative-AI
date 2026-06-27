@@ -1091,10 +1091,15 @@ var VideoGeneration = function VideoGeneration(_ref) {
   var currentOutput = currentOutputList.length > 0 ? ((_currentOutputList$cu = currentOutputList[currentVideoIndex]) === null || _currentOutputList$cu === void 0 ? void 0 : _currentOutputList$cu.value) || ((_currentOutputList$ = currentOutputList[0]) === null || _currentOutputList$ === void 0 ? void 0 : _currentOutputList$.value) || data.resultUrl : data.resultUrl;
   return /*#__PURE__*/_react["default"].createElement("div", {
     style: {
-      minHeight: 220,
+      minHeight: 320,
+      minWidth: 280,
+      maxWidth: 280,
+      maxHeight: 320,
+      width: 280,
+      height: 320,
       '--loader-color': '#f97316'
     },
-    className: "\n        nowheel group flex flex-col flex-1 w-80 \n        rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-orange-500 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
+    className: "\n        nowheel group flex flex-col flex-1\n        rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out \n        ".concat(selected ? "border-orange-500 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" : "border-zinc-800 hover:border-zinc-700 shadow-lg", " \n        bg-[#0c0d0f]\n      ")
   }, data.isLoading && /*#__PURE__*/_react["default"].createElement("div", {
     className: "loader-border"
   }), /*#__PURE__*/_react["default"].createElement("div", {

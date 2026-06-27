@@ -18,6 +18,7 @@ import { useGenerationCost } from "./useGenerationCost";
 import VideoPlayer from "./VideoPlayer";
 import { buildSeedanceWorkflowBody } from "./seedanceWorkflowPayload.js";
 import { collectConnectedCharacterReferences } from "./connectedCharacterReferences.js";
+import { DEFAULT_MEDIA_NODE_SIZE } from "./imageNodeSizing.js";
 
 const inputHandles = [
   "videoInput",   // prompt
@@ -764,9 +765,17 @@ const VideoGeneration = ({ id, data, selected }) => {
 
   return (
     <div 
-      style={{ minHeight: 220, '--loader-color': '#f97316' }}
+      style={{
+        minHeight: DEFAULT_MEDIA_NODE_SIZE.height,
+        minWidth: DEFAULT_MEDIA_NODE_SIZE.width,
+        maxWidth: DEFAULT_MEDIA_NODE_SIZE.width,
+        maxHeight: DEFAULT_MEDIA_NODE_SIZE.height,
+        width: DEFAULT_MEDIA_NODE_SIZE.width,
+        height: DEFAULT_MEDIA_NODE_SIZE.height,
+        '--loader-color': '#f97316',
+      }}
       className={`
-        nowheel group flex flex-col flex-1 w-80 
+        nowheel group flex flex-col flex-1
         rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out 
         ${selected 
           ? "border-orange-500 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" 
