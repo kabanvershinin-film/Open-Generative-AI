@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { callVolcOpenAPI } from '../../_lib/volc-sign.js';
+import { pickFaceVerificationLink } from './logic.js';
 
 const VOLC_AK = process.env.VOLC_ACCESS_KEY;
 const VOLC_SK = process.env.VOLC_SECRET_KEY;
@@ -23,10 +24,11 @@ export async function POST(request) {
 
     const h5Link = result.H5Link;
     const bytedToken = result.BytedToken;
+    const shortUrl = pickFaceVerificationLink(result);
 
     return NextResponse.json({
       h5Link,
-      shortUrl: h5Link, // можно добавить укорочение ссылки позже
+      shortUrl,
       bytedToken,
     });
   } catch (err) {
