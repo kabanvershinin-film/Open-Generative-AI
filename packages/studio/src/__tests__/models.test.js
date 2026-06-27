@@ -21,6 +21,21 @@ test('image model getters return exact known model metadata', () => {
 });
 
 test('image input option helpers expose shared options and defaults', () => {
+    assert.deepStrictEqual(models.getAspectRatiosForModel('seedream-5.0-lite'), [
+        '1:1',
+        '4:3',
+        '3:4',
+        '16:9',
+        '9:16',
+        '3:2',
+        '2:3',
+        '21:9',
+    ]);
+    assert.deepStrictEqual(models.getImageInputOptions('seedream-5.0-lite', 'imageSize'), ['2K', '3K', '4K']);
+    assert.strictEqual(models.getImageInputDefault('seedream-5.0-lite', 'imageSize'), '2K');
+    assert.deepStrictEqual(models.getImageInputOptions('seedream-5.0-lite', 'format'), ['jpeg', 'png']);
+    assert.strictEqual(models.getImageInputDefault('seedream-5.0-lite', 'format'), 'jpeg');
+    assert.strictEqual(models.getMaxImagesForI2IModel('seedream-5.0-lite-edit'), 14);
     assert.deepStrictEqual(models.getAspectRatiosForModel('gemini-3.1-flash-image-preview'), [
         '1:1',
         '16:9',

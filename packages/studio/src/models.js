@@ -22,6 +22,8 @@ import {
   GEMINI_IMAGE_SIZE_PRESETS,
   GPT_IMAGE_ASPECT_RATIOS,
   GPT_IMAGE_SIZE_PRESETS,
+  SEEDREAM_IMAGE_ASPECT_RATIOS,
+  SEEDREAM_IMAGE_SIZE_PRESETS,
 } from "./imageModelSizing.js";
 
 // ── Image generation (text → image) via POST /v1/images/generations ──────────
@@ -38,6 +40,19 @@ export const _t2iModelsAll = [
       format: { enum: ["jpeg", "png", "webp"], default: "jpeg" },
       background: { enum: ["auto", "opaque"], default: "auto" },
       moderation: { enum: ["auto", "low"], default: "auto" },
+    },
+  },
+  {
+    id: "seedream-5.0-lite",
+    name: "Seedream 5.0 Lite",
+    apiId: "doubao-seedream-5-0-260128",
+    provider: "ark",
+    imageSizing: "seedream",
+    inputs: {
+      prompt: { type: "string" },
+      aspect_ratio: { enum: SEEDREAM_IMAGE_ASPECT_RATIOS, default: "1:1" },
+      imageSize: { enum: SEEDREAM_IMAGE_SIZE_PRESETS, default: "2K" },
+      format: { enum: ["jpeg", "png"], default: "jpeg" },
     },
   },
   {
@@ -79,6 +94,21 @@ export const _i2iModelsAll = [
       format: { enum: ["jpeg", "png", "webp"], default: "jpeg" },
       background: { enum: ["auto", "opaque"], default: "auto" },
       moderation: { enum: ["auto", "low"], default: "auto" },
+    },
+  },
+  {
+    id: "seedream-5.0-lite-edit",
+    name: "Seedream 5.0 Lite",
+    apiId: "doubao-seedream-5-0-260128",
+    provider: "ark",
+    imageSizing: "seedream",
+    acceptsImage: true,
+    maxImages: 14,
+    inputs: {
+      prompt: { type: "string" },
+      aspect_ratio: { enum: SEEDREAM_IMAGE_ASPECT_RATIOS, default: "1:1" },
+      imageSize: { enum: SEEDREAM_IMAGE_SIZE_PRESETS, default: "2K" },
+      format: { enum: ["jpeg", "png"], default: "jpeg" },
     },
   },
   {

@@ -311,6 +311,37 @@ test('generateImage мапит GPT preset 2K в корректный size для
     assert.strictEqual(body.size, '1152x2048');
 });
 
+test('generateImage routes Seedream 5.0 Lite to Ark image proxy with documented payload', async () => {
+  global.fetch.mock.resetCalls();
+  global.fetch.mock.mockImplementationOnce(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ created: 123, data: [{ url: 'http://example.com/seedream.jpg', size: '4096x2304' }] }),
+  }));
+
+  const result = await muapi.generateImage('key', {
+    model: 'seedream-5.0-lite',
+    prompt: 'город будущего',
+    aspect_ratio: '16:9',
+    imageSize: '3K',
+    format: 'png',
+  });
+
+  assert.strictEqual(result.url, 'http://example.com/seedream.jpg');
+  const [url, options] = global.fetch.mock.calls[0].arguments;
+  assert.strictEqual(url, '/api/ark/images');
+  assert.strictEqual(options.method, 'POST');
+  const body = JSON.parse(options.body);
+  assert.strictEqual(body.model, 'doubao-seedream-5-0-260128');
+  assert.strictEqual(body.prompt, 'город будущего');
+  assert.strictEqual(body.size, '4096x2304');
+  assert.strictEqual(body.output_format, 'png');
+  assert.strictEqual(body.response_format, 'url');
+  assert.strictEqual(body.sequential_image_generation, 'disabled');
+  assert.strictEqual(body.stream, false);
+  assert.strictEqual(body.watermark, false);
+});
+
 test('generateI2I posts multipart edit request and returns url', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {
@@ -415,6 +446,36 @@ test('generateI2I sends additional references through image[] fields', async () 
     assert.ok(primaryImages[0] instanceof Blob);
     assert.ok(extraImages[0] instanceof Blob);
     assert.ok(extraImages[1] instanceof Blob);
+});
+
+test('generateI2I routes Seedream 5.0 Lite edit to Ark image proxy with multi-image input', async () => {
+  global.fetch.mock.resetCalls();
+  global.fetch.mock.mockImplementationOnce(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ created: 123, data: [{ url: 'http://example.com/seedream-edit.jpg' }] }),
+  }));
+
+  const result = await muapi.generateI2I('key', {
+    model: 'seedream-5.0-lite-edit',
+    prompt: 'смешай эти референсы',
+    image_url: 'http://example.com/source-1.jpg',
+    images_list: ['http://example.com/source-1.jpg', 'http://example.com/source-2.jpg'],
+    aspect_ratio: '1:1',
+    imageSize: '2K',
+    format: 'jpeg',
+  });
+
+  assert.strictEqual(result.url, 'http://example.com/seedream-edit.jpg');
+  const [url, options] = global.fetch.mock.calls[0].arguments;
+  assert.strictEqual(url, '/api/ark/images');
+  const body = JSON.parse(options.body);
+  assert.strictEqual(body.model, 'doubao-seedream-5-0-260128');
+  assert.strictEqual(body.size, '2048x2048');
+  assert.deepStrictEqual(body.image, [
+    'http://example.com/source-1.jpg',
+    'http://example.com/source-2.jpg',
+  ]);
 });
 
 test('generateImage routes Gemini image models to native generateContent', async (t) => {

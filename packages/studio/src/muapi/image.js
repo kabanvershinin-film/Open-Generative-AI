@@ -1,6 +1,6 @@
 import { getI2iModels, getT2iModels } from '../models.js';
 import { fetchWithTimeout, formatApiError, notifyAuthRequired } from './core.js';
-import { computeGptImageSize } from '../imageModelSizing.js';
+import { computeImageGenerationSize } from '../imageModelSizing.js';
 
 function getImageModelById(id) {
     const all = [...getT2iModels(), ...getI2iModels()];
@@ -11,8 +11,8 @@ function getI2IModelById(id) {
     return getI2iModels().find((model) => model.id === id);
 }
 
-function computeImageSize(aspectRatio, imageSize) {
-    return computeGptImageSize(aspectRatio, imageSize);
+function computeImageSize(modelInfo, aspectRatio, imageSize) {
+    return computeImageGenerationSize(modelInfo, aspectRatio, imageSize);
 }
 
 function applyImageRouting(modelId, routing) {
@@ -28,6 +28,10 @@ const GEMINI_NATIVE_IMAGE_MODELS = new Set([
 
 function isGeminiNativeImageModel(modelId) {
     return GEMINI_NATIVE_IMAGE_MODELS.has(modelId);
+}
+
+function isArkImageModel(modelInfo) {
+    return modelInfo?.provider === 'ark';
 }
 
 function getImageUrlFromResponse(data) {
@@ -59,6 +63,13 @@ function getGeminiImageUrlFromResponse(data) {
 }
 
 function getGeminiImageReferences(params) {
+    return [
+        ...(Array.isArray(params.images_list) ? params.images_list : []),
+        params.image_url,
+    ].filter(Boolean).filter((image, index, list) => list.indexOf(image) === index);
+}
+
+function getArkImageReferences(params) {
     return [
         ...(Array.isArray(params.images_list) ? params.images_list : []),
         params.image_url,
@@ -146,6 +157,59 @@ async function imageReferenceToInlineData(image) {
     return null;
 }
 
+async function imageReferenceToArkValue(image) {
+    if (image instanceof Blob) {
+        const mime = image.type || 'image/png';
+        const data = await blobToBase64(image);
+        return `data:${mime};base64,${data}`;
+    }
+
+    if (typeof image === 'string' && image.startsWith('data:')) {
+        return image;
+    }
+
+    if (typeof image === 'string' && /^https?:\/\//i.test(image)) {
+        return image;
+    }
+
+    return null;
+}
+
+async function generateArkImage(apiKey, modelInfo, params) {
+    const modelId = modelInfo?.apiId || params.model;
+    const references = await Promise.all(getArkImageReferences(params).map((image) => imageReferenceToArkValue(image)));
+    const images = references.filter(Boolean);
+    const body = {
+        model: modelId,
+        prompt: params.prompt || '',
+        size: computeImageSize(modelInfo, params.aspect_ratio, params.imageSize || params.size),
+        response_format: 'url',
+        sequential_image_generation: 'disabled',
+        stream: false,
+        watermark: false,
+    };
+
+    if (images.length === 1) body.image = images[0];
+    if (images.length > 1) body.image = images;
+    if (params.format) body.output_format = params.format;
+
+    const response = await fetchWithTimeout('/api/ark/images', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+    }, 5 * 60 * 1000);
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        if (response.status === 401) notifyAuthRequired(401, formatApiError(data.error, 'Войдите в аккаунт, чтобы генерировать.'));
+        if (response.status === 402) throw new Error(`Недостаточно средств. Нужно ${data.required ?? ''}₽, на балансе ${data.balance ?? 0}₽.`);
+        throw new Error(formatApiError(data.error || data.detail, `Ark Image API ${response.status}`));
+    }
+    return normalizeImageResult(data);
+}
+
 async function generateGeminiImage(apiKey, modelId, params) {
     const parts = [{ text: params.prompt || '' }];
     const images = getGeminiImageReferences(params);
@@ -193,11 +257,14 @@ export async function generateImage(apiKey, params) {
     if (isGeminiNativeImageModel(params.model) || isGeminiNativeImageModel(rawModelId)) {
         return generateGeminiImage(apiKey, modelId, params);
     }
+    if (isArkImageModel(modelInfo)) {
+        return generateArkImage(apiKey, modelInfo, params);
+    }
     const body = {
         model: modelId,
         prompt: params.prompt || '',
         n: 1,
-        size: computeImageSize(params.aspect_ratio, params.imageSize || params.size),
+        size: computeImageSize(modelInfo, params.aspect_ratio, params.imageSize || params.size),
         response_format: 'url',
     };
     if (params.quality) body.quality = params.quality;
@@ -229,6 +296,9 @@ export async function generateI2I(apiKey, params) {
     if (isGeminiNativeImageModel(params.model) || isGeminiNativeImageModel(modelInfo?.apiId || params.model)) {
         return generateGeminiImage(apiKey, modelId, params);
     }
+    if (isArkImageModel(modelInfo)) {
+        return generateArkImage(apiKey, modelInfo, params);
+    }
 
     const images = [
         ...(Array.isArray(params.images_list) ? params.images_list : []),
@@ -239,7 +309,7 @@ export async function generateI2I(apiKey, params) {
     form.append('model', modelId);
     form.append('prompt', params.prompt || '');
     form.append('n', '1');
-    form.append('size', computeImageSize(params.aspect_ratio, params.imageSize || params.size));
+    form.append('size', computeImageSize(modelInfo, params.aspect_ratio, params.imageSize || params.size));
     if (params.quality) form.append('quality', params.quality);
     if (params.format) form.append('output_format', params.format);
     if (params.background) form.append('background', params.background);
