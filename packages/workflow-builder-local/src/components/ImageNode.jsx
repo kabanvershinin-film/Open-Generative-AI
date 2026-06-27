@@ -777,7 +777,7 @@ const ImageGeneration = ({ id, data, selected }) => {
                   loading="lazy"
                   decoding="async"
                   onError={(e) => { if (currentOutput && e.currentTarget.src !== currentOutput) e.currentTarget.src = currentOutput; }}
-                  className="absolute inset-0 block w-full h-full max-w-full max-h-full object-contain rounded-b-none animate-in fade-in duration-500"
+                  className="absolute inset-0 block w-full h-full max-w-full max-h-full object-cover object-center rounded-b-none animate-in fade-in duration-500"
                 />
               </div>
               <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none rounded-b-xl flex flex-col justify-end">
