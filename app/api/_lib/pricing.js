@@ -243,7 +243,14 @@ async function videoPriceRub(model, durationSec, params, userId = null) {
     return round2(baseCny * durMult * CNY_TO_RUB * markup);
 }
 
+const IMAGE_PRICE_RUB_OVERRIDE = {
+    'doubao-seedream-5-0-260128': 3,
+};
+
 async function imagePriceRub(model, userId = null) {
+    if (Object.prototype.hasOwnProperty.call(IMAGE_PRICE_RUB_OVERRIDE, model)) {
+        return IMAGE_PRICE_RUB_OVERRIDE[model];
+    }
     return FIXED_IMAGE_PRICE_RUB;
 }
 
@@ -292,4 +299,14 @@ async function priceRub(category, model, params = {}, userId = null) {
     return imagePriceRub(real, userId);
 }
 
-export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP, loadPlatformMarkup, FIXED_IMAGE_PRICE_RUB };
+export {
+    priceRub,
+    seedance2RateCny,
+    rubFromTokens,
+    ensureCnyRate,
+    CNY_TO_RUB,
+    PLATFORM_MARKUP,
+    loadPlatformMarkup,
+    FIXED_IMAGE_PRICE_RUB,
+    IMAGE_PRICE_RUB_OVERRIDE,
+};

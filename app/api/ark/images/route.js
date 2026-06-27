@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 
 import { BILLING_ENABLED, refundBalanceRpc, spendBalance } from '../../_lib/balance';
+import { priceRub } from '../../_lib/pricing';
 import { buildImageChargeMeta } from '../../mf/helpers.js';
 import { buildArkImagePayload, extractArkImageError } from './route.helpers.js';
 
 const ARK_BASE = 'https://ark.cn-beijing.volces.com/api/v3';
 const ARK_API_KEY = process.env.ARK_API_KEY || '';
-const IMAGE_PRICE_RUB = 10;
 
 export async function POST(request) {
   if (!ARK_API_KEY) {
@@ -20,10 +20,11 @@ export async function POST(request) {
   }
 
   let charged = { ok: true, free: !BILLING_ENABLED };
+  const imagePriceRub = await priceRub('image', payload.model, {});
   if (BILLING_ENABLED) {
     charged = await spendBalance(
       request,
-      IMAGE_PRICE_RUB,
+      imagePriceRub,
       payload.model,
       buildImageChargeMeta(['v3', 'images', 'generations'], payload.model, null),
     );
@@ -39,7 +40,7 @@ export async function POST(request) {
         return NextResponse.json(
           {
             error: 'Недостаточно средств.',
-            required: charged.required ?? IMAGE_PRICE_RUB,
+            required: charged.required ?? imagePriceRub,
             balance: charged.balance ?? 0,
           },
           { status: 402 },
@@ -65,7 +66,7 @@ export async function POST(request) {
 
     if (!upstream.ok) {
       if (charged?.ok && !charged?.free) {
-        await refundBalanceRpc(request, IMAGE_PRICE_RUB, payload.model);
+        await refundBalanceRpc(request, imagePriceRub, payload.model);
       }
       return NextResponse.json(
         { error: extractArkImageError(data, upstream.status) },
@@ -76,7 +77,7 @@ export async function POST(request) {
     return NextResponse.json(data, { status: upstream.status });
   } catch (error) {
     if (charged?.ok && !charged?.free) {
-      await refundBalanceRpc(request, IMAGE_PRICE_RUB, payload.model);
+      await refundBalanceRpc(request, imagePriceRub, payload.model);
     }
     return NextResponse.json(
       { error: error?.message || 'Ark image proxy failed' },
