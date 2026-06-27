@@ -136,10 +136,9 @@ async function openGalleryEntryWithObjectUrl(popup, entry) {
 
 export async function openGalleryEntry(entry) {
   if (typeof window === "undefined") return;
-  const popup = window.open("", "_blank", "noopener,noreferrer");
+  const popup = window.open("about:blank", "_blank");
   if (!popup) {
-    window.open(entry?.url || "", "_blank", "noopener,noreferrer");
-    return;
+    throw new Error("Браузер заблокировал окно предпросмотра.");
   }
 
   popup.document.open();

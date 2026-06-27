@@ -44,6 +44,7 @@ test("buildGalleryViewerHtml рендерит image viewer для фото", () 
 
 test("openGalleryEntry открывает viewer через object URL вместо прямой ссылки", async (t) => {
   const writes = [];
+  const openCalls = [];
   const popup = {
     document: {
       open() {},
@@ -57,7 +58,10 @@ test("openGalleryEntry открывает viewer через object URL вмес�
   };
 
   global.window = {
-    open: () => popup,
+    open: (...args) => {
+      openCalls.push(args);
+      return popup;
+    },
   };
   let requestedUrl = "";
   global.fetch = async (url) => {
@@ -79,6 +83,7 @@ test("openGalleryEntry открывает viewer через object URL вмес�
   });
 
   assert.equal(writes.length >= 2, true);
+  assert.deepStrictEqual(openCalls[0], ["about:blank", "_blank"]);
   assert.strictEqual(
     requestedUrl,
     "/api/workflow/proxy-download?url=https%3A%2F%2Fcdn.example.com%2Fmedia%2Fresult.mp4",
