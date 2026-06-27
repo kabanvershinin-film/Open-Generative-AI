@@ -846,7 +846,42 @@ const MODERATION_LABELS = { auto: "Авто", low: "Низкая" };
 
 // ─── SimpleDropdown ───────────────────────────────────────────────────────────
 
-function SimpleDropdown({ title, options, selected, onSelect, onClose, labels }) {
+function AspectRatioOptionPreview({ ratio }) {
+  const [rawWidth, rawHeight] = String(ratio || "").split(":").map(Number);
+  const widthValue = Number.isFinite(rawWidth) && rawWidth > 0 ? rawWidth : 1;
+  const heightValue = Number.isFinite(rawHeight) && rawHeight > 0 ? rawHeight : 1;
+  const maxSize = 16;
+  const minSize = 6;
+
+  let previewWidth = maxSize;
+  let previewHeight = maxSize;
+
+  if (widthValue > heightValue) {
+    previewHeight = Math.max(minSize, Math.round((maxSize * heightValue) / widthValue));
+  } else if (heightValue > widthValue) {
+    previewWidth = Math.max(minSize, Math.round((maxSize * widthValue) / heightValue));
+  }
+
+  return (
+    <span className="flex h-6 w-6 items-center justify-center rounded-md border border-white/10 bg-white/5">
+      <span
+        className="rounded-[3px] border border-[#22d3ee]/80 bg-[#22d3ee]/15"
+        style={{ width: `${previewWidth}px`, height: `${previewHeight}px` }}
+      />
+    </span>
+  );
+}
+
+function renderAspectRatioOption(option) {
+  return (
+    <span className="flex items-center gap-2">
+      <AspectRatioOptionPreview ratio={option} />
+      <span>{option}</span>
+    </span>
+  );
+}
+
+function SimpleDropdown({ title, options, selected, onSelect, onClose, labels, renderOption }) {
   return (
     <>
       <div className="text-xs font-medium text-muted pb-2 border-b border-white/5 mb-2">
@@ -864,7 +899,7 @@ function SimpleDropdown({ title, options, selected, onSelect, onClose, labels })
             className="flex items-center justify-between p-2 hover:bg-white/5 rounded-md cursor-pointer transition-all group"
           >
             <span className="text-xs font-bold text-white opacity-80 group-hover:opacity-100">
-              {labels?.[opt] || opt}
+              {renderOption ? renderOption(opt) : (labels?.[opt] || opt)}
             </span>
             {selected === opt && (
               <svg
@@ -2408,6 +2443,7 @@ export default function ImageStudio({
                       title="Соотношение сторон"
                       options={currentAspectRatios}
                       selected={selectedAr}
+                      renderOption={renderAspectRatioOption}
                       onSelect={(val) => setSelectedAr(val)}
                       onClose={() => setDropdownOpen(null)}
                     />
