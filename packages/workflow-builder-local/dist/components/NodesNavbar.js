@@ -71,6 +71,10 @@ var NodesNavbar = function NodesNavbar(_ref) {
     _useState4 = _slicedToArray(_useState3, 2),
     searchQuery = _useState4[0],
     setSearchQuery = _useState4[1];
+  var _useState5 = (0, _react.useState)(0),
+    _useState6 = _slicedToArray(_useState5, 2),
+    submenuAnchorTop = _useState6[0],
+    setSubmenuAnchorTop = _useState6[1];
   var menuRef = (0, _react.useRef)(null);
   var isSidebar = variant === "sidebar";
   var getNodeTypeFromSubmenuId = function getNodeTypeFromSubmenuId(id) {
@@ -188,6 +192,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
       selectedModel: model
     });
     setActiveSubMenu(null);
+    setSubmenuAnchorTop(0);
     setSearchQuery("");
   };
   var menuStructure = [{
@@ -429,12 +434,12 @@ var NodesNavbar = function NodesNavbar(_ref) {
     }, "\u041D\u0438\u0447\u0435\u0433\u043E \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E"));
   };
   var anchorRef = (0, _react.useRef)(null);
-  var _useState5 = (0, _react.useState)({
+  var _useState7 = (0, _react.useState)({
       opacity: 0
     }),
-    _useState6 = _slicedToArray(_useState5, 2),
-    menuStyle = _useState6[0],
-    setMenuStyle = _useState6[1];
+    _useState8 = _slicedToArray(_useState7, 2),
+    menuStyle = _useState8[0],
+    setMenuStyle = _useState8[1];
   (0, _react.useLayoutEffect)(function () {
     if (isSidebar) {
       setMenuStyle({});
@@ -487,6 +492,10 @@ var NodesNavbar = function NodesNavbar(_ref) {
   }).filter(function (section) {
     return section.items.length > 0;
   }) : menuStructure;
+  var openSubmenu = function openSubmenu(event, itemId) {
+    setSubmenuAnchorTop(event.currentTarget.offsetTop);
+    setActiveSubMenu(itemId);
+  };
   return /*#__PURE__*/_react["default"].createElement("div", {
     ref: anchorRef,
     className: isSidebar ? "relative flex h-full w-full flex-col" : "relative z-50 flex flex-col gap-2"
@@ -520,18 +529,19 @@ var NodesNavbar = function NodesNavbar(_ref) {
       return /*#__PURE__*/_react["default"].createElement("div", {
         key: i,
         className: "flex items-center justify-between px-2 py-2 rounded-lg transition-colors relative ".concat(item.isSoon ? "opacity-50 cursor-not-allowed" : "cursor-pointer group hover:bg-[#212326] hover:text-white", " ").concat(activeSubMenu === item.id ? "bg-[#2c3037] text-white" : "text-gray-300"),
-        onMouseEnter: function onMouseEnter() {
+        onMouseEnter: function onMouseEnter(e) {
           if (item.isSoon) return;
           if (item.hasSubmenu) {
-            setActiveSubMenu(item.id);
+            openSubmenu(e, item.id);
           } else {
             setActiveSubMenu(null);
+            setSubmenuAnchorTop(0);
           }
         },
-        onClick: function onClick() {
+        onClick: function onClick(e) {
           if (item.isSoon) return;
           if (item.hasSubmenu) {
-            setActiveSubMenu(item.id);
+            openSubmenu(e, item.id);
           } else if (item.action) {
             item.action();
           }
@@ -559,6 +569,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     getSubmenuItems: getSubmenuItems,
     handleAddNode: handleAddNode,
     parentRef: menuRef,
+    anchorTop: submenuAnchorTop,
     onBack: function onBack() {
       return setActiveSubMenu(null);
     },
@@ -572,16 +583,18 @@ var Submenu = function Submenu(_ref4) {
     getSubmenuItems = _ref4.getSubmenuItems,
     handleAddNode = _ref4.handleAddNode,
     parentRef = _ref4.parentRef,
+    _ref4$anchorTop = _ref4.anchorTop,
+    anchorTop = _ref4$anchorTop === void 0 ? 0 : _ref4$anchorTop,
     onBack = _ref4.onBack,
     _ref4$sidebar = _ref4.sidebar,
     sidebar = _ref4$sidebar === void 0 ? false : _ref4$sidebar;
-  var _useState7 = (0, _react.useState)({
+  var _useState9 = (0, _react.useState)({
       side: "right",
       top: 0
     }),
-    _useState8 = _slicedToArray(_useState7, 2),
-    position = _useState8[0],
-    setPosition = _useState8[1];
+    _useState10 = _slicedToArray(_useState9, 2),
+    position = _useState10[0],
+    setPosition = _useState10[1];
   var submenuRef = (0, _react.useRef)(null);
   (0, _react.useLayoutEffect)(function () {
     if (sidebar) {
@@ -605,12 +618,12 @@ var Submenu = function Submenu(_ref4) {
           newSide = "left";
         }
       }
-      var newTop = 0;
+      var newTop = anchorTop;
       if (newSide !== "overlay") {
-        var projectedBottom = parentRect.top + submenuRect.height;
+        var projectedBottom = parentRect.top + newTop + submenuRect.height;
         if (projectedBottom > windowHeight) {
           var overlap = projectedBottom - windowHeight;
-          newTop = -overlap - 10;
+          newTop = Math.max(0, newTop - overlap - 10);
         }
       }
       setPosition({
@@ -618,7 +631,7 @@ var Submenu = function Submenu(_ref4) {
         top: newTop
       });
     }
-  }, [activeSubMenu, parentRef, sidebar]);
+  }, [activeSubMenu, anchorTop, parentRef, sidebar]);
   var currentSide = sidebar ? "overlay" : position.side;
   var getOverlayClass = function getOverlayClass() {
     if (currentSide === "overlay") return "left-0 top-0 h-full w-full";

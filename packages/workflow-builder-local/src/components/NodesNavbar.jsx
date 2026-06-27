@@ -36,6 +36,7 @@ const ALLOWED_GENERATE_IMAGE = new Set([
 
 const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchemas = {}, variant = "floating" }) => {
   const [activeSubMenu, setActiveSubMenu] = useState(null);
+  const [submenuAnchorTop, setSubmenuAnchorTop] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef(null);
   const isSidebar = variant === "sidebar";
@@ -131,6 +132,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
   const handleAddNode = (type, model) => {
     addNode(type, null, { selectedModel: model });
     setActiveSubMenu(null);
+    setSubmenuAnchorTop(0);
     setSearchQuery("");
   };
 
@@ -324,6 +326,11 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
       })).filter(section => section.items.length > 0)
     : menuStructure;
 
+  const openSubmenu = (event, itemId) => {
+    setSubmenuAnchorTop(event.currentTarget.offsetTop);
+    setActiveSubMenu(itemId);
+  };
+
   return (
     <div
       ref={anchorRef}
@@ -357,18 +364,19 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
                     <div
                       key={i}
                       className={`flex items-center justify-between px-2 py-2 rounded-lg transition-colors relative ${item.isSoon ? "opacity-50 cursor-not-allowed" : "cursor-pointer group hover:bg-[#212326] hover:text-white"} ${activeSubMenu === item.id ? "bg-[#2c3037] text-white" : "text-gray-300"}`}
-                      onMouseEnter={() => {
+                      onMouseEnter={(e) => {
                         if (item.isSoon) return;
                         if (item.hasSubmenu) {
-                          setActiveSubMenu(item.id);
+                          openSubmenu(e, item.id);
                         } else {
                           setActiveSubMenu(null);
+                          setSubmenuAnchorTop(0);
                         }
                       }}
-                      onClick={() => {
+                      onClick={(e) => {
                         if (item.isSoon) return;
                         if (item.hasSubmenu) {
-                          setActiveSubMenu(item.id);
+                          openSubmenu(e, item.id);
                         } else if (item.action) {
                           item.action();
                         }
@@ -403,6 +411,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             getSubmenuItems={getSubmenuItems}
             handleAddNode={handleAddNode}
             parentRef={menuRef}
+            anchorTop={submenuAnchorTop}
             onBack={() => setActiveSubMenu(null)}
             sidebar={isSidebar}
           />
@@ -412,7 +421,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
   );
 };
 
-const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode, parentRef, onBack, sidebar = false }) => {
+const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode, parentRef, anchorTop = 0, onBack, sidebar = false }) => {
   const [position, setPosition] = useState({ side: "right", top: 0 });
   const submenuRef = useRef(null);
 
@@ -439,19 +448,19 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
         }
       }
 
-      let newTop = 0;
+      let newTop = anchorTop;
 
       if (newSide !== "overlay") {
-        const projectedBottom = parentRect.top + submenuRect.height;
+        const projectedBottom = parentRect.top + newTop + submenuRect.height;
         if (projectedBottom > windowHeight) {
           const overlap = projectedBottom - windowHeight;
-          newTop = -overlap - 10;
+          newTop = Math.max(0, newTop - overlap - 10);
         }
       }
 
       setPosition({ side: newSide, top: newTop });
     }
-  }, [activeSubMenu, parentRef, sidebar]);
+  }, [activeSubMenu, anchorTop, parentRef, sidebar]);
 
   const currentSide = sidebar ? "overlay" : position.side;
 
