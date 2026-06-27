@@ -3091,7 +3091,9 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       )}
       <div
         className={`fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black transition-all duration-200 ease-in-out ${
-          dropDown === 2 ? "opacity-100 scale-100 visible" : "opacity-0 scale-80 invisible"
+          dropDown === 2
+            ? "pointer-events-auto opacity-100 scale-100 visible"
+            : "pointer-events-none opacity-0 scale-80 invisible"
         }`}
         onClick={() => setDropDown(0)}
       >
