@@ -464,11 +464,11 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
 
   const currentSide = sidebar ? "overlay" : position.side;
 
-  const getOverlayClass = () => {
-    if (currentSide === "overlay") return "left-0 top-0 h-full w-full";
-    if (currentSide === "right") return "left-full ml-2";
-    return "right-full mr-2";
-  };
+  const submenuStyle = currentSide === "overlay"
+    ? { left: 0, top: 0 }
+    : currentSide === "right"
+      ? { left: "calc(100% + 0.5rem)", top: `${position.top}px` }
+      : { right: "calc(100% + 0.5rem)", top: `${position.top}px` };
 
   const getLabelIcon = (label) => {
     switch (label) {
@@ -505,8 +505,8 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
   return (
     <div
       ref={submenuRef}
-      style={{ top: currentSide === "overlay" ? 0 : `${position.top}px` }}
-      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ${currentSide === "overlay" ? "h-full w-full" : "h-fit max-h-[80vh]"} ${getOverlayClass()}`}
+      style={submenuStyle}
+      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ${currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]"}`}
     >
       <div
         className="flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors"

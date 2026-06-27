@@ -633,10 +633,15 @@ var Submenu = function Submenu(_ref4) {
     }
   }, [activeSubMenu, anchorTop, parentRef, sidebar]);
   var currentSide = sidebar ? "overlay" : position.side;
-  var getOverlayClass = function getOverlayClass() {
-    if (currentSide === "overlay") return "left-0 top-0 h-full w-full";
-    if (currentSide === "right") return "left-full ml-2";
-    return "right-full mr-2";
+  var submenuStyle = currentSide === "overlay" ? {
+    left: 0,
+    top: 0
+  } : currentSide === "right" ? {
+    left: "calc(100% + 0.5rem)",
+    top: "".concat(position.top, "px")
+  } : {
+    right: "calc(100% + 0.5rem)",
+    top: "".concat(position.top, "px")
   };
   var getLabelIcon = function getLabelIcon(label) {
     switch (label) {
@@ -673,10 +678,8 @@ var Submenu = function Submenu(_ref4) {
   };
   return /*#__PURE__*/_react["default"].createElement("div", {
     ref: submenuRef,
-    style: {
-      top: currentSide === "overlay" ? 0 : "".concat(position.top, "px")
-    },
-    className: "absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ".concat(currentSide === "overlay" ? "h-full w-full" : "h-fit max-h-[80vh]", " ").concat(getOverlayClass())
+    style: submenuStyle,
+    className: "absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ".concat(currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]")
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors",
     onClick: function onClick() {
