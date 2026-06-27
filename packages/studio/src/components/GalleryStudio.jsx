@@ -46,9 +46,9 @@ export default function GalleryStudio({ apiKey }) {
     }
   };
 
-  const handleOpen = (entry) => {
+  const handleOpen = async (entry) => {
     try {
-      openGalleryEntry(entry);
+      await openGalleryEntry(entry);
     } catch (err) {
       console.error('Failed to open entry:', err);
       toast.error('Не удалось открыть файл');

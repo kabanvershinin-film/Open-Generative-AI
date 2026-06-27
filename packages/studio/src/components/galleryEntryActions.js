@@ -109,16 +109,55 @@ export function buildGalleryViewerHtml(entry) {
 </html>`;
 }
 
-export function openGalleryEntry(entry) {
+function canInlineGalleryEntry(entry) {
+  return entry?.type === "image" || entry?.type === "video" || entry?.type === "audio";
+}
+
+async function openGalleryEntryWithObjectUrl(popup, entry) {
+  const response = await fetch(entry?.url || "");
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const viewerEntry = { ...entry, url: objectUrl };
+  popup.document.open();
+  popup.document.write(buildGalleryViewerHtml(viewerEntry));
+  popup.document.close();
+
+  const releaseObjectUrl = () => URL.revokeObjectURL(objectUrl);
+  popup.addEventListener?.("beforeunload", releaseObjectUrl, { once: true });
+  return objectUrl;
+}
+
+export async function openGalleryEntry(entry) {
   if (typeof window === "undefined") return;
   const popup = window.open("", "_blank", "noopener,noreferrer");
   if (!popup) {
     window.open(entry?.url || "", "_blank", "noopener,noreferrer");
     return;
   }
+
   popup.document.open();
-  popup.document.write(buildGalleryViewerHtml(entry));
+  popup.document.write(buildGalleryViewerHtml({
+    ...entry,
+    prompt: "Загрузка...",
+  }));
   popup.document.close();
+
+  if (!canInlineGalleryEntry(entry)) {
+    popup.document.open();
+    popup.document.write(buildGalleryViewerHtml(entry));
+    popup.document.close();
+    return;
+  }
+
+  try {
+    await openGalleryEntryWithObjectUrl(popup, entry);
+  } catch (error) {
+    popup.location.href = entry?.url || "about:blank";
+    throw error;
+  }
 }
 
 export async function downloadGalleryEntry(entry) {
