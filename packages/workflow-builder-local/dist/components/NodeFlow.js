@@ -47,6 +47,7 @@ var _SeedancePromptNode = _interopRequireDefault(require("./SeedancePromptNode")
 var _SkylarkNode = _interopRequireDefault(require("./SkylarkNode"));
 var _useGenerationCost2 = require("./useGenerationCost");
 var _connectedCharacterReferences = require("./connectedCharacterReferences.js");
+var _workflowNodeRestore = require("./workflowNodeRestore.js");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t0 in e) "default" !== _t0 && {}.hasOwnProperty.call(e, _t0) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t0)) && (i.get || i.set) ? o(f, _t0, i) : f[_t0] = e[_t0]); return f; })(e, t); }
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -235,29 +236,16 @@ var getModelObjStatic = function getModelObjStatic(category, modelId, nodeSchema
 var processWorkflowData = function processWorkflowData(workflowData, nodeSchemas, id) {
   var _workflowData$can_edi;
   if (!workflowData || !(nodeSchemas !== null && nodeSchemas !== void 0 && nodeSchemas.categories)) return null;
-  var workflow = workflowData === null || workflowData === void 0 ? void 0 : workflowData.data;
-  if (!(workflow !== null && workflow !== void 0 && workflow.nodes)) return null;
-  var restoredNodes = workflow.nodes.map(function (n) {
-    var _n$position$x, _n$position, _n$position$y, _n$position2, _n$output_params, _n$output_params2, _workflowData$run_his;
-    return {
-      id: n.id,
-      type: n.category === "utility" ? n.model === "video-combiner" ? "vidConcatNode" : "concatNode" : "".concat(n.category, "Node"),
-      position: {
-        x: (_n$position$x = (_n$position = n.position) === null || _n$position === void 0 ? void 0 : _n$position.x) !== null && _n$position$x !== void 0 ? _n$position$x : 350,
-        y: (_n$position$y = (_n$position2 = n.position) === null || _n$position2 === void 0 ? void 0 : _n$position2.y) !== null && _n$position$y !== void 0 ? _n$position$y : 0
-      },
-      data: {
-        nodeSchemas: nodeSchemas,
-        modelId: n.model,
-        selectedModel: getModelObjStatic(n.category, n.model, nodeSchemas),
-        outputs: ((_n$output_params = n.output_params) === null || _n$output_params === void 0 ? void 0 : _n$output_params.outputs) || [],
-        resultUrl: ((_n$output_params2 = n.output_params) === null || _n$output_params2 === void 0 ? void 0 : _n$output_params2.resultUrl) || null,
-        formValues: n.input_params || {},
-        outputHistory: (((_workflowData$run_his = workflowData.run_history) === null || _workflowData$run_his === void 0 ? void 0 : _workflowData$run_his[n.id]) || []).sort(function (a, b) {
-          return new Date(a.started_at) - new Date(b.started_at);
-        })
-      }
-    };
+  var hasStoredNodes = Array.isArray(workflowData === null || workflowData === void 0 ? void 0 : workflowData.data.nodes) || Array.isArray(workflowData === null || workflowData === void 0 ? void 0 : workflowData.nodes);
+  if (!hasStoredNodes) return null;
+  var storedNodes = (0, _workflowNodeRestore.getWorkflowNodesList)(workflowData);
+  var restoredNodes = storedNodes.map(function (node) {
+    return (0, _workflowNodeRestore.buildRestoredNode)(node, {
+      nodeSchemas: nodeSchemas,
+      workflowData: workflowData
+    });
+  }).filter(function (node) {
+    return node.id && node.type;
   });
   var restoredEdges = (workflowData.edges || []).map(function (e) {
     var sourceNode = restoredNodes.find(function (n) {
@@ -572,29 +560,16 @@ var NodeFlow = function NodeFlow(_ref) {
     return getModelObjStatic(category, modelId, nodeSchemas);
   }, [nodeSchemas]);
   var restoreWorkflow = (0, _react.useCallback)(function (workflowData) {
-    var workflow = workflowData === null || workflowData === void 0 ? void 0 : workflowData.data;
-    if (!(workflow !== null && workflow !== void 0 && workflow.nodes)) return;
-    var restoredNodes = workflow.nodes.map(function (n) {
-      var _n$position$x2, _n$position3, _n$position$y2, _n$position4, _n$output_params3, _n$output_params4, _workflowData$run_his2;
-      return {
-        id: n.id,
-        type: n.category === "utility" ? n.model === "video-combiner" ? "vidConcatNode" : "concatNode" : n.category === "character" ? "characterNode" : "".concat(n.category, "Node"),
-        position: {
-          x: (_n$position$x2 = (_n$position3 = n.position) === null || _n$position3 === void 0 ? void 0 : _n$position3.x) !== null && _n$position$x2 !== void 0 ? _n$position$x2 : 350,
-          y: (_n$position$y2 = (_n$position4 = n.position) === null || _n$position4 === void 0 ? void 0 : _n$position4.y) !== null && _n$position$y2 !== void 0 ? _n$position$y2 : 0
-        },
-        data: {
-          nodeSchemas: nodeSchemas,
-          modelId: n.model,
-          selectedModel: getModelObj(n.category, n.model),
-          outputs: ((_n$output_params3 = n.output_params) === null || _n$output_params3 === void 0 ? void 0 : _n$output_params3.outputs) || [],
-          resultUrl: ((_n$output_params4 = n.output_params) === null || _n$output_params4 === void 0 ? void 0 : _n$output_params4.resultUrl) || null,
-          formValues: n.input_params || {},
-          outputHistory: (((_workflowData$run_his2 = workflowData.run_history) === null || _workflowData$run_his2 === void 0 ? void 0 : _workflowData$run_his2[n.id]) || []).sort(function (a, b) {
-            return new Date(a.started_at) - new Date(b.started_at);
-          })
-        }
-      };
+    var storedNodes = (0, _workflowNodeRestore.getWorkflowNodesList)(workflowData);
+    if (!storedNodes.length && !Array.isArray(workflowData === null || workflowData === void 0 ? void 0 : workflowData.data.nodes) && !Array.isArray(workflowData === null || workflowData === void 0 ? void 0 : workflowData.nodes)) return;
+    var restoredNodes = storedNodes.map(function (node) {
+      return (0, _workflowNodeRestore.buildRestoredNode)(node, {
+        nodeSchemas: nodeSchemas,
+        workflowData: workflowData,
+        getModelObj: getModelObj
+      });
+    }).filter(function (node) {
+      return node.id && node.type;
     });
     var restoredEdges = (workflowData.edges || []).map(function (e) {
       var sourceNode = restoredNodes.find(function (n) {
@@ -1086,7 +1061,7 @@ var NodeFlow = function NodeFlow(_ref) {
             setChatMessages(function (prev) {
               return [].concat(_toConsumableArray(prev), [newAgentMessage]);
             });
-            if (workflow && workflow.nodes) {
+            if ((0, _workflowNodeRestore.getWorkflowNodesList)(workflow).length > 0 || Array.isArray(workflow === null || workflow === void 0 ? void 0 : workflow.data.nodes) || Array.isArray(workflow === null || workflow === void 0 ? void 0 : workflow.nodes)) {
               idMapping = {};
               counts = {
                 text: 0,
@@ -1094,10 +1069,15 @@ var NodeFlow = function NodeFlow(_ref) {
                 video: 0,
                 audio: 0
               };
-              newNodes = workflow.nodes.map(function (n) {
-                var _n$position$x3, _n$position5, _n$position$y3, _n$position6, _n$output_params5, _n$output_params6, _existingNode$data;
+              newNodes = (0, _workflowNodeRestore.getWorkflowNodesList)(workflow).map(function (n) {
+                var _n$position$x3, _n$position5, _n$position$y3, _n$position6, _existingNode$data;
                 var newId = n.id;
-                var category = n.category;
+                var category = (0, _workflowNodeRestore.getCategoryFromStoredNode)(n);
+                var restoredNode = (0, _workflowNodeRestore.buildRestoredNode)(n, {
+                  nodeSchemas: nodeSchemas,
+                  workflowData: workflow,
+                  getModelObj: getModelObj
+                });
                 if (["user_text", "prompt_gen"].includes(n.id) || category === "text") {
                   counts.text++;
                   newId = "text".concat(counts.text);
@@ -1117,20 +1097,14 @@ var NodeFlow = function NodeFlow(_ref) {
                 });
                 return {
                   id: newId,
-                  type: n.category === "utility" ? n.model === "video-combiner" ? "vidConcatNode" : "concatNode" : "".concat(n.category, "Node"),
+                  type: restoredNode.type,
                   position: (existingNode === null || existingNode === void 0 ? void 0 : existingNode.position) || {
                     x: (_n$position$x3 = (_n$position5 = n.position) === null || _n$position5 === void 0 ? void 0 : _n$position5.x) !== null && _n$position$x3 !== void 0 ? _n$position$x3 : 350,
                     y: (_n$position$y3 = (_n$position6 = n.position) === null || _n$position6 === void 0 ? void 0 : _n$position6.y) !== null && _n$position$y3 !== void 0 ? _n$position$y3 : 0
                   },
-                  data: _objectSpread(_objectSpread({}, existingNode === null || existingNode === void 0 ? void 0 : existingNode.data), {}, {
-                    nodeSchemas: nodeSchemas,
-                    modelId: n.model,
-                    selectedModel: getModelObj(n.category, n.model),
-                    outputs: ((_n$output_params5 = n.output_params) === null || _n$output_params5 === void 0 ? void 0 : _n$output_params5.outputs) || [],
-                    resultUrl: ((_n$output_params6 = n.output_params) === null || _n$output_params6 === void 0 ? void 0 : _n$output_params6.resultUrl) || null,
-                    formValues: n.input_params || n.params || {},
-                    outputHistory: (existingNode === null || existingNode === void 0 || (_existingNode$data = existingNode.data) === null || _existingNode$data === void 0 ? void 0 : _existingNode$data.outputHistory) || []
-                  })
+                  data: _objectSpread(_objectSpread({}, existingNode === null || existingNode === void 0 ? void 0 : existingNode.data), {}, _objectSpread(_objectSpread({}, restoredNode.data), {}, {
+                    outputHistory: (existingNode === null || existingNode === void 0 || (_existingNode$data = existingNode.data) === null || _existingNode$data === void 0 ? void 0 : _existingNode$data.outputHistory) || restoredNode.data.outputHistory || []
+                  }))
                 };
               });
               setNodes(newNodes);

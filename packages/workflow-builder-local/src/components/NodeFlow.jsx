@@ -55,6 +55,12 @@ import SkylarkNode from "./SkylarkNode";
 import { useGenerationCost } from "./useGenerationCost";
 import { collectConnectedCharacterReferences } from "./connectedCharacterReferences.js";
 import { buildWorkflowNodeData } from "./imageNodeSizing.js";
+import {
+  buildRestoredNode,
+  getCategoryFromStoredNode,
+  getModelObjStatic,
+  getWorkflowNodesList,
+} from "./workflowNodeRestore.js";
 
 const nodeTypes = {
   textNode: TextGeneration,
@@ -151,16 +157,6 @@ const iconMap = {
   "text": <TfiText size={20} />,
 };
 
-const SPECIAL_MODEL_NAMES = {
-  "text-passthrough": "Текст",
-  "image-passthrough": "Изображение",
-  "video-passthrough": "Видео",
-  "audio-passthrough": "Аудио",
-  "doubao-seedance-2-0-260128": "Seedance 2.0",
-  "doubao-seedance-2-0-fast-260128": "Seedance 2.0 Fast",
-};
-
-const formatName = (id) => id.replace(/-/g, ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 const formatNodeTitle = (id) => id
   .replace(/(\D+)(\d+)/, "$1 $2")
   .replace(/^text/i, "Текст")
@@ -172,58 +168,18 @@ const formatNodeTitle = (id) => id
   .replace(/^concat/i, "Объединение")
   .replace(/^skylark/i, "Агент Гена")
   .replace(/^vidConcat/i, "Видеообъединение");
-
-const getModelObjStatic = (category, modelId, nodeSchemas) => {
-  // Seedance Промпт is a custom node (text-passthrough under the hood) with no
-  // schema entry — return a stable model object so consumers never see undefined.
-  if (category === "seedancePrompt") {
-    return { id: modelId || "text-passthrough", name: "Seedance Промпт" };
-  }
-  if (category === "api") {
-    // We can't easily access filteredApiNodeModels statically without passing it, 
-    // but we can compute it on the fly or just return null and let useEffect handle it if needed.
-    // For now, let's just use the shared logic.
-    const apiModelsFromBackend = nodeSchemas?.categories?.api?.models ? Object.keys(nodeSchemas.categories.api.models) : [];
-    const filtered = apiNodeModels.filter(model => apiModelsFromBackend.includes(model.id));
-    return filtered.find(m => m.id === modelId) || null;
-  }
-  if (!modelId || !nodeSchemas?.categories) return null;
-  const rawModel = nodeSchemas.categories[category]?.models?.[modelId];
-  if (!rawModel) return null;
-
-  return {
-    ...rawModel,
-    id: modelId,
-    name: SPECIAL_MODEL_NAMES[modelId] || formatName(modelId)
-  };
-};
-
 const processWorkflowData = (workflowData, nodeSchemas, id) => {
   if (!workflowData || !nodeSchemas?.categories) return null;
 
-  const workflow = workflowData?.data;
-  if (!workflow?.nodes) return null;
+  const hasStoredNodes =
+    Array.isArray(workflowData?.data?.nodes) ||
+    Array.isArray(workflowData?.nodes);
+  if (!hasStoredNodes) return null;
 
-  const restoredNodes = workflow.nodes.map(n => ({
-    id: n.id,
-    type: n.category === "utility" 
-      ? (n.model === "video-combiner" ? "vidConcatNode" : "concatNode") 
-      : `${n.category}Node`,
-    position: {
-      x: n.position?.x ?? 350,
-      y: n.position?.y ?? 0
-    },
-    data: {
-      nodeSchemas,
-      modelId: n.model,
-      selectedModel: getModelObjStatic(n.category, n.model, nodeSchemas),
-      outputs: n.output_params?.outputs || [],
-      resultUrl: n.output_params?.resultUrl || null,
-      formValues: n.input_params || {},
-      outputHistory: (workflowData.run_history?.[n.id] || [])
-        .sort((a, b) => new Date(a.started_at) - new Date(b.started_at)),
-    }
-  }));
+  const storedNodes = getWorkflowNodesList(workflowData);
+  const restoredNodes = storedNodes
+    .map((node) => buildRestoredNode(node, { nodeSchemas, workflowData }))
+    .filter((node) => node.id && node.type);
 
   const restoredEdges = (workflowData.edges || []).map((e) => {
     const sourceNode = restoredNodes.find(n => n.id === e.source);
@@ -980,9 +936,10 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             const idMapping = {};
             const counts = { text: 0, image: 0, video: 0, audio: 0 };
 
-            const newNodes = workflow.nodes.map((n) => {
+            const newNodes = getWorkflowNodesList(workflow).map((n) => {
               let newId = n.id;
-              const category = n.category;
+              const category = getCategoryFromStoredNode(n);
+              const restoredNode = buildRestoredNode(n, { nodeSchemas, workflowData: workflow, getModelObj });
 
               if (["user_text", "prompt_gen"].includes(n.id) || category === "text") {
                 counts.text++;
@@ -1002,21 +959,16 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               const existingNode = nodes.find((en) => en.id === newId);
 
               return {
+                ...restoredNode,
                 id: newId,
-                type: n.category === "utility" ? (n.model === "video-combiner" ? "vidConcatNode" : "concatNode") : `${n.category}Node`,
                 position: existingNode?.position || {
                   x: n.position?.x ?? 350,
                   y: n.position?.y ?? 0
                 },
                 data: {
                   ...existingNode?.data,
-                  nodeSchemas,
-                  modelId: n.model,
-                  selectedModel: getModelObj(n.category, n.model),
-                  outputs: n.output_params?.outputs || [],
-                  resultUrl: n.output_params?.resultUrl || null,
-                  formValues: n.input_params || n.params || {},
-                  outputHistory: existingNode?.data?.outputHistory || [],
+                  ...restoredNode.data,
+                  outputHistory: existingNode?.data?.outputHistory || restoredNode.data.outputHistory || [],
                 }
               };
             });

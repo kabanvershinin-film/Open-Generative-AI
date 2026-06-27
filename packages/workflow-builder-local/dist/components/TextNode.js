@@ -42,9 +42,6 @@ var TextGeneration = function TextGeneration(_ref) {
   var id = _ref.id,
     data = _ref.data,
     selected = _ref.selected;
-  console.log('=== TextNode LOADED ===', {
-    id: id
-  });
   var _useReactFlow = (0, _reactflow.useReactFlow)(),
     getNodes = _useReactFlow.getNodes,
     getEdges = _useReactFlow.getEdges;
@@ -59,20 +56,7 @@ var TextGeneration = function TextGeneration(_ref) {
   // Auto-detect references wired into the video/image node this prompt node feeds,
   // and surface them as clickable chips (with thumbnails) — like SeedancePromptNode.
   var availableTags = (0, _react.useMemo)(function () {
-    console.log('=== TextNode availableTags debug ===');
     var allNodes = getNodes() || [];
-    console.log('1. allNodes:', allNodes.map(function (n) {
-      return {
-        id: n.id,
-        type: n.type
-      };
-    }));
-    console.log('2. edges:', edges.map(function (e) {
-      return {
-        source: e.source,
-        target: e.target
-      };
-    }));
     var genIds = new Set(edges.filter(function (e) {
       return e.source === id;
     }).map(function (e) {
@@ -81,10 +65,8 @@ var TextGeneration = function TextGeneration(_ref) {
       var n = allNodes.find(function (nn) {
         return nn.id === tid;
       });
-      console.log("   - checking edge target ".concat(tid, ":"), n === null || n === void 0 ? void 0 : n.type);
       return n && (n.type === "videoNode" || n.type === "imageNode");
     }));
-    console.log('3. genIds:', Array.from(genIds));
     var out = [];
     var seen = new Set();
     var counters = {
@@ -94,7 +76,6 @@ var TextGeneration = function TextGeneration(_ref) {
     };
 
     // First add references connected directly to TextNode
-    console.log('4. Adding direct references to TextNode');
     var _iterator = _createForOfIteratorHelper(edges),
       _step;
     try {
@@ -112,19 +93,12 @@ var TextGeneration = function TextGeneration(_ref) {
             return nn.id === e.source;
           });
           if (!n) {
-            console.log('     - no node found for direct ref');
             return 0; // continue
           }
           var d = n.data || {};
           var fvN = d.formValues || {};
           var rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl || Array.isArray(d.outputs) && ((_d$outputs$ = d.outputs[0]) === null || _d$outputs$ === void 0 ? void 0 : _d$outputs$.value) || fvN.image_url;
           var url = typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg") ? rawThumb : undefined;
-          console.log("   - Found direct reference node:", {
-            sourceId: e.source,
-            type: n.type,
-            url: url,
-            rawThumb: rawThumb
-          });
           if (n.type === "characterNode") {
             counters.images += 1;
             out.push({
@@ -172,24 +146,19 @@ var TextGeneration = function TextGeneration(_ref) {
     } finally {
       _iterator.f();
     }
-    console.log('5. Adding references to connected gen node');
     var _iterator2 = _createForOfIteratorHelper(edges),
       _step2;
     try {
       var _loop2 = function _loop2() {
           var _d$outputs$2;
           var e = _step2.value;
-          console.log("   - checking edge: source=".concat(e.source, ", target=").concat(e.target));
           if (!genIds.has(e.target)) {
-            console.log('     - target not in genIds');
             return 0; // continue
           }
           if (e.source === id) {
-            console.log('     - source is self');
             return 0; // continue
           }
           if (seen.has(e.source)) {
-            console.log('     - already seen');
             return 0; // continue
           }
           seen.add(e.source);
@@ -197,19 +166,12 @@ var TextGeneration = function TextGeneration(_ref) {
             return nn.id === e.source;
           });
           if (!n) {
-            console.log('     - no node found');
             return 0; // continue
           }
           var d = n.data || {};
           var fvN = d.formValues || {};
           var rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl || Array.isArray(d.outputs) && ((_d$outputs$2 = d.outputs[0]) === null || _d$outputs$2 === void 0 ? void 0 : _d$outputs$2.value) || fvN.image_url;
           var url = typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg") ? rawThumb : undefined;
-          console.log("   - Found gen reference node:", {
-            sourceId: e.source,
-            type: n.type,
-            url: url,
-            rawThumb: rawThumb
-          });
           if (n.type === "characterNode") {
             counters.images += 1;
             out.push({
@@ -255,7 +217,6 @@ var TextGeneration = function TextGeneration(_ref) {
     } finally {
       _iterator2.f();
     }
-    console.log('6. Final availableTags:', out);
     return out;
   }, [edges, id, getNodes]);
   var insertTag = function insertTag(tag) {

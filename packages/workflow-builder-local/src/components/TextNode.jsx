@@ -10,7 +10,6 @@ import NodeSendButton from "./NodeSendButton";
 import UploadNode from "./UploadNode";
 
 const TextGeneration = ({ id, data, selected }) => {
-  console.log('=== TextNode LOADED ===', { id });
   const { getNodes, getEdges } = useReactFlow();
   const edges = useStore((state) => state.edges);
   
@@ -22,44 +21,36 @@ const TextGeneration = ({ id, data, selected }) => {
   // Auto-detect references wired into the video/image node this prompt node feeds,
   // and surface them as clickable chips (with thumbnails) — like SeedancePromptNode.
   const availableTags = useMemo(() => {
-    console.log('=== TextNode availableTags debug ===');
     const allNodes = getNodes() || [];
-    console.log('1. allNodes:', allNodes.map(n => ({ id: n.id, type: n.type })));
-    console.log('2. edges:', edges.map(e => ({ source: e.source, target: e.target })));
     
     const genIds = new Set(
       edges.filter((e) => e.source === id)
         .map((e) => e.target)
         .filter((tid) => {
           const n = allNodes.find((nn) => nn.id === tid);
-          console.log(`   - checking edge target ${tid}:`, n?.type);
           return n && (n.type === "videoNode" || n.type === "imageNode");
         }),
     );
-    console.log('3. genIds:', Array.from(genIds));
     
     const out = [];
     const seen = new Set();
     const counters = { images: 0, video: 0, audio: 0 };
     
     // First add references connected directly to TextNode
-    console.log('4. Adding direct references to TextNode');
     for (const e of edges) {
       if (e.target !== id) { continue; } // Skip edges not targeting TextNode
       if (seen.has(e.source)) { continue; }
       seen.add(e.source);
       
       const n = allNodes.find((nn) => nn.id === e.source);
-      if (!n) { console.log('     - no node found for direct ref'); continue; }
+      if (!n) { continue; }
       
       const d = n.data || {};
       const fvN = d.formValues || {};
       const rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl
         || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url;
       const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
-      
-      console.log(`   - Found direct reference node:`, { sourceId: e.source, type: n.type, url, rawThumb });
-      
+
       if (n.type === "characterNode") {
         counters.images += 1;
         out.push({ id: n.id, label: `图片${counters.images}`, kind: "character", url, name: (fvN.character_name || "角色").trim() });
@@ -76,25 +67,21 @@ const TextGeneration = ({ id, data, selected }) => {
     }
     
     // Then add references connected to the node that TextNode feeds
-    console.log('5. Adding references to connected gen node');
     for (const e of edges) {
-      console.log(`   - checking edge: source=${e.source}, target=${e.target}`);
-      if (!genIds.has(e.target)) { console.log('     - target not in genIds'); continue; }
-      if (e.source === id) { console.log('     - source is self'); continue; }
-      if (seen.has(e.source)) { console.log('     - already seen'); continue; }
+      if (!genIds.has(e.target)) { continue; }
+      if (e.source === id) { continue; }
+      if (seen.has(e.source)) { continue; }
       
       seen.add(e.source);
       const n = allNodes.find((nn) => nn.id === e.source);
-      if (!n) { console.log('     - no node found'); continue; }
+      if (!n) { continue; }
       
       const d = n.data || {};
       const fvN = d.formValues || {};
       const rawThumb = fvN.character_photo || d.thumbnail || d.previewUrl || d.resultUrl
         || (Array.isArray(d.outputs) && d.outputs[0]?.value) || fvN.image_url;
       const url = (typeof rawThumb === "string" && !rawThumb.startsWith("asset://") && !rawThumb.startsWith("data:image/svg")) ? rawThumb : undefined;
-      
-      console.log(`   - Found gen reference node:`, { sourceId: e.source, type: n.type, url, rawThumb });
-      
+
       if (n.type === "characterNode") {
         counters.images += 1;
         out.push({ id: n.id, label: `图片${counters.images}`, kind: "character", url, name: (fvN.character_name || "角色").trim() });
@@ -109,7 +96,6 @@ const TextGeneration = ({ id, data, selected }) => {
         out.push({ id: n.id, label: `图片${counters.images}`, kind: "images", url });
       }
     }
-    console.log('6. Final availableTags:', out);
     return out;
   }, [edges, id, getNodes]);
   
