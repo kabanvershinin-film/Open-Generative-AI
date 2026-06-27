@@ -250,7 +250,7 @@ const TextGeneration = ({ id, data, selected }) => {
     <div 
       style={{ minHeight: 280, '--loader-color': '#2563eb' }} 
       className={`
-        nowheel group flex flex-col flex-1 w-80 
+        nowheel group flex flex-col flex-1 w-96 
         rounded-2xl border-2 relative transition-all duration-300 ease-in-out 
         ${selected 
           ? "border-blue-600 shadow-[0_0_25px_rgba(37,99,235,0.3)] scale-[1.02] ring-1 ring-blue-500/20" 

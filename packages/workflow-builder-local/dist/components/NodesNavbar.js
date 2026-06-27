@@ -501,7 +501,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     className: isSidebar ? "relative flex h-full w-full flex-col" : "relative z-50 flex flex-col gap-2"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     ref: menuRef,
-    className: "relative flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl opacity-100 ".concat(isSidebar ? "h-full w-full shadow-none" : "w-60 shadow-2xl"),
+    className: "relative flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl opacity-100 ".concat(isSidebar ? "h-full w-full shadow-none" : "w-72 shadow-2xl"),
     style: isSidebar ? undefined : menuStyle
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center relative w-full pl-2 bg-[#161719] border border-gray-600 rounded-lg shrink-0"
@@ -679,7 +679,7 @@ var Submenu = function Submenu(_ref4) {
   return /*#__PURE__*/_react["default"].createElement("div", {
     ref: submenuRef,
     style: submenuStyle,
-    className: "absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ".concat(currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]")
+    className: "absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-72 shadow-2xl overflow-hidden z-50 ".concat(currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]")
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors",
     onClick: function onClick() {
