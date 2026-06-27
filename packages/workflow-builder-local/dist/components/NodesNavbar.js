@@ -60,7 +60,9 @@ var NodesNavbar = function NodesNavbar(_ref) {
     _ref$filterNodeTypes = _ref.filterNodeTypes,
     filterNodeTypes = _ref$filterNodeTypes === void 0 ? null : _ref$filterNodeTypes,
     _ref$nodeSchemas = _ref.nodeSchemas,
-    nodeSchemas = _ref$nodeSchemas === void 0 ? {} : _ref$nodeSchemas;
+    nodeSchemas = _ref$nodeSchemas === void 0 ? {} : _ref$nodeSchemas,
+    _ref$variant = _ref.variant,
+    variant = _ref$variant === void 0 ? "floating" : _ref$variant;
   var _useState = (0, _react.useState)(null),
     _useState2 = _slicedToArray(_useState, 2),
     activeSubMenu = _useState2[0],
@@ -70,6 +72,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
     searchQuery = _useState4[0],
     setSearchQuery = _useState4[1];
   var menuRef = (0, _react.useRef)(null);
+  var isSidebar = variant === "sidebar";
   var getNodeTypeFromSubmenuId = function getNodeTypeFromSubmenuId(id) {
     if (!id) return null; // direct-action items (e.g. Seedance Промпт) have no submenu id
     if (id === 'inputs') return ['textNode', 'imageNode', 'videoNode', 'audioNode'];
@@ -433,6 +436,10 @@ var NodesNavbar = function NodesNavbar(_ref) {
     menuStyle = _useState6[0],
     setMenuStyle = _useState6[1];
   (0, _react.useLayoutEffect)(function () {
+    if (isSidebar) {
+      setMenuStyle({});
+      return;
+    }
     if (anchorRef.current && menuRef.current) {
       var anchorRect = anchorRef.current.getBoundingClientRect();
       var menuRect = menuRef.current.getBoundingClientRect();
@@ -464,7 +471,7 @@ var NodesNavbar = function NodesNavbar(_ref) {
         opacity: 1
       });
     }
-  }, [searchQuery]);
+  }, [searchQuery, isSidebar]);
   var filteredMenuStructure = filterNodeTypes ? menuStructure.map(function (section) {
     return _objectSpread(_objectSpread({}, section), {}, {
       items: section.items.filter(function (item) {
@@ -482,11 +489,11 @@ var NodesNavbar = function NodesNavbar(_ref) {
   }) : menuStructure;
   return /*#__PURE__*/_react["default"].createElement("div", {
     ref: anchorRef,
-    className: "flex flex-col gap-2 relative z-50"
+    className: isSidebar ? "relative flex h-full w-full flex-col" : "relative z-50 flex flex-col gap-2"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     ref: menuRef,
-    className: "flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl opacity-100",
-    style: menuStyle
+    className: "relative flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl opacity-100 ".concat(isSidebar ? "h-full w-full shadow-none" : "w-60 shadow-2xl"),
+    style: isSidebar ? undefined : menuStyle
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center relative w-full pl-2 bg-[#161719] border border-gray-600 rounded-lg shrink-0"
   }, /*#__PURE__*/_react["default"].createElement(_ai.AiOutlineSearch, {
@@ -554,7 +561,8 @@ var NodesNavbar = function NodesNavbar(_ref) {
     parentRef: menuRef,
     onBack: function onBack() {
       return setActiveSubMenu(null);
-    }
+    },
+    sidebar: isSidebar
   })));
 };
 var Submenu = function Submenu(_ref4) {
@@ -564,7 +572,9 @@ var Submenu = function Submenu(_ref4) {
     getSubmenuItems = _ref4.getSubmenuItems,
     handleAddNode = _ref4.handleAddNode,
     parentRef = _ref4.parentRef,
-    onBack = _ref4.onBack;
+    onBack = _ref4.onBack,
+    _ref4$sidebar = _ref4.sidebar,
+    sidebar = _ref4$sidebar === void 0 ? false : _ref4$sidebar;
   var _useState7 = (0, _react.useState)({
       side: "right",
       top: 0
@@ -574,6 +584,13 @@ var Submenu = function Submenu(_ref4) {
     setPosition = _useState8[1];
   var submenuRef = (0, _react.useRef)(null);
   (0, _react.useLayoutEffect)(function () {
+    if (sidebar) {
+      setPosition({
+        side: "overlay",
+        top: 0
+      });
+      return;
+    }
     if (parentRef.current && submenuRef.current) {
       var parentRect = parentRef.current.getBoundingClientRect();
       var submenuRect = submenuRef.current.getBoundingClientRect();
@@ -601,10 +618,11 @@ var Submenu = function Submenu(_ref4) {
         top: newTop
       });
     }
-  }, [activeSubMenu, parentRef]);
+  }, [activeSubMenu, parentRef, sidebar]);
+  var currentSide = sidebar ? "overlay" : position.side;
   var getOverlayClass = function getOverlayClass() {
-    if (position.side === "overlay") return "left-0 top-0 h-full w-full";
-    if (position.side === "right") return "left-full ml-2";
+    if (currentSide === "overlay") return "left-0 top-0 h-full w-full";
+    if (currentSide === "right") return "left-full ml-2";
     return "right-full mr-2";
   };
   var getLabelIcon = function getLabelIcon(label) {
@@ -643,15 +661,15 @@ var Submenu = function Submenu(_ref4) {
   return /*#__PURE__*/_react["default"].createElement("div", {
     ref: submenuRef,
     style: {
-      top: position.side === "overlay" ? 0 : "".concat(position.top, "px")
+      top: currentSide === "overlay" ? 0 : "".concat(position.top, "px")
     },
-    className: "absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ".concat(position.side === "overlay" ? "h-full" : "h-fit max-h-[80vh]", " ").concat(getOverlayClass())
+    className: "absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ".concat(currentSide === "overlay" ? "h-full w-full" : "h-fit max-h-[80vh]", " ").concat(getOverlayClass())
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors",
     onClick: function onClick() {
-      return position.side === "overlay" && onBack();
+      return currentSide === "overlay" && onBack();
     }
-  }, position.side === "overlay" && /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, null), (_menuStructure$flatMa = menuStructure.flatMap(function (s) {
+  }, currentSide === "overlay" && /*#__PURE__*/_react["default"].createElement(_fa.FaAngleLeft, null), (_menuStructure$flatMa = menuStructure.flatMap(function (s) {
     return s.items;
   }).find(function (i) {
     return i.id === activeSubMenu;

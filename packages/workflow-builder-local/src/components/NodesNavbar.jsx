@@ -34,10 +34,11 @@ const ALLOWED_GENERATE_IMAGE = new Set([
   "gemini-3-pro-image-preview",
 ]);
 
-const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchemas = {} }) => {
+const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchemas = {}, variant = "floating" }) => {
   const [activeSubMenu, setActiveSubMenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const menuRef = useRef(null);
+  const isSidebar = variant === "sidebar";
 
   const getNodeTypeFromSubmenuId = (id) => {
     if (!id) return null; // direct-action items (e.g. Seedance Промпт) have no submenu id
@@ -266,6 +267,11 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
   const [menuStyle, setMenuStyle] = useState({ opacity: 0 });
 
   useLayoutEffect(() => {
+    if (isSidebar) {
+      setMenuStyle({});
+      return;
+    }
+
     if (anchorRef.current && menuRef.current) {
       const anchorRect = anchorRef.current.getBoundingClientRect();
       const menuRect = menuRef.current.getBoundingClientRect();
@@ -303,7 +309,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
         opacity: 1
       });
     }
-  }, [searchQuery]);
+  }, [searchQuery, isSidebar]);
 
   const filteredMenuStructure = filterNodeTypes 
     ? menuStructure.map(section => ({
@@ -319,11 +325,16 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
     : menuStructure;
 
   return (
-    <div ref={anchorRef} className="flex flex-col gap-2 relative z-50">
+    <div
+      ref={anchorRef}
+      className={isSidebar ? "relative flex h-full w-full flex-col" : "relative z-50 flex flex-col gap-2"}
+    >
       <div 
         ref={menuRef}
-        className="flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl opacity-100"
-        style={menuStyle}
+        className={`relative flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl opacity-100 ${
+          isSidebar ? "h-full w-full shadow-none" : "w-60 shadow-2xl"
+        }`}
+        style={isSidebar ? undefined : menuStyle}
       >
         <div className="flex items-center relative w-full pl-2 bg-[#161719] border border-gray-600 rounded-lg shrink-0">
           <AiOutlineSearch className="text-gray-400" />
@@ -393,6 +404,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             handleAddNode={handleAddNode}
             parentRef={menuRef}
             onBack={() => setActiveSubMenu(null)}
+            sidebar={isSidebar}
           />
         )}
       </div>
@@ -400,11 +412,16 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
   );
 };
 
-const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode, parentRef, onBack }) => {
+const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode, parentRef, onBack, sidebar = false }) => {
   const [position, setPosition] = useState({ side: "right", top: 0 });
   const submenuRef = useRef(null);
 
   useLayoutEffect(() => {
+    if (sidebar) {
+      setPosition({ side: "overlay", top: 0 });
+      return;
+    }
+
     if (parentRef.current && submenuRef.current) {
       const parentRect = parentRef.current.getBoundingClientRect();
       const submenuRect = submenuRef.current.getBoundingClientRect();
@@ -434,11 +451,13 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
 
       setPosition({ side: newSide, top: newTop });
     }
-  }, [activeSubMenu, parentRef]);
+  }, [activeSubMenu, parentRef, sidebar]);
+
+  const currentSide = sidebar ? "overlay" : position.side;
 
   const getOverlayClass = () => {
-    if (position.side === "overlay") return "left-0 top-0 h-full w-full";
-    if (position.side === "right") return "left-full ml-2";
+    if (currentSide === "overlay") return "left-0 top-0 h-full w-full";
+    if (currentSide === "right") return "left-full ml-2";
     return "right-full mr-2";
   };
 
@@ -477,14 +496,14 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
   return (
     <div
       ref={submenuRef}
-      style={{ top: position.side === "overlay" ? 0 : `${position.top}px` }}
-      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ${position.side === "overlay" ? "h-full" : "h-fit max-h-[80vh]"} ${getOverlayClass()}`}
+      style={{ top: currentSide === "overlay" ? 0 : `${position.top}px` }}
+      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ${currentSide === "overlay" ? "h-full w-full" : "h-fit max-h-[80vh]"} ${getOverlayClass()}`}
     >
       <div
         className="flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors"
-        onClick={() => position.side === "overlay" && onBack()}
+        onClick={() => currentSide === "overlay" && onBack()}
       >
-        {position.side === "overlay" && <FaAngleLeft />}
+        {currentSide === "overlay" && <FaAngleLeft />}
         {menuStructure.flatMap(s => s.items).find(i => i.id === activeSubMenu)?.label}
       </div>
       <div className="flex flex-col gap-1 overflow-y-auto pr-1 custom-scrollbar">

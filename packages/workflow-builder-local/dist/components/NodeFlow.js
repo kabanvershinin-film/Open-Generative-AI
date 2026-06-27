@@ -2598,6 +2598,8 @@ var NodeFlow = function NodeFlow(_ref) {
       x: event.clientX,
       y: event.clientY
     });
+    setDropDown(0);
+    setEdgePicker(null);
     setContextMenu({
       x: event.clientX,
       y: event.clientY,
@@ -2606,6 +2608,11 @@ var NodeFlow = function NodeFlow(_ref) {
   }, [screenToFlowPosition]);
   var onPaneClick = (0, _react.useCallback)(function () {
     setContextMenu(null);
+  }, []);
+  var closeNodesSidebar = (0, _react.useCallback)(function () {
+    setDropDown(0);
+    setContextMenu(null);
+    setEdgePicker(null);
   }, []);
   var getNewNodePosition = function getNewNodePosition(lastNode) {
     if (!lastNode) return {
@@ -2669,6 +2676,32 @@ var NodeFlow = function NodeFlow(_ref) {
       }, 0);
     }
   };
+  var nodesSidebarConfig = (0, _react.useMemo)(function () {
+    if (edgePicker) {
+      return {
+        title: "Добавить совместимую ноду",
+        addNode: handleSelectNodeFromEdgePicker,
+        filterNodeTypes: getCompatibleNodeTypes(edgePicker.handleColor, edgePicker.isOutput)
+      };
+    }
+    if (contextMenu) {
+      return {
+        title: "Добавить ноду",
+        addNode: function addNode(type, _, data) {
+          return _addNode(type, contextMenu.position, data);
+        },
+        filterNodeTypes: null
+      };
+    }
+    if (dropDown === 1) {
+      return {
+        title: "Добавить ноду",
+        addNode: _addNode,
+        filterNodeTypes: null
+      };
+    }
+    return null;
+  }, [edgePicker, contextMenu, dropDown, handleSelectNodeFromEdgePicker, _addNode]);
   var onKeyDown = (0, _react.useCallback)(function (e) {
     if (e.key === "Delete") {
       setNodes(function (nds) {
@@ -2789,20 +2822,14 @@ var NodeFlow = function NodeFlow(_ref) {
     size: 18
   })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "relative ".concat(!interactionMode && "hidden"),
-    onBlur: function onBlur(e) {
-      var currentTarget = e.currentTarget;
-      setTimeout(function () {
-        if (currentTarget && !currentTarget.contains(document.activeElement)) {
-          setDropDown(0);
-        }
-      }, 100);
-    },
     tabIndex: 0
   }, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     disabled: !interactionMode,
     onClick: function onClick() {
+      setContextMenu(null);
+      setEdgePicker(null);
       return setDropDown(function (prev) {
         return prev === 1 ? 0 : 1;
       });
@@ -2810,13 +2837,7 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ".concat(dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600")
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaPlus, {
     size: 18
-  })), dropDown === 1 && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "absolute left-14 top-0 z-50"
-  }, /*#__PURE__*/_react["default"].createElement(_NodesNavbar["default"], {
-    addNode: _addNode,
-    apiNodeModels: filteredApiNodeModels,
-    nodeSchemas: nodeSchemas
-  }))), /*#__PURE__*/_react["default"].createElement("button", {
+  })), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     onClick: handleSaveWorkFlow,
@@ -2907,32 +2928,7 @@ var NodeFlow = function NodeFlow(_ref) {
     proOptions: {
       hideAttribution: true
     }
-  }, /*#__PURE__*/_react["default"].createElement(_reactflow.Background, null), edgePicker && function () {
-    var compatibleTypes = getCompatibleNodeTypes(edgePicker.handleColor, edgePicker.isOutput);
-    return /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "fixed inset-0 z-40",
-      onClick: function onClick() {
-        return setEdgePicker(null);
-      },
-      style: {
-        pointerEvents: 'auto'
-      }
-    }), /*#__PURE__*/_react["default"].createElement("div", {
-      className: "fixed z-50 pointer-events-auto",
-      style: {
-        left: "".concat(edgePicker.cursorPos.x + 10, "px"),
-        top: "".concat(edgePicker.cursorPos.y, "px")
-      },
-      onClick: function onClick(e) {
-        return e.stopPropagation();
-      }
-    }, /*#__PURE__*/_react["default"].createElement(_NodesNavbar["default"], {
-      addNode: handleSelectNodeFromEdgePicker,
-      apiNodeModels: filteredApiNodeModels,
-      filterNodeTypes: compatibleTypes,
-      nodeSchemas: nodeSchemas
-    })));
-  }())), selectedNode && !["concatNode"].includes(selectedNode.type) && /*#__PURE__*/_react["default"].createElement("div", {
+  }, /*#__PURE__*/_react["default"].createElement(_reactflow.Background, null))), selectedNode && !["concatNode"].includes(selectedNode.type) && /*#__PURE__*/_react["default"].createElement("div", {
     className: "".concat(isMobile ? isPanelOpen ? "fixed inset-0 z-50" : "hidden" : "absolute right-2 top-16 z-50", " w-80 h-full max-h-[90%] bg-[#0c0d0f] border border-white/10 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-black/50")
   }, isMobile && /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
@@ -3381,22 +3377,31 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaPlay, {
     size: 14
-  }), "Generate")))))), contextMenu && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "fixed z-40",
-    style: {
-      top: contextMenu.y,
-      left: contextMenu.x
-    },
+  }), "Generate")))))), nodesSidebarConfig && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "".concat(isMobile ? "fixed inset-y-0 right-0 z-50 w-full max-w-sm" : "fixed top-16 bottom-2 z-50 w-80 ".concat(selectedNode && !["concatNode"].includes(selectedNode.type) ? "right-[21rem]" : "right-2")),
     onClick: function onClick(e) {
       return e.stopPropagation();
     }
+  }, /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex h-full min-h-0 flex-col rounded-2xl border border-white/10 bg-[#0c0d0f] shadow-2xl shadow-black/50"
+  }, /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3"
+  }, /*#__PURE__*/_react["default"].createElement("h3", {
+    className: "text-sm font-semibold text-white"
+  }, nodesSidebarConfig.title), /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    suppressHydrationWarning: true,
+    onClick: closeNodesSidebar,
+    className: "flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white"
+  }, "\u2715")), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "min-h-0 flex-1 p-2"
   }, /*#__PURE__*/_react["default"].createElement(_NodesNavbar["default"], {
-    addNode: function addNode(type, _, data) {
-      return _addNode(type, contextMenu.position, data);
-    },
+    variant: "sidebar",
+    addNode: nodesSidebarConfig.addNode,
     apiNodeModels: filteredApiNodeModels,
+    filterNodeTypes: nodesSidebarConfig.filterNodeTypes,
     nodeSchemas: nodeSchemas
-  })), /*#__PURE__*/_react["default"].createElement("div", {
+  })))), /*#__PURE__*/_react["default"].createElement("div", {
     className: "fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black transition-all duration-200 ease-in-out ".concat(dropDown === 2 ? "pointer-events-auto opacity-100 scale-100 visible" : "pointer-events-none opacity-0 scale-80 invisible"),
     onClick: function onClick() {
       return setDropDown(0);
@@ -3554,6 +3559,6 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "w-4 h-4 border-2 border-t-transparent border-current rounded-full animate-spin"
   }) : /*#__PURE__*/_react["default"].createElement(_fa2.FaTelegramPlane, {
     size: 14
-  }), "\u041E\u043F\u0443\u0431\u043B\u0438\u043A\u043E\u0432\u0430\u0442\u044C")))), /*#__PURE__*/_react["default"].createElement(_reactHotToast.Toaster, null));
+  }), "\u041E\u043F\u0443\u0431\u043B\u0438\u043A\u043E\u0432\u0430\u0442\u044C")))), /*#__PURE__*/_react["default"].createElement(_reactHotToast.Toaster, null)));
 };
 var _default = exports["default"] = NodeFlow;

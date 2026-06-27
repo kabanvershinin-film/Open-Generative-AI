@@ -2294,6 +2294,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       y: event.clientY,
     });
 
+    setDropDown(0);
+    setEdgePicker(null);
     setContextMenu({
       x: event.clientX,
       y: event.clientY,
@@ -2303,6 +2305,12 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
   const onPaneClick = useCallback(() => {
     setContextMenu(null);
+  }, []);
+
+  const closeNodesSidebar = useCallback(() => {
+    setDropDown(0);
+    setContextMenu(null);
+    setEdgePicker(null);
   }, []);
 
   const getNewNodePosition = (lastNode) => {
@@ -2364,6 +2372,34 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       }), 0);
     }
   };
+
+  const nodesSidebarConfig = useMemo(() => {
+    if (edgePicker) {
+      return {
+        title: "Добавить совместимую ноду",
+        addNode: handleSelectNodeFromEdgePicker,
+        filterNodeTypes: getCompatibleNodeTypes(edgePicker.handleColor, edgePicker.isOutput),
+      };
+    }
+
+    if (contextMenu) {
+      return {
+        title: "Добавить ноду",
+        addNode: (type, _, data) => addNode(type, contextMenu.position, data),
+        filterNodeTypes: null,
+      };
+    }
+
+    if (dropDown === 1) {
+      return {
+        title: "Добавить ноду",
+        addNode,
+        filterNodeTypes: null,
+      };
+    }
+
+    return null;
+  }, [edgePicker, contextMenu, dropDown, handleSelectNodeFromEdgePicker, addNode]);
 
   const onKeyDown = useCallback((e) => {
     if (e.key === "Delete") {
@@ -2492,30 +2528,21 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </button>
         <div
           className={`relative ${!interactionMode && "hidden"}`}
-          onBlur={(e) => {
-            const currentTarget = e.currentTarget;
-            setTimeout(() => {
-              if (currentTarget && !currentTarget.contains(document.activeElement)) {
-                setDropDown(0);
-              }
-            }, 100);
-          }}
           tabIndex={0}
         >
           <button
             type="button"
             suppressHydrationWarning={true}
             disabled={!interactionMode}
-            onClick={() => setDropDown((prev) => prev === 1 ? 0 : 1)}
+            onClick={() => {
+              setContextMenu(null);
+              setEdgePicker(null);
+              setDropDown((prev) => prev === 1 ? 0 : 1);
+            }}
             className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"}`}
           >
             <FaPlus size={18} />
           </button>
-          {dropDown === 1 && (
-            <div className="absolute left-14 top-0 z-50">
-              <NodesNavbar addNode={addNode} apiNodeModels={filteredApiNodeModels} nodeSchemas={nodeSchemas} />
-            </div>
-          )}
         </div>
         <button
           type="button"
@@ -2603,34 +2630,6 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           proOptions={{ hideAttribution: true }}
         >
           <Background />
-          {edgePicker && (() => {
-            const compatibleTypes = getCompatibleNodeTypes(edgePicker.handleColor, edgePicker.isOutput);
-
-            return (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setEdgePicker(null)}
-                  style={{ pointerEvents: 'auto' }}
-                />
-                <div
-                  className="fixed z-50 pointer-events-auto"
-                  style={{
-                    left: `${edgePicker.cursorPos.x + 10}px`,
-                    top: `${edgePicker.cursorPos.y}px`,
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <NodesNavbar
-                    addNode={handleSelectNodeFromEdgePicker}
-                    apiNodeModels={filteredApiNodeModels}
-                    filterNodeTypes={compatibleTypes}
-                    nodeSchemas={nodeSchemas}
-                  />
-                </div>
-              </>
-            );
-          })()}
         </ReactFlow>
       </div>
       {selectedNode && !["concatNode"].includes(selectedNode.type) && (
@@ -3073,20 +3072,33 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           </div>
         </div>
       )}
-      {contextMenu && (
+      {nodesSidebarConfig && (
         <div
-          className="fixed z-40"
-          style={{
-            top: contextMenu.y,
-            left: contextMenu.x,
-          }}
+          className={`${isMobile ? "fixed inset-y-0 right-0 z-50 w-full max-w-sm" : `fixed top-16 bottom-2 z-50 w-80 ${selectedNode && !["concatNode"].includes(selectedNode.type) ? "right-[21rem]" : "right-2"}`}`}
           onClick={(e) => e.stopPropagation()}
         >
-          <NodesNavbar
-            addNode={(type, _, data) => addNode(type, contextMenu.position, data)}
-            apiNodeModels={filteredApiNodeModels}
-            nodeSchemas={nodeSchemas}
-          />
+          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-white/10 bg-[#0c0d0f] shadow-2xl shadow-black/50">
+            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+              <h3 className="text-sm font-semibold text-white">{nodesSidebarConfig.title}</h3>
+              <button
+                type="button"
+                suppressHydrationWarning={true}
+                onClick={closeNodesSidebar}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white"
+              >
+                &#10005;
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 p-2">
+              <NodesNavbar
+                variant="sidebar"
+                addNode={nodesSidebarConfig.addNode}
+                apiNodeModels={filteredApiNodeModels}
+                filterNodeTypes={nodesSidebarConfig.filterNodeTypes}
+                nodeSchemas={nodeSchemas}
+              />
+            </div>
+          </div>
         </div>
       )}
       <div
