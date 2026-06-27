@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { isSeedance2Model, rubFromTokensValue, seedance2RateCny } from '../pricingCore.js';
+import { FIXED_IMAGE_PRICE_RUB, priceRub } from '../pricing.js';
 
 test('seedance2RateCny returns correct values', () => {
     const rate1 = seedance2RateCny('doubao-seedance-2-0-260128', '720p', false);
@@ -41,4 +42,14 @@ test('rubFromTokensValue returns 0 for invalid inputs', () => {
     assert.strictEqual(rubFromTokensValue(1_000_000, 0, 10.55, 1.15), 0);
     assert.strictEqual(rubFromTokensValue(1_000_000, 46, 0, 1.15), 0);
     assert.strictEqual(rubFromTokensValue(1_000_000, 46, 10.55, 0), 0);
+});
+
+test('priceRub делает все image-модели фиксированно по 10 рублей', async () => {
+    assert.strictEqual(await priceRub('image', 'gpt-image-2', {}), FIXED_IMAGE_PRICE_RUB);
+    assert.strictEqual(await priceRub('image', 'gemini-3.1-flash-image-preview', {}), FIXED_IMAGE_PRICE_RUB);
+});
+
+test('priceRub делает image edit-модели фиксированно по 10 рублей', async () => {
+    assert.strictEqual(await priceRub('image', 'gpt-image-2-edit', {}), FIXED_IMAGE_PRICE_RUB);
+    assert.strictEqual(await priceRub('image', 'gemini-3.1-flash-image-edit', {}), FIXED_IMAGE_PRICE_RUB);
 });

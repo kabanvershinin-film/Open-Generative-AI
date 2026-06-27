@@ -8,7 +8,6 @@
 //   CNY_TO_RUB       — yuan→ruble rate (CBR), default 10.55
 //   PLATFORM_MARKUP  — platform margin, default 1.15 (+15%)
 
-import { createClient } from '@supabase/supabase-js';
 import { SEEDANCE2_DIMS, SEEDANCE2_RATES, isSeedance2Model, rubFromTokensValue, seedance2RateCny } from './pricingCore.js';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -19,12 +18,21 @@ let PLATFORM_MARKUP = Number(process.env.PLATFORM_MARKUP || 1.20);
 let _platformMarkupCache = { value: PLATFORM_MARKUP, updatedAt: 0 };
 const MARKUP_CACHE_TTL = 60_000; // 1 minute
 
+let _createClient = null;
+async function getSupabaseCreateClient() {
+    if (_createClient) return _createClient;
+    const mod = await import('@supabase/supabase-js');
+    _createClient = mod.createClient;
+    return _createClient;
+}
+
 async function loadPlatformMarkup(userId = null) {
     const now = Date.now();
     
     // If we have a userId, we check their specific markup in profiles
     if (userId) {
         try {
+            const createClient = await getSupabaseCreateClient();
             const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
             const { data } = await admin
                 .from('profiles')
@@ -49,6 +57,7 @@ async function loadPlatformMarkup(userId = null) {
     }
     
     try {
+        const createClient = await getSupabaseCreateClient();
         const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
         const { data } = await admin
             .from('config')
@@ -235,9 +244,7 @@ async function videoPriceRub(model, durationSec, params, userId = null) {
 }
 
 async function imagePriceRub(model, userId = null) {
-    const markup = await loadPlatformMarkup(userId);
-    const cny = MEMEFAST_IMAGE_CNY[model] ?? 0.30;          // default ¥0.30
-    return round2(cny * CNY_TO_RUB * markup);
+    return FIXED_IMAGE_PRICE_RUB;
 }
 
 async function audioPriceRub(model, userId = null) {
@@ -258,6 +265,7 @@ const VIDEO_SET = new Set(Object.keys(MEMEFAST_VIDEO_CNY).concat([
 ]));
 const AUDIO_SET = new Set(Object.keys(MEMEFAST_AUDIO_CNY));
 const IMAGE_SET = new Set(Object.keys(MEMEFAST_IMAGE_CNY));
+const FIXED_IMAGE_PRICE_RUB = 10;
 
 /**
  * Cost of one generation in rubles. `category` is one of
@@ -284,4 +292,4 @@ async function priceRub(category, model, params = {}, userId = null) {
     return imagePriceRub(real, userId);
 }
 
-export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP, loadPlatformMarkup };
+export { priceRub, seedance2RateCny, rubFromTokens, ensureCnyRate, CNY_TO_RUB, PLATFORM_MARKUP, loadPlatformMarkup, FIXED_IMAGE_PRICE_RUB };
