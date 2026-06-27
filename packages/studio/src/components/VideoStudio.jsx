@@ -33,6 +33,10 @@ import { useModelConfig } from "../useModelConfig.js";
 import FaceRegistrationDialog from "./FaceRegistrationDialog.jsx";
 import FaceAssetDialog from "./FaceAssetDialog.jsx";
 import { buildSeedanceStudioPayload, validateFaceAsset } from "../videoAssetPayload.js";
+import {
+  buildVideoHistoryRestoreState,
+  getVideoHistoryRestoreState,
+} from "../videoHistoryRestore.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { pickCompatibleControlValue } from "../videoStudioControls.js";
 import {
@@ -769,9 +773,14 @@ export default function VideoStudio({
           if (data.selectedCharacterOrientation) setSelectedCharacterOrientation(data.selectedCharacterOrientation);
           if (data.selectedKeepOriginalSound) setSelectedKeepOriginalSound(data.selectedKeepOriginalSound);
           if (data.uploadedImageUrl) setUploadedImageUrl(data.uploadedImageUrl);
+          if (data.uploadedEndImageUrl) setUploadedEndImageUrl(data.uploadedEndImageUrl);
           if (data.uploadedVideoUrl) setUploadedVideoUrl(data.uploadedVideoUrl);
           if (data.uploadedVideoName) setUploadedVideoName(data.uploadedVideoName);
+          if (data.uploadedAudioUrl) setUploadedAudioUrl(data.uploadedAudioUrl);
+          if (data.uploadedAudioName) setUploadedAudioName(data.uploadedAudioName);
           if (data.prompt) setPrompt(data.prompt);
+          if (Array.isArray(data.refFiles)) setRefFiles(data.refFiles);
+          if (data.faceAsset) setFaceAsset(data.faceAsset);
           if (data.localHistory) setLocalHistory(data.localHistory);
           if (data.seed !== undefined) setSeed(data.seed);
           if (data.returnLastFrame !== undefined) setReturnLastFrame(data.returnLastFrame);
@@ -831,8 +840,13 @@ export default function VideoStudio({
           selectedCharacterOrientation,
           selectedKeepOriginalSound,
           uploadedImageUrl,
+          uploadedEndImageUrl,
           uploadedVideoUrl,
           uploadedVideoName,
+          uploadedAudioUrl,
+          uploadedAudioName,
+          refFiles,
+          faceAsset,
           prompt,
           localHistory,
           seed,
@@ -858,8 +872,13 @@ export default function VideoStudio({
     selectedCharacterOrientation,
     selectedKeepOriginalSound,
     uploadedImageUrl,
+    uploadedEndImageUrl,
     uploadedVideoUrl,
     uploadedVideoName,
+    uploadedAudioUrl,
+    uploadedAudioName,
+    refFiles,
+    faceAsset,
     prompt,
     localHistory,
     seed,
@@ -1536,10 +1555,8 @@ export default function VideoStudio({
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
         keepalive: true,
         body: JSON.stringify({
-          url: entry.url,
+          ...entry,
           type: "video",
-          model: entry.model,
-          prompt: entry.prompt || "",
         }),
       });
       const payload = await r.json().catch(() => ({}));
@@ -1614,6 +1631,68 @@ export default function VideoStudio({
     setCanvasModel(model);
     setShowCanvas(true);
   }, []);
+
+  const restoreHistoryEntryToForm = useCallback((entry) => {
+    const restoreState = getVideoHistoryRestoreState(entry);
+    const modelAliases = {
+      "doubao-seedance-2-0-260128": "seedance-2.0-t2v",
+      "doubao-seedance-2-0-mini-260615": "seedance-2.0-mini-t2v",
+      "doubao-seedance-2-0-fast-260128": "seedance-2.0-fast-t2v",
+    };
+    const requestedModelId = modelAliases[restoreState.selectedModel || entry?.model || ""] || restoreState.selectedModel || entry?.model || "";
+    const nextV2vMode = restoreState.v2vMode || v2vModels.some((model) => model.id === requestedModelId);
+    const nextImageMode = !nextV2vMode && (restoreState.imageMode || i2vModels.some((model) => model.id === requestedModelId));
+    const targetModels = nextV2vMode ? v2vModels : (nextImageMode ? i2vModels : t2vModels);
+    const targetModel = targetModels.find((model) => model.id === requestedModelId) || targetModels[0] || null;
+
+    if (!targetModel) {
+      toast.error("Не удалось вернуть запись в форму: модель недоступна.");
+      return;
+    }
+
+    setV2vMode(nextV2vMode);
+    setImageMode(nextImageMode);
+    setSelectedModel(targetModel.id);
+    setSelectedModelName(targetModel.name);
+    applyControlsForModel(targetModel.id, nextImageMode, nextV2vMode, {
+      selectedAr: restoreState.selectedAr,
+      selectedDuration: restoreState.selectedDuration,
+      selectedResolution: restoreState.selectedResolution,
+      selectedQuality: restoreState.selectedQuality,
+      selectedMode: restoreState.selectedMode,
+      selectedEffect: restoreState.selectedEffect,
+      selectedCharacterOrientation: restoreState.selectedCharacterOrientation,
+      selectedKeepOriginalSound: restoreState.selectedKeepOriginalSound,
+    });
+
+    setPrompt(restoreState.prompt || "");
+    setUploadedImageUrl(restoreState.uploadedImageUrl || null);
+    setUploadedEndImageUrl(restoreState.uploadedEndImageUrl || null);
+    setUploadedVideoUrl(restoreState.uploadedVideoUrl || null);
+    setUploadedVideoName(restoreState.uploadedVideoName || null);
+    setUploadedAudioUrl(restoreState.uploadedAudioUrl || null);
+    setUploadedAudioName(restoreState.uploadedAudioName || null);
+    setRefFiles(Array.isArray(restoreState.refFiles) ? restoreState.refFiles : []);
+    setFaceAsset(restoreState.faceAsset || null);
+    setSeed(Number.isFinite(Number(restoreState.seed)) ? Number(restoreState.seed) : -1);
+    setReturnLastFrame(!!restoreState.returnLastFrame);
+
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.style.height = "auto";
+      const maxH = window.innerWidth < 768 ? 300 : 400;
+      textarea.style.height = Math.min(textarea.scrollHeight, maxH) + "px";
+      textarea.focus();
+    });
+
+    toast.success(
+      entry?.restoreState
+        ? "Промпт и референсы возвращены в форму."
+        : "Промпт возвращён. Для этой старой записи доступны не все референсы.",
+      { duration: 2500 },
+    );
+  }, [applyControlsForModel]);
 
   useEffect(() => {
     if (!apiKey) return;
@@ -1984,10 +2063,31 @@ export default function VideoStudio({
             prompt: taskPrompt,
             model: taskModel, 
             aspect_ratio: selectedAr,
+            resolution: selectedResolution || undefined,
             duration: selectedDuration, 
             timestamp: new Date().toISOString(),
             seed: seed !== -1 ? seed : undefined,
+            return_last_frame: returnLastFrame,
             last_frame_url: res.last_frame_url,
+            restoreState: buildVideoHistoryRestoreState({
+              prompt: taskPrompt,
+              selectedModel: taskModel,
+              imageMode: isI2V,
+              v2vMode: false,
+              selectedAr,
+              selectedDuration,
+              selectedResolution,
+              uploadedImageUrl,
+              uploadedEndImageUrl: res.last_frame_url || null,
+              uploadedVideoUrl,
+              uploadedVideoName,
+              uploadedAudioUrl,
+              uploadedAudioName,
+              refFiles,
+              faceAsset,
+              seed,
+              returnLastFrame,
+            }),
           };
           
           if (isMountedRef.current) {
@@ -2131,8 +2231,33 @@ export default function VideoStudio({
           prompt: (v2vMode && !currentModel?.hasPrompt) ? "" : taskPrompt,
           model: taskModel,
           aspect_ratio: selectedAr,
+          resolution: selectedResolution || undefined,
           duration: selectedDuration,
           timestamp: new Date().toISOString(),
+          restoreState: buildVideoHistoryRestoreState({
+            prompt: (v2vMode && !currentModel?.hasPrompt) ? "" : taskPrompt,
+            selectedModel: taskModel,
+            imageMode,
+            v2vMode,
+            selectedAr,
+            selectedDuration,
+            selectedResolution,
+            selectedQuality,
+            selectedMode,
+            selectedEffect,
+            selectedCharacterOrientation,
+            selectedKeepOriginalSound,
+            uploadedImageUrl,
+            uploadedEndImageUrl,
+            uploadedVideoUrl,
+            uploadedVideoName,
+            uploadedAudioUrl,
+            uploadedAudioName,
+            refFiles,
+            faceAsset,
+            seed,
+            returnLastFrame,
+          }),
         };
 
         if (isMountedRef.current) {
@@ -2251,6 +2376,8 @@ export default function VideoStudio({
     uploadedEndImageUrl,
     refFiles,
     faceAsset,
+    uploadedVideoName,
+    uploadedAudioName,
     lastGenerationId,
     getCurrentModel,
     getCurrentDurations,
@@ -2660,6 +2787,16 @@ export default function VideoStudio({
                         )}
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        restoreHistoryEntryToForm(entry);
+                      }}
+                      className="mt-1 w-full rounded-md border border-primary/25 bg-primary/8 py-2 text-[11px] font-semibold text-primary transition-colors hover:border-primary/45 hover:bg-primary/14"
+                    >
+                      Вернуть в форму
+                    </button>
                   </div>
                 </div>
               );

@@ -292,10 +292,10 @@ export async function POST(request) {
         if (!TOS_ENABLED) { logStep('POST aborted: TOS not enabled'); return NextResponse.json({ error: 'TOS not enabled' }, { status: 503 }); }
 
         const body = await request.json();
-        const { url, type = 'video', model = '', prompt = '' } = body;
+        const { url, type = 'video', model = '', prompt = '', ...extra } = body;
         logStep('POST body', { type, model, hasUrl: !!url, promptLen: (prompt || '').length });
         if (!url) return NextResponse.json({ error: 'url required' }, { status: 400 });
-        const entry = await saveGalleryEntry({ userId: user.id, url, type, model, prompt });
+        const entry = await saveGalleryEntry({ userId: user.id, url, type, model, prompt, extra });
         if (!entry) {
             logStep('POST entry write failed', { type, model });
             return NextResponse.json({ error: 'TOS upload failed' }, { status: 500 });

@@ -135,17 +135,24 @@ async function appendToIndex(host, userId, entry) {
     }
 }
 
-export async function saveGalleryEntry({ userId, url, type = 'video', model = '', prompt = '' }) {
+export async function saveGalleryEntry({ userId, url, type = 'video', model = '', prompt = '', extra = {} }) {
     if (!TOS_ENABLED || !userId || !url) return null;
     const permanentUrl = await maybeUploadMediaToTOS(url, type, userId);
     if (type === 'video' && !permanentUrl) return null;
     const finalUrl = permanentUrl || url;
+    const safeExtra = extra && typeof extra === 'object' ? { ...extra } : {};
+    delete safeExtra.id;
+    delete safeExtra.url;
+    delete safeExtra.type;
+    delete safeExtra.model;
+    delete safeExtra.prompt;
     const entry = {
         id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
         type,
         url: finalUrl,
         model,
         prompt,
+        ...safeExtra,
         mirrored_to_tos: !!permanentUrl,
         created_at: new Date().toISOString(),
     };
