@@ -22,8 +22,16 @@ function dedupeImages(images) {
   return result;
 }
 
-export function buildSeedanceWorkflowImages({ connectedImages = [], connectedFaceAssets = [], imageUrl }) {
+export function buildSeedanceWorkflowImages({
+  connectedImages = [],
+  connectedFaceAssets = [],
+  imageUrl,
+  imageUrls = [],
+}) {
   const normalizedImages = connectedImages
+    .map((image) => normalizeImageValue(image))
+    .filter(Boolean);
+  const normalizedImageUrls = (Array.isArray(imageUrls) ? imageUrls : [])
     .map((image) => normalizeImageValue(image))
     .filter(Boolean);
 
@@ -40,6 +48,7 @@ export function buildSeedanceWorkflowImages({ connectedImages = [], connectedFac
   if (normalizedImageUrl) {
     finalImages.push(normalizedImageUrl);
   }
+  finalImages.push(...normalizedImageUrls);
 
   return dedupeImages(finalImages);
 }
@@ -75,6 +84,7 @@ export function buildSeedanceWorkflowBody({
     connectedImages,
     connectedFaceAssets,
     imageUrl: formValues.image_url,
+    imageUrls: formValues.images_list,
   });
 
   return {

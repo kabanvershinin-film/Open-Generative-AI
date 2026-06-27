@@ -44,6 +44,27 @@ test('buildSeedanceWorkflowImages keeps assets first and preserves extra image r
   ]);
 });
 
+test('buildSeedanceWorkflowImages includes workflow images_list references', () => {
+  const images = buildSeedanceWorkflowImages({
+    connectedFaceAssets: [
+      { uri: 'asset://face-1', thumbnail: 'https://cdn.example.com/face-1.jpg' },
+    ],
+    imageUrl: 'https://cdn.example.com/main-image.jpg',
+    imageUrls: [
+      'https://cdn.example.com/cat-ref.jpg',
+      { url: 'https://cdn.example.com/extra-ref.jpg' },
+      'https://cdn.example.com/main-image.jpg',
+    ],
+  });
+
+  assert.deepStrictEqual(images, [
+    { url: 'asset://face-1', thumbnail: 'https://cdn.example.com/face-1.jpg' },
+    { url: 'https://cdn.example.com/main-image.jpg' },
+    { url: 'https://cdn.example.com/cat-ref.jpg' },
+    { url: 'https://cdn.example.com/extra-ref.jpg' },
+  ]);
+});
+
 test('ensureSeedanceFaceTags appends missing tags for all face references', () => {
   const prompt = ensureSeedanceFaceTags('Кинематографичная сцена 图片1', [
     { url: 'asset://face-1' },
@@ -92,4 +113,20 @@ test('buildSeedanceWorkflowBody keeps Seedance Mini model and studio-style flags
   assert.strictEqual(body.seed, 42);
   assert.strictEqual(body.return_last_frame, true);
   assert.strictEqual(body.generate_audio, true);
+});
+
+test('buildSeedanceWorkflowBody forwards image_url and images_list into image_urls', () => {
+  const body = buildSeedanceWorkflowBody({
+    model: 'doubao-seedance-2-0-mini-260615',
+    prompt: '图片1 стоит, 图片2 кот как референс',
+    formValues: {
+      image_url: 'https://cdn.example.com/main-image.jpg',
+      images_list: ['https://cdn.example.com/cat-ref.jpg'],
+    },
+  });
+
+  assert.deepStrictEqual(body.image_urls, [
+    { url: 'https://cdn.example.com/main-image.jpg' },
+    { url: 'https://cdn.example.com/cat-ref.jpg' },
+  ]);
 });
