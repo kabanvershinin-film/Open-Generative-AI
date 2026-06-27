@@ -2307,12 +2307,6 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     setContextMenu(null);
   }, []);
 
-  const closeNodesSidebar = useCallback(() => {
-    setDropDown(0);
-    setContextMenu(null);
-    setEdgePicker(null);
-  }, []);
-
   const getNewNodePosition = (lastNode) => {
     if (!lastNode) return { x: 250, y: 250 };
 
@@ -2373,33 +2367,25 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     }
   };
 
-  const nodesSidebarConfig = useMemo(() => {
+  const floatingNodesMenuConfig = useMemo(() => {
     if (edgePicker) {
       return {
-        title: "Добавить совместимую ноду",
         addNode: handleSelectNodeFromEdgePicker,
         filterNodeTypes: getCompatibleNodeTypes(edgePicker.handleColor, edgePicker.isOutput),
+        anchor: edgePicker.cursorPos,
       };
     }
 
     if (contextMenu) {
       return {
-        title: "Добавить ноду",
         addNode: (type, _, data) => addNode(type, contextMenu.position, data),
         filterNodeTypes: null,
-      };
-    }
-
-    if (dropDown === 1) {
-      return {
-        title: "Добавить ноду",
-        addNode,
-        filterNodeTypes: null,
+        anchor: { x: contextMenu.x, y: contextMenu.y },
       };
     }
 
     return null;
-  }, [edgePicker, contextMenu, dropDown, handleSelectNodeFromEdgePicker, addNode]);
+  }, [edgePicker, contextMenu, handleSelectNodeFromEdgePicker, addNode]);
 
   const onKeyDown = useCallback((e) => {
     if (e.key === "Delete") {
@@ -2543,6 +2529,19 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           >
             <FaPlus size={18} />
           </button>
+          {dropDown === 1 && (
+            <div
+              className="absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <NodesNavbar
+                addNode={addNode}
+                apiNodeModels={filteredApiNodeModels}
+                filterNodeTypes={null}
+                nodeSchemas={nodeSchemas}
+              />
+            </div>
+          )}
         </div>
         <button
           type="button"
@@ -3072,33 +3071,21 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           </div>
         </div>
       )}
-      {nodesSidebarConfig && (
+      {floatingNodesMenuConfig && (
         <div
-          className={`${isMobile ? "fixed inset-y-0 right-0 z-50 w-full max-w-sm" : `fixed top-16 bottom-2 z-50 w-80 ${selectedNode && !["concatNode"].includes(selectedNode.type) ? "right-[21rem]" : "right-2"}`}`}
+          className="fixed z-50"
+          style={{
+            left: floatingNodesMenuConfig.anchor.x,
+            top: floatingNodesMenuConfig.anchor.y,
+          }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex h-full min-h-0 flex-col rounded-2xl border border-white/10 bg-[#0c0d0f] shadow-2xl shadow-black/50">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-              <h3 className="text-sm font-semibold text-white">{nodesSidebarConfig.title}</h3>
-              <button
-                type="button"
-                suppressHydrationWarning={true}
-                onClick={closeNodesSidebar}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white"
-              >
-                &#10005;
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 p-2">
-              <NodesNavbar
-                variant="sidebar"
-                addNode={nodesSidebarConfig.addNode}
-                apiNodeModels={filteredApiNodeModels}
-                filterNodeTypes={nodesSidebarConfig.filterNodeTypes}
-                nodeSchemas={nodeSchemas}
-              />
-            </div>
-          </div>
+          <NodesNavbar
+            addNode={floatingNodesMenuConfig.addNode}
+            apiNodeModels={filteredApiNodeModels}
+            filterNodeTypes={floatingNodesMenuConfig.filterNodeTypes}
+            nodeSchemas={nodeSchemas}
+          />
         </div>
       )}
       <div

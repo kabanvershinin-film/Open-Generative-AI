@@ -2609,11 +2609,6 @@ var NodeFlow = function NodeFlow(_ref) {
   var onPaneClick = (0, _react.useCallback)(function () {
     setContextMenu(null);
   }, []);
-  var closeNodesSidebar = (0, _react.useCallback)(function () {
-    setDropDown(0);
-    setContextMenu(null);
-    setEdgePicker(null);
-  }, []);
   var getNewNodePosition = function getNewNodePosition(lastNode) {
     if (!lastNode) return {
       x: 250,
@@ -2676,32 +2671,28 @@ var NodeFlow = function NodeFlow(_ref) {
       }, 0);
     }
   };
-  var nodesSidebarConfig = (0, _react.useMemo)(function () {
+  var floatingNodesMenuConfig = (0, _react.useMemo)(function () {
     if (edgePicker) {
       return {
-        title: "Добавить совместимую ноду",
         addNode: handleSelectNodeFromEdgePicker,
-        filterNodeTypes: getCompatibleNodeTypes(edgePicker.handleColor, edgePicker.isOutput)
+        filterNodeTypes: getCompatibleNodeTypes(edgePicker.handleColor, edgePicker.isOutput),
+        anchor: edgePicker.cursorPos
       };
     }
     if (contextMenu) {
       return {
-        title: "Добавить ноду",
         addNode: function addNode(type, _, data) {
           return _addNode(type, contextMenu.position, data);
         },
-        filterNodeTypes: null
-      };
-    }
-    if (dropDown === 1) {
-      return {
-        title: "Добавить ноду",
-        addNode: _addNode,
-        filterNodeTypes: null
+        filterNodeTypes: null,
+        anchor: {
+          x: contextMenu.x,
+          y: contextMenu.y
+        }
       };
     }
     return null;
-  }, [edgePicker, contextMenu, dropDown, handleSelectNodeFromEdgePicker, _addNode]);
+  }, [edgePicker, contextMenu, handleSelectNodeFromEdgePicker, _addNode]);
   var onKeyDown = (0, _react.useCallback)(function (e) {
     if (e.key === "Delete") {
       setNodes(function (nds) {
@@ -2837,6 +2828,16 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ".concat(dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600")
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaPlus, {
     size: 18
+  })), dropDown === 1 && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "absolute left-full top-1/2 z-50 ml-3 -translate-y-1/2",
+    onClick: function onClick(e) {
+      return e.stopPropagation();
+    }
+  }, /*#__PURE__*/_react["default"].createElement(_NodesNavbar["default"], {
+    addNode: _addNode,
+    apiNodeModels: filteredApiNodeModels,
+    filterNodeTypes: null,
+    nodeSchemas: nodeSchemas
   })), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
@@ -3377,31 +3378,21 @@ var NodeFlow = function NodeFlow(_ref) {
     className: "flex items-center gap-2"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaPlay, {
     size: 14
-  }), "Generate")))))), nodesSidebarConfig && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "".concat(isMobile ? "fixed inset-y-0 right-0 z-50 w-full max-w-sm" : "fixed top-16 bottom-2 z-50 w-80 ".concat(selectedNode && !["concatNode"].includes(selectedNode.type) ? "right-[21rem]" : "right-2")),
+  }), "Generate")))))), floatingNodesMenuConfig && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "fixed z-50",
+    style: {
+      left: floatingNodesMenuConfig.anchor.x,
+      top: floatingNodesMenuConfig.anchor.y
+    },
     onClick: function onClick(e) {
       return e.stopPropagation();
     }
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex h-full min-h-0 flex-col rounded-2xl border border-white/10 bg-[#0c0d0f] shadow-2xl shadow-black/50"
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3"
-  }, /*#__PURE__*/_react["default"].createElement("h3", {
-    className: "text-sm font-semibold text-white"
-  }, nodesSidebarConfig.title), /*#__PURE__*/_react["default"].createElement("button", {
-    type: "button",
-    suppressHydrationWarning: true,
-    onClick: closeNodesSidebar,
-    className: "flex h-8 w-8 items-center justify-center rounded-full text-zinc-400 transition hover:bg-white/10 hover:text-white"
-  }, "\u2715")), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "min-h-0 flex-1 p-2"
   }, /*#__PURE__*/_react["default"].createElement(_NodesNavbar["default"], {
-    variant: "sidebar",
-    addNode: nodesSidebarConfig.addNode,
+    addNode: floatingNodesMenuConfig.addNode,
     apiNodeModels: filteredApiNodeModels,
-    filterNodeTypes: nodesSidebarConfig.filterNodeTypes,
+    filterNodeTypes: floatingNodesMenuConfig.filterNodeTypes,
     nodeSchemas: nodeSchemas
-  })))), /*#__PURE__*/_react["default"].createElement("div", {
+  })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black transition-all duration-200 ease-in-out ".concat(dropDown === 2 ? "pointer-events-auto opacity-100 scale-100 visible" : "pointer-events-none opacity-0 scale-80 invisible"),
     onClick: function onClick() {
       return setDropDown(0);
