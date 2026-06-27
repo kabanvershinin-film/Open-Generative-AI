@@ -27,7 +27,11 @@ import {
 import { useModelConfig } from "../useModelConfig.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { saveMediaToGallery } from "./gallerySave.js";
-import { excludeImageHistoryEntry, mergeImageHistoryEntries } from "./imageHistory.js";
+import {
+  excludeImageHistoryEntry,
+  mergeImageHistoryEntries,
+  sanitizePersistedImageHistoryEntries,
+} from "./imageHistory.js";
 import { getUploadPickerMaxImages } from "../imageStudioUploadConfig.js";
 import {
   buildImageHistoryRestoreState,
@@ -952,7 +956,7 @@ export default function ImageStudio({
   const PENDING_RESULT_KEY = "mf_image_studio_pending_result";
 
   const sanitizeHistoryForStorage = useCallback((entries) => {
-    return (Array.isArray(entries) ? entries : [])
+    return sanitizePersistedImageHistoryEntries((Array.isArray(entries) ? entries : [])
       .filter(Boolean)
       .map((entry) => ({
         id: entry.id,
@@ -965,7 +969,7 @@ export default function ImageStudio({
           ? buildImageHistoryRestoreState(entry.restoreState)
           : undefined,
       }))
-      .filter((entry) => !!entry.url)
+      .filter((entry) => !!entry.url))
       .slice(0, 20);
   }, []);
 
@@ -1020,7 +1024,7 @@ export default function ImageStudio({
       const raw = localStorage.getItem(PERSIST_RECENT_RESULTS_KEY);
       if (!raw) return [];
       const data = JSON.parse(raw);
-      return Array.isArray(data.entries) ? data.entries : [];
+      return sanitizePersistedImageHistoryEntries(Array.isArray(data.entries) ? data.entries : []);
     } catch {
       return [];
     }
@@ -1205,7 +1209,7 @@ export default function ImageStudio({
         if (data.prompt) setPrompt(data.prompt);
         if (data.uploadedImageUrls) setUploadedImageUrls(data.uploadedImageUrls);
         if (data.batchSize) setBatchSize(data.batchSize);
-        if (data.localHistory) setLocalHistory(data.localHistory);
+        if (data.localHistory) setLocalHistory(sanitizePersistedImageHistoryEntries(data.localHistory));
       }
       if (recentStored.length > 0) {
         setLocalHistory((prev) => mergeHistoryEntries(prev, recentStored));

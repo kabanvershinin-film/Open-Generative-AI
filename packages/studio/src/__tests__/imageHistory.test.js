@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
   excludeImageHistoryEntry,
+  isDurableImageHistoryUrl,
   mergeImageHistoryEntries,
+  sanitizePersistedImageHistoryEntries,
 } from '../components/imageHistory.js';
 
 test('mergeImageHistoryEntries убирает дубли по id и url', () => {
@@ -53,5 +55,27 @@ test('excludeImageHistoryEntry сразу убирает запись по id и
   assert.deepStrictEqual(result, [
     { id: 'one', url: 'https://cdn.example.com/a.png' },
     { id: 'three', url: 'https://cdn.example.com/c.png' },
+  ]);
+});
+
+test('isDurableImageHistoryUrl принимает только постоянные URL истории', () => {
+  assert.strictEqual(isDurableImageHistoryUrl('https://bucket.tos-cn-beijing.volces.com/users/1/a.png'), true);
+  assert.strictEqual(isDurableImageHistoryUrl('/api/media/image/123'), true);
+  assert.strictEqual(isDurableImageHistoryUrl('data:image/png;base64,abc'), true);
+  assert.strictEqual(isDurableImageHistoryUrl('https://cdn.openai.com/tmp.png'), false);
+  assert.strictEqual(isDurableImageHistoryUrl('https://example.com/image.png'), false);
+});
+
+test('sanitizePersistedImageHistoryEntries вычищает протухающие внешние URL из local history', () => {
+  const result = sanitizePersistedImageHistoryEntries([
+    { id: 'raw-openai', url: 'https://cdn.openai.com/tmp.png' },
+    { id: 'raw-gemini', url: 'https://lh3.googleusercontent.com/tmp.png' },
+    { id: 'tos', url: 'https://bucket.tos-cn-beijing.volces.com/users/1/a.png' },
+    { id: 'data', url: 'data:image/png;base64,abc' },
+  ]);
+
+  assert.deepStrictEqual(result, [
+    { id: 'tos', url: 'https://bucket.tos-cn-beijing.volces.com/users/1/a.png' },
+    { id: 'data', url: 'data:image/png;base64,abc' },
   ]);
 });

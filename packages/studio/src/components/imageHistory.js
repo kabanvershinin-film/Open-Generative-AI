@@ -1,3 +1,19 @@
+export function isDurableImageHistoryUrl(url) {
+  if (typeof url !== "string") return false;
+  const value = url.trim();
+  if (!value) return false;
+  if (value.startsWith("data:image/")) return true;
+  if (value.startsWith("/")) return true;
+  if (/^https?:\/\/[^/]+\.volces\.com\//i.test(value)) return true;
+  return false;
+}
+
+export function sanitizePersistedImageHistoryEntries(entries = []) {
+  return (Array.isArray(entries) ? entries : [])
+    .filter(Boolean)
+    .filter((entry) => isDurableImageHistoryUrl(entry?.url));
+}
+
 export function mergeImageHistoryEntries(primary, secondary = []) {
   const seenIds = new Set();
   const seenUrls = new Set();
