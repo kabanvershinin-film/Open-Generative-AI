@@ -37,6 +37,10 @@ import { videoModels } from "./model-registry/videoModels.js";
 import { videoCombinerModels } from "./model-registry/videoCombinerModels.js";
 import { apiNodeModels } from "./model-registry/apiNodeModels.js";
 import { presets } from "./presets/index.js";
+import {
+  WORKFLOW_FIT_MIN_ZOOM,
+  normalizeWorkflowNodePositions,
+} from "./workflowViewport.js";
 import Link from "next/link";
 import RenderField from "./RenderField";
 import PromptConcate from "./PromptConcate";
@@ -204,11 +208,13 @@ const processWorkflowData = (workflowData, nodeSchemas, id) => {
   const workflow = workflowData?.data;
   if (!workflow?.nodes) return null;
 
-  const restoredNodes = workflow.nodes.map(n => ({
+  const restoredNodes = normalizeWorkflowNodePositions(workflow.nodes.map(n => ({
     id: n.id,
     type: n.category === "utility" 
       ? (n.model === "video-combiner" ? "vidConcatNode" : "concatNode") 
-      : `${n.category}Node`,
+      : n.category === "character"
+        ? "characterNode"
+        : `${n.category}Node`,
     position: {
       x: n.position?.x ?? 350,
       y: n.position?.y ?? 0
@@ -419,7 +425,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     const workflow = workflowData?.data;
     if (!workflow?.nodes) return;
 
-    const restoredNodes = workflow.nodes.map(n => ({
+    const restoredNodes = normalizeWorkflowNodePositions(workflow.nodes.map(n => ({
       id: n.id,
       type: n.category === "utility"
         ? (n.model === "video-combiner" ? "vidConcatNode" : "concatNode")
@@ -457,6 +463,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       }
     });
 
+    setHasFit(false);
     setNodes(restoredNodes);
     setEdges(restoredEdges);
     setWorkflowId(id);
@@ -497,7 +504,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
     if (nodes.length > 0 && !hasFit) {
       const timeout = setTimeout(() => {
-        fitView({ padding: 0.4, duration: 500, minZoom: 0.2 });
+        fitView({ padding: 0.4, duration: 500, minZoom: WORKFLOW_FIT_MIN_ZOOM });
         setHasFit(true);
       }, 100);
       return () => clearTimeout(timeout);
@@ -2350,7 +2357,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     setDropDown(0);
     setContextMenu(null);
     if (!position) {
-      setTimeout(() => fitView({ padding: isEmptyCanvas ? 1.2 : 0.8, duration: 500, minZoom: isEmptyCanvas ? 0.15 : 0.2 }), 0);
+      setTimeout(() => fitView({
+        padding: isEmptyCanvas ? 1.2 : 0.8,
+        duration: 500,
+        minZoom: WORKFLOW_FIT_MIN_ZOOM,
+      }), 0);
     }
   };
 
@@ -2549,7 +2560,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         <button
           type="button"
           suppressHydrationWarning={true}
-          onClick={() => fitView({ padding: 0.4, duration: 500, minZoom: 0.2 })}
+          onClick={() => fitView({ padding: 0.4, duration: 500, minZoom: WORKFLOW_FIT_MIN_ZOOM })}
           className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
         >
           <MdOutlineZoomOutMap size={18} />
@@ -2581,14 +2592,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           nodesDraggable={interactionMode}
           nodesConnectable={interactionMode}
           elementsSelectable={interactionMode}
-          minZoom={0.1}
+          minZoom={WORKFLOW_FIT_MIN_ZOOM}
           maxZoom={4}
           selectionOnDrag={!isDragging}
           panOnDrag={isDragging}
           selectionMode={!isDragging ? "partial" : null}
           multiSelectionKeyCode="Shift"
           connectionLineStyle={connectionLineStyle}
-          fitView={() => fitView({ padding: 0.4, duration: 500, minZoom: 0.2 })}
+          fitView={() => fitView({ padding: 0.4, duration: 500, minZoom: WORKFLOW_FIT_MIN_ZOOM })}
           proOptions={{ hideAttribution: true }}
         >
           <Background />

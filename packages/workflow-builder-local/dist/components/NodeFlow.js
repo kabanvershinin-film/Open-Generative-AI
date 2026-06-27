@@ -47,6 +47,7 @@ var _SeedancePromptNode = _interopRequireDefault(require("./SeedancePromptNode")
 var _SkylarkNode = _interopRequireDefault(require("./SkylarkNode"));
 var _useGenerationCost2 = require("./useGenerationCost");
 var _connectedCharacterReferences = require("./connectedCharacterReferences.js");
+var _workflowViewport = require("./workflowViewport.js");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t0 in e) "default" !== _t0 && {}.hasOwnProperty.call(e, _t0) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t0)) && (i.get || i.set) ? o(f, _t0, i) : f[_t0] = e[_t0]); return f; })(e, t); }
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -237,11 +238,11 @@ var processWorkflowData = function processWorkflowData(workflowData, nodeSchemas
   if (!workflowData || !(nodeSchemas !== null && nodeSchemas !== void 0 && nodeSchemas.categories)) return null;
   var workflow = workflowData === null || workflowData === void 0 ? void 0 : workflowData.data;
   if (!(workflow !== null && workflow !== void 0 && workflow.nodes)) return null;
-  var restoredNodes = workflow.nodes.map(function (n) {
+  var restoredNodes = (0, _workflowViewport.normalizeWorkflowNodePositions)(workflow.nodes.map(function (n) {
     var _n$position$x, _n$position, _n$position$y, _n$position2, _n$output_params, _n$output_params2, _workflowData$run_his;
     return {
       id: n.id,
-      type: n.category === "utility" ? n.model === "video-combiner" ? "vidConcatNode" : "concatNode" : "".concat(n.category, "Node"),
+      type: n.category === "utility" ? n.model === "video-combiner" ? "vidConcatNode" : "concatNode" : n.category === "character" ? "characterNode" : "".concat(n.category, "Node"),
       position: {
         x: (_n$position$x = (_n$position = n.position) === null || _n$position === void 0 ? void 0 : _n$position.x) !== null && _n$position$x !== void 0 ? _n$position$x : 350,
         y: (_n$position$y = (_n$position2 = n.position) === null || _n$position2 === void 0 ? void 0 : _n$position2.y) !== null && _n$position$y !== void 0 ? _n$position$y : 0
@@ -258,7 +259,7 @@ var processWorkflowData = function processWorkflowData(workflowData, nodeSchemas
         })
       }
     };
-  });
+  }));
   var restoredEdges = (workflowData.edges || []).map(function (e) {
     var sourceNode = restoredNodes.find(function (n) {
       return n.id === e.source;
@@ -574,7 +575,7 @@ var NodeFlow = function NodeFlow(_ref) {
   var restoreWorkflow = (0, _react.useCallback)(function (workflowData) {
     var workflow = workflowData === null || workflowData === void 0 ? void 0 : workflowData.data;
     if (!(workflow !== null && workflow !== void 0 && workflow.nodes)) return;
-    var restoredNodes = workflow.nodes.map(function (n) {
+    var restoredNodes = (0, _workflowViewport.normalizeWorkflowNodePositions)(workflow.nodes.map(function (n) {
       var _n$position$x2, _n$position3, _n$position$y2, _n$position4, _n$output_params3, _n$output_params4, _workflowData$run_his2;
       return {
         id: n.id,
@@ -595,7 +596,7 @@ var NodeFlow = function NodeFlow(_ref) {
           })
         }
       };
-    });
+    }));
     var restoredEdges = (workflowData.edges || []).map(function (e) {
       var sourceNode = restoredNodes.find(function (n) {
         return n.id === e.source;
@@ -613,6 +614,7 @@ var NodeFlow = function NodeFlow(_ref) {
         style: edgeStyles[edgeColor]
       };
     });
+    setHasFit(false);
     setNodes(restoredNodes);
     setEdges(restoredEdges);
     setWorkflowId(id);
@@ -650,7 +652,7 @@ var NodeFlow = function NodeFlow(_ref) {
         _fitView({
           padding: 0.4,
           duration: 500,
-          minZoom: 0.2
+          minZoom: _workflowViewport.WORKFLOW_FIT_MIN_ZOOM
         });
         setHasFit(true);
       }, 100);
@@ -2662,7 +2664,7 @@ var NodeFlow = function NodeFlow(_ref) {
         return _fitView({
           padding: isEmptyCanvas ? 1.2 : 0.8,
           duration: 500,
-          minZoom: isEmptyCanvas ? 0.15 : 0.2
+          minZoom: _workflowViewport.WORKFLOW_FIT_MIN_ZOOM
         });
       }, 0);
     }
@@ -2854,7 +2856,7 @@ var NodeFlow = function NodeFlow(_ref) {
       return _fitView({
         padding: 0.4,
         duration: 500,
-        minZoom: 0.2
+        minZoom: _workflowViewport.WORKFLOW_FIT_MIN_ZOOM
       });
     },
     className: "p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
@@ -2888,7 +2890,7 @@ var NodeFlow = function NodeFlow(_ref) {
     nodesDraggable: interactionMode,
     nodesConnectable: interactionMode,
     elementsSelectable: interactionMode,
-    minZoom: 0.1,
+    minZoom: _workflowViewport.WORKFLOW_FIT_MIN_ZOOM,
     maxZoom: 4,
     selectionOnDrag: !isDragging,
     panOnDrag: isDragging,
@@ -2899,7 +2901,7 @@ var NodeFlow = function NodeFlow(_ref) {
       return _fitView({
         padding: 0.4,
         duration: 500,
-        minZoom: 0.2
+        minZoom: _workflowViewport.WORKFLOW_FIT_MIN_ZOOM
       });
     },
     proOptions: {
