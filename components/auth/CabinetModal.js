@@ -3,19 +3,10 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthProvider';
 import { supabase } from '@/lib/supabaseClient';
+import { txnLabel } from './transactionLabels';
 
 const PRESETS = [500, 1000, 2000, 5000];
 const ADMIN_EMAILS = ['kaban.vershinin@gmail.com', 'didig.vershinin@yandex.ru'];
-
-// Map known model ids / reasons to friendly Russian labels for the history list.
-function txnLabel(t) {
-    const r = t.reason || '';
-    if (r === 'admin_topup') return 'Пополнение (админ)';
-    if (r === 'topup' || r === 'payment') return 'Пополнение';
-    if (/^Возврат/i.test(r)) return r;
-    const model = t.meta?.model || r;
-    return model ? `Генерация · ${model}` : 'Операция';
-}
 
 function fmtDate(s) {
     if (!s) return '';
