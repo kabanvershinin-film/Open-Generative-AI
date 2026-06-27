@@ -10,6 +10,7 @@ function createSubmitDeps(overrides = {}) {
     priceRub: [],
     resolvePublic: [],
     pickEndpoint: [],
+    pickMiniEndpoint: 0,
   };
 
   const deps = {
@@ -40,6 +41,10 @@ function createSubmitDeps(overrides = {}) {
       calls.pickEndpoint.push(fast);
       return fast ? 'ep-fast' : 'ep-std';
     },
+    pickMiniEndpoint: () => {
+      calls.pickMiniEndpoint += 1;
+      return 'ep-mini';
+    },
     fetchImpl: async (url, options) => {
       calls.fetch.push([url, options]);
       return {
@@ -50,6 +55,7 @@ function createSubmitDeps(overrides = {}) {
     },
     fastModelId: 'doubao-seedance-2-0-fast-260128',
     stdModelId: 'doubao-seedance-2-0-260128',
+    miniModelId: 'doubao-seedance-2-0-mini-260615',
     ...overrides,
   };
 
@@ -155,7 +161,7 @@ test('submitSeedanceTask downgrades fast 1080p to 720p and returns bill metadata
   assert.strictEqual(payload.return_last_frame, true);
 });
 
-test('submitSeedanceTask keeps explicit mini model id and mini pricing', async () => {
+test('submitSeedanceTask routes mini through mini endpoint pool and keeps mini pricing', async () => {
   const { deps, calls } = createSubmitDeps({
     seedance2RateCny: () => 23,
   });
@@ -170,12 +176,13 @@ test('submitSeedanceTask keeps explicit mini model id and mini pricing', async (
   assert.strictEqual(result.status, 200);
   assert.deepStrictEqual(result.body, {
     taskId: 'task-1',
-    endpoint: 'doubao-seedance-2-0-mini-260615',
+    endpoint: 'ep-mini',
     bill: 'bill-token',
     estimatedCost: 321.45,
     rateCny: 23,
   });
   assert.deepStrictEqual(calls.pickEndpoint, []);
+  assert.strictEqual(calls.pickMiniEndpoint, 1);
   assert.deepStrictEqual(calls.priceRub[0], [
     'video',
     'doubao-seedance-2-0-mini-260615',
@@ -198,7 +205,7 @@ test('submitSeedanceTask keeps explicit mini model id and mini pricing', async (
   ]);
   const [, fetchOptions] = calls.fetch[0];
   const payload = JSON.parse(fetchOptions.body);
-  assert.strictEqual(payload.model, 'doubao-seedance-2-0-mini-260615');
+  assert.strictEqual(payload.model, 'ep-mini');
   assert.strictEqual(payload.resolution, '720p');
 });
 

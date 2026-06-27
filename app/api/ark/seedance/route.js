@@ -3,7 +3,7 @@ import { getUser, signBill, verifyBillData, chargeForTask } from '../../_lib/bal
 import { priceRub, ensureCnyRate, seedance2RateCny, rubFromTokens } from '../../_lib/pricing';
 import { buildContent } from './logic';
 import { buildUserMediaKey } from '../../_lib/tosPaths';
-import { createRoundRobinPicker, parseEndpoints } from './route.helpers.js';
+import { createRoundRobinPicker, createSinglePoolPicker, parseEndpoints } from './route.helpers.js';
 import { pollSeedanceTask, submitSeedanceTask } from './route.handlers.js';
 
 const TOS_AK = process.env.TOS_ACCESS_KEY || '';
@@ -76,10 +76,11 @@ async function resolvePublic(u, userId = null) {
 const ARK_BASE = 'https://ark.cn-beijing.volces.com/api/v3';
 const ARK_API_KEY = process.env.ARK_API_KEY || '';
 
-// Two separate endpoint pools — Seedance 2.0 (full) and Seedance 2.0 Fast.
+// Three separate endpoint pools — Seedance 2.0 (full), Seedance 2.0 Fast and Seedance 2.0 Mini.
 // Each is round-robin load-balanced. Override via env (comma-separated ep- ids):
 //   ARK_SEEDANCE_ENDPOINTS       — full (Doubao-Seedance-2.0)
 //   ARK_SEEDANCE_FAST_ENDPOINTS  — fast (Doubao-Seedance-2.0-fast)
+//   ARK_SEEDANCE_MINI_ENDPOINTS  — mini (Doubao-Seedance-2.0-mini)
 const FULL_ENDPOINTS = parseEndpoints(process.env.ARK_SEEDANCE_ENDPOINTS, [
   'ep-20260529025832-p9qqk',
   'ep-20260529025809-nv5bv',
@@ -94,9 +95,11 @@ const FAST_ENDPOINTS = parseEndpoints(process.env.ARK_SEEDANCE_FAST_ENDPOINTS, [
   'ep-20260602191152-xctn2',
   'ep-20260602190812-pqwdx',
 ]);
+const MINI_ENDPOINTS = parseEndpoints(process.env.ARK_SEEDANCE_MINI_ENDPOINTS, []);
 
 const FAST_MODEL_ID = 'doubao-seedance-2-0-fast-260128';
 const STD_MODEL_ID  = 'doubao-seedance-2-0-260128';
+const MINI_MODEL_ID = 'doubao-seedance-2-0-mini-260615';
 
 // Per-pool round-robin index, seeded randomly so concurrent cold serverless
 // instances don't all start on the same endpoint.
@@ -105,6 +108,7 @@ const rrIndex = {
   fast: Math.floor(Math.random() * Math.max(1, FAST_ENDPOINTS.length)),
 };
 const pickEndpoint = createRoundRobinPicker(FULL_ENDPOINTS, FAST_ENDPOINTS, rrIndex);
+const pickMiniEndpoint = createSinglePoolPicker(MINI_ENDPOINTS, Math.floor(Math.random() * Math.max(1, MINI_ENDPOINTS.length)));
 
 const routeDeps = {
   arkApiKey: ARK_API_KEY,
@@ -120,9 +124,11 @@ const routeDeps = {
   rubFromTokens,
   chargeForTask,
   pickEndpoint,
+  pickMiniEndpoint,
   fetchImpl: fetch,
   fastModelId: FAST_MODEL_ID,
   stdModelId: STD_MODEL_ID,
+  miniModelId: MINI_MODEL_ID,
 };
 
 // POST /api/ark/seedance — submit a generation task, returns { taskId, endpoint, bill, balance }

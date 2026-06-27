@@ -22,6 +22,17 @@ export function createRoundRobinPicker(fullEndpoints, fastEndpoints, initialInde
   };
 }
 
+export function createSinglePoolPicker(endpoints, initialIndex = 0) {
+  let index = initialIndex || 0;
+
+  return function pickEndpoint() {
+    if (!endpoints.length) return null;
+    const endpoint = endpoints[index % endpoints.length];
+    index = (index + 1) % endpoints.length;
+    return endpoint;
+  };
+}
+
 export function normalizeArkResolution(resolution, fast) {
   const normalized = String(resolution || "").toLowerCase();
   if (!normalized) return undefined;

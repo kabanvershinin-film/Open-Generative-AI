@@ -18,6 +18,13 @@ function pickSeedanceModelId(requestedModel, fast, stdModelId, fastModelId) {
   return fast ? fastModelId : stdModelId;
 }
 
+function pickSeedanceEndpoint(modelId, stdModelId, fastModelId, miniModelId, pickEndpoint, pickMiniEndpoint) {
+  if (modelId === fastModelId) return pickEndpoint(true) || modelId;
+  if (modelId === stdModelId) return pickEndpoint(false) || modelId;
+  if (modelId === miniModelId) return pickMiniEndpoint?.() || modelId;
+  return modelId;
+}
+
 function extractArkError(data, status) {
   return data?.error?.message || data?.message || `Ark error ${status}`;
 }
@@ -47,9 +54,11 @@ export async function submitSeedanceTask(deps, requestBody, requestMeta = {}) {
     seedance2RateCny,
     signBill,
     pickEndpoint,
+    pickMiniEndpoint,
     fetchImpl,
     fastModelId,
     stdModelId,
+    miniModelId,
   } = deps;
 
   if (!arkApiKey) {
@@ -104,8 +113,14 @@ export async function submitSeedanceTask(deps, requestBody, requestMeta = {}) {
 
   const modelId = pickSeedanceModelId(model, fast, stdModelId, fastModelId);
   const isFastModel = modelId === fastModelId;
-  const usesDedicatedEndpoint = modelId === stdModelId || modelId === fastModelId;
-  const endpoint = usesDedicatedEndpoint ? (pickEndpoint(isFastModel) || modelId) : modelId;
+  const endpoint = pickSeedanceEndpoint(
+    modelId,
+    stdModelId,
+    fastModelId,
+    miniModelId,
+    pickEndpoint,
+    pickMiniEndpoint,
+  );
 
   await ensureCnyRate();
   const hasVideoInput = hasVideoReferences(video_url, video_urls);
