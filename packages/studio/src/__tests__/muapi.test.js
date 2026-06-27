@@ -246,6 +246,32 @@ test('generateImage posts to image generation proxy and returns url', async (t) 
     assert.strictEqual(body.size, '1024x1024');
 });
 
+test('generateImage sends documented GPT fields output_format, background and moderation', async () => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementationOnce(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'img-gpt-documented', data: [{ url: 'http://example.com/image-documented.jpg' }] }),
+    }));
+
+    await muapi.generateImage('key', {
+        model: 'gpt-image-2',
+        prompt: 'кот',
+        aspect_ratio: '3:2',
+        imageSize: '2K',
+        format: 'png',
+        background: 'opaque',
+        moderation: 'low',
+    });
+
+    const [, options] = global.fetch.mock.calls[0].arguments;
+    const body = JSON.parse(options.body);
+    assert.strictEqual(body.size, '2048x1360');
+    assert.strictEqual(body.output_format, 'png');
+    assert.strictEqual(body.background, 'opaque');
+    assert.strictEqual(body.moderation, 'low');
+});
+
 test('generateImage мапит GPT aspect ratio 16:9 в size формата Nano Banana', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async () => ({
@@ -391,14 +417,22 @@ test('generateI2I sends additional references through image[] fields', async () 
     assert.ok(extraImages[1] instanceof Blob);
 });
 
-test('generateImage routes Gemini image models to chat completions', async (t) => {
+test('generateImage routes Gemini image models to native generateContent', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementationOnce(async () => ({
         ok: true,
         status: 200,
         json: async () => ({
-            id: 'chat-img-1',
-            choices: [{ message: { content: [{ image_url: { url: 'http://example.com/gemini.png' } }] } }],
+            candidates: [{
+                content: {
+                    parts: [{
+                        inlineData: {
+                            mimeType: 'image/png',
+                            data: 'R0VNSU5J',
+                        },
+                    }],
+                },
+            }],
         }),
     }));
 
@@ -408,24 +442,48 @@ test('generateImage routes Gemini image models to chat completions', async (t) =
         aspect_ratio: '1:1',
     });
 
-    assert.strictEqual(result.url, 'http://example.com/gemini.png');
+    assert.strictEqual(result.url, 'data:image/png;base64,R0VNSU5J');
     const [url, options] = global.fetch.mock.calls[0].arguments;
-    assert.strictEqual(url, '/api/mf/v1/chat/completions');
+    assert.strictEqual(url, '/api/mf/v1beta/models/gemini-3.1-flash-image-preview:generateContent');
     const body = JSON.parse(options.body);
-    assert.strictEqual(body.model, 'gemini-3.1-flash-image-preview');
-    assert.deepEqual(body.messages, [{ role: 'user', content: 'кот' }]);
+    assert.deepEqual(body.contents, [{ parts: [{ text: 'кот' }] }]);
+    assert.deepEqual(body.generationConfig, {
+        responseModalities: ['IMAGE', 'TEXT'],
+        imageConfig: {
+            aspectRatio: '1:1',
+        },
+    });
 });
 
-test('generateI2I routes Gemini edit models to chat completions with image reference', async (t) => {
+test('generateI2I routes Gemini edit models to native generateContent with inline image', async (t) => {
     global.fetch.mock.resetCalls();
-    global.fetch.mock.mockImplementationOnce(async () => ({
-        ok: true,
-        status: 200,
-        json: async () => ({
-            id: 'chat-edit-1',
-            choices: [{ message: { content: [{ image_url: { url: 'http://example.com/gemini-edit.png' } }] } }],
-        }),
-    }));
+    global.fetch.mock.mockImplementation(async (url) => {
+        if (url === 'http://example.com/source.jpg') {
+            return {
+                ok: true,
+                blob: async () => new Blob(['gemini-source'], { type: 'image/jpeg' }),
+            };
+        }
+        if (url === '/api/mf/v1beta/models/gemini-3.1-flash-image-preview:generateContent') {
+            return {
+                ok: true,
+                status: 200,
+                json: async () => ({
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                inlineData: {
+                                    mimeType: 'image/png',
+                                    data: 'RURJVA==',
+                                },
+                            }],
+                        },
+                    }],
+                }),
+            };
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+    });
 
     const result = await muapi.generateI2I('key', {
         model: 'gemini-3.1-flash-image-preview-edit',
@@ -435,18 +493,20 @@ test('generateI2I routes Gemini edit models to chat completions with image refer
         aspect_ratio: '1:1',
     });
 
-    assert.strictEqual(result.url, 'http://example.com/gemini-edit.png');
-    const [url, options] = global.fetch.mock.calls[0].arguments;
-    assert.strictEqual(url, '/api/mf/v1/chat/completions');
+    assert.strictEqual(result.url, 'data:image/png;base64,RURJVA==');
+    assert.strictEqual(global.fetch.mock.calls.length, 2);
+    const [url, options] = global.fetch.mock.calls[1].arguments;
+    assert.strictEqual(url, '/api/mf/v1beta/models/gemini-3.1-flash-image-preview:generateContent');
     const body = JSON.parse(options.body);
-    assert.strictEqual(body.model, 'gemini-3.1-flash-image-preview');
-    assert.deepEqual(body.messages, [{
-        role: 'user',
-        content: [
-            { type: 'text', text: 'сделай рыжим' },
-            { type: 'image_url', image_url: { url: 'http://example.com/source.jpg' } },
-        ],
-    }]);
+    assert.strictEqual(body.contents.length, 1);
+    assert.strictEqual(body.contents[0].parts[0].text, 'сделай рыжим');
+    assert.ok(body.contents[0].parts[1].inline_data);
+    assert.deepEqual(body.generationConfig, {
+        responseModalities: ['IMAGE', 'TEXT'],
+        imageConfig: {
+            aspectRatio: '1:1',
+        },
+    });
 });
 
 test('generateImage formats object API errors', async (t) => {

@@ -39,6 +39,8 @@ test('image input option helpers expose shared options and defaults', () => {
     ]);
     assert.deepStrictEqual(models.getImageInputOptions('gpt-image-2', 'format'), ['jpeg', 'png', 'webp']);
     assert.strictEqual(models.getImageInputDefault('gpt-image-2', 'format'), 'jpeg');
+    assert.deepStrictEqual(models.getImageInputOptions('gpt-image-2', 'background'), ['auto', 'opaque']);
+    assert.deepStrictEqual(models.getImageInputOptions('gpt-image-2-edit', 'background'), ['auto', 'opaque']);
     assert.strictEqual(models.getImageInputDefault('gpt-image-2-edit', 'background'), 'auto');
     assert.deepStrictEqual(models.getImageInputOptions('unknown-model', 'format'), []);
     assert.strictEqual(models.getImageInputDefault('unknown-model', 'format'), null);

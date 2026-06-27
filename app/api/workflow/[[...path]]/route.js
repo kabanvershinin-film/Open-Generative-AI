@@ -7,6 +7,13 @@ import { createClient } from '@supabase/supabase-js';
 import { buildContent } from '../../ark/seedance/logic';
 import { filterVisibleOwnerWorkflows } from './workflowListAccess.js';
 import { buildWorkflowCandidateKeys } from './workflowStorageCandidates.js';
+import {
+    computeGptImageSize,
+    GEMINI_IMAGE_ASPECT_RATIOS,
+    GEMINI_IMAGE_SIZE_PRESETS,
+    GPT_IMAGE_ASPECT_RATIOS,
+    GPT_IMAGE_SIZE_PRESETS,
+} from '../../../../packages/studio/src/imageModelSizing.js';
 
 // Supabase client for workflow shares
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -676,8 +683,8 @@ const AUDIO_MODELS = new Set([
 // nano-banana removed: "No available channel" error with current Memefast key
 const FAL_IMAGE_MODEL_MAP = {};
 
-// Models that generate images via /v1/chat/completions (not /v1/images/generations)
-const CHAT_IMAGE_MODELS = new Set([
+// Gemini image models use the native generateContent API.
+const GEMINI_NATIVE_IMAGE_MODELS = new Set([
     'gemini-2.5-flash-image',
     'gemini-3-pro-image-preview',
     'gemini-3.1-flash-image-preview',
@@ -724,6 +731,14 @@ function computeImageSize(aspectRatio, resolution, width, height) {
     return `${Math.round(w * scale)}x${Math.round(h * scale)}`;
 }
 
+function computeWorkflowImageSize(model, params) {
+    if (params.size) return params.size;
+    if ((MODEL_ID_MAP[model] || model) === 'gpt-image-2') {
+        return computeGptImageSize(params.aspect_ratio, params.imageSize || params.size);
+    }
+    return computeImageSize(params.aspect_ratio, params.resolution, params.width, params.height);
+}
+
 function applyImageRouting(modelId, routing) {
     if (routing && routing !== 'default') return `${modelId}:${routing}`;
     return modelId;
@@ -732,16 +747,14 @@ function applyImageRouting(modelId, routing) {
 function isImageWorkflowModel(model) {
     if (!model) return false;
     if (model === 'image-passthrough') return true;
-    if (CHAT_IMAGE_MODELS.has(model)) return true;
+    if (GEMINI_NATIVE_IMAGE_MODELS.has(model)) return true;
     if (model in FAL_IMAGE_MODEL_MAP) return true;
     return !VIDEO_MODELS.has(model) && !TEXT_MODELS.has(model) && !AUDIO_MODELS.has(model);
 }
 
 async function generateImage(apiKey, model, params) {
     const apiModel = applyImageRouting(MODEL_ID_MAP[model] || model, params.routing);
-    // Prefer an explicit pixel size (e.g. gpt-image-2 "Size" field); otherwise
-    // derive it from aspect_ratio + resolution for models that use those.
-    const size = params.size || computeImageSize(params.aspect_ratio, params.resolution, params.width, params.height);
+    const size = computeWorkflowImageSize(model, params);
     // Collect every wired reference image (images_list = up to 16, plus a single
     // image_url for backward compatibility).
     const imgs = [
@@ -749,6 +762,10 @@ async function generateImage(apiKey, model, params) {
         params.image_url,
     ].filter(Boolean);
     const imgInput = imgs[0];
+
+    if (GEMINI_NATIVE_IMAGE_MODELS.has(model)) {
+        return generateGeminiImage(apiKey, model, params);
+    }
 
     // Use /v1/images/edits whenever a reference image is wired in (editing mode).
     if (imgInput && (model.includes('edit') || model.includes('reference') || model.includes('inpaint') || model.startsWith('gpt-image'))) {
@@ -758,7 +775,7 @@ async function generateImage(apiKey, model, params) {
         form.append('n', '1');
         form.append('size', size);
         if (params.quality) form.append('quality', params.quality);
-        if (params.format) form.append('format', params.format);
+        if (params.format) form.append('output_format', params.format);
         if (params.background) form.append('background', params.background);
         if (params.moderation) form.append('moderation', params.moderation);
         for (const u of imgs) form.append('image[]', u);
@@ -780,7 +797,9 @@ async function generateImage(apiKey, model, params) {
 
     const body = { model: apiModel, prompt: params.prompt || '', n: 1, size, response_format: 'url' };
     if (params.quality) body.quality = params.quality;
-    if (params.format) body.format = params.format;
+    if (params.format) body.output_format = params.format;
+    if (params.background) body.background = params.background;
+    if (params.moderation) body.moderation = params.moderation;
     if (imgInput) body.image_url = imgInput;
 
     const res = await fetch(`${MEMEFAST}/v1/images/generations`, {
@@ -859,7 +878,7 @@ async function urlToInlineData(url) {
 // Gemini image models (Nano Banana 2 / Pro) via the native generateContent API.
 // Honours generationConfig.imageConfig (aspectRatio + imageSize) and embeds an
 // optional reference image inline as base64.
-async function generateChatImage(apiKey, model, params) {
+async function generateGeminiImage(apiKey, model, params) {
     const apiModel = applyImageRouting(MODEL_ID_MAP[model] || model, params.routing);
     const parts = [{ text: params.prompt || '' }];
     // Embed every wired reference image (images_list, plus a single image_url).
@@ -1162,7 +1181,7 @@ async function runNode(runId, nodeId, model, params, apiKey, userId = null, opts
         else if (TEXT_MODELS.has(model)) outputs = await generateText(apiKey, model, params);
         else if (AUDIO_MODELS.has(model)) outputs = await generateAudio(apiKey, model, params);
         else if (model in FAL_IMAGE_MODEL_MAP) outputs = await generateFalImage(apiKey, model, params);
-        else if (CHAT_IMAGE_MODELS.has(model)) outputs = await generateChatImage(apiKey, model, params);
+        else if (GEMINI_NATIVE_IMAGE_MODELS.has(model)) outputs = await generateGeminiImage(apiKey, model, params);
         else outputs = await generateImage(apiKey, model, params);
 
         // Upload generated media to TOS SYNCHRONOUSLY so the client receives a
@@ -1229,14 +1248,15 @@ function getNodeSchemas() {
         ar_std:        { enum: ["1:1","16:9","9:16","4:3","3:4"], type: "string", title: "Aspect Ratio", default: "1:1" },
         ar_ext:        { enum: ["1:1","16:9","9:16","4:3","3:4","3:2","2:3"], type: "string", title: "Aspect Ratio", default: "1:1" },
         ar_wide:       { enum: ["1:1","16:9","9:16","4:3","3:4","3:2","2:3","21:9"], type: "string", title: "Aspect Ratio", default: "1:1" },
-        ar_gemini:     { enum: ["1:1","16:9","9:16","4:3","3:4","2:3","3:2","4:5","5:4","1:4","4:1","1:8","8:1","21:9"], type: "string", title: "Aspect Ratio", default: "1:1" },
+        ar_gemini:     { enum: GEMINI_IMAGE_ASPECT_RATIOS, type: "string", title: "Aspect Ratio", default: "1:1" },
         ar_video:      { enum: ["16:9","9:16","1:1","4:3"], type: "string", title: "Aspect Ratio", default: "16:9" },
         ar_seed2:      { enum: ["21:9","16:9","4:3","1:1","3:4","9:16"], type: "string", title: "Aspect Ratio", default: "16:9" },
         // Resolution presets per model capability
         res_2k:        { enum: ["1k","2k"], type: "string", title: "Resolution", default: "1k" },
         res_4k:        { enum: ["1k","2k","4k"], type: "string", title: "Resolution", default: "1k" },
-        gpt2_size:     { enum: ["1024x1024","1536x1024","1024x1536","2048x2048","2048x1152","3840x2160","2160x3840"], type: "string", title: "Size", default: "1024x1024" },
-        image_size:    { enum: ["1K","2K","4K","512"], type: "string", title: "Resolution", default: "1K" },
+        gpt2_ar:       { enum: GPT_IMAGE_ASPECT_RATIOS, type: "string", title: "Aspect Ratio", default: "1:1" },
+        gpt2_image_size:{ enum: GPT_IMAGE_SIZE_PRESETS, type: "string", title: "Resolution", default: "1K" },
+        image_size:    { enum: GEMINI_IMAGE_SIZE_PRESETS, type: "string", title: "Resolution", default: "1K" },
         res_video:     { enum: ["480p","720p","1080p"], type: "string", title: "Resolution", default: "1080p" },
         res_video_fast:{ enum: ["480p","720p"], type: "string", title: "Resolution", default: "720p" },
         dur_seed2:     { type: "int", title: "Duration (sec)", default: 5, minValue: 4, maxValue: 15, step: 1 },
@@ -1245,7 +1265,7 @@ function getNodeSchemas() {
         quality_gpt2:  { enum: ["auto","high","medium","low"], type: "string", title: "Quality", default: "auto" },
         quality_std:   { enum: ["standard","hd"], type: "string", title: "Quality", default: "standard" },
         image_format:  { enum: ["jpeg","png","webp"], type: "string", title: "Format", default: "jpeg" },
-        background:    { enum: ["auto","transparent","opaque"], type: "string", title: "Background", default: "auto" },
+        background:    { enum: ["auto","opaque"], type: "string", title: "Background", default: "auto" },
         moderation:    { enum: ["auto","low"], type: "string", title: "Moderation", default: "auto" },
         routing:       { enum: ["default","nitro","floor","stable"], type: "string", title: "Routing", default: "default" },
         // Suno music fields
@@ -1258,7 +1278,7 @@ function getNodeSchemas() {
 
     const T = {
         // Image generation — model-specific schemas
-        t2i_gpt2:   ms({ prompt: F.prompt, images_list: F.images_list, size: F.gpt2_size, quality: F.quality_gpt2, format: F.image_format, background: F.background, moderation: F.moderation, routing: F.routing }),
+        t2i_gpt2:   ms({ prompt: F.prompt, images_list: F.images_list, aspect_ratio: F.gpt2_ar, imageSize: F.gpt2_image_size, quality: F.quality_gpt2, format: F.image_format, background: F.background, moderation: F.moderation, routing: F.routing }),
         t2i_gpt1:   ms({ prompt: F.prompt, aspect_ratio: F.ar_ext,    resolution: F.res_2k, quality: F.quality_hq }),
         t2i_dalle:  ms({ prompt: F.prompt, aspect_ratio: F.ar_simple }),
         t2i_flux:   ms({ prompt: F.prompt, aspect_ratio: F.ar_std,    resolution: F.res_2k }),
@@ -1269,7 +1289,7 @@ function getNodeSchemas() {
         t2i_simple: ms({ prompt: F.prompt, aspect_ratio: F.ar_simple }),
         t2iWH:      ms({ prompt: F.prompt, width: F.width, height: F.height }),
         // Image editing — model-specific schemas
-        i2i_gpt2:   ms({ prompt: F.prompt, images_list: F.images_list, size: F.gpt2_size, quality: F.quality_gpt2, format: F.image_format, background: F.background, moderation: F.moderation, routing: F.routing }),
+        i2i_gpt2:   ms({ prompt: F.prompt, images_list: F.images_list, aspect_ratio: F.gpt2_ar, imageSize: F.gpt2_image_size, quality: F.quality_gpt2, format: F.image_format, background: F.background, moderation: F.moderation, routing: F.routing }),
         i2i_gpt1:   ms({ prompt: F.prompt, images_list: F.images_list, resolution: F.res_2k, quality: F.quality_hq }),
         i2i:        ms({ prompt: F.prompt, images_list: F.images_list }),
         i2i_gemini: ms({ prompt: F.prompt, images_list: F.images_list, aspect_ratio: F.ar_gemini, imageSize: F.image_size, routing: F.routing }),
