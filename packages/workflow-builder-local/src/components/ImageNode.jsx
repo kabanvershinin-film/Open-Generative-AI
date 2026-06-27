@@ -15,6 +15,11 @@ import { HiOutlineViewGrid } from "react-icons/hi";
 import NodeSendButton from "./NodeSendButton";
 import NodeOptionsMenu from "./NodeOptionsMenu";
 import { useGenerationCost } from "./useGenerationCost";
+import {
+  MAX_IMAGE_NODE_SIZE,
+  MIN_IMAGE_NODE_SIZE,
+  normalizeImageNodeSize,
+} from "./imageNodeSizing.js";
 
 const inputHandles = [
   "imageInput",
@@ -42,8 +47,11 @@ const ImageGeneration = ({ id, data, selected }) => {
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageMetadata, setImageMetadata] = useState({ width: 0, height: 0, size: null });
+  const [nodeSize, setNodeSize] = useState(() => normalizeImageNodeSize(data.nodeSize));
   const outputHistory = data.outputHistory || [];
   const prevHistoryLengthRef = useRef(outputHistory.length);
+  const resizeCleanupRef = useRef(null);
+  const containerRef = useRef(null);
   const workflowId = getWorkflowId();
   const runId = data.runId ?? getRunId();
   const nodeSchemas = data.nodeSchemas || {};
@@ -170,11 +178,67 @@ const ImageGeneration = ({ id, data, selected }) => {
 
   useEffect(() => {
     updateNodeInternals(id);
-  }, [formValues, id]);
+  }, [formValues, id, nodeSize, updateNodeInternals]);
+
+  useEffect(() => {
+    const nextSize = normalizeImageNodeSize(data.nodeSize);
+    setNodeSize((prev) => (
+      prev.width === nextSize.width && prev.height === nextSize.height
+        ? prev
+        : nextSize
+    ));
+  }, [data.nodeSize]);
+
+  useEffect(() => () => {
+    resizeCleanupRef.current?.();
+    resizeCleanupRef.current = null;
+  }, []);
 
   const handleChange = (key, value) => {
     setFormValues(prev => ({ ...prev, [key]: value }));
     setDropDown(-1);
+  };
+
+  const handleResizeStart = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    resizeCleanupRef.current?.();
+
+    const startSize = normalizeImageNodeSize(nodeSize);
+    const startWidth = containerRef.current?.offsetWidth || startSize.width;
+    const startHeight = containerRef.current?.offsetHeight || startSize.height;
+    const startX = event.clientX;
+    const startY = event.clientY;
+    let lastSize = startSize;
+
+    const handlePointerMove = (moveEvent) => {
+      const nextSize = normalizeImageNodeSize({
+        width: startWidth + (moveEvent.clientX - startX),
+        height: startHeight + (moveEvent.clientY - startY),
+      });
+      lastSize = nextSize;
+      setNodeSize(nextSize);
+    };
+
+    const finishResize = () => {
+      resizeCleanupRef.current?.();
+      resizeCleanupRef.current = null;
+      setNodeSize(lastSize);
+      data.onDataChange?.(id, { nodeSize: lastSize });
+      updateNodeInternals(id);
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", finishResize);
+      window.removeEventListener("pointercancel", finishResize);
+    };
+
+    resizeCleanupRef.current = cleanup;
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", finishResize);
+    window.addEventListener("pointercancel", finishResize);
   };
 
   useEffect(() => {
@@ -553,9 +617,18 @@ const ImageGeneration = ({ id, data, selected }) => {
 
   return (
     <div 
-      style={{ minHeight: 220, '--loader-color': '#10b981' }} 
+      ref={containerRef}
+      style={{
+        minHeight: MIN_IMAGE_NODE_SIZE.height,
+        minWidth: MIN_IMAGE_NODE_SIZE.width,
+        maxWidth: MAX_IMAGE_NODE_SIZE.width,
+        maxHeight: MAX_IMAGE_NODE_SIZE.height,
+        width: nodeSize.width,
+        height: nodeSize.height,
+        '--loader-color': '#10b981',
+      }} 
       className={`
-        nowheel group flex flex-col flex-1 w-80 
+        nowheel group flex flex-col flex-1
         rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out 
         ${selected 
           ? "border-emerald-500 shadow-[0_0_25px_rgba(16,185,129,0.3)] scale-[1.02] ring-1 ring-emerald-500/20" 
@@ -869,6 +942,14 @@ const ImageGeneration = ({ id, data, selected }) => {
       > 
         Изображение 
       </p>
+      <button
+        type="button"
+        onPointerDown={handleResizeStart}
+        className="nodrag absolute bottom-2 right-2 z-20 h-4 w-4 cursor-se-resize rounded-sm border border-white/15 bg-black/70 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/90"
+        title="Изменить размер"
+      >
+        <span className="pointer-events-none absolute bottom-0.5 right-0.5 h-2 w-2 border-b border-r border-white/70" />
+      </button>
     </div>
   );
 };

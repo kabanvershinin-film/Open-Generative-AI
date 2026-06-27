@@ -54,6 +54,7 @@ import SeedancePromptNode from "./SeedancePromptNode";
 import SkylarkNode from "./SkylarkNode";
 import { useGenerationCost } from "./useGenerationCost";
 import { collectConnectedCharacterReferences } from "./connectedCharacterReferences.js";
+import { buildWorkflowNodeData } from "./imageNodeSizing.js";
 
 const nodeTypes = {
   textNode: TextGeneration,
@@ -1938,7 +1939,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       },
       selected: true,
       data: {
-        ...nodeToDuplicate.data,
+        ...buildWorkflowNodeData(nodeToDuplicate.type, nodeToDuplicate.data),
       }
     };
 
@@ -2187,7 +2188,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         x: flowPosition.x - 160,
         y: flowPosition.y - 100,
       },
-      data: { ...initialData },
+      data: buildWorkflowNodeData(nodeType, initialData),
     };
 
     setNodes((prev) => [...prev, newNode]);
@@ -2342,7 +2343,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       id,
       type: nodeType,
       position: nodePosition,
-      data: { ...initialData },
+      data: buildWorkflowNodeData(nodeType, initialData),
     };
 
     setNodes((prev) => [...prev, newNode]);
