@@ -6,6 +6,7 @@ import { buildLegacyWorkflowStorageKey, buildUserMediaKey, buildWorkflowStorageK
 import { createClient } from '@supabase/supabase-js';
 import { buildContent } from '../../ark/seedance/logic';
 import { filterVisibleOwnerWorkflows } from './workflowListAccess.js';
+import { buildWorkflowCandidateKeys } from './workflowStorageCandidates.js';
 
 // Supabase client for workflow shares
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
@@ -482,11 +483,10 @@ async function tosLoadWorkflow(id, options = {}) {
     if (!TOS_ENABLED) return null;
     const preferredUserId = options.userId || null;
     const indexedOwnerId = options.ownerId || (await tosLoadIndex()).find((w) => w?.id === id)?.owner_id || null;
-    const keys = [
-        buildWorkflowStorageKey(preferredUserId, id),
-        indexedOwnerId ? buildWorkflowStorageKey(indexedOwnerId, id) : null,
-        buildLegacyWorkflowStorageKey(id),
-    ].filter(Boolean);
+    const keys = buildWorkflowCandidateKeys(id, {
+        userId: preferredUserId,
+        ownerId: indexedOwnerId,
+    });
 
     const seen = new Set();
     for (const key of keys) {
