@@ -35,6 +35,11 @@ import FaceAssetDialog from "./FaceAssetDialog.jsx";
 import { buildSeedanceStudioPayload, validateFaceAsset } from "../videoAssetPayload.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { pickCompatibleControlValue } from "../videoStudioControls.js";
+import {
+  buildRefTokenLabel,
+  getRefTokenLabelForFile,
+  insertPromptTokenAtSelection,
+} from "../videoPromptTokens.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const HISTORY_PAGE_SIZE = 18;
@@ -1000,14 +1005,16 @@ export default function VideoStudio({
       const imageFiles = droppedFiles.filter(f => f.type.startsWith('image/'));
       const videoFiles = droppedFiles.filter(f => f.type.startsWith('video/'));
       
-      if (videoFiles.length > 0) {
+      if (getCurrentModel()?.provider === "ark") {
+        uploadReferenceFiles(droppedFiles, { insertIntoPrompt: true });
+      } else if (videoFiles.length > 0) {
         processDroppedVideo(videoFiles[0]);
       } else if (imageFiles.length > 0) {
         processDroppedImage(imageFiles[0]);
       }
       onFilesHandled?.();
     }
-  }, [droppedFiles, onFilesHandled, processDroppedImage, processDroppedVideo]);
+  }, [apiKey, droppedFiles, faceAsset, getCurrentModel, onFilesHandled, processDroppedImage, processDroppedVideo, uploadedImageUrl]);
 
   // Initialise controls for default model on mount
   useEffect(() => {
@@ -1148,26 +1155,11 @@ export default function VideoStudio({
 
   // Per-kind label + ordinal for the @reference chip, e.g. 图片1, 视频2, 音频1.
   // Note: faceAsset is always mapped to 图片1 if present.
-  const refLabel = (kind, index) => {
-    const word = kind === "image" ? "图片" : kind === "video" ? "视频" : "音频";
-    
-    let actualIndex = index;
-    if (kind === "image") {
-      // Character is always 图片1 in muapi.js if it exists.
-      if (faceAsset) {
-        actualIndex += 1;
-      }
-      // Main uploaded image is 图片2 (if character exists) or 图片1.
-      if (uploadedImageUrl) {
-        // muapi.js skips uploadedImageUrl if it's the same as faceAsset.thumbnail
-        if (!faceAsset || uploadedImageUrl !== faceAsset.thumbnail) {
-          actualIndex += 1;
-        }
-      }
-    }
-    
-    return `${word}${actualIndex}`;
-  };
+  const refLabel = (kind, index) =>
+    buildRefTokenLabel(kind, index, {
+      faceAsset,
+      uploadedImageUrl,
+    });
 
   // Compress image before upload to reduce file size and speed up upload
   const compressImage = async (file) => {
@@ -1209,11 +1201,7 @@ export default function VideoStudio({
     });
   };
 
-  const handleRefFilesChange = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (refFileInputRef.current) refFileInputRef.current.value = "";
-
-    // Upload all files in parallel
+  const uploadReferenceFiles = async (files, { insertIntoPrompt = false } = {}) => {
     const uploadPromises = files.map(async (file) => {
       const kind = refKindOf(file);
       if (!kind) {
@@ -1282,7 +1270,20 @@ export default function VideoStudio({
           xhr.send(processedFile);
         });
         if (uploadAborted) return;
-        setRefFiles((prev) => prev.map((f) => (f.id === id ? { ...f, url: publicUrl, uploading: false, progress: 100 } : f)));
+        let insertedToken = null;
+        setRefFiles((prev) => {
+          const next = prev.map((f) => (f.id === id ? { ...f, url: publicUrl, uploading: false, progress: 100 } : f));
+          if (insertIntoPrompt) {
+            insertedToken = getRefTokenLabelForFile(next, id, {
+              faceAsset,
+              uploadedImageUrl,
+            });
+          }
+          return next;
+        });
+        if (insertIntoPrompt && insertedToken) {
+          insertRefToken(insertedToken);
+        }
       } catch (err) {
         if (err.message === 'aborted') return;
         console.error("[VideoStudio] Reference upload failed:", err);
@@ -1292,6 +1293,12 @@ export default function VideoStudio({
     });
 
     await Promise.all(uploadPromises);
+  };
+
+  const handleRefFilesChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (refFileInputRef.current) refFileInputRef.current.value = "";
+    await uploadReferenceFiles(files);
   };
 
   const removeRefFile = (id) => setRefFiles((prev) => prev.filter((f) => f.id !== id));
@@ -1309,7 +1316,7 @@ export default function VideoStudio({
     const end = el.selectionEnd;
     
     // Обновляем текст
-    setPrompt((prev) => prev.slice(0, start) + token + " " + prev.slice(end));
+    setPrompt((prev) => insertPromptTokenAtSelection(prev, token, start, end));
     
     // Восстанавливаем прокрутку сразу и повторно через requestAnimationFrame
     const restoreScroll = () => {
