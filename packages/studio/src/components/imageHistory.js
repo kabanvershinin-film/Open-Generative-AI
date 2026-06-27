@@ -8,6 +8,30 @@ export function isDurableImageHistoryUrl(url) {
   return false;
 }
 
+function getEntryTime(entry) {
+  const value = Date.parse(entry?.timestamp || entry?.created_at || 0);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function mergeImageHistoryEntryPair(existing, incoming) {
+  const existingTime = getEntryTime(existing);
+  const incomingTime = getEntryTime(incoming);
+  const preferIncoming = incomingTime >= existingTime;
+  const newer = preferIncoming ? incoming : existing;
+  const older = preferIncoming ? existing : incoming;
+
+  return {
+    ...older,
+    ...newer,
+    prompt: typeof newer?.prompt === "string" && newer.prompt.trim()
+      ? newer.prompt
+      : (typeof older?.prompt === "string" ? older.prompt : ""),
+    restoreState: newer?.restoreState && typeof newer.restoreState === "object"
+      ? newer.restoreState
+      : older?.restoreState,
+  };
+}
+
 export function sanitizePersistedImageHistoryEntries(entries = []) {
   return (Array.isArray(entries) ? entries : [])
     .filter(Boolean)
@@ -15,18 +39,18 @@ export function sanitizePersistedImageHistoryEntries(entries = []) {
 }
 
 export function mergeImageHistoryEntries(primary, secondary = []) {
-  const seenIds = new Set();
-  const seenUrls = new Set();
   const merged = [];
 
   for (const entry of [...(Array.isArray(primary) ? primary : []), ...(Array.isArray(secondary) ? secondary : [])]) {
     if (!entry?.url) continue;
-    const keyId = entry.id || null;
-    const keyUrl = entry.url;
-    if ((keyId && seenIds.has(keyId)) || seenUrls.has(keyUrl)) continue;
-    if (keyId) seenIds.add(keyId);
-    seenUrls.add(keyUrl);
-    merged.push(entry);
+    const matchIndex = merged.findIndex((item) =>
+      (entry.id && item.id === entry.id) || item.url === entry.url,
+    );
+    if (matchIndex === -1) {
+      merged.push(entry);
+      continue;
+    }
+    merged[matchIndex] = mergeImageHistoryEntryPair(merged[matchIndex], entry);
   }
 
   return merged

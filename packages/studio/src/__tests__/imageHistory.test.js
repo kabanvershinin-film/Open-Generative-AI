@@ -8,7 +8,7 @@ import {
   sanitizePersistedImageHistoryEntries,
 } from '../components/imageHistory.js';
 
-test('mergeImageHistoryEntries убирает дубли по id и url', () => {
+test('mergeImageHistoryEntries убирает дубли по id и url, оставляя более новую запись', () => {
   const result = mergeImageHistoryEntries(
     [
       { id: 'one', url: 'https://cdn.example.com/a.png', timestamp: '2026-06-24T10:00:00.000Z' },
@@ -23,8 +23,40 @@ test('mergeImageHistoryEntries убирает дубли по id и url', () => 
 
   assert.deepStrictEqual(result.map((entry) => entry.id), ['one', 'two']);
   assert.deepStrictEqual(result.map((entry) => entry.url), [
-    'https://cdn.example.com/a.png',
+    'https://cdn.example.com/a-new.png',
     'https://cdn.example.com/b.png',
+  ]);
+});
+
+test('mergeImageHistoryEntries оставляет более новый prompt при дубле по url', () => {
+  const result = mergeImageHistoryEntries(
+    [
+      {
+        id: 'old-entry',
+        url: 'https://cdn.example.com/result.png',
+        prompt: 'старый промпт',
+        timestamp: '2026-06-24T10:00:00.000Z',
+      },
+    ],
+    [
+      {
+        id: 'new-entry',
+        url: 'https://cdn.example.com/result.png',
+        prompt: 'новый промпт',
+        timestamp: '2026-06-24T11:00:00.000Z',
+        restoreState: { prompt: 'новый промпт' },
+      },
+    ],
+  );
+
+  assert.deepStrictEqual(result, [
+    {
+      id: 'new-entry',
+      url: 'https://cdn.example.com/result.png',
+      prompt: 'новый промпт',
+      timestamp: '2026-06-24T11:00:00.000Z',
+      restoreState: { prompt: 'новый промпт' },
+    },
   ]);
 });
 
