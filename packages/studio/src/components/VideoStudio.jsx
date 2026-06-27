@@ -45,6 +45,7 @@ import {
   insertPromptTokenAtSelection,
 } from "../videoPromptTokens.js";
 import { buildSeedanceExtendSession } from "../seedanceExtend.js";
+import { normalizePersistedRefFiles, serializeRefFilesForPersistence } from "../refFilesState.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const HISTORY_PAGE_SIZE = 18;
@@ -781,7 +782,7 @@ export default function VideoStudio({
           if (data.uploadedAudioUrl) setUploadedAudioUrl(data.uploadedAudioUrl);
           if (data.uploadedAudioName) setUploadedAudioName(data.uploadedAudioName);
           if (data.prompt) setPrompt(data.prompt);
-          if (Array.isArray(data.refFiles)) setRefFiles(data.refFiles);
+          if (Array.isArray(data.refFiles)) setRefFiles(normalizePersistedRefFiles(data.refFiles));
           if (data.faceAsset) setFaceAsset(data.faceAsset);
           if (data.localHistory) setLocalHistory(data.localHistory);
           if (data.seed !== undefined) setSeed(data.seed);
@@ -847,7 +848,7 @@ export default function VideoStudio({
           uploadedVideoName,
           uploadedAudioUrl,
           uploadedAudioName,
-          refFiles,
+          refFiles: serializeRefFilesForPersistence(refFiles),
           faceAsset,
           prompt,
           localHistory,
@@ -3029,7 +3030,7 @@ export default function VideoStudio({
                       {f.uploading ? (
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); f.cancel?.(); }}
+                          onClick={(e) => { e.stopPropagation(); f.cancel?.(); if (!f.cancel) removeRefFile(f.id); }}
                           className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
                           title="Отменить загрузку"
                         >
