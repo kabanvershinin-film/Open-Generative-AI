@@ -2346,14 +2346,28 @@ export default function VideoStudio({
             pricingModelId = "omni-flash";
           }
 
-          const hasVideoInput = refFiles.some(f => f.kind === "video");
+          const isI2V = i2vModels.some((m) => m.id === selectedModel);
+          const pricingPayload = buildSeedanceStudioPayload({
+            model: selectedModel,
+            prompt,
+            aspectRatio: selectedAr,
+            uploadedImageUrl,
+            uploadedVideoUrl,
+            uploadedAudioUrl,
+            refFiles,
+            faceAsset,
+            isI2V,
+            seed,
+            returnLastFrame,
+          });
           const requestBody = {
             category: "video",
             model: pricingModelId,
             params: {
               duration: selectedDuration || 5,
               resolution: selectedResolution || "720p",
-              video_url: hasVideoInput ? "exists" : undefined,
+              video_url: pricingPayload.video_url ? "exists" : undefined,
+              video_urls: Array.isArray(pricingPayload.video_urls) && pricingPayload.video_urls.length > 0 ? ["exists"] : undefined,
               generate_audio: true // Seedance 2.0 по умолчанию генерирует аудио
             }
           };

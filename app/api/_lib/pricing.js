@@ -176,6 +176,12 @@ const PRICE_MODEL_ALIAS = {
 
 function round2(n) { return Math.round(n * 100) / 100; }
 
+function hasSeedanceVideoInput(params = {}) {
+    if (params?.video_url) return true;
+    if (Array.isArray(params?.video_urls)) return params.video_urls.some(Boolean);
+    return false;
+}
+
 // Mirrors creator-club's calculateCost (video branch) exactly:
 //   tier   = 1080p → hd, else sd
 //   rate   = hasVideoInput ? withVideo : noVideo   (¥ per 1M tokens)
@@ -216,7 +222,7 @@ async function videoPriceRub(model, durationSec, params, userId = null) {
         const res = params?.resolution || '720p';
         // hasVideoInput = a real reference VIDEO (video-to-video), not an image
         // first frame — only that switches to the cheaper withVideo rate.
-        const hasVideoInput = !!(params?.video_url);
+        const hasVideoInput = hasSeedanceVideoInput(params);
         // generate_audio defaults ON (doubles tokens), как в creator-club.
         const generateAudio = params?.generate_audio !== false;
         const inputVideoSec = params?.inputVideoSec || 0;

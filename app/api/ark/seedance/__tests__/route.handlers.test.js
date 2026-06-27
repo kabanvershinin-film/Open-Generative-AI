@@ -182,6 +182,7 @@ test('submitSeedanceTask keeps explicit mini model id and mini pricing', async (
     {
       resolution: '720p',
       video_url: 'https://cdn.example.com/ref.mp4',
+      video_urls: undefined,
       duration: 6,
       generate_audio: true,
     },
@@ -199,6 +200,42 @@ test('submitSeedanceTask keeps explicit mini model id and mini pricing', async (
   const payload = JSON.parse(fetchOptions.body);
   assert.strictEqual(payload.model, 'doubao-seedance-2-0-mini-260615');
   assert.strictEqual(payload.resolution, '720p');
+});
+
+test('submitSeedanceTask treats video_urls as video input for mini pricing', async () => {
+  const { deps, calls } = createSubmitDeps({
+    seedance2RateCny: () => 14,
+  });
+  const result = await submitSeedanceTask(deps, {
+    model: 'doubao-seedance-2-0-mini-260615',
+    prompt: 'мини ролик с видео-референсом',
+    resolution: '720p',
+    duration: 6,
+    video_urls: ['https://cdn.example.com/ref.mp4'],
+  });
+
+  assert.strictEqual(result.status, 200);
+  assert.strictEqual(result.body.rateCny, 14);
+  assert.deepStrictEqual(calls.priceRub[0], [
+    'video',
+    'doubao-seedance-2-0-mini-260615',
+    {
+      resolution: '720p',
+      video_url: undefined,
+      video_urls: ['https://cdn.example.com/ref.mp4'],
+      duration: 6,
+      generate_audio: true,
+    },
+  ]);
+  assert.deepStrictEqual(calls.signBill[0], [
+    321.45,
+    {
+      model: 'doubao-seedance-2-0-mini-260615',
+      resolution: '720p',
+      hasVideoInput: true,
+      userId: 'user-1',
+    },
+  ]);
 });
 
 test('submitSeedanceTask resolves face thumbnail and image references before content build', async () => {

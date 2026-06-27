@@ -4,6 +4,12 @@ function jsonResult(body, status = 200) {
   return { status, body };
 }
 
+function hasVideoReferences(videoUrl, videoUrls) {
+  if (videoUrl) return true;
+  if (Array.isArray(videoUrls)) return videoUrls.some(Boolean);
+  return false;
+}
+
 function pickSeedanceModelId(requestedModel, fast, stdModelId, fastModelId) {
   const model = String(requestedModel || "");
   if (/doubao-seedance-2-0-mini/.test(model)) return model;
@@ -102,8 +108,14 @@ export async function submitSeedanceTask(deps, requestBody, requestMeta = {}) {
   const endpoint = usesDedicatedEndpoint ? (pickEndpoint(isFastModel) || modelId) : modelId;
 
   await ensureCnyRate();
-  const estimatedCost = await priceRub('video', modelId, { resolution, video_url, duration, generate_audio });
-  const hasVideoInput = !!video_url;
+  const hasVideoInput = hasVideoReferences(video_url, video_urls);
+  const estimatedCost = await priceRub('video', modelId, {
+    resolution,
+    video_url,
+    video_urls,
+    duration,
+    generate_audio,
+  });
   const finalRes = normalizeArkResolution(resolution || '720p', isFastModel) || '720p';
   const rateCny = seedance2RateCny(modelId, finalRes, hasVideoInput);
   const bill = signBill(estimatedCost, {
