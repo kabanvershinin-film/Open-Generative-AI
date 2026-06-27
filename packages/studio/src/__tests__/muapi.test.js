@@ -262,7 +262,27 @@ test('generateImage мапит GPT aspect ratio 16:9 в size формата Nano
 
     const [, options] = global.fetch.mock.calls[0].arguments;
     const body = JSON.parse(options.body);
-    assert.strictEqual(body.size, '2048x1152');
+    assert.strictEqual(body.size, '1536x864');
+});
+
+test('generateImage мапит GPT preset 2K в корректный size для выбранной пропорции', async () => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'img-2k', data: [{ url: 'http://example.com/portrait-2k.jpg' }] }),
+    }));
+
+    await muapi.generateImage('key', {
+        model: 'gpt-image-2',
+        prompt: 'портрет',
+        aspect_ratio: '9:16',
+        imageSize: '2K',
+    });
+
+    const [, options] = global.fetch.mock.calls[0].arguments;
+    const body = JSON.parse(options.body);
+    assert.strictEqual(body.size, '1152x2048');
 });
 
 test('generateI2I posts multipart edit request and returns url', async (t) => {

@@ -20,6 +20,7 @@ export const routingLabels = {
 // Aspect-ratio options shared by the Gemini image model (Nano Banana 2).
 const GEMINI_AR = ["1:1", "16:9", "9:16", "4:3", "3:4", "2:3", "3:2", "4:5", "5:4", "1:4", "4:1", "1:8", "8:1", "21:9"];
 const GPT_AR = ["1:1", "16:9", "9:16", "3:2", "2:3"];
+const GPT_IMAGE_SIZE = ["1K", "2K"];
 
 // ── Image generation (text → image) via POST /v1/images/generations ──────────
 export const _t2iModelsAll = [
@@ -30,6 +31,7 @@ export const _t2iModelsAll = [
     inputs: {
       prompt: { type: "string" },
       aspect_ratio: { enum: GPT_AR, default: "1:1" },
+      imageSize: { enum: GPT_IMAGE_SIZE, default: "1K" },
       quality: { enum: ["auto", "high", "medium", "low"], default: "auto" },
       format: { enum: ["jpeg", "png", "webp"], default: "jpeg" },
     },
@@ -68,6 +70,7 @@ export const _i2iModelsAll = [
     inputs: {
       prompt: { type: "string" },
       aspect_ratio: { enum: GPT_AR, default: "1:1" },
+      imageSize: { enum: GPT_IMAGE_SIZE, default: "1K" },
       quality: { enum: ["auto", "high", "medium", "low"], default: "auto" },
       format: { enum: ["jpeg", "png", "webp"], default: "jpeg" },
       background: { enum: ["auto", "transparent", "opaque"], default: "auto" },

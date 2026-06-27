@@ -11,15 +11,25 @@ function getI2IModelById(id) {
 }
 
 function computeImageSize(aspectRatio, imageSize) {
-    if (imageSize) return imageSize;
+    if (typeof imageSize === 'string' && imageSize.includes('x')) return imageSize;
+    const preset = imageSize || '1K';
     const sizes = {
-        '1:1': '1024x1024',
-        '16:9': '2048x1152',
-        '9:16': '2160x3840',
-        '3:2': '1536x1024',
-        '2:3': '1024x1536',
+        '1K': {
+            '1:1': '1024x1024',
+            '16:9': '1536x864',
+            '9:16': '864x1536',
+            '3:2': '1536x1024',
+            '2:3': '1024x1536',
+        },
+        '2K': {
+            '1:1': '2048x2048',
+            '16:9': '2048x1152',
+            '9:16': '1152x2048',
+            '3:2': '2048x1360',
+            '2:3': '1360x2048',
+        },
     };
-    return sizes[aspectRatio] || '1024x1024';
+    return sizes[preset]?.[aspectRatio] || sizes['1K'][aspectRatio] || '1024x1024';
 }
 
 function applyImageRouting(modelId, routing) {

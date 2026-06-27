@@ -14,6 +14,8 @@ test('image model getters return exact known model metadata', () => {
         '3:2',
         '2:3',
     ]);
+    assert.deepStrictEqual(models.getImageInputOptions('gpt-image-2', 'imageSize'), ['1K', '2K']);
+    assert.strictEqual(models.getImageInputDefault('gpt-image-2', 'imageSize'), '1K');
     assert.deepStrictEqual(models.getResolutionsForModel('gpt-image-2'), []);
     assert.strictEqual(models.getQualityFieldForModel('gpt-image-2'), null);
 });
