@@ -2331,10 +2331,10 @@ export default function VideoStudio({
           if (isArk) {
             const modelMap = {
               "seedance-2.0-t2v": "doubao-seedance-2-0-260128",
-              "seedance-2.0-mini-t2v": "doubao-seedance-1-0-lite-t2v-250428",
+              "seedance-2.0-mini-t2v": "doubao-seedance-2-0-mini-260615",
               "seedance-2.0-fast-t2v": "doubao-seedance-2-0-fast-260128",
               "seedance-2.0-i2v": "doubao-seedance-2-0-260128",
-              "seedance-2.0-mini-i2v": "doubao-seedance-1-0-lite-i2v-250428",
+              "seedance-2.0-mini-i2v": "doubao-seedance-2-0-mini-260615",
               "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
             };
             pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";

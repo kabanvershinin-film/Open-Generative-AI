@@ -59,10 +59,10 @@ test('video model getters expose exact capabilities for t2v and i2v models', () 
     assert.ok(miniI2v);
     assert.strictEqual(t2v.provider, 'ark');
     assert.strictEqual(t2v.platform, 'unified');
-    assert.strictEqual(miniT2v.apiId, 'doubao-seedance-1-0-lite-t2v-250428');
+    assert.strictEqual(miniT2v.apiId, 'doubao-seedance-2-0-mini-260615');
     assert.strictEqual(i2v.provider, 'ark');
     assert.strictEqual(i2v.platform, 'unified');
-    assert.strictEqual(miniI2v.apiId, 'doubao-seedance-1-0-lite-i2v-250428');
+    assert.strictEqual(miniI2v.apiId, 'doubao-seedance-2-0-mini-260615');
 
     assert.deepStrictEqual(models.getAspectRatiosForVideoModel('seedance-2.0-fast-t2v'), [
         'adaptive',

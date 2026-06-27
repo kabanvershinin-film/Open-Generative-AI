@@ -11,6 +11,12 @@ test('seedance2RateCny returns correct values', () => {
     
     const rate3 = seedance2RateCny('doubao-seedance-2-0-fast-260128', '1080p', false);
     assert.strictEqual(rate3, 41);
+
+    const rate4 = seedance2RateCny('doubao-seedance-2-0-mini-260615', '720p', false);
+    assert.strictEqual(rate4, 23);
+
+    const rate5 = seedance2RateCny('doubao-seedance-2-0-mini-260615', '720p', true);
+    assert.strictEqual(rate5, 14);
 });
 
 test('seedance2RateCny returns 0 for non-seedance models', () => {
@@ -21,6 +27,7 @@ test('seedance2RateCny returns 0 for non-seedance models', () => {
 test('isSeedance2Model detects supported family', () => {
     assert.strictEqual(isSeedance2Model('doubao-seedance-2-0-260128'), true);
     assert.strictEqual(isSeedance2Model('doubao-seedance-2-0-fast-260128'), true);
+    assert.strictEqual(isSeedance2Model('doubao-seedance-2-0-mini-260615'), true);
     assert.strictEqual(isSeedance2Model('veo3.1'), false);
 });
 

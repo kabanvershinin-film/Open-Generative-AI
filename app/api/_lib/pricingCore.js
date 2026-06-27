@@ -5,6 +5,7 @@ function round2(value) {
 export const SEEDANCE2_RATES = {
   standard: { sd: { noVideo: 46, withVideo: 28 }, hd: { noVideo: 51, withVideo: 31 } },
   fast: { sd: { noVideo: 37, withVideo: 22 }, hd: { noVideo: 41, withVideo: 25 } },
+  mini: { sd: { noVideo: 23, withVideo: 14 } },
 };
 
 export const SEEDANCE2_DIMS = {
@@ -20,9 +21,14 @@ export function isSeedance2Model(model) {
 
 export function seedance2RateCny(model, resolution, hasVideoInput) {
   if (!isSeedance2Model(model)) return 0;
-  const variant = String(model || "").includes("fast") ? "fast" : "standard";
+  const modelName = String(model || "");
+  const variant = modelName.includes("mini")
+    ? "mini"
+    : modelName.includes("fast")
+      ? "fast"
+      : "standard";
   const tier = (resolution === "1080p" || resolution === "2160p") ? "hd" : "sd";
-  const rate = SEEDANCE2_RATES[variant][tier];
+  const rate = SEEDANCE2_RATES[variant][tier] || SEEDANCE2_RATES[variant].sd;
   return hasVideoInput ? rate.withVideo : rate.noVideo;
 }
 

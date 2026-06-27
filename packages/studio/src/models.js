@@ -122,7 +122,7 @@ export const _t2vModelsAll = [
   {
     id: "seedance-2.0-mini-t2v",
     name: "Seedance 2.0 Mini",
-    apiId: "doubao-seedance-1-0-lite-t2v-250428",
+    apiId: "doubao-seedance-2-0-mini-260615",
     platform: "unified",
     provider: "ark",
     acceptsImage: true,
@@ -178,7 +178,7 @@ export const _i2vModelsAll = [
   {
     id: "seedance-2.0-mini-i2v",
     name: "Seedance 2.0 Mini (фото→видео)",
-    apiId: "doubao-seedance-1-0-lite-i2v-250428",
+    apiId: "doubao-seedance-2-0-mini-260615",
     platform: "unified",
     provider: "ark",
     imageField: "image_url",

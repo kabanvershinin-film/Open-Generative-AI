@@ -183,11 +183,16 @@ function round2(n) { return Math.round(n * 100) / 100; }
 //   ₽      = tokens/1e6 × rate × CNY_TO_RUB × PLATFORM_MARKUP
 async function seedance2PriceRub(model, durationSec, resolution, hasVideoInput, generateAudio, inputVideoSec, userId = null) {
     const markup = await loadPlatformMarkup(userId);
-    const variant = model.includes('fast') ? 'fast' : 'standard';
+    const variant = model.includes('mini')
+        ? 'mini'
+        : model.includes('fast')
+            ? 'fast'
+            : 'standard';
     const tier = (resolution === '1080p' || resolution === '2160p') ? 'hd' : 'sd';
+    const variantRates = SEEDANCE2_RATES[variant][tier] || SEEDANCE2_RATES[variant].sd;
     const rate = hasVideoInput
-        ? SEEDANCE2_RATES[variant][tier].withVideo
-        : SEEDANCE2_RATES[variant][tier].noVideo;
+        ? variantRates.withVideo
+        : variantRates.noVideo;
     if (rate === 0) return 0;
     const [w, h] = SEEDANCE2_DIMS[resolution] || SEEDANCE2_DIMS['720p'];
     const inputSec = hasVideoInput ? (inputVideoSec || 0) : 0;
@@ -243,7 +248,7 @@ const FREE_MODELS = new Set([
 // Sets mirroring route.js categorisation (kept local to avoid a circular import).
 const VIDEO_SET = new Set(Object.keys(MEMEFAST_VIDEO_CNY).concat([
     'veo3.1-pro', 'veo3.1-4k',
-    'doubao-seedance-2-0-260128', 'doubao-seedance-2-0-fast-260128',
+    'doubao-seedance-2-0-260128', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-mini-260615',
 ]));
 const AUDIO_SET = new Set(Object.keys(MEMEFAST_AUDIO_CNY));
 const IMAGE_SET = new Set(Object.keys(MEMEFAST_IMAGE_CNY));

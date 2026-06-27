@@ -4,6 +4,14 @@ function jsonResult(body, status = 200) {
   return { status, body };
 }
 
+function pickSeedanceModelId(requestedModel, fast, stdModelId, fastModelId) {
+  const model = String(requestedModel || "");
+  if (/doubao-seedance-2-0-mini/.test(model)) return model;
+  if (/doubao-seedance-2-0-fast/.test(model)) return fastModelId;
+  if (/doubao-seedance-2-0/.test(model)) return stdModelId;
+  return fast ? fastModelId : stdModelId;
+}
+
 function extractArkError(data, status) {
   return data?.error?.message || data?.message || `Ark error ${status}`;
 }
@@ -45,6 +53,7 @@ export async function submitSeedanceTask(deps, requestBody, requestMeta = {}) {
   const user = await getUser(requestMeta.request);
   const userId = user?.id || null;
   const {
+    model,
     fast = false,
     prompt = '',
     first_frame_image,
@@ -87,13 +96,15 @@ export async function submitSeedanceTask(deps, requestBody, requestMeta = {}) {
     return jsonResult({ error: 'Empty content' }, 400);
   }
 
-  const modelId = fast ? fastModelId : stdModelId;
-  const endpoint = pickEndpoint(fast) || modelId;
+  const modelId = pickSeedanceModelId(model, fast, stdModelId, fastModelId);
+  const isFastModel = modelId === fastModelId;
+  const usesDedicatedEndpoint = modelId === stdModelId || modelId === fastModelId;
+  const endpoint = usesDedicatedEndpoint ? (pickEndpoint(isFastModel) || modelId) : modelId;
 
   await ensureCnyRate();
   const estimatedCost = await priceRub('video', modelId, { resolution, video_url, duration, generate_audio });
   const hasVideoInput = !!video_url;
-  const finalRes = normalizeArkResolution(resolution || '720p', fast) || '720p';
+  const finalRes = normalizeArkResolution(resolution || '720p', isFastModel) || '720p';
   const rateCny = seedance2RateCny(modelId, finalRes, hasVideoInput);
   const bill = signBill(estimatedCost, {
     model: modelId,
@@ -112,7 +123,7 @@ export async function submitSeedanceTask(deps, requestBody, requestMeta = {}) {
     duration,
     seed,
     returnLastFrame: return_last_frame,
-    fast,
+    fast: isFastModel,
   });
 
   const response = await fetchImpl(`${arkBase}/contents/generations/tasks`, {

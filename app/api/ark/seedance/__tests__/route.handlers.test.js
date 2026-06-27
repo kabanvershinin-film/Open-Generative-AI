@@ -155,6 +155,52 @@ test('submitSeedanceTask downgrades fast 1080p to 720p and returns bill metadata
   assert.strictEqual(payload.return_last_frame, true);
 });
 
+test('submitSeedanceTask keeps explicit mini model id and mini pricing', async () => {
+  const { deps, calls } = createSubmitDeps({
+    seedance2RateCny: () => 23,
+  });
+  const result = await submitSeedanceTask(deps, {
+    model: 'doubao-seedance-2-0-mini-260615',
+    prompt: 'мини ролик',
+    resolution: '720p',
+    duration: 6,
+    video_url: 'https://cdn.example.com/ref.mp4',
+  });
+
+  assert.strictEqual(result.status, 200);
+  assert.deepStrictEqual(result.body, {
+    taskId: 'task-1',
+    endpoint: 'doubao-seedance-2-0-mini-260615',
+    bill: 'bill-token',
+    estimatedCost: 321.45,
+    rateCny: 23,
+  });
+  assert.deepStrictEqual(calls.pickEndpoint, []);
+  assert.deepStrictEqual(calls.priceRub[0], [
+    'video',
+    'doubao-seedance-2-0-mini-260615',
+    {
+      resolution: '720p',
+      video_url: 'https://cdn.example.com/ref.mp4',
+      duration: 6,
+      generate_audio: true,
+    },
+  ]);
+  assert.deepStrictEqual(calls.signBill[0], [
+    321.45,
+    {
+      model: 'doubao-seedance-2-0-mini-260615',
+      resolution: '720p',
+      hasVideoInput: true,
+      userId: 'user-1',
+    },
+  ]);
+  const [, fetchOptions] = calls.fetch[0];
+  const payload = JSON.parse(fetchOptions.body);
+  assert.strictEqual(payload.model, 'doubao-seedance-2-0-mini-260615');
+  assert.strictEqual(payload.resolution, '720p');
+});
+
 test('submitSeedanceTask resolves face thumbnail and image references before content build', async () => {
   let capturedInput = null;
   const { deps, calls } = createSubmitDeps({
