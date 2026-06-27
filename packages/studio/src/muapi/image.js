@@ -14,13 +14,10 @@ function computeImageSize(aspectRatio, imageSize) {
     if (imageSize) return imageSize;
     const sizes = {
         '1:1': '1024x1024',
-        '16:9': '1792x1024',
-        '9:16': '1024x1792',
-        '4:3': '1024x768',
-        '3:4': '768x1024',
+        '16:9': '2048x1152',
+        '9:16': '2160x3840',
         '3:2': '1536x1024',
         '2:3': '1024x1536',
-        '21:9': '2048x878',
     };
     return sizes[aspectRatio] || '1024x1024';
 }

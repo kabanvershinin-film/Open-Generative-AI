@@ -243,6 +243,26 @@ test('generateImage posts to image generation proxy and returns url', async (t) 
     const body = JSON.parse(options.body);
     assert.strictEqual(body.model, 'gpt-image-2');
     assert.strictEqual(body.prompt, 'кот');
+    assert.strictEqual(body.size, '1024x1024');
+});
+
+test('generateImage мапит GPT aspect ratio 16:9 в size формата Nano Banana', async (t) => {
+    global.fetch.mock.resetCalls();
+    global.fetch.mock.mockImplementation(async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({ id: 'img-16x9', data: [{ url: 'http://example.com/wide.jpg' }] }),
+    }));
+
+    await muapi.generateImage('key', {
+        model: 'gpt-image-2',
+        prompt: 'панорама',
+        aspect_ratio: '16:9',
+    });
+
+    const [, options] = global.fetch.mock.calls[0].arguments;
+    const body = JSON.parse(options.body);
+    assert.strictEqual(body.size, '2048x1152');
 });
 
 test('generateI2I posts multipart edit request and returns url', async (t) => {

@@ -19,6 +19,7 @@ export const routingLabels = {
 
 // Aspect-ratio options shared by the Gemini image model (Nano Banana 2).
 const GEMINI_AR = ["1:1", "16:9", "9:16", "4:3", "3:4", "2:3", "3:2", "4:5", "5:4", "1:4", "4:1", "1:8", "8:1", "21:9"];
+const GPT_AR = ["1:1", "16:9", "9:16", "3:2", "2:3"];
 
 // ── Image generation (text → image) via POST /v1/images/generations ──────────
 export const _t2iModelsAll = [
@@ -28,7 +29,7 @@ export const _t2iModelsAll = [
     apiId: "gpt-image-2",
     inputs: {
       prompt: { type: "string" },
-      size: { enum: ["1024x1024", "1536x1024", "1024x1536", "2048x2048", "2048x1152", "3840x2160", "2160x3840"], default: "1024x1024" },
+      aspect_ratio: { enum: GPT_AR, default: "1:1" },
       quality: { enum: ["auto", "high", "medium", "low"], default: "auto" },
       format: { enum: ["jpeg", "png", "webp"], default: "jpeg" },
     },
@@ -66,7 +67,7 @@ export const _i2iModelsAll = [
     maxImages: 16,
     inputs: {
       prompt: { type: "string" },
-      size: { enum: ["1024x1024", "1536x1024", "1024x1536", "2048x2048", "2048x1152", "3840x2160", "2160x3840"], default: "1024x1024" },
+      aspect_ratio: { enum: GPT_AR, default: "1:1" },
       quality: { enum: ["auto", "high", "medium", "low"], default: "auto" },
       format: { enum: ["jpeg", "png", "webp"], default: "jpeg" },
       background: { enum: ["auto", "transparent", "opaque"], default: "auto" },
@@ -280,7 +281,7 @@ export const getResolutionsForModel = (id) => {
 export const getQualityFieldForModel = (id) => {
   const m = t2iModels.find(x => x.id === id);
   if (m?.inputs?.size?.enum) return 'size';
-  return m?.inputs?.quality?.enum ? 'quality' : null;
+  return null;
 };
 export const getAspectRatiosForI2IModel = (id) => {
   const m = i2iModels.find(x => x.id === id);
@@ -293,7 +294,7 @@ export const getResolutionsForI2IModel = (id) => {
 export const getQualityFieldForI2IModel = (id) => {
   const m = i2iModels.find(x => x.id === id);
   if (m?.inputs?.size?.enum) return 'size';
-  return m?.inputs?.quality?.enum ? 'quality' : null;
+  return null;
 };
 
 // Generic input-option helpers — work for both t2i and i2i models. Used by
