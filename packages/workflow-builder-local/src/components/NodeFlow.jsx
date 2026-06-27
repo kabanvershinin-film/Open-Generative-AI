@@ -2573,6 +2573,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           suppressHydrationWarning={true}
           onClick={zoomIn}
           className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
+          title="Увеличить масштаб"
+          aria-label="Увеличить масштаб"
         >
           <FiZoomIn size={18} />
         </button>
@@ -2581,6 +2583,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           suppressHydrationWarning={true}
           onClick={zoomOut}
           className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
+          title="Уменьшить масштаб"
+          aria-label="Уменьшить масштаб"
         >
           <FiZoomOut size={18} />
         </button>
@@ -2589,6 +2593,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           suppressHydrationWarning={true}
           onClick={() => fitView({ padding: 0.4, duration: 500, minZoom: WORKFLOW_FIT_MIN_ZOOM })}
           className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
+          title="Показать весь процесс"
+          aria-label="Показать весь процесс"
         >
           <MdOutlineZoomOutMap size={18} />
         </button>
@@ -2597,6 +2603,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           suppressHydrationWarning={true}
           onClick={() => setIsDragging(!isDragging)}
           className={`p-3 rounded-full cursor-pointer outline-none active:bg-purple-700 transition ${!isDragging ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 hover:bg-purple-600 hover:text-white"}`}
+          title={isDragging ? "Включить перемещение по холсту" : "Выключить перемещение по холсту"}
+          aria-label={isDragging ? "Включить перемещение по холсту" : "Выключить перемещение по холсту"}
         >
           <LuMousePointer2 size={18} />
         </button>
