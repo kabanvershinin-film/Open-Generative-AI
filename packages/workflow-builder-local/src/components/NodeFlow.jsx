@@ -229,7 +229,7 @@ const processWorkflowData = (workflowData, nodeSchemas, id) => {
       outputHistory: (workflowData.run_history?.[n.id] || [])
         .sort((a, b) => new Date(a.started_at) - new Date(b.started_at)),
     }
-  }));
+  })));
 
   const restoredEdges = (workflowData.edges || []).map((e) => {
     const sourceNode = restoredNodes.find(n => n.id === e.source);
@@ -446,7 +446,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         outputHistory: (workflowData.run_history?.[n.id] || [])
           .sort((a, b) => new Date(a.started_at) - new Date(b.started_at)),
       }
-    }));
+    })));
 
     const restoredEdges = (workflowData.edges || []).map((e) => {
       const sourceNode = restoredNodes.find(n => n.id === e.source);
