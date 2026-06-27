@@ -37,6 +37,12 @@ import {
   buildVideoHistoryRestoreState,
   getVideoHistoryRestoreState,
 } from "../videoHistoryRestore.js";
+import {
+  buildVideoGalleryDedupeKey,
+  mergeVideoHistoryEntries,
+  removeVideoHistoryEntry,
+  upsertVideoHistoryEntry,
+} from "../videoHistory.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { pickCompatibleControlValue } from "../videoStudioControls.js";
 import {
@@ -528,25 +534,7 @@ export default function VideoStudio({
   // Merge localHistory and remoteHistory, local has priority
   const history = useMemo(() => {
     if (historyItems) return historyItems;
-    const seen = new Set();
-    const merged = [];
-    // Add local entries first (priority for new generations)
-    [...localHistory].reverse().forEach(entry => {
-      const key = entry.id || entry.url;
-      if (key && !seen.has(key)) {
-        seen.add(key);
-        merged.unshift(entry);
-      }
-    });
-    // Then add remote entries that aren't already in local
-    remoteHistory.forEach(entry => {
-      const key = entry.id || entry.url;
-      if (key && !seen.has(key)) {
-        seen.add(key);
-        merged.push(entry);
-      }
-    });
-    return merged;
+    return mergeVideoHistoryEntries([...(localHistory || []), ...(remoteHistory || [])], Infinity);
   }, [historyItems, localHistory, remoteHistory]);
 
   const getCurrentModels = useCallback(() => {
@@ -784,7 +772,7 @@ export default function VideoStudio({
           if (data.prompt) setPrompt(data.prompt);
           if (Array.isArray(data.refFiles)) setRefFiles(normalizePersistedRefFiles(data.refFiles));
           if (data.faceAsset) setFaceAsset(data.faceAsset);
-          if (data.localHistory) setLocalHistory(data.localHistory);
+          if (data.localHistory) setLocalHistory(mergeVideoHistoryEntries(data.localHistory));
           if (data.seed !== undefined) setSeed(data.seed);
           if (data.returnLastFrame !== undefined) setReturnLastFrame(data.returnLastFrame);
 
@@ -907,16 +895,7 @@ export default function VideoStudio({
       const nextEntries = Array.isArray(data.entries) ? data.entries : [];
       setRemoteHistory((prev) => {
         const base = reset ? [] : prev;
-        const seen = new Set(base.map((e) => e.id || e.url));
-        const merged = [...base];
-        nextEntries.forEach((entry) => {
-          const key = entry.id || entry.url;
-          if (!seen.has(key)) {
-            seen.add(key);
-            merged.push(entry);
-          }
-        });
-        return merged;
+        return mergeVideoHistoryEntries([...base, ...nextEntries], Infinity);
       });
       setRemoteHistoryNextCursor(data.nextCursor ?? null);
     } catch (err) {
@@ -1522,8 +1501,7 @@ export default function VideoStudio({
       const raw = localStorage.getItem(PERSIST_KEY);
       const data = raw ? JSON.parse(raw) : {};
       const prev = Array.isArray(data.localHistory) ? data.localHistory : [];
-      if (prev.some((e) => e.id === entry.id)) return;
-      data.localHistory = [entry, ...prev].slice(0, 30);
+      data.localHistory = upsertVideoHistoryEntry(prev, entry, 30);
       localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
     } catch {}
   }, []);
@@ -1583,14 +1561,7 @@ export default function VideoStudio({
 
   // ── add to local history ──────────────────────────────────────────────────
   const addToLocalHistory = useCallback((entry) => {
-    setLocalHistory((prev) => {
-      const key = entry.id || entry.url;
-      // Skip duplicates
-      const existing = prev.find(e => (e.id || e.url) === key);
-      if (existing) return prev;
-      // Add new entry at start
-      return [entry, ...prev].slice(0, 30);
-    });
+    setLocalHistory((prev) => upsertVideoHistoryEntry(prev, entry, 30));
     setActiveHistoryIdx(0);
   }, []);
 
@@ -1615,8 +1586,8 @@ export default function VideoStudio({
       }
     }
 
-    setLocalHistory((prev) => prev.filter((item) => item?.id !== entry?.id && item?.url !== entry?.url));
-    setRemoteHistory((prev) => prev.filter((item) => item?.id !== entry?.id && item?.url !== entry?.url));
+    setLocalHistory((prev) => removeVideoHistoryEntry(prev, entry));
+    setRemoteHistory((prev) => removeVideoHistoryEntry(prev, entry));
 
     const nextHistory = history.filter((_, idx) => idx !== entryIdx);
     if (canvasUrl === entry?.url) {
@@ -1731,6 +1702,7 @@ export default function VideoStudio({
             duration: task.meta?.duration || null,
             timestamp: new Date().toISOString(),
             last_frame_url: res.last_frame_url || null,
+            dedupeKey: buildVideoGalleryDedupeKey(task.request_id, task.task_id, task.id, res.id),
           };
           const updateResult = await updatePendingGeneration({
             ...task,
@@ -1801,6 +1773,7 @@ export default function VideoStudio({
         id: genId, url, prompt: stored.prompt || "",
         model: stored.model, aspect_ratio: stored.aspect_ratio,
         duration: stored.duration, timestamp: new Date().toISOString(),
+        dedupeKey: buildVideoGalleryDedupeKey(stored.taskId, genId),
       };
       addToLocalHistory(entry);
       persistVideoEntryToStorage(entry);
@@ -1897,7 +1870,7 @@ export default function VideoStudio({
     };
 
     const restore = (entry) => {
-      setLocalHistory(prev => prev.some(p => p.id === entry.id) ? prev : [entry, ...prev].slice(0, 30));
+      setLocalHistory((prev) => upsertVideoHistoryEntry(prev, entry, 30));
       setActiveHistoryIdx(0);
       showVideoInCanvas(entry.url, entry.model);
       try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
@@ -2075,6 +2048,7 @@ export default function VideoStudio({
             seed: seed !== -1 ? seed : undefined,
             return_last_frame: returnLastFrame,
             last_frame_url: res.last_frame_url,
+            dedupeKey: buildVideoGalleryDedupeKey(pendingExternalId, pendingTaskId, genId),
             restoreState: buildVideoHistoryRestoreState({
               prompt: taskPrompt,
               selectedModel: taskModel,
@@ -2236,6 +2210,7 @@ export default function VideoStudio({
           resolution: selectedResolution || undefined,
           duration: selectedDuration,
           timestamp: new Date().toISOString(),
+          dedupeKey: buildVideoGalleryDedupeKey(pendingExternalId, pendingTaskId, genId),
           restoreState: buildVideoHistoryRestoreState({
             prompt: (v2vMode && !currentModel?.hasPrompt) ? "" : taskPrompt,
             selectedModel: taskModel,

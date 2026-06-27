@@ -45,6 +45,7 @@ test('buildPendingGallerySaveInput собирает payload из entry и вер
         type: 'image',
         model: 'gemini-image',
         prompt: 'кот',
+        extra: {},
     });
 });
 
@@ -62,6 +63,29 @@ test('buildPendingGallerySaveInput использует дефолты для co
         type: 'video',
         model: '',
         prompt: '',
+        extra: {},
+    });
+});
+
+test('buildPendingGallerySaveInput прокидывает dedupeKey из completed entry', () => {
+    const payload = buildPendingGallerySaveInput('user-1', {
+        status: 'completed',
+        dedupeKey: 'mf-video:req-top',
+        entry: {
+            url: 'https://cdn.example.com/video.mp4',
+            dedupe_key: 'mf-video:req-123',
+        },
+    });
+
+    assert.deepStrictEqual(payload, {
+        userId: 'user-1',
+        url: 'https://cdn.example.com/video.mp4',
+        type: 'video',
+        model: '',
+        prompt: '',
+        extra: {
+            dedupeKey: 'mf-video:req-123',
+        },
     });
 });
 
@@ -102,8 +126,36 @@ test('applySavedPendingGalleryEntry обновляет entry данными из
                 model: 'seedance',
                 id: 'gallery-1',
                 created_at: '2026-06-24T00:00:00.000Z',
+                dedupeKey: undefined,
+                dedupe_key: undefined,
             },
         },
+    });
+});
+
+test('applySavedPendingGalleryEntry сохраняет dedupeKey галереи в entry', () => {
+    const result = applySavedPendingGalleryEntry(
+        {
+            status: 'completed',
+            entry: {
+                id: 'gen-1',
+                url: 'https://cdn.example.com/raw.mp4',
+            },
+        },
+        {
+            id: 'gallery-1',
+            url: 'https://tos.example.com/final.mp4',
+            dedupe_key: 'mf-video:req-123',
+            created_at: '2026-06-24T00:00:00.000Z',
+        },
+    );
+
+    assert.deepStrictEqual(result.nextBody.entry, {
+        id: 'gen-1',
+        url: 'https://tos.example.com/final.mp4',
+        dedupeKey: 'mf-video:req-123',
+        dedupe_key: 'mf-video:req-123',
+        created_at: '2026-06-24T00:00:00.000Z',
     });
 });
 
