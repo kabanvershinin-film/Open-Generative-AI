@@ -464,12 +464,17 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             max={meta.maxValue} 
             step={meta.step}
             value={formValues[fieldName] ?? meta.default ?? 0} 
-            readOnly
-            // onChange={(e) => {
-            //   const val = parseFloat(e.target.value) || meta.minValue;
-            //   const clamped = Math.max(meta.minValue, Math.min(val, meta.maxValue));
-            //   handleChange(fieldName, clamped);
-            // }} 
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "") {
+                handleChange(fieldName, "");
+                return;
+              }
+              const val = parseFloat(value);
+              if (Number.isNaN(val)) return;
+              const clamped = Math.max(meta.minValue, Math.min(val, meta.maxValue));
+              handleChange(fieldName, clamped);
+            }} 
             className="w-12 h-8 text-center text-white rounded-lg border border-white/10 text-[10px] font-bold bg-zinc-900 outline-none focus:border-blue-500/50 transition-all" 
           />
         </div>
@@ -575,8 +580,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
         {label}
         <textarea
           value={value}
-          readOnly
-          // onChange={(e) => handleChange(fieldName, e.target.value)}
+          onChange={(e) => handleChange(fieldName, e.target.value)}
           placeholder={translateUi(meta.description || "")}
           className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
           rows={6}

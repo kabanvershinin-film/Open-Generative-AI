@@ -431,13 +431,17 @@ var RenderField = function RenderField(_ref) {
       max: meta.maxValue,
       step: meta.step,
       value: (_ref4 = (_formValues$fieldName3 = formValues[fieldName]) !== null && _formValues$fieldName3 !== void 0 ? _formValues$fieldName3 : meta["default"]) !== null && _ref4 !== void 0 ? _ref4 : 0,
-      readOnly: true
-      // onChange={(e) => {
-      //   const val = parseFloat(e.target.value) || meta.minValue;
-      //   const clamped = Math.max(meta.minValue, Math.min(val, meta.maxValue));
-      //   handleChange(fieldName, clamped);
-      // }} 
-      ,
+      onChange: function onChange(e) {
+        var value = e.target.value;
+        if (value === "") {
+          handleChange(fieldName, "");
+          return;
+        }
+        var val = parseFloat(value);
+        if (Number.isNaN(val)) return;
+        var clamped = Math.max(meta.minValue, Math.min(val, meta.maxValue));
+        handleChange(fieldName, clamped);
+      },
       className: "w-12 h-8 text-center text-white rounded-lg border border-white/10 text-[10px] font-bold bg-zinc-900 outline-none focus:border-blue-500/50 transition-all"
     })));
   }
@@ -545,9 +549,9 @@ var RenderField = function RenderField(_ref) {
       className: "flex flex-col items-start gap-1"
     }, label, /*#__PURE__*/_react["default"].createElement("textarea", {
       value: value,
-      readOnly: true
-      // onChange={(e) => handleChange(fieldName, e.target.value)}
-      ,
+      onChange: function onChange(e) {
+        return handleChange(fieldName, e.target.value);
+      },
       placeholder: translateUi(meta.description || ""),
       className: "bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50",
       rows: 6
