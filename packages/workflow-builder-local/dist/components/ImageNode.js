@@ -891,7 +891,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
       return updateWorkflowThumbnail(currentOutput);
     }
   }))), ((_data$selectedModel8 = data.selectedModel) === null || _data$selectedModel8 === void 0 ? void 0 : _data$selectedModel8.id) === "image-passthrough" ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-full h-full flex-1"
+    className: "flex min-h-0 w-full flex-1 overflow-hidden"
   }, /*#__PURE__*/_react["default"].createElement(_UploadNode["default"], {
     id: id,
     data: data,
@@ -902,9 +902,9 @@ var ImageGeneration = function ImageGeneration(_ref) {
     uploadType: "upload",
     acceptType: "image"
   })) : /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col flex-grow w-full rounded-b-none overflow-hidden transition-all duration-500"
+    className: "flex min-h-0 flex-col flex-grow w-full rounded-b-none overflow-hidden transition-all duration-500"
   }, data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-center w-full h-full overflow-hidden aspect-[1/1] bg-white/5 animate-pulse rounded-b-none"
+    className: "flex min-h-0 flex-1 items-center justify-center w-full overflow-hidden bg-white/5 animate-pulse rounded-b-none"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col items-center gap-3"
   }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -914,7 +914,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
   }, "\u0413\u0435\u043D\u0435\u0440\u0430\u0446\u0438\u044F..."))) : data.errorMsg ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-red-400 text-xs font-medium p-3 bg-red-500/10 rounded-xl border border-red-500/20 m-3 w-full"
   }, data.errorMsg || "Ошибка генерации") : currentOutput && !data.isLoading ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "h-full w-full relative overflow-hidden rounded-b-none group/image"
+    className: "relative min-h-0 flex-1 w-full overflow-hidden rounded-b-none group/image"
   }, currentOutputList.length > 1 && /*#__PURE__*/_react["default"].createElement(_react["default"].Fragment, null, /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
@@ -939,7 +939,9 @@ var ImageGeneration = function ImageGeneration(_ref) {
     className: "absolute right-2 top-1/2 -translate-y-1/2 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover/image:opacity-100 transition-opacity hover:bg-black/70"
   }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleRight, {
     size: 16
-  }))), /*#__PURE__*/_react["default"].createElement("img", {
+  }))), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "absolute inset-0 overflow-hidden rounded-b-none"
+  }, /*#__PURE__*/_react["default"].createElement("img", {
     key: currentOutput,
     src: toThumb(currentOutput),
     alt: "Generated",
@@ -948,8 +950,8 @@ var ImageGeneration = function ImageGeneration(_ref) {
     onError: function onError(e) {
       if (currentOutput && e.currentTarget.src !== currentOutput) e.currentTarget.src = currentOutput;
     },
-    className: "w-full h-full object-contain rounded-b-none animate-in fade-in duration-500"
-  }), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "absolute inset-0 block w-full h-full max-w-full max-h-full object-cover object-center rounded-b-none animate-in fade-in duration-500"
+  })), /*#__PURE__*/_react["default"].createElement("div", {
     className: "absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none rounded-b-xl flex flex-col justify-end"
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between"
@@ -973,7 +975,7 @@ var ImageGeneration = function ImageGeneration(_ref) {
       className: "w-1.5 h-1.5 rounded-full transition-all ".concat(idx === currentImageIndex ? "bg-white scale-125" : "bg-white/40")
     });
   }))) : /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col items-center justify-center text-zinc-400 gap-2"
+    className: "flex min-h-0 flex-1 flex-col items-center justify-center text-zinc-400 gap-2"
   }, /*#__PURE__*/_react["default"].createElement(_io.IoImageOutline, {
     size: 32
   }), /*#__PURE__*/_react["default"].createElement("span", {
