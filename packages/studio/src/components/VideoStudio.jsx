@@ -3356,17 +3356,44 @@ export default function VideoStudio({
             </>)}
 
             {/* Prompt textarea */}
-            <div className="flex-1 flex flex-col gap-1 relative">
+            <div className="flex-1 flex items-start gap-2 relative">
               {/* Actual textarea */}
-              <textarea
-                ref={textareaRef}
-                value={prompt}
-                onChange={handlePromptInput}
-                placeholder={promptPlaceholder}
-                disabled={promptDisabled}
-                rows={1}
-                className="relative z-10 w-full bg-transparent border-none text-white caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
-              />
+              <div className="flex-1 flex flex-col gap-1 relative">
+                <textarea
+                  ref={textareaRef}
+                  value={prompt}
+                  onChange={handlePromptInput}
+                  placeholder={promptPlaceholder}
+                  disabled={promptDisabled}
+                  rows={1}
+                  className="relative z-10 w-full bg-transparent border-none text-white caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
+                />
+              </div>
+              {prompt.trim() && !promptDisabled && (
+                <div className="relative shrink-0 group">
+                  <button
+                    type="button"
+                    title="Удалить промт"
+                    aria-label="Удалить промт"
+                    onClick={() => {
+                      setPrompt("");
+                      if (textareaRef.current) {
+                        textareaRef.current.style.height = "auto";
+                        textareaRef.current.focus();
+                      }
+                    }}
+                    className="mt-1 w-9 h-9 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500 hover:text-white hover:border-red-400 transition-all flex items-center justify-center shadow-lg shadow-red-500/10"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                      <path d="M18 6L6 18" />
+                      <path d="M6 6l12 12" />
+                    </svg>
+                  </button>
+                  <div className="pointer-events-none absolute right-0 bottom-full mb-2 whitespace-nowrap rounded-md border border-white/10 bg-black/90 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                    Удалить промт
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
