@@ -260,8 +260,13 @@ export async function GET(request) {
         // the server-side save can each persist the same image under different
         // ids) — keep the newest, which is already first after the sort above.
         const seenUrl = new Set();
+        const seenDedupeKey = new Set();
         entries = entries.filter((e) => {
             if (!e?.url) return true;
+            if (e.dedupe_key) {
+                if (seenDedupeKey.has(e.dedupe_key)) return false;
+                seenDedupeKey.add(e.dedupe_key);
+            }
             if (seenUrl.has(e.url)) return false;
             seenUrl.add(e.url);
             return true;

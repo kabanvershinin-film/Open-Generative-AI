@@ -50,6 +50,7 @@ test("saveMediaToGallery отправляет дополнительные по�
     model: "gpt-image-2",
     prompt: "лиса",
     extra: {
+      dedupeKey: "mf-image:req-123",
       aspect_ratio: "16:9",
       restoreState: {
         prompt: "лиса",
@@ -63,6 +64,7 @@ test("saveMediaToGallery отправляет дополнительные по�
     type: "image",
     model: "gpt-image-2",
     prompt: "лиса",
+    dedupeKey: "mf-image:req-123",
     aspect_ratio: "16:9",
     restoreState: {
       prompt: "лиса",

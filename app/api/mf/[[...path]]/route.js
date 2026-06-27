@@ -140,6 +140,9 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
             type: 'image',
             model: model || '',
             prompt: payload?.params?.prompt || '',
+            extra: {
+                dedupeKey: `mf-image:${data?.id || data?.request_id || imageUrl}`,
+            },
         }).catch(() => {});
     }
 

@@ -1927,6 +1927,7 @@ export default function ImageStudio({
               }
               persistEntryToStorage(finalEntry);
               await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model, {
+                dedupeKey: `mf-image:${finalEntry.id}`,
                 aspect_ratio: finalEntry.aspect_ratio,
                 restoreState: finalEntry.restoreState,
               });
@@ -2103,6 +2104,7 @@ export default function ImageStudio({
             setCurrentImageUrl((cur) => (cur === entry.url ? permUrl : cur));
             persistEntryToStorage(finalEntry);
             await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model, {
+              dedupeKey: `mf-image:${finalEntry.id}`,
               aspect_ratio: finalEntry.aspect_ratio,
               restoreState: finalEntry.restoreState,
             });

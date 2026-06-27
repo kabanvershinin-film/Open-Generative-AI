@@ -1,5 +1,5 @@
 import { createHmac, createHash } from 'crypto';
-import { buildUserMediaKey } from './tosPaths';
+import { buildUserMediaKey } from './tosPaths.js';
 
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
 const TOS_BUCKET = process.env.TOS_BUCKET || '';
@@ -123,8 +123,7 @@ async function appendToIndex(host, userId, entry) {
     for (let attempt = 0; attempt < 6; attempt += 1) {
         let list = await readList();
         if (!Array.isArray(list)) list = [];
-        if (list.some((item) => item && (item.id === entry.id || item.url === entry.url))) return;
-        let next = [entry, ...list];
+        let next = mergeGalleryIndexEntries(list, entry);
         if (next.length > 1000) next = next.slice(0, 1000);
         const ok = await tosUpload(key, Buffer.from(JSON.stringify(next)), 'application/json');
         if (ok) {
@@ -135,23 +134,47 @@ async function appendToIndex(host, userId, entry) {
     }
 }
 
+export function buildGalleryEntryId(userId, type, dedupeKey = '') {
+    const normalized = typeof dedupeKey === 'string' ? dedupeKey.trim() : '';
+    if (!normalized) {
+        return `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    }
+    return `dedupe_${createHash('sha256').update(`${userId}:${type}:${normalized}`).digest('hex').slice(0, 24)}`;
+}
+
+export function mergeGalleryIndexEntries(list, entry) {
+    const items = Array.isArray(list) ? list.filter(Boolean) : [];
+    const dedupeKey = entry?.dedupe_key || '';
+    const filtered = items.filter((item) => {
+        if (!item) return false;
+        if (item.id === entry.id) return false;
+        if (item.url === entry.url) return false;
+        if (dedupeKey && item.dedupe_key === dedupeKey) return false;
+        return true;
+    });
+    return [entry, ...filtered];
+}
+
 export async function saveGalleryEntry({ userId, url, type = 'video', model = '', prompt = '', extra = {} }) {
     if (!TOS_ENABLED || !userId || !url) return null;
     const permanentUrl = await maybeUploadMediaToTOS(url, type, userId);
     if (type === 'video' && !permanentUrl) return null;
     const finalUrl = permanentUrl || url;
     const safeExtra = extra && typeof extra === 'object' ? { ...extra } : {};
+    const dedupeKey = typeof safeExtra.dedupeKey === 'string' ? safeExtra.dedupeKey.trim() : '';
+    delete safeExtra.dedupeKey;
     delete safeExtra.id;
     delete safeExtra.url;
     delete safeExtra.type;
     delete safeExtra.model;
     delete safeExtra.prompt;
     const entry = {
-        id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        id: buildGalleryEntryId(userId, type, dedupeKey),
         type,
         url: finalUrl,
         model,
         prompt,
+        dedupe_key: dedupeKey || undefined,
         ...safeExtra,
         mirrored_to_tos: !!permanentUrl,
         created_at: new Date().toISOString(),
