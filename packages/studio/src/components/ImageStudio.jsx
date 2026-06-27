@@ -27,7 +27,7 @@ import {
 import { useModelConfig } from "../useModelConfig.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { saveMediaToGallery } from "./gallerySave.js";
-import { mergeImageHistoryEntries } from "./imageHistory.js";
+import { excludeImageHistoryEntry, mergeImageHistoryEntries } from "./imageHistory.js";
 import { getUploadPickerMaxImages } from "../imageStudioUploadConfig.js";
 import {
   addSelectedUploadEntry,
@@ -998,6 +998,56 @@ export default function ImageStudio({
     } catch {}
   }, [mergeHistoryEntries, PENDING_RESULT_KEY]);
 
+  const removeEntryFromStorageCaches = useCallback((entry) => {
+    try {
+      const stored = localStorage.getItem(PERSIST_KEY);
+      if (stored) {
+        const data = JSON.parse(stored);
+        writePersistentState({
+          ...data,
+          localHistory: excludeImageHistoryEntry(data?.localHistory, entry),
+        });
+      }
+    } catch {}
+
+    try {
+      const raw = localStorage.getItem(PERSIST_RECENT_RESULTS_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        localStorage.setItem(
+          PERSIST_RECENT_RESULTS_KEY,
+          JSON.stringify({
+            ...data,
+            entries: sanitizeHistoryForStorage(excludeImageHistoryEntry(data?.entries, entry)).slice(0, 12),
+            ts: Date.now(),
+          }),
+        );
+      }
+    } catch {}
+
+    try {
+      const raw = localStorage.getItem(PENDING_RESULT_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        const nextEntries = excludeImageHistoryEntry(data?.entries, entry);
+        if (nextEntries.length > 0) {
+          localStorage.setItem(
+            PENDING_RESULT_KEY,
+            JSON.stringify({ ...data, entries: nextEntries }),
+          );
+        } else {
+          localStorage.removeItem(PENDING_RESULT_KEY);
+        }
+      }
+    } catch {}
+  }, [
+    PENDING_RESULT_KEY,
+    PERSIST_KEY,
+    PERSIST_RECENT_RESULTS_KEY,
+    sanitizeHistoryForStorage,
+    writePersistentState,
+  ]);
+
   const router = useRouter();
   const [workflowPicker, setWorkflowPicker] = useState(null); // { url, prompt } | null
   const [pickerWorkflows, setPickerWorkflows] = useState([]);
@@ -1441,6 +1491,27 @@ export default function ImageStudio({
   const removeFromHistory = useCallback(async (entry, entryIdx) => {
     const deleteId = entry?.id || "local-media";
     const deleteUrl = typeof entry?.url === "string" ? entry.url : "";
+    const previousHistory = Array.isArray(history) ? [...history] : [];
+    const previousCurrentImageUrl = currentImageUrl;
+    const previousActiveHistoryIdx = activeHistoryIdx;
+    const nextEntries = excludeImageHistoryEntry(history, entry);
+
+    if (historyItems !== undefined) {
+      onHistoryChange?.(excludeImageHistoryEntry(historyItems, entry));
+    } else {
+      setLocalHistory((prev) => excludeImageHistoryEntry(prev, entry));
+    }
+
+    removeEntryFromStorageCaches(entry);
+
+    if (currentImageUrl === entry?.url) {
+      setCurrentImageUrl(nextEntries[0]?.url || null);
+      setActiveHistoryIdx(0);
+    } else if (entryIdx <= activeHistoryIdx) {
+      setActiveHistoryIdx((prev) => Math.max(0, prev - 1));
+    }
+
+    toast.success("Удалено");
 
     if (deleteUrl) {
       try {
@@ -1454,25 +1525,20 @@ export default function ImageStudio({
           throw new Error(payload?.error || `HTTP ${response.status}`);
         }
       } catch (err) {
+        if (historyItems !== undefined) {
+          onHistoryChange?.(previousHistory);
+        } else {
+          setLocalHistory(previousHistory);
+        }
+        if (previousCurrentImageUrl) {
+          setCurrentImageUrl(previousCurrentImageUrl);
+        }
+        setActiveHistoryIdx(previousActiveHistoryIdx);
         toast.error(`Не удалось удалить файл: ${err.message || "ошибка"}`);
         return;
       }
     }
-
-    const nextEntries = history.filter((_, idx) => idx !== entryIdx);
-    if (historyItems !== undefined) {
-      onHistoryChange?.(historyItems.filter((item, idx) => idx !== entryIdx && item?.id !== entry?.id && item?.url !== entry?.url));
-    } else {
-      setLocalHistory((prev) => prev.filter((item, idx) => idx !== entryIdx && item?.id !== entry?.id && item?.url !== entry?.url));
-    }
-
-    if (currentImageUrl === entry?.url) {
-      setCurrentImageUrl(nextEntries[0]?.url || null);
-      setActiveHistoryIdx(0);
-    }
-
-    toast.success("Удалено");
-  }, [currentImageUrl, history, historyItems, onHistoryChange]);
+  }, [activeHistoryIdx, currentImageUrl, history, historyItems, onHistoryChange, removeEntryFromStorageCaches]);
 
   const addToHistory = useCallback(
     (entry) => {

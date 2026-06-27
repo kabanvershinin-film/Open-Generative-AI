@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { mergeImageHistoryEntries } from '../components/imageHistory.js';
+import {
+  excludeImageHistoryEntry,
+  mergeImageHistoryEntries,
+} from '../components/imageHistory.js';
 
 test('mergeImageHistoryEntries убирает дубли по id и url', () => {
   const result = mergeImageHistoryEntries(
@@ -35,4 +38,20 @@ test('mergeImageHistoryEntries сортирует по времени и огр�
   assert.strictEqual(result.length, 50);
   assert.strictEqual(result[0].id, 'id-54');
   assert.strictEqual(result.at(-1).id, 'id-5');
+});
+
+test('excludeImageHistoryEntry сразу убирает запись по id и url из локальной истории', () => {
+  const result = excludeImageHistoryEntry(
+    [
+      { id: 'one', url: 'https://cdn.example.com/a.png' },
+      { id: 'two', url: 'https://cdn.example.com/b.png' },
+      { id: 'three', url: 'https://cdn.example.com/c.png' },
+    ],
+    { id: 'two', url: 'https://cdn.example.com/b.png' },
+  );
+
+  assert.deepStrictEqual(result, [
+    { id: 'one', url: 'https://cdn.example.com/a.png' },
+    { id: 'three', url: 'https://cdn.example.com/c.png' },
+  ]);
 });

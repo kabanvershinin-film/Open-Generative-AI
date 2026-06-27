@@ -17,3 +17,15 @@ export function mergeImageHistoryEntries(primary, secondary = []) {
     .sort((a, b) => new Date(b.timestamp || b.created_at || 0) - new Date(a.timestamp || a.created_at || 0))
     .slice(0, 50);
 }
+
+export function excludeImageHistoryEntry(entries, entry) {
+  const targetId = entry?.id || null;
+  const targetUrl = typeof entry?.url === "string" ? entry.url : "";
+
+  return (Array.isArray(entries) ? entries : []).filter((item) => {
+    if (!item) return false;
+    if (targetId && item.id === targetId) return false;
+    if (targetUrl && item.url === targetUrl) return false;
+    return true;
+  });
+}
