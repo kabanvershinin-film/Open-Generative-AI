@@ -764,9 +764,9 @@ const VideoGeneration = ({ id, data, selected }) => {
 
   return (
     <div 
-      style={{ minHeight: 220, '--loader-color': '#f97316' }}
+      style={{ minHeight: 190, '--loader-color': '#f97316' }}
       className={`
-        nowheel group flex flex-col flex-1 w-80 
+        nowheel group flex w-[260px] flex-col
         rounded-t-2xl rounded-b-none border-2 relative transition-all duration-300 ease-in-out 
         ${selected 
           ? "border-orange-500 shadow-[0_0_25px_rgba(249,115,22,0.3)] scale-[1.02] ring-1 ring-orange-500/20" 
@@ -797,11 +797,11 @@ const VideoGeneration = ({ id, data, selected }) => {
       </div>
       <div className="flex flex-col">
         <div className="flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 py-2 px-3">
-          <div className="flex items-center gap-2.5">
+          <div className="workflow-node-drag-handle flex min-w-0 flex-1 cursor-grab items-center gap-2.5 active:cursor-grabbing">
             <div className={`p-1.5 rounded-lg ${selected ? "bg-orange-600 text-white" : "bg-zinc-800 text-zinc-400"} transition-colors`}>
               <IoVideocamOutline size={14} />
             </div>
-            <h3 className="text-xs font-bold text-zinc-100">
+            <h3 className="truncate text-xs font-bold text-zinc-100">
               {selectedModel.name}
             </h3>
           </div>

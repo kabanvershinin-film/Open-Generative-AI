@@ -82,6 +82,7 @@ const initialNodes = [
 ];
 
 const initialEdges = [];
+const MEDIA_NODE_DRAG_HANDLE = ".workflow-node-drag-handle";
 
 const edgeStyles = {
   blue: {
@@ -1902,6 +1903,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
   const nodesWithHandlers = nodes.map((node) => ({
     ...node,
+    dragHandle: ["imageNode", "videoNode"].includes(node.type) ? MEDIA_NODE_DRAG_HANDLE : node.dragHandle,
     data: {
       ...node.data,
       nodeSchemas,

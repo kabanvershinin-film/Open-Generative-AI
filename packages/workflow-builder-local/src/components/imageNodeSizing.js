@@ -1,16 +1,16 @@
 export const DEFAULT_IMAGE_NODE_SIZE = Object.freeze({
-  width: 280,
-  height: 320,
+  width: 240,
+  height: 280,
 });
 
 export const MIN_IMAGE_NODE_SIZE = Object.freeze({
-  width: 240,
-  height: 260,
+  width: 200,
+  height: 220,
 });
 
 export const MAX_IMAGE_NODE_SIZE = Object.freeze({
-  width: 720,
-  height: 920,
+  width: 420,
+  height: 520,
 });
 
 const toFiniteNumber = (value, fallback) => {

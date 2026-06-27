@@ -659,11 +659,11 @@ const ImageGeneration = ({ id, data, selected }) => {
       </div>
       <div className="flex flex-col">
         <div className="flex items-center justify-between bg-gradient-to-r from-[#151618] to-[#1c1e21] rounded-t-2xl border-b border-zinc-800 p-3">
-          <div className="flex items-center gap-2.5">
+          <div className="workflow-node-drag-handle flex min-w-0 flex-1 cursor-grab items-center gap-2.5 active:cursor-grabbing">
             <div className={`p-1.5 rounded-lg ${selected ? "bg-emerald-600 text-white" : "bg-zinc-800 text-zinc-400"} transition-colors`}>
               <IoImageOutline size={14} />
             </div>
-            <h3 className="text-xs font-bold text-zinc-100">
+            <h3 className="truncate text-xs font-bold text-zinc-100">
               {selectedModel.name}
             </h3>
           </div>
