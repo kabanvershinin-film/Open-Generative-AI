@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   addSelectedUploadEntry,
+  appendUploadUrls,
   replaceSelectedUploadEntry,
   getDisplayUploadUrls,
 } from "../components/uploadPreviewState.js";
@@ -35,5 +36,27 @@ test("getDisplayUploadUrls отдаёт preview раньше боевых URL", 
   assert.deepStrictEqual(
     getDisplayUploadUrls([], ["https://cdn.example.com/one.png"]),
     ["https://cdn.example.com/one.png"],
+  );
+});
+
+test("appendUploadUrls мгновенно добавляет новые preview URL c учётом лимита", () => {
+  assert.deepStrictEqual(
+    appendUploadUrls(
+      ["https://cdn.example.com/one.png"],
+      ["blob:two", "blob:three"],
+      3,
+    ),
+    ["https://cdn.example.com/one.png", "blob:two", "blob:three"],
+  );
+});
+
+test("appendUploadUrls в одиночном режиме сразу заменяет текущий preview", () => {
+  assert.deepStrictEqual(
+    appendUploadUrls(
+      ["https://cdn.example.com/one.png"],
+      ["blob:new"],
+      1,
+    ),
+    ["blob:new"],
   );
 });

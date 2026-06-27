@@ -31,6 +31,7 @@ import { excludeImageHistoryEntry, mergeImageHistoryEntries } from "./imageHisto
 import { getUploadPickerMaxImages } from "../imageStudioUploadConfig.js";
 import {
   addSelectedUploadEntry,
+  appendUploadUrls,
   replaceSelectedUploadEntry,
   getDisplayUploadUrls,
 } from "./uploadPreviewState.js";
@@ -1420,9 +1421,31 @@ export default function ImageStudio({
     }
 
     setGenerating(true); // Show as generating/busy
+    const previousPreviewUrls = Array.isArray(previewImageUrls) ? previewImageUrls : [];
+    const previousUploadedUrls = Array.isArray(uploadedImageUrls) ? uploadedImageUrls : [];
+    const previewObjectUrls = [];
     try {
+      const baseUrls =
+        uploadPickerMaxImages === 1
+          ? []
+          : getDisplayUploadUrls(previousPreviewUrls, previousUploadedUrls);
       const toUpload =
-        uploadPickerMaxImages === 1 ? files.slice(0, 1) : files.slice(0, uploadPickerMaxImages);
+        uploadPickerMaxImages === 1
+          ? files.slice(0, 1)
+          : files.slice(0, Math.max(uploadPickerMaxImages - baseUrls.length, 0));
+
+      if (toUpload.length === 0) return;
+
+      const instantPreviewUrls = toUpload.map((file) => {
+        const objectUrl = URL.createObjectURL(file);
+        previewObjectUrls.push(objectUrl);
+        return objectUrl;
+      });
+
+      handleUploadPreviewChange({
+        urls: appendUploadUrls(baseUrls, instantPreviewUrls, uploadPickerMaxImages),
+      });
+
       const urls = await Promise.all(
         toUpload.map(async (file) => {
           try {
@@ -1439,13 +1462,25 @@ export default function ImageStudio({
         })
       );
 
-      handleUploadSelect({ urls });
+      handleUploadSelect({
+        urls: appendUploadUrls(
+          uploadPickerMaxImages === 1 ? [] : previousUploadedUrls,
+          urls,
+          uploadPickerMaxImages,
+        ),
+      });
     } catch (err) {
+      setPreviewImageUrls(previousPreviewUrls);
       alert(`Ошибка загрузки изображения: ${err.message}`);
     } finally {
+      previewObjectUrls.forEach((url) => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch {}
+      });
       setGenerating(false);
     }
-  }, [apiKey, handleUploadSelect, uploadPickerMaxImages]);
+  }, [apiKey, handleUploadPreviewChange, handleUploadSelect, previewImageUrls, uploadedImageUrls, uploadPickerMaxImages]);
 
   // ── Handle Dropped Files ────────────────────────────────────────────────
   useEffect(() => {
