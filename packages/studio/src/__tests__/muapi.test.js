@@ -342,6 +342,42 @@ test('generateImage routes Seedream 5.0 Lite to Ark image proxy with documented 
   assert.strictEqual(body.watermark, false);
 });
 
+test('generateImage routes Seedream 5.0 Lite image set mode and returns multiple urls', async () => {
+  global.fetch.mock.resetCalls();
+  global.fetch.mock.mockImplementationOnce(async () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({
+      created: 123,
+      data: [
+        { url: 'http://example.com/seedream-set-1.jpg' },
+        { url: 'http://example.com/seedream-set-2.jpg' },
+        { url: 'http://example.com/seedream-set-3.jpg' },
+      ],
+    }),
+  }));
+
+  const result = await muapi.generateImage('key', {
+    model: 'seedream-5.0-lite',
+    prompt: 'четыре сезона',
+    aspect_ratio: '1:1',
+    imageSize: '2K',
+    image_set_mode: 'auto',
+    image_set_max_images: 3,
+  });
+
+  assert.strictEqual(result.url, 'http://example.com/seedream-set-1.jpg');
+  assert.deepStrictEqual(result.urls, [
+    'http://example.com/seedream-set-1.jpg',
+    'http://example.com/seedream-set-2.jpg',
+    'http://example.com/seedream-set-3.jpg',
+  ]);
+  const [, options] = global.fetch.mock.calls[0].arguments;
+  const body = JSON.parse(options.body);
+  assert.strictEqual(body.sequential_image_generation, 'auto');
+  assert.deepStrictEqual(body.sequential_image_generation_options, { max_images: 3 });
+});
+
 test('generateI2I posts multipart edit request and returns url', async (t) => {
     global.fetch.mock.resetCalls();
     global.fetch.mock.mockImplementation(async (url) => {

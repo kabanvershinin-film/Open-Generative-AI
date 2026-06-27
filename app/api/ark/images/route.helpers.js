@@ -9,11 +9,13 @@ export function normalizeArkImageField(image) {
 }
 
 export function buildArkImagePayload(body = {}) {
+  const imageSetMode = body.sequential_image_generation === 'auto' ? 'auto' : 'disabled';
+  const maxImages = Math.max(1, Math.min(15, Number(body?.sequential_image_generation_options?.max_images) || 1));
   const payload = {
     model: String(body.model || '').trim(),
     prompt: typeof body.prompt === 'string' ? body.prompt : '',
     response_format: body.response_format || 'url',
-    sequential_image_generation: body.sequential_image_generation || 'disabled',
+    sequential_image_generation: imageSetMode,
     stream: !!body.stream,
     watermark: body.watermark === undefined ? false : !!body.watermark,
   };
@@ -25,6 +27,9 @@ export function buildArkImagePayload(body = {}) {
 
   const image = normalizeArkImageField(body.image);
   if (image !== undefined) payload.image = image;
+  if (imageSetMode === 'auto') {
+    payload.sequential_image_generation_options = { max_images: maxImages };
+  }
 
   return payload;
 }

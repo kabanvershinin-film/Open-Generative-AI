@@ -848,6 +848,11 @@ function ModelDropdown({ models, selectedModel, onSelect, onClose, isAdmin }) {
 const QUALITY_LABELS = { auto: "Авто", high: "Высокое", medium: "Среднее", low: "Низкое" };
 const BACKGROUND_LABELS = { auto: "Авто", transparent: "Прозрачный", opaque: "Непрозрачный" };
 const MODERATION_LABELS = { auto: "Авто", low: "Низкая" };
+const IMAGE_SET_COUNT_OPTIONS = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15];
+
+function supportsImageSet(model) {
+  return !!model?.supportsImageSet;
+}
 
 // ─── SimpleDropdown ───────────────────────────────────────────────────────────
 
@@ -1127,6 +1132,8 @@ export default function ImageStudio({
   const [selectedImageSize, setSelectedImageSize] = useState(
     () => (defaultModel ? getImageInputDefault(defaultModel.id, "imageSize") : null),
   );
+  const [imageSetMode, setImageSetMode] = useState(false);
+  const [imageSetMaxImages, setImageSetMaxImages] = useState(4);
 
   // ── Prompt / upload state ───────────────────────────────────────────────
   const [prompt, setPrompt] = useState("");
@@ -1193,6 +1200,8 @@ export default function ImageStudio({
         if (data.selectedQuality) setSelectedQuality(data.selectedQuality);
         if (data.selectedEffect) setSelectedEffect(data.selectedEffect);
         if (data.maxImages) setMaxImages(data.maxImages);
+        if (data.imageSetMode !== undefined) setImageSetMode(!!data.imageSetMode);
+        if (data.imageSetMaxImages) setImageSetMaxImages(Math.max(1, Number(data.imageSetMaxImages) || 1));
         if (data.prompt) setPrompt(data.prompt);
         if (data.uploadedImageUrls) setUploadedImageUrls(data.uploadedImageUrls);
         if (data.batchSize) setBatchSize(data.batchSize);
@@ -1269,6 +1278,8 @@ export default function ImageStudio({
           selectedBackground,
           selectedModeration,
           selectedImageSize,
+          imageSetMode,
+          imageSetMaxImages,
           selectedRouting,
           selectedEffect,
           maxImages,
@@ -1294,6 +1305,8 @@ export default function ImageStudio({
     selectedBackground,
     selectedModeration,
     selectedImageSize,
+    imageSetMode,
+    imageSetMaxImages,
     selectedRouting,
     selectedEffect,
     maxImages,
@@ -1323,6 +1336,7 @@ export default function ImageStudio({
 
   // ── Derived: current model lists & helpers ───────────────────────────────
   const currentModels = imageMode ? i2iModels : t2iModels;
+  const currentModelObj = currentModels.find((model) => model.id === selectedModelId) || null;
   const currentAspectRatios = imageMode && selectedModelId
     ? getAspectRatiosForI2IModel(selectedModelId)
     : selectedModelId ? getAspectRatiosForModel(selectedModelId) : [];
@@ -1369,6 +1383,11 @@ export default function ImageStudio({
   const currentBackgroundOptions = selectedModelId ? getImageInputOptions(selectedModelId, "background") : [];
   const currentModerationOptions = selectedModelId ? getImageInputOptions(selectedModelId, "moderation") : [];
   const currentImageSizeOptions = selectedModelId ? getImageInputOptions(selectedModelId, "imageSize") : [];
+  const imageSetSupported = supportsImageSet(currentModelObj);
+  const referenceCount = Array.isArray(uploadedImageUrls) ? uploadedImageUrls.filter(Boolean).length : 0;
+  const imageSetHardLimit = Math.max(1, 15 - referenceCount);
+  const imageSetCountOptions = IMAGE_SET_COUNT_OPTIONS.filter((count) => count <= imageSetHardLimit);
+  const effectiveImageSetMaxImages = Math.max(1, Math.min(imageSetHardLimit, Number(imageSetMaxImages) || 1));
   const uploadPickerMaxImages = useMemo(
     () =>
       getUploadPickerMaxImages({
@@ -1406,6 +1425,16 @@ export default function ImageStudio({
     setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
     setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
   }, [i2iModels, imageMode, selectedModelId, t2iModels]);
+
+  useEffect(() => {
+    if (!imageSetSupported) {
+      if (imageSetMode) setImageSetMode(false);
+      return;
+    }
+    if (effectiveImageSetMaxImages !== imageSetMaxImages) {
+      setImageSetMaxImages(effectiveImageSetMaxImages);
+    }
+  }, [effectiveImageSetMaxImages, imageSetMaxImages, imageSetMode, imageSetSupported]);
 
   const handleUploadPreviewChange = useCallback(
     ({ url, urls }) => {
@@ -1550,6 +1579,8 @@ export default function ImageStudio({
       setSelectedImageSize(getImageInputDefault(firstT2I.id, "imageSize"));
       setSelectedEffect("");
       setMaxImages(1);
+      setImageSetMode(false);
+      setImageSetMaxImages(4);
     }
   }, [t2iModels]);
 
@@ -1570,6 +1601,8 @@ export default function ImageStudio({
     setSelectedBackground(getImageInputDefault(m.id, "background"));
     setSelectedModeration(getImageInputDefault(m.id, "moderation"));
     setSelectedImageSize(getImageInputDefault(m.id, "imageSize"));
+    setImageSetMode(false);
+    setImageSetMaxImages(4);
     if (imageMode) {
       setMaxImages(getMaxImagesForI2IModel(m.id));
       const effects = getEffectsForI2IModel(m.id);
@@ -1704,6 +1737,9 @@ export default function ImageStudio({
     const nextBackgroundOptions = getImageInputOptions(targetModel.id, "background");
     const nextModerationOptions = getImageInputOptions(targetModel.id, "moderation");
     const nextImageSizeOptions = getImageInputOptions(targetModel.id, "imageSize");
+    const nextImageSetSupported = supportsImageSet(targetModel);
+    const nextReferenceCount = Array.isArray(restoreState.uploadedImageUrls) ? restoreState.uploadedImageUrls.length : 0;
+    const nextImageSetHardLimit = Math.max(1, 15 - nextReferenceCount);
 
     setImageMode(nextImageMode);
     setSelectedModelId(targetModel.id);
@@ -1744,6 +1780,12 @@ export default function ImageStudio({
         : getImageInputDefault(targetModel.id, "imageSize"),
     );
     setSelectedRouting(routingOptions.includes(restoreState.selectedRouting) ? restoreState.selectedRouting : "default");
+    setImageSetMode(nextImageSetSupported ? !!restoreState.imageSetMode : false);
+    setImageSetMaxImages(
+      nextImageSetSupported
+        ? Math.max(1, Math.min(nextImageSetHardLimit, Number(restoreState.imageSetMaxImages) || 4))
+        : 4,
+    );
     setSelectedEffect(
       nextEffects.includes(restoreState.selectedEffect)
         ? restoreState.selectedEffect
@@ -1790,6 +1832,8 @@ export default function ImageStudio({
       setSelectedImageSize(getImageInputDefault(firstT2I.id, "imageSize"));
       setSelectedEffect("");
       setMaxImages(1);
+      setImageSetMode(false);
+      setImageSetMaxImages(4);
     }
   };
 
@@ -1800,7 +1844,9 @@ export default function ImageStudio({
     async (snap) => {
       const taskId = snap.requestId;
       const promptTrim = (snap.prompt || "").trim();
-      const batch = snap.batchSize || 1;
+      const isImageSetMode = !!snap.imageSetMode;
+      const batch = isImageSetMode ? 1 : (snap.batchSize || 1);
+      const expectedOutputs = isImageSetMode ? Math.max(1, Number(snap.imageSetMaxImages) || 1) : batch;
 
       // Add task to active tasks and set backwards-compatible states
       // Find model name from model ID for correct display
@@ -1817,7 +1863,7 @@ export default function ImageStudio({
           prompt: promptTrim,
           model: snap.selectedModelId,
           modelName: findModelName(snap.selectedModelId),
-          batchSize: batch,
+          batchSize: expectedOutputs,
           status: 'generating',
           createdAt: Date.now()
         }
@@ -1845,6 +1891,10 @@ export default function ImageStudio({
               if (snap.selectedBackground) genParams.background = snap.selectedBackground;
               if (snap.selectedModeration) genParams.moderation = snap.selectedModeration;
               if (snap.selectedImageSize) genParams.imageSize = snap.selectedImageSize;
+              if (snap.imageSetMode) {
+                genParams.image_set_mode = "auto";
+                genParams.image_set_max_images = snap.imageSetMaxImages;
+              }
               if (snap.selectedRouting) genParams.routing = snap.selectedRouting;
               if (snap.effect) genParams.name = snap.effect;
               return await generateI2I(apiKey, genParams);
@@ -1860,6 +1910,10 @@ export default function ImageStudio({
               if (snap.selectedQualityOpt) genParams.quality = snap.selectedQualityOpt;
               if (snap.selectedFormat) genParams.format = snap.selectedFormat;
               if (snap.selectedImageSize) genParams.imageSize = snap.selectedImageSize;
+              if (snap.imageSetMode) {
+                genParams.image_set_mode = "auto";
+                genParams.image_set_max_images = snap.imageSetMaxImages;
+              }
               if (snap.selectedRouting) genParams.routing = snap.selectedRouting;
               return await generateImage(apiKey, genParams);
             }
@@ -1868,11 +1922,11 @@ export default function ImageStudio({
 
         let added = 0;
         const postProcessTasks = [];
-        results.forEach((res) => {
-          if (res && res.url) {
+        results.forEach((res, responseIndex) => {
+          const urls = Array.isArray(res?.urls) ? res.urls.filter(Boolean) : (res?.url ? [res.url] : []);
+          urls.forEach((rawUrl, imageIndex) => {
             added++;
-            const id = res.id || Math.random().toString(36).substring(7);
-            const rawUrl = res.url;
+            const id = `${res?.id || Math.random().toString(36).substring(7)}_${responseIndex}_${imageIndex}`;
             const entry = {
               id,
               url: rawUrl,
@@ -1882,6 +1936,8 @@ export default function ImageStudio({
               timestamp: new Date().toISOString(),
               restoreState: buildImageHistoryRestoreState({
                 imageMode: snap.imageMode,
+                imageSetMode: snap.imageSetMode,
+                imageSetMaxImages: snap.imageSetMaxImages,
                 selectedModelId: snap.selectedModelId,
                 selectedModelName: findModelName(snap.selectedModelId),
                 selectedAr: snap.selectedAr,
@@ -1899,18 +1955,10 @@ export default function ImageStudio({
                 uploadedImageUrls: snap.uploadedImageUrls,
               }),
             };
-            // Show the result IMMEDIATELY (raw url / base64) — don't make the user
-            // wait for the TOS upload. Display is in-memory only at this point.
             addToHistory(entry);
-            // Store the immediate result in the lightweight recent cache only.
-            // Even provider http(s) URLs may be temporary, so durable storage
-            // happens only after the TOS mirroring step below.
             writeRecentResults([entry, ...history]);
             upsertPendingResults(snap.requestId, [entry]);
 
-            // Do not mark generation as fully complete until the image is saved
-            // to a durable URL and written to the gallery. This prevents a fast
-            // page refresh from losing freshly generated images.
             postProcessTasks.push((async () => {
               let permUrl = rawUrl;
               try {
@@ -1931,11 +1979,7 @@ export default function ImageStudio({
                 aspect_ratio: finalEntry.aspect_ratio,
                 restoreState: finalEntry.restoreState,
               });
-
-              // Write to dedicated result key so the resume-poll can find the entry
-              // even if the component was unmounted and the save-effect ran in between.
               upsertPendingResults(snap.requestId, [finalEntry]);
-
               onGenerationComplete?.({
                 url: permUrl,
                 model: snap.selectedModelId,
@@ -1943,7 +1987,7 @@ export default function ImageStudio({
                 type: "image",
               });
             })());
-          }
+          });
         });
 
         // If the request "succeeded" but produced no usable image, surface it
@@ -2030,6 +2074,8 @@ export default function ImageStudio({
       selectedBackground: currentBackgroundOptions.length > 0 ? selectedBackground : null,
       selectedModeration: currentModerationOptions.length > 0 ? selectedModeration : null,
       selectedImageSize: currentImageSizeOptions.length > 0 ? selectedImageSize : null,
+      imageSetMode: imageSetSupported ? imageSetMode : false,
+      imageSetMaxImages: imageSetSupported ? effectiveImageSetMaxImages : 1,
       selectedRouting,
       effect: showEffectBtn ? selectedEffect : "",
       selectedAr,
@@ -2745,6 +2791,67 @@ export default function ImageStudio({
                 </div>
               )}
 
+              {imageSetSupported && (
+                <div className="flex items-center gap-1 bg-white/[0.03] rounded-md p-1 border border-white/[0.03]">
+                  {[
+                    { value: false, label: "1", title: "Сгенерировать одно изображение" },
+                    { value: true, label: "Set", title: "Сгенерировать набор изображений" },
+                  ].map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      title={option.title}
+                      onClick={() => setImageSetMode(option.value)}
+                      className={`px-3 h-7 flex items-center justify-center rounded-md text-[10px] font-black transition-all ${
+                        imageSetMode === option.value
+                          ? "bg-[#22d3ee] text-black shadow-lg shadow-[#22d3ee]/20"
+                          : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {imageSetSupported && imageSetMode && (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDropdownOpen((o) => (o === "imageSetCount" ? null : "imageSetCount"));
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] rounded-md transition-all border border-white/[0.03] group whitespace-nowrap"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40 text-white">
+                      <rect x="3" y="3" width="7" height="7" rx="1" />
+                      <rect x="14" y="3" width="7" height="7" rx="1" />
+                      <rect x="3" y="14" width="7" height="7" rx="1" />
+                      <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    <span className="text-[11px] font-semibold text-white/70 group-hover:text-[#22d3ee] transition-colors">
+                      Set {effectiveImageSetMaxImages}
+                    </span>
+                  </button>
+
+                  {dropdownOpen === "imageSetCount" && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-[#0a0a0a] rounded-md p-3 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-2xl border border-white/[0.05] min-w-[170px]"
+                    >
+                      <SimpleDropdown
+                        title="Размер набора"
+                        options={imageSetCountOptions}
+                        selected={effectiveImageSetMaxImages}
+                        onSelect={(val) => setImageSetMaxImages(Number(val) || 4)}
+                        onClose={() => setDropdownOpen(null)}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Output format button (jpeg/png/webp) */}
               {currentFormatOptions.length > 0 && (
                 <div className="relative">
@@ -2929,22 +3036,24 @@ export default function ImageStudio({
               )}
 
               {/* Batch size selector */}
-              <div className="flex items-center gap-1 bg-white/[0.03] rounded-md p-1 border border-white/[0.03]">
-                {[1, 2, 3, 4].map((num) => (
-                  <button
-                    key={num}
-                    type="button"
-                    onClick={() => setBatchSize(num)}
-                    className={`w-7 h-7 flex items-center justify-center rounded-md text-[10px] font-black transition-all ${
-                      batchSize === num
-                        ? "bg-[#22d3ee] text-black shadow-lg shadow-[#22d3ee]/20"
-                        : "text-white/40 hover:text-white/80 hover:bg-white/5"
-                    }`}
-                  >
-                    {num}
-                  </button>
-                ))}
-              </div>
+              {!imageSetMode && (
+                <div className="flex items-center gap-1 bg-white/[0.03] rounded-md p-1 border border-white/[0.03]">
+                  {[1, 2, 3, 4].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setBatchSize(num)}
+                      className={`w-7 h-7 flex items-center justify-center rounded-md text-[10px] font-black transition-all ${
+                        batchSize === num
+                          ? "bg-[#22d3ee] text-black shadow-lg shadow-[#22d3ee]/20"
+                          : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Generate button */}

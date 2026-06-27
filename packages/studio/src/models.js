@@ -48,6 +48,7 @@ export const _t2iModelsAll = [
     apiId: "doubao-seedream-5-0-260128",
     provider: "ark",
     imageSizing: "seedream",
+    supportsImageSet: true,
     inputs: {
       prompt: { type: "string" },
       aspect_ratio: { enum: SEEDREAM_IMAGE_ASPECT_RATIOS, default: "1:1" },
@@ -102,6 +103,7 @@ export const _i2iModelsAll = [
     apiId: "doubao-seedream-5-0-260128",
     provider: "ark",
     imageSizing: "seedream",
+    supportsImageSet: true,
     acceptsImage: true,
     maxImages: 14,
     inputs: {

@@ -59,6 +59,18 @@ test('buildArkImagePayload сохраняет multi-image массив и явн
   assert.strictEqual(payload.response_format, 'url');
 });
 
+test('buildArkImagePayload добавляет режим набора изображений с max_images', () => {
+  const payload = buildArkImagePayload({
+    model: 'doubao-seedream-5-0-260128',
+    prompt: 'серия кадров',
+    sequential_image_generation: 'auto',
+    sequential_image_generation_options: { max_images: 4 },
+  });
+
+  assert.strictEqual(payload.sequential_image_generation, 'auto');
+  assert.deepStrictEqual(payload.sequential_image_generation_options, { max_images: 4 });
+});
+
 test('extractArkImageError вытаскивает сообщение в приоритетном порядке', () => {
   assert.strictEqual(extractArkImageError({ error: { message: 'bad request' } }, 400), 'bad request');
   assert.strictEqual(extractArkImageError({ error: 'plain error' }, 400), 'plain error');

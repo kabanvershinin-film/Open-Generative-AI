@@ -9,6 +9,8 @@ import {
 test("buildImageHistoryRestoreState сохраняет промпт, модель и все референсы", () => {
   const state = buildImageHistoryRestoreState({
     imageMode: true,
+    imageSetMode: true,
+    imageSetMaxImages: 5,
     selectedModelId: "gpt-image-2",
     selectedModelName: "GPT Image 2",
     selectedAr: "16:9",
@@ -32,6 +34,8 @@ test("buildImageHistoryRestoreState сохраняет промпт, модел�
 
   assert.deepStrictEqual(state, {
     imageMode: true,
+    imageSetMode: true,
+    imageSetMaxImages: 5,
     selectedModelId: "gpt-image-2",
     selectedModelName: "GPT Image 2",
     selectedAr: "16:9",
@@ -60,6 +64,8 @@ test("getImageHistoryRestoreState использует снимок восста
     aspect_ratio: "1:1",
     restoreState: {
       imageMode: true,
+      imageSetMode: true,
+      imageSetMaxImages: 3,
       selectedModelId: "gemini-3-pro-image-preview-edit",
       selectedAr: "3:4",
       prompt: "новый промпт",
@@ -69,6 +75,8 @@ test("getImageHistoryRestoreState использует снимок восста
 
   assert.deepStrictEqual(state, {
     imageMode: true,
+    imageSetMode: true,
+    imageSetMaxImages: 3,
     selectedModelId: "gemini-3-pro-image-preview-edit",
     selectedModelName: "",
     selectedAr: "3:4",

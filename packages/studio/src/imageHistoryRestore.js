@@ -6,6 +6,8 @@ function normalizeUrlList(urls) {
 
 export function buildImageHistoryRestoreState({
   imageMode,
+  imageSetMode,
+  imageSetMaxImages,
   selectedModelId,
   selectedModelName,
   selectedAr,
@@ -24,6 +26,8 @@ export function buildImageHistoryRestoreState({
 }) {
   return {
     imageMode: !!imageMode,
+    imageSetMode: !!imageSetMode,
+    imageSetMaxImages: Math.max(1, Number(imageSetMaxImages) || 1),
     selectedModelId: selectedModelId || "",
     selectedModelName: selectedModelName || "",
     selectedAr: selectedAr || null,
@@ -49,6 +53,8 @@ export function getImageHistoryRestoreState(entry) {
 
   return {
     imageMode: !!restoreState.imageMode,
+    imageSetMode: !!restoreState.imageSetMode,
+    imageSetMaxImages: Math.max(1, Number(restoreState.imageSetMaxImages) || 1),
     selectedModelId: restoreState.selectedModelId || entry?.model || "",
     selectedModelName: restoreState.selectedModelName || "",
     selectedAr: restoreState.selectedAr || entry?.aspect_ratio || null,

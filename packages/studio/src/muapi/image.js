@@ -39,9 +39,19 @@ function getImageUrlFromResponse(data) {
     return item?.url || (item?.b64_json ? `data:image/png;base64,${item.b64_json}` : '') || data?.url || data?.output?.url || data?.outputs?.[0] || '';
 }
 
+function getImageUrlsFromResponse(data) {
+    const items = Array.isArray(data?.data) ? data.data : [];
+    const urls = items
+        .map((item) => item?.url || (item?.b64_json ? `data:image/png;base64,${item.b64_json}` : ''))
+        .filter(Boolean);
+    if (urls.length > 0) return urls;
+    const single = getImageUrlFromResponse(data);
+    return single ? [single] : [];
+}
+
 function normalizeImageResult(data, fallbackId) {
-    const url = getImageUrlFromResponse(data);
-    return { ...data, id: data?.id || data?.request_id || fallbackId, url };
+    const urls = getImageUrlsFromResponse(data);
+    return { ...data, id: data?.id || data?.request_id || fallbackId, url: urls[0] || '', urls };
 }
 
 function getImageUrlFromText(text) {
@@ -179,12 +189,14 @@ async function generateArkImage(apiKey, modelInfo, params) {
     const modelId = modelInfo?.apiId || params.model;
     const references = await Promise.all(getArkImageReferences(params).map((image) => imageReferenceToArkValue(image)));
     const images = references.filter(Boolean);
+    const imageSetMode = params.image_set_mode === 'auto' ? 'auto' : 'disabled';
+    const imageSetMaxImages = Math.max(1, Math.min(15, Number(params.image_set_max_images) || 1));
     const body = {
         model: modelId,
         prompt: params.prompt || '',
         size: computeImageSize(modelInfo, params.aspect_ratio, params.imageSize || params.size),
         response_format: 'url',
-        sequential_image_generation: 'disabled',
+        sequential_image_generation: imageSetMode,
         stream: false,
         watermark: false,
     };
@@ -192,6 +204,9 @@ async function generateArkImage(apiKey, modelInfo, params) {
     if (images.length === 1) body.image = images[0];
     if (images.length > 1) body.image = images;
     if (params.format) body.output_format = params.format;
+    if (imageSetMode === 'auto') {
+        body.sequential_image_generation_options = { max_images: imageSetMaxImages };
+    }
 
     const response = await fetchWithTimeout('/api/ark/images', {
         method: 'POST',
