@@ -9,6 +9,7 @@ import ReactFlow, {
   Controls,
   MiniMap,
   Panel,
+  useNodesInitialized,
   useNodesState,
   useEdgesState,
   useReactFlow,
@@ -307,6 +308,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isModelDropdownUp, setIsModelDropdownUp] = useState(false);
   const modelDropdownTriggerRef = useRef(null);
+  const nodesInitialized = useNodesInitialized();
 
   const { zoomIn, zoomOut, fitView, getNodes, getEdges, screenToFlowPosition, setNodes: rfSetNodes, setEdges: rfSetEdges, setViewport } = useReactFlow();
 
@@ -372,31 +374,22 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   }, [nodeSchemas]);
 
   const restoreWorkflow = useCallback((workflowData) => {
-    const workflow = workflowData?.data;
-    if (!workflow?.nodes) return;
+    const storedNodes = getWorkflowNodesList(workflowData);
+    if (
+      !storedNodes.length &&
+      !Array.isArray(workflowData?.data?.nodes) &&
+      !Array.isArray(workflowData?.nodes)
+    ) {
+      return;
+    }
 
-    const restoredNodes = workflow.nodes.map(n => ({
-      id: n.id,
-      type: n.category === "utility"
-        ? (n.model === "video-combiner" ? "vidConcatNode" : "concatNode")
-        : n.category === "character"
-          ? "characterNode"
-          : `${n.category}Node`,
-      position: {
-        x: n.position?.x ?? 350,
-        y: n.position?.y ?? 0
-      },
-      data: {
+    const restoredNodes = storedNodes
+      .map((node) => buildRestoredNode(node, {
         nodeSchemas,
-        modelId: n.model,
-        selectedModel: getModelObj(n.category, n.model),
-        outputs: n.output_params?.outputs || [],
-        resultUrl: n.output_params?.resultUrl || null,
-        formValues: n.input_params || {},
-        outputHistory: (workflowData.run_history?.[n.id] || [])
-          .sort((a, b) => new Date(a.started_at) - new Date(b.started_at)),
-      }
-    }));
+        workflowData,
+        getModelObj,
+      }))
+      .filter((node) => node.id && node.type);
 
     const restoredEdges = (workflowData.edges || []).map((e) => {
       const sourceNode = restoredNodes.find(n => n.id === e.source);
@@ -422,6 +415,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
     setWorkflowIds(workflowData.workflow_id, workflowData?.run_id);
     setInteractionMode(workflowData.is_owner);
     setPublishWorkflow(workflowData.is_published);
+    setHasFit(false);
     setTemplate(prev => ({
       ...prev,
       showTemplateBtn: workflowData.show_temp_button,
@@ -451,16 +445,19 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   useEffect(() => {
     if (isRestoring) return;
 
-    if (nodes.length > 0 && !hasFit) {
+    if (nodes.length > 0 && !hasFit && nodesInitialized) {
       const timeout = setTimeout(() => {
-        fitView({ padding: 0.4, duration: 500, minZoom: 0.2 });
-        setHasFit(true);
-      }, 100);
+        fitView({ padding: 0.45, duration: 500, minZoom: 0.2, maxZoom: 1.2 });
+        setTimeout(() => {
+          fitView({ padding: 0.45, duration: 250, minZoom: 0.2, maxZoom: 1.2 });
+          setHasFit(true);
+        }, 180);
+      }, 120);
       return () => clearTimeout(timeout);
     } else if (nodes.length === 0) {
       setIsPresetsDismissed(false);
     };
-  }, [nodes, hasFit, fitView, isRestoring]);
+  }, [nodes, hasFit, fitView, isRestoring, nodesInitialized]);
 
   const arrangeNodesInRow = useCallback(() => {
     const spacing = 350;
@@ -932,7 +929,11 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           };
           setChatMessages((prev) => [...prev, newAgentMessage]);
 
-          if (workflow && workflow.nodes) {
+          if (
+            getWorkflowNodesList(workflow).length > 0 ||
+            Array.isArray(workflow?.data?.nodes) ||
+            Array.isArray(workflow?.nodes)
+          ) {
             const idMapping = {};
             const counts = { text: 0, image: 0, video: 0, audio: 0 };
 

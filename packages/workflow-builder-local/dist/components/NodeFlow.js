@@ -485,6 +485,7 @@ var NodeFlow = function NodeFlow(_ref) {
     isModelDropdownUp = _useState62[0],
     setIsModelDropdownUp = _useState62[1];
   var modelDropdownTriggerRef = (0, _react.useRef)(null);
+  var nodesInitialized = (0, _reactflow.useNodesInitialized)();
   var _useReactFlow = (0, _reactflow.useReactFlow)(),
     zoomIn = _useReactFlow.zoomIn,
     zoomOut = _useReactFlow.zoomOut,
@@ -597,6 +598,7 @@ var NodeFlow = function NodeFlow(_ref) {
     (0, _WorkflowStore.setWorkflowIds)(workflowData.workflow_id, workflowData === null || workflowData === void 0 ? void 0 : workflowData.run_id);
     setInteractionMode(workflowData.is_owner);
     setPublishWorkflow(workflowData.is_published);
+    setHasFit(false);
     setTemplate(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, {
         showTemplateBtn: workflowData.show_temp_button,
@@ -620,15 +622,24 @@ var NodeFlow = function NodeFlow(_ref) {
   }, [id, nodeSchemas, initialWorkflowData, restoreWorkflow]);
   (0, _react.useEffect)(function () {
     if (isRestoring) return;
-    if (nodes.length > 0 && !hasFit) {
+    if (nodes.length > 0 && !hasFit && nodesInitialized) {
       var timeout = setTimeout(function () {
         _fitView({
-          padding: 0.4,
+          padding: 0.45,
           duration: 500,
-          minZoom: 0.2
+          minZoom: 0.2,
+          maxZoom: 1.2
         });
-        setHasFit(true);
-      }, 100);
+        setTimeout(function () {
+          _fitView({
+            padding: 0.45,
+            duration: 250,
+            minZoom: 0.2,
+            maxZoom: 1.2
+          });
+          setHasFit(true);
+        }, 180);
+      }, 120);
       return function () {
         return clearTimeout(timeout);
       };
@@ -636,7 +647,7 @@ var NodeFlow = function NodeFlow(_ref) {
       setIsPresetsDismissed(false);
     }
     ;
-  }, [nodes, hasFit, _fitView, isRestoring]);
+  }, [nodes, hasFit, _fitView, isRestoring, nodesInitialized]);
   var arrangeNodesInRow = (0, _react.useCallback)(function () {
     var spacing = 350;
     var y = 100;
