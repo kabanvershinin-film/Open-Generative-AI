@@ -44,6 +44,7 @@ import {
   getRefTokenLabelForFile,
   insertPromptTokenAtSelection,
 } from "../videoPromptTokens.js";
+import { buildSeedanceExtendSession } from "../seedanceExtend.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const HISTORY_PAGE_SIZE = 18;
@@ -440,6 +441,7 @@ export default function VideoStudio({
   const [endImageUploading, setEndImageUploading] = useState(false);
   const [endImageProgress, setEndImageProgress] = useState(0);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState(null);
+  const [extendSourceVideoUrl, setExtendSourceVideoUrl] = useState(null);
   const [videoUploading, setVideoUploading] = useState(false);
   const [uploadedVideoName, setUploadedVideoName] = useState(null);
   const [uploadedAudioUrl, setUploadedAudioUrl] = useState(null);
@@ -487,8 +489,8 @@ export default function VideoStudio({
   const [canvasUrl, setCanvasUrl] = useState(null);
   const [canvasModel, setCanvasModel] = useState(null);
   const [showCanvas, setShowCanvas] = useState(false);
-  const [lastGenerationId, setLastGenerationId] = useState(null);
-  const [lastGenerationModel, setLastGenerationModel] = useState(null);
+  const [, setLastGenerationId] = useState(null);
+  const [, setLastGenerationModel] = useState(null);
 
   // ── history ──
   const [localHistory, setLocalHistory] = useState([]);
@@ -992,6 +994,7 @@ export default function VideoStudio({
       const url = await uploadFile(apiKey, file, (pct) => {
         setVideoProgress(pct);
       });
+      setExtendSourceVideoUrl(null);
       setUploadedVideoUrl(url);
       setUploadedVideoName(file.name);
       // Multimodal models keep the current model — video is just an extra input.
@@ -1430,6 +1433,7 @@ export default function VideoStudio({
   };
 
   const clearVideoUpload = () => {
+    setExtendSourceVideoUrl(null);
     setUploadedVideoUrl(null);
     setUploadedVideoName(null);
     // For multimodal models the video is just an optional input — keep the model.
@@ -1668,6 +1672,7 @@ export default function VideoStudio({
     setPrompt(restoreState.prompt || "");
     setUploadedImageUrl(restoreState.uploadedImageUrl || null);
     setUploadedEndImageUrl(restoreState.uploadedEndImageUrl || null);
+    setExtendSourceVideoUrl(null);
     setUploadedVideoUrl(restoreState.uploadedVideoUrl || null);
     setUploadedVideoName(restoreState.uploadedVideoName || null);
     setUploadedAudioUrl(restoreState.uploadedAudioUrl || null);
@@ -1927,7 +1932,7 @@ export default function VideoStudio({
   // ── generate ──────────────────────────────────────────────────────────────
   const handleGenerate = useCallback(async () => {
     const currentModel = getCurrentModel();
-    const isExtendMode = currentModel?.requiresRequestId;
+    const isExtendMode = !!extendSourceVideoUrl && currentModel?.provider === "ark";
     const trimmedPrompt = prompt.trim();
 
     // Validations
@@ -1955,8 +1960,8 @@ export default function VideoStudio({
         return;
       }
     } else if (isExtendMode) {
-      if (!lastGenerationId) {
-        alert("Генерация Seedance 2.0 не найдена. Сначала создайте видео.");
+      if (!extendSourceVideoUrl) {
+        alert("Исходное видео для продления не найдено. Сначала выберите видео из истории.");
         return;
       }
     } else if (imageMode) {
@@ -2200,11 +2205,7 @@ export default function VideoStudio({
             }).catch(() => null);
           };
           if (taskPrompt) params.prompt = taskPrompt;
-          if (isExtendMode) {
-            params.request_id = lastGenerationId;
-          } else {
-            params.aspect_ratio = selectedAr;
-          }
+          params.aspect_ratio = selectedAr;
           const durations = getDurationsForModel(taskModel);
           if (durations.length > 0) params.duration = selectedDuration;
           const resolutions = getResolutionsForVideoModel(taskModel);
@@ -2372,13 +2373,13 @@ export default function VideoStudio({
     showEffect,
     uploadedImageUrl,
     uploadedVideoUrl,
+    extendSourceVideoUrl,
     uploadedAudioUrl,
     uploadedEndImageUrl,
     refFiles,
     faceAsset,
     uploadedVideoName,
     uploadedAudioName,
-    lastGenerationId,
     getCurrentModel,
     getCurrentDurations,
     getCurrentResolutions,
@@ -2404,11 +2405,16 @@ export default function VideoStudio({
     setShowCanvas(false);
   }, []);
 
+  const clearExtendMode = useCallback(() => {
+    setExtendSourceVideoUrl(null);
+  }, []);
+
   const handleNewPrompt = useCallback(() => {
     resetToPromptBar();
     setPrompt("");
     setUploadedImageUrl(null);
     setImageMode(false);
+    clearExtendMode();
     setUploadedVideoUrl(null);
     setUploadedVideoName(null);
     setV2vMode(false);
@@ -2418,26 +2424,35 @@ export default function VideoStudio({
     applyControlsForModel(first.id, false, false);
     setPromptDisabled(false);
     setTimeout(() => textareaRef.current?.focus(), 50);
-  }, [resetToPromptBar, applyControlsForModel]);
+  }, [clearExtendMode, resetToPromptBar, applyControlsForModel]);
 
-  const handleExtend = useCallback(() => {
-    if (!lastGenerationId) return;
+  const handleExtend = useCallback((entry) => {
+    const session = buildSeedanceExtendSession(entry);
+    if (!session.ready) {
+      toast.error("Не удалось подготовить продление: нет исходного видео или модели Seedance.");
+      return;
+    }
+
     resetToPromptBar();
     setPrompt("");
     setUploadedImageUrl(null);
     setImageMode(false);
-    setSelectedModel("seedance-v2.0-extend");
-    setSelectedModelName("Seedance 2.0 Extend");
-    applyControlsForModel("seedance-v2.0-extend", false, false);
+    setV2vMode(false);
+    setExtendSourceVideoUrl(session.videoUrl);
+    setUploadedVideoUrl(session.videoUrl);
+    setUploadedVideoName(session.videoName);
+    setSelectedModel(session.modelId);
+    setSelectedModelName(session.modelName);
+    applyControlsForModel(session.modelId, false, false);
     setPromptDisabled(false);
     setTimeout(() => textareaRef.current?.focus(), 50);
-  }, [lastGenerationId, resetToPromptBar, applyControlsForModel]);
+  }, [resetToPromptBar, applyControlsForModel]);
 
   // ── derived UI values ────────────────────────────────────────────────────
   const isSeedance2Canvas =
     canvasModel === "seedance-v2.0-t2v" || canvasModel === "seedance-v2.0-i2v";
   const currentModelObj = getCurrentModel();
-  const isExtendMode = currentModelObj?.requiresRequestId;
+  const isExtendMode = !!extendSourceVideoUrl && currentModelObj?.provider === "ark";
   // Seedance 2.0 (Ark) supports multimodal references — show the dedicated uploader.
   const isSeedanceArk = currentModelObj?.provider === "ark";
 
@@ -2551,7 +2566,9 @@ export default function VideoStudio({
     };
   }, [selectedModel, selectedDuration, selectedResolution, refFiles, imageMode, v2vMode, getCurrentModel]);
 
-  const promptPlaceholder = isSeedanceArk
+  const promptPlaceholder = isExtendMode
+    ? "Необязательно: опишите как продолжить видео..."
+    : isSeedanceArk
     ? "Используйте теги, чтобы ссылаться на файлы. Напр.: возьми движение из 视频1, создай видео с персонажами из 图片2 и 图片3."
     : v2vMode
     ? currentModelObj?.imageField
@@ -2561,9 +2578,7 @@ export default function VideoStudio({
       : "Видео готово — нажмите Создать для удаления водяного знака"
     : imageMode
       ? "Опишите движение или эффект (необязательно)"
-      : isExtendMode
-        ? "Необязательно: опишите как продолжить видео..."
-        : "Опишите видео, которое хотите создать";
+      : "Опишите видео, которое хотите создать";
 
   const toggleDropdown = (type) => (e) => {
     e.stopPropagation();
@@ -2730,8 +2745,7 @@ export default function VideoStudio({
                         title="Расширить видео с помощью Seedance 2.0 Extend"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLastGenerationId(entry.id);
-                          handleExtend();
+                          handleExtend(entry);
                         }}
                         className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-primary hover:text-black transition-all border border-white/10"
                       >
@@ -3369,7 +3383,7 @@ export default function VideoStudio({
               >
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-              <span>Расширение предыдущей генерации Seedance 2.0</span>
+              <span>Продление видео Seedance 2.0 через входное video_url</span>
             </div>
           )}
 
