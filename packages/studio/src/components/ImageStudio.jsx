@@ -1382,6 +1382,10 @@ export default function ImageStudio({
     el.style.height = Math.min(el.scrollHeight, maxHeight) + "px";
   };
 
+  useEffect(() => {
+    handleTextareaInput();
+  }, [prompt]);
+
   // ── Upload picker callbacks ──────────────────────────────────────────────
 
   const handleUploadClear = useCallback(() => {
