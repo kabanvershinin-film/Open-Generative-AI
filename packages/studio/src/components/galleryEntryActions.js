@@ -28,6 +28,10 @@ function getExtensionFromUrl(url, fallback) {
   }
 }
 
+function getGalleryProxyUrl(url) {
+  return `/api/workflow/proxy-download?url=${encodeURIComponent(url || "")}`;
+}
+
 export function getGalleryEntryFilename(entry) {
   const extByType = {
     image: "png",
@@ -114,7 +118,7 @@ function canInlineGalleryEntry(entry) {
 }
 
 async function openGalleryEntryWithObjectUrl(popup, entry) {
-  const response = await fetch(entry?.url || "");
+  const response = await fetch(getGalleryProxyUrl(entry?.url));
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }
@@ -155,7 +159,12 @@ export async function openGalleryEntry(entry) {
   try {
     await openGalleryEntryWithObjectUrl(popup, entry);
   } catch (error) {
-    popup.location.href = entry?.url || "about:blank";
+    popup.document.open();
+    popup.document.write(buildGalleryViewerHtml({
+      ...entry,
+      prompt: `Не удалось открыть файл: ${error.message}`,
+    }));
+    popup.document.close();
     throw error;
   }
 }
@@ -163,7 +172,7 @@ export async function openGalleryEntry(entry) {
 export async function downloadGalleryEntry(entry) {
   if (typeof document === "undefined") return;
   const filename = getGalleryEntryFilename(entry);
-  const response = await fetch(entry?.url || "");
+  const response = await fetch(getGalleryProxyUrl(entry?.url));
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`);
   }

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   buildGalleryViewerHtml,
+  downloadGalleryEntry,
   getGalleryEntryFilename,
   openGalleryEntry,
 } from "../components/galleryEntryActions.js";
@@ -58,10 +59,14 @@ test("openGalleryEntry открывает viewer через object URL вмес�
   global.window = {
     open: () => popup,
   };
-  global.fetch = async () => ({
+  let requestedUrl = "";
+  global.fetch = async (url) => {
+    requestedUrl = url;
+    return {
     ok: true,
     blob: async () => new Blob(["video-bytes"], { type: "video/mp4" }),
-  });
+    };
+  };
   global.URL = {
     createObjectURL: () => "blob:gallery-video",
     revokeObjectURL() {},
@@ -74,6 +79,57 @@ test("openGalleryEntry открывает viewer через object URL вмес�
   });
 
   assert.equal(writes.length >= 2, true);
+  assert.strictEqual(
+    requestedUrl,
+    "/api/workflow/proxy-download?url=https%3A%2F%2Fcdn.example.com%2Fmedia%2Fresult.mp4",
+  );
   assert.match(writes[writes.length - 1], /src="blob:gallery-video"/);
   assert.doesNotMatch(writes[writes.length - 1], /src="https:\/\/cdn\.example\.com\/media\/result\.mp4"/);
+});
+
+test("downloadGalleryEntry скачивает через прокси", async () => {
+  let requestedUrl = "";
+  const appended = [];
+  const clicked = [];
+  global.fetch = async (url) => {
+    requestedUrl = url;
+    return {
+      ok: true,
+      blob: async () => new Blob(["video-bytes"], { type: "video/mp4" }),
+    };
+  };
+  global.URL = {
+    createObjectURL: () => "blob:download-video",
+    revokeObjectURL() {},
+  };
+  global.document = {
+    body: {
+      appendChild(node) {
+        appended.push(node);
+      },
+    },
+    createElement() {
+      return {
+        click() {
+          clicked.push(true);
+        },
+        remove() {},
+        style: {},
+      };
+    },
+  };
+
+  await downloadGalleryEntry({
+    id: "vid-123",
+    type: "video",
+    model: "seedance-2.0-mini-t2v",
+    url: "https://cdn.example.com/media/result.mp4",
+  });
+
+  assert.strictEqual(
+    requestedUrl,
+    "/api/workflow/proxy-download?url=https%3A%2F%2Fcdn.example.com%2Fmedia%2Fresult.mp4",
+  );
+  assert.strictEqual(appended.length, 1);
+  assert.strictEqual(clicked.length, 1);
 });
