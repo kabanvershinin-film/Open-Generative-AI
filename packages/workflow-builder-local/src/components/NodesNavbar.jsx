@@ -342,7 +342,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
       <div 
         ref={menuRef}
         className={`relative flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl opacity-100 ${
-          isSidebar ? "h-full w-full shadow-none" : "w-60 shadow-2xl"
+          isSidebar ? "h-full w-full shadow-none" : "w-64 shadow-2xl"
         }`}
         style={isSidebar ? undefined : menuStyle}
       >
@@ -509,7 +509,7 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
     <div
       ref={submenuRef}
       style={submenuStyle}
-      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-60 shadow-2xl overflow-hidden z-50 ${currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]"}`}
+      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-64 shadow-2xl overflow-hidden z-50 ${currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]"}`}
     >
       <div
         className="flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors"
