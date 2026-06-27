@@ -30,6 +30,10 @@ import { saveMediaToGallery } from "./gallerySave.js";
 import { excludeImageHistoryEntry, mergeImageHistoryEntries } from "./imageHistory.js";
 import { getUploadPickerMaxImages } from "../imageStudioUploadConfig.js";
 import {
+  buildImageHistoryRestoreState,
+  getImageHistoryRestoreState,
+} from "../imageHistoryRestore.js";
+import {
   addSelectedUploadEntry,
   appendUploadUrls,
   replaceSelectedUploadEntry,
@@ -952,6 +956,9 @@ export default function ImageStudio({
         model: entry.model || null,
         aspect_ratio: entry.aspect_ratio || null,
         timestamp: entry.timestamp || null,
+        restoreState: entry.restoreState && typeof entry.restoreState === "object"
+          ? buildImageHistoryRestoreState(entry.restoreState)
+          : undefined,
       }))
       .filter((entry) => !!entry.url)
       .slice(0, 20);
@@ -1222,6 +1229,9 @@ export default function ImageStudio({
             model: entry.model || null,
             aspect_ratio: entry.aspect_ratio || null,
             timestamp: entry.created_at || entry.timestamp || new Date().toISOString(),
+            restoreState: entry.restoreState && typeof entry.restoreState === "object"
+              ? getImageHistoryRestoreState(entry)
+              : undefined,
           }));
         if (cancelled || normalized.length === 0) return;
         setLocalHistory((prev) => mergeHistoryEntries(prev, normalized));
@@ -1254,6 +1264,12 @@ export default function ImageStudio({
           selectedModelName,
           selectedAr,
           selectedQuality,
+          selectedQualityOpt,
+          selectedFormat,
+          selectedBackground,
+          selectedModeration,
+          selectedImageSize,
+          selectedRouting,
           selectedEffect,
           maxImages,
           prompt,
@@ -1273,6 +1289,12 @@ export default function ImageStudio({
     selectedModelName,
     selectedAr,
     selectedQuality,
+    selectedQualityOpt,
+    selectedFormat,
+    selectedBackground,
+    selectedModeration,
+    selectedImageSize,
+    selectedRouting,
     selectedEffect,
     maxImages,
     prompt,
@@ -1640,7 +1662,7 @@ export default function ImageStudio({
     }
   }, [sanitizeHistoryForStorage, writePersistentState, writeRecentResults]);
 
-  const saveImageToGallery = useCallback(async (url, promptText = "", modelId = "") => {
+  const saveImageToGallery = useCallback(async (url, promptText = "", modelId = "", extra = {}) => {
     if (!url || typeof url !== "string") return null;
     try {
       return await saveMediaToGallery({
@@ -1648,12 +1670,103 @@ export default function ImageStudio({
         type: "image",
         model: modelId || "",
         prompt: promptText || "",
+        extra,
       });
     } catch (err) {
       toast.error(`Не удалось сохранить в галерею: ${err.message || "ошибка"}`);
       return null;
     }
   }, []);
+
+  const restoreHistoryEntryToForm = useCallback((entry) => {
+    const restoreState = getImageHistoryRestoreState(entry);
+    const nextImageMode = !!restoreState.imageMode;
+    const targetModels = nextImageMode ? i2iModels : t2iModels;
+    const targetModel =
+      targetModels.find((model) => model.id === restoreState.selectedModelId) ||
+      targetModels[0] ||
+      null;
+
+    if (!targetModel) {
+      toast.error("Не удалось вернуть запись в форму: модель недоступна.");
+      return;
+    }
+
+    const nextAspectRatios = nextImageMode
+      ? getAspectRatiosForI2IModel(targetModel.id)
+      : getAspectRatiosForModel(targetModel.id);
+    const nextResolutions = nextImageMode
+      ? getResolutionsForI2IModel(targetModel.id)
+      : getResolutionsForModel(targetModel.id);
+    const nextEffects = nextImageMode ? getEffectsForI2IModel(targetModel.id) : [];
+    const nextQualityOptions = getImageInputOptions(targetModel.id, "quality");
+    const nextFormatOptions = getImageInputOptions(targetModel.id, "format");
+    const nextBackgroundOptions = getImageInputOptions(targetModel.id, "background");
+    const nextModerationOptions = getImageInputOptions(targetModel.id, "moderation");
+    const nextImageSizeOptions = getImageInputOptions(targetModel.id, "imageSize");
+
+    setImageMode(nextImageMode);
+    setSelectedModelId(targetModel.id);
+    setSelectedModelName(targetModel.name);
+    setSelectedAr(
+      nextAspectRatios.includes(restoreState.selectedAr)
+        ? restoreState.selectedAr
+        : (targetModel.inputs?.aspect_ratio?.default || nextAspectRatios[0] || "1:1"),
+    );
+    setSelectedQuality(
+      nextResolutions.includes(restoreState.selectedQuality)
+        ? restoreState.selectedQuality
+        : (targetModel.inputs?.resolution?.default || nextResolutions[0] || null),
+    );
+    setSelectedQualityOpt(
+      nextQualityOptions.includes(restoreState.selectedQualityOpt)
+        ? restoreState.selectedQualityOpt
+        : getImageInputDefault(targetModel.id, "quality"),
+    );
+    setSelectedFormat(
+      nextFormatOptions.includes(restoreState.selectedFormat)
+        ? restoreState.selectedFormat
+        : getImageInputDefault(targetModel.id, "format"),
+    );
+    setSelectedBackground(
+      nextBackgroundOptions.includes(restoreState.selectedBackground)
+        ? restoreState.selectedBackground
+        : getImageInputDefault(targetModel.id, "background"),
+    );
+    setSelectedModeration(
+      nextModerationOptions.includes(restoreState.selectedModeration)
+        ? restoreState.selectedModeration
+        : getImageInputDefault(targetModel.id, "moderation"),
+    );
+    setSelectedImageSize(
+      nextImageSizeOptions.includes(restoreState.selectedImageSize)
+        ? restoreState.selectedImageSize
+        : getImageInputDefault(targetModel.id, "imageSize"),
+    );
+    setSelectedRouting(routingOptions.includes(restoreState.selectedRouting) ? restoreState.selectedRouting : "default");
+    setSelectedEffect(
+      nextEffects.includes(restoreState.selectedEffect)
+        ? restoreState.selectedEffect
+        : (nextImageMode ? (getDefaultEffectForI2IModel(targetModel.id) || nextEffects[0] || "") : ""),
+    );
+    setMaxImages(nextImageMode ? getMaxImagesForI2IModel(targetModel.id) : Math.max(1, Number(restoreState.maxImages) || 1));
+    setBatchSize(Math.max(1, Number(restoreState.batchSize) || 1));
+    setPrompt(restoreState.prompt || "");
+    setUploadedImageUrls(Array.isArray(restoreState.uploadedImageUrls) ? restoreState.uploadedImageUrls : []);
+    setPreviewImageUrls(Array.isArray(restoreState.uploadedImageUrls) ? restoreState.uploadedImageUrls : []);
+
+    requestAnimationFrame(() => {
+      handleTextareaInput();
+      textareaRef.current?.focus();
+    });
+
+    toast.success(
+      entry?.restoreState
+        ? "Промпт и референсы возвращены в форму."
+        : "Промпт возвращён. Для старой записи доступны не все референсы.",
+      { duration: 2500 },
+    );
+  }, [i2iModels, t2iModels]);
 
   // ── View state ─────────────────────────────────────
 
@@ -1767,6 +1880,24 @@ export default function ImageStudio({
               model: snap.selectedModelId,
               aspect_ratio: snap.selectedAr,
               timestamp: new Date().toISOString(),
+              restoreState: buildImageHistoryRestoreState({
+                imageMode: snap.imageMode,
+                selectedModelId: snap.selectedModelId,
+                selectedModelName: findModelName(snap.selectedModelId),
+                selectedAr: snap.selectedAr,
+                selectedQuality: snap.selectedQuality,
+                selectedQualityOpt: snap.selectedQualityOpt,
+                selectedFormat: snap.selectedFormat,
+                selectedBackground: snap.selectedBackground,
+                selectedModeration: snap.selectedModeration,
+                selectedImageSize: snap.selectedImageSize,
+                selectedRouting: snap.selectedRouting,
+                selectedEffect: snap.effect,
+                maxImages: snap.imageMode ? getMaxImagesForI2IModel(snap.selectedModelId) : 1,
+                batchSize: snap.batchSize,
+                prompt: promptTrim,
+                uploadedImageUrls: snap.uploadedImageUrls,
+              }),
             };
             // Show the result IMMEDIATELY (raw url / base64) — don't make the user
             // wait for the TOS upload. Display is in-memory only at this point.
@@ -1795,7 +1926,10 @@ export default function ImageStudio({
                 );
               }
               persistEntryToStorage(finalEntry);
-              await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model);
+              await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model, {
+                aspect_ratio: finalEntry.aspect_ratio,
+                restoreState: finalEntry.restoreState,
+              });
 
               // Write to dedicated result key so the resume-poll can find the entry
               // even if the component was unmounted and the save-effect ran in between.
@@ -1968,7 +2102,10 @@ export default function ImageStudio({
             );
             setCurrentImageUrl((cur) => (cur === entry.url ? permUrl : cur));
             persistEntryToStorage(finalEntry);
-            await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model);
+            await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model, {
+              aspect_ratio: finalEntry.aspect_ratio,
+              restoreState: finalEntry.restoreState,
+            });
             upsertPendingResults(snap.requestId, [finalEntry]);
           }
         } finally {
@@ -2306,6 +2443,16 @@ export default function ImageStudio({
                     </span>
                     <span className="text-[10px] text-white/40">{entry.aspect_ratio}</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      restoreHistoryEntryToForm(entry);
+                    }}
+                    className="mt-1 w-full rounded-md border border-primary/25 bg-primary/8 py-2 text-[11px] font-semibold text-primary transition-colors hover:border-primary/45 hover:bg-primary/14"
+                  >
+                    Вернуть в форму
+                  </button>
                 </div>
               </div>
             ))}

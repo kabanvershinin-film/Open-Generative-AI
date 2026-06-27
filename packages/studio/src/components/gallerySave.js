@@ -1,4 +1,4 @@
-export async function saveMediaToGallery({ url, type = "image", model = "", prompt = "" }) {
+export async function saveMediaToGallery({ url, type = "image", model = "", prompt = "", extra = {} }) {
   if (!url || typeof url !== "string") return null;
 
   const response = await fetch("/api/gallery", {
@@ -10,6 +10,7 @@ export async function saveMediaToGallery({ url, type = "image", model = "", prom
       type,
       model,
       prompt,
+      ...(extra && typeof extra === "object" ? extra : {}),
     }),
   });
 

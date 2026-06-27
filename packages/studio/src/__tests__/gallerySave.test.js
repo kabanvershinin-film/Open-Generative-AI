@@ -33,6 +33,44 @@ test("saveMediaToGallery отправляет изображение в гале
   });
 });
 
+test("saveMediaToGallery отправляет дополнительные поля записи", async (t) => {
+  let request = null;
+
+  t.mock.method(globalThis, "fetch", async (url, options = {}) => {
+    request = { url, options };
+    return {
+      ok: true,
+      json: async () => ({ entry: { id: "img-2", url: "https://cdn.example.com/image-2.png" } }),
+    };
+  });
+
+  await saveMediaToGallery({
+    url: "https://cdn.example.com/image-2.png",
+    type: "image",
+    model: "gpt-image-2",
+    prompt: "лиса",
+    extra: {
+      aspect_ratio: "16:9",
+      restoreState: {
+        prompt: "лиса",
+        uploadedImageUrls: ["https://cdn.example.com/ref.png"],
+      },
+    },
+  });
+
+  assert.deepStrictEqual(JSON.parse(request.options.body), {
+    url: "https://cdn.example.com/image-2.png",
+    type: "image",
+    model: "gpt-image-2",
+    prompt: "лиса",
+    aspect_ratio: "16:9",
+    restoreState: {
+      prompt: "лиса",
+      uploadedImageUrls: ["https://cdn.example.com/ref.png"],
+    },
+  });
+});
+
 test("saveMediaToGallery бросает ошибку сервера", async (t) => {
   t.mock.method(globalThis, "fetch", async () => ({
     ok: false,
