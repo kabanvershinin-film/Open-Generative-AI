@@ -725,13 +725,13 @@ const ImageGeneration = ({ id, data, selected }) => {
         </div>
       </div>
       {data.selectedModel?.id === "image-passthrough" ? (
-        <div className="w-full h-full flex-1">
+        <div className="flex min-h-0 w-full flex-1 overflow-hidden">
           <UploadNode id={id} data={data} formValues={formValues} setFormValues={setFormValues} selectedModel={selectedModel} loading={loading} uploadType="upload" acceptType="image" />
         </div>
       ) : (
         <div className="flex min-h-0 flex-col flex-grow w-full rounded-b-none overflow-hidden transition-all duration-500">
           {data.isLoading ? (
-            <div className="flex min-h-0 items-center justify-center w-full h-full overflow-hidden bg-white/5 animate-pulse rounded-b-none">
+            <div className="flex min-h-0 flex-1 items-center justify-center w-full overflow-hidden bg-white/5 animate-pulse rounded-b-none">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
                 <span className="text-[10px] font-bold text-emerald-500 tracking-wider uppercase">Генерация...</span>
@@ -742,7 +742,7 @@ const ImageGeneration = ({ id, data, selected }) => {
               {data.errorMsg || "Ошибка генерации"}
             </div>
           ) : currentOutput && !data.isLoading ? (
-            <div className="relative min-h-0 h-full w-full overflow-hidden rounded-b-none group/image">
+            <div className="relative min-h-0 flex-1 w-full overflow-hidden rounded-b-none group/image">
               {currentOutputList.length > 1 && (
                 <>
                   <button
@@ -769,15 +769,17 @@ const ImageGeneration = ({ id, data, selected }) => {
                   </button>
                 </>
               )}
-              <img
-                key={currentOutput}
-                src={toThumb(currentOutput)}
-                alt="Generated"
-                loading="lazy"
-                decoding="async"
-                onError={(e) => { if (currentOutput && e.currentTarget.src !== currentOutput) e.currentTarget.src = currentOutput; }}
-                className="block w-full h-full max-w-full max-h-full object-contain rounded-b-none animate-in fade-in duration-500"
-              />
+              <div className="absolute inset-0 overflow-hidden rounded-b-none">
+                <img
+                  key={currentOutput}
+                  src={toThumb(currentOutput)}
+                  alt="Generated"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => { if (currentOutput && e.currentTarget.src !== currentOutput) e.currentTarget.src = currentOutput; }}
+                  className="absolute inset-0 block w-full h-full max-w-full max-h-full object-contain rounded-b-none animate-in fade-in duration-500"
+                />
+              </div>
               <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 pointer-events-none rounded-b-xl flex flex-col justify-end">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-0.5">
@@ -808,7 +810,7 @@ const ImageGeneration = ({ id, data, selected }) => {
               )}
             </div>
           ) : (
-            <div className="flex min-h-0 flex-col items-center justify-center text-zinc-400 gap-2">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-zinc-400 gap-2">
               <IoImageOutline size={32} />
               <span className="text-[10px] italic">Результат появится здесь...</span>
             </div>
