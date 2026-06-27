@@ -49,14 +49,20 @@ test('image input option helpers expose shared options and defaults', () => {
 
 test('video model getters expose exact capabilities for t2v and i2v models', () => {
     const t2v = models.getVideoModelById('seedance-2.0-t2v');
+    const miniT2v = models.getVideoModelById('seedance-2.0-mini-t2v');
     const i2v = models.getVideoModelById('seedance-2.0-i2v');
+    const miniI2v = models.getVideoModelById('seedance-2.0-mini-i2v');
 
     assert.ok(t2v);
+    assert.ok(miniT2v);
     assert.ok(i2v);
+    assert.ok(miniI2v);
     assert.strictEqual(t2v.provider, 'ark');
     assert.strictEqual(t2v.platform, 'unified');
+    assert.strictEqual(miniT2v.apiId, 'doubao-seedance-1-0-lite-t2v-250428');
     assert.strictEqual(i2v.provider, 'ark');
     assert.strictEqual(i2v.platform, 'unified');
+    assert.strictEqual(miniI2v.apiId, 'doubao-seedance-1-0-lite-i2v-250428');
 
     assert.deepStrictEqual(models.getAspectRatiosForVideoModel('seedance-2.0-fast-t2v'), [
         'adaptive',
@@ -68,6 +74,7 @@ test('video model getters expose exact capabilities for t2v and i2v models', () 
         '21:9',
     ]);
     assert.deepStrictEqual(models.getResolutionsForVideoModel('seedance-2.0-fast-t2v'), ['720p', '480p']);
+    assert.deepStrictEqual(models.getResolutionsForVideoModel('seedance-2.0-mini-t2v'), ['720p', '480p']);
     assert.deepStrictEqual(models.getDurationsForModel('seedance-2.0-fast-t2v'), [4, 5, 6, 8, 10, 12, 15]);
 
     assert.deepStrictEqual(models.getAspectRatiosForI2VModel('seedance-2.0-i2v'), [
@@ -80,6 +87,7 @@ test('video model getters expose exact capabilities for t2v and i2v models', () 
         '21:9',
     ]);
     assert.deepStrictEqual(models.getResolutionsForI2VModel('seedance-2.0-i2v'), ['720p', '1080p', '480p']);
+    assert.deepStrictEqual(models.getResolutionsForI2VModel('seedance-2.0-mini-i2v'), ['720p', '480p']);
     assert.deepStrictEqual(models.getDurationsForI2VModel('seedance-2.0-i2v'), [4, 5, 6, 8, 10, 12, 15]);
 });
 
@@ -99,7 +107,7 @@ test('video model catalog has no duplicate ids and keeps ark contract', () => {
     const uniqueIds = new Set(ids);
 
     assert.strictEqual(uniqueIds.size, ids.length);
-    assert.ok(videoModels.length >= 4);
+    assert.ok(videoModels.length >= 6);
     assert.ok(videoModels.every((model) => model.provider === 'ark'));
     assert.ok(videoModels.every((model) => model.platform === 'unified'));
     assert.ok(videoModels.every((model) => Array.isArray(model.inputs?.aspect_ratio?.enum)));

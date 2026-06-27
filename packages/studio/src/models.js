@@ -120,6 +120,22 @@ export const _t2vModelsAll = [
     }
   },
   {
+    id: "seedance-2.0-mini-t2v",
+    name: "Seedance 2.0 Mini",
+    apiId: "doubao-seedance-1-0-lite-t2v-250428",
+    platform: "unified",
+    provider: "ark",
+    acceptsImage: true,
+    acceptsVideo: true,
+    acceptsAudio: true,
+    inputs: {
+      prompt: { type: "string", title: "Prompt" },
+      aspect_ratio: { enum: ["adaptive", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"], default: "adaptive", title: "Aspect Ratio", type: "string" },
+      resolution: { enum: ["720p", "480p"], default: "720p", title: "Resolution", type: "string" },
+      duration: { enum: [4, 5, 6, 8, 10, 12, 15], default: 5, title: "Duration (s)", type: "int" }
+    }
+  },
+  {
     id: "seedance-2.0-fast-t2v",
     name: "Seedance 2.0 Fast",
     apiId: "seedance-pro-t2v-fast",
@@ -157,6 +173,22 @@ export const _i2vModelsAll = [
       duration: { enum: [4, 5, 6, 8, 10, 12, 15], default: 5, title: "Duration (s)", type: "int" },
       seed: { type: "integer", title: "Seed (для повторения результатов)", default: -1 },
       return_last_frame: { type: "boolean", title: "Возвращать последний кадр", default: false }
+    }
+  },
+  {
+    id: "seedance-2.0-mini-i2v",
+    name: "Seedance 2.0 Mini (фото→видео)",
+    apiId: "doubao-seedance-1-0-lite-i2v-250428",
+    platform: "unified",
+    provider: "ark",
+    imageField: "image_url",
+    acceptsVideo: true,
+    acceptsAudio: true,
+    inputs: {
+      prompt: { type: "string", title: "Prompt" },
+      aspect_ratio: { enum: ["adaptive", "16:9", "9:16", "1:1", "4:3", "3:4", "21:9"], default: "adaptive", title: "Aspect Ratio", type: "string" },
+      resolution: { enum: ["720p", "480p"], default: "720p", title: "Resolution", type: "string" },
+      duration: { enum: [4, 5, 6, 8, 10, 12, 15], default: 5, title: "Duration (s)", type: "int" }
     }
   },
   {
