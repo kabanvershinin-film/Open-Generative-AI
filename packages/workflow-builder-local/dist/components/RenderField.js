@@ -237,51 +237,22 @@ var RenderField = function RenderField(_ref) {
       key: fieldName,
       className: "flex flex-col gap-1 w-full"
     }, label, /*#__PURE__*/_react["default"].createElement("div", {
-      tabIndex: 0,
-      onBlur: function onBlur(e) {
-        var currentTarget = e.currentTarget;
-        setTimeout(function () {
-          if (currentTarget && !currentTarget.contains(document.activeElement)) {
-            setDropDown(-1);
-          }
-        }, 100);
+      className: "relative w-full"
+    }, /*#__PURE__*/_react["default"].createElement("select", {
+      value: value,
+      onChange: function onChange(e) {
+        return handleChange(fieldName, e.target.value);
       },
-      className: "flex flex-col gap-1 relative w-full"
-    }, /*#__PURE__*/_react["default"].createElement("button", {
-      type: "button",
-      suppressHydrationWarning: true,
-      ref: buttonRef,
-      onClick: function onClick() {
-        return handleDropdownToggle(idx + 1);
-      },
-      className: "flex items-center justify-between gap-1 text-xs text-center text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-1.5 bg-zinc-900 border border-white/10 hover:border-white/20 focus:outline-none rounded-lg transition-all"
-    }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "flex items-center gap-2 truncate"
-    }, /*#__PURE__*/_react["default"].createElement("span", {
-      className: "truncate"
-    }, translateUi(value))), /*#__PURE__*/_react["default"].createElement(_fa.FaAngleDown, {
-      size: 14,
-      className: "transition-all duration-300 ease-in-out text-zinc-400 group-hover:text-white ".concat(dropDown === idx + 1 ? "rotate-180" : "")
-    })), /*#__PURE__*/_react["default"].createElement("div", {
-      tabIndex: -1,
-      style: dropdownStyle,
-      className: "absolute left-0 ".concat(isOpeningUp ? "bottom-full mb-2" : "top-full mt-2", " border border-white/10 p-1 rounded-xl flex flex-col overflow-y-auto bg-zinc-900 shadow-2xl transition-all duration-200 w-full z-50 max-h-60 custom-scrollbar-thin ").concat(dropDown === idx + 1 ? "opacity-100 scale-100 visible translate-y-0" : "opacity-0 scale-95 invisible ".concat(isOpeningUp ? "translate-y-2" : "-translate-y-2"))
+      className: "w-full appearance-none rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 pr-9 text-xs text-white outline-none transition-all hover:border-white/20 focus:border-blue-500/50"
     }, meta["enum"].map(function (option, i) {
-      return /*#__PURE__*/_react["default"].createElement("button", {
-        type: "button",
-        suppressHydrationWarning: true,
+      return /*#__PURE__*/_react["default"].createElement("option", {
         key: i,
-        className: "flex items-center gap-2 px-3 py-2 text-xs cursor-pointer rounded-lg transition-all ".concat(formValues[fieldName] === option ? "bg-blue-600 text-white" : "text-zinc-400 hover:bg-[#2c3037] hover:text-white"),
-        onClick: function onClick() {
-          handleChange(fieldName, option);
-          setDropDown(-1);
-        }
-      }, /*#__PURE__*/_react["default"].createElement("span", {
-        className: "truncate"
-      }, translateUi(option)), formValues[fieldName] === option && /*#__PURE__*/_react["default"].createElement("span", {
-        className: "ml-auto text-blue-400 font-bold"
-      }, "\u2713"));
-    }))));
+        value: option
+      }, translateUi(option));
+    })), /*#__PURE__*/_react["default"].createElement(_fa.FaAngleDown, {
+      size: 14,
+      className: "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
+    })));
   }
   ;
   if (['image', 'video', 'audio'].includes(meta.field)) {
