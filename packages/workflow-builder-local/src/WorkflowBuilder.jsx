@@ -6,7 +6,7 @@ import NodeFlow from "./components/NodeFlow";
 
 export default function Home({ initialNodeSchemas, initialWorkflowData }) {
   return (
-    <div className="flex flex-col items-center justify-center h-screen w-full">
+    <div className="h-screen w-full min-h-screen">
       <ReactFlowProvider>
         <NodeFlow 
           initialNodeSchemas={initialNodeSchemas} 

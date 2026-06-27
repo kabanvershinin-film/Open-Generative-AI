@@ -2769,7 +2769,7 @@ var NodeFlow = function NodeFlow(_ref) {
   return /*#__PURE__*/_react["default"].createElement("div", {
     tabIndex: 0,
     onKeyDown: onKeyDown,
-    className: "flex h-dvh w-full relative"
+    className: "relative flex h-screen min-h-screen w-full"
   }, isRestoring && /*#__PURE__*/_react["default"].createElement("div", {
     className: "fixed inset-0 flex items-center justify-center gap-2 bg-black w-full h-full z-20"
   }, /*#__PURE__*/_react["default"].createElement("div", {

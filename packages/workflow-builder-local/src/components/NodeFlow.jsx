@@ -2473,7 +2473,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   };
 
   return (
-    <div tabIndex={0} onKeyDown={onKeyDown} className="flex h-dvh w-full relative">
+    <div tabIndex={0} onKeyDown={onKeyDown} className="relative flex h-screen min-h-screen w-full">
       {isRestoring && (
         <div className="fixed inset-0 flex items-center justify-center gap-2 bg-black w-full h-full z-20">
           <div className="w-6 h-6 rounded-full border-[4px] border-white border-t-transparent animate-spin"></div>
