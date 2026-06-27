@@ -3747,8 +3747,10 @@ export default function VideoStudio({
                     <span className="text-[#22d3ee] font-medium text-xs">
                       ≈ {estimatedCost.toFixed(2)} ₽
                     </span>
+                  ) : estimatedCost === 0 ? (
+                    <span className="text-white/50 text-xs font-medium">0 ₽</span>
                   ) : (
-                    <span className="text-white/30 text-xs font-medium">Бесплатно</span>
+                    <span className="text-white/30 text-xs font-medium">Цена недоступна</span>
                   )}
                 </div>
               )}
