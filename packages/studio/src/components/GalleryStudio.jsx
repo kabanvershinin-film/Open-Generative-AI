@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
+import { downloadGalleryEntry, openGalleryEntry } from './galleryEntryActions.js';
 
 export default function GalleryStudio({ apiKey }) {
   const [entries, setEntries] = useState([]);
@@ -42,6 +43,24 @@ export default function GalleryStudio({ apiKey }) {
     } catch (err) {
       console.error('Failed to delete entry:', err);
       toast.error(`Ошибка удаления: ${err.response?.data?.error || err.message}`);
+    }
+  };
+
+  const handleOpen = (entry) => {
+    try {
+      openGalleryEntry(entry);
+    } catch (err) {
+      console.error('Failed to open entry:', err);
+      toast.error('Не удалось открыть файл');
+    }
+  };
+
+  const handleDownload = async (entry) => {
+    try {
+      await downloadGalleryEntry(entry);
+    } catch (err) {
+      console.error('Failed to download entry:', err);
+      toast.error(`Ошибка скачивания: ${err.message}`);
     }
   };
 
@@ -137,15 +156,22 @@ export default function GalleryStudio({ apiKey }) {
                     </div>
                   )}
                   <div className="flex gap-2">
-                    <a
-                      href={entry.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => handleOpen(entry)}
                       className="px-3 py-1 bg-[#22d3ee] text-black text-[10px] font-bold rounded hover:bg-white transition-colors"
                     >
                       Открыть
-                    </a>
+                    </button>
                     <button
+                      type="button"
+                      onClick={() => handleDownload(entry)}
+                      className="px-3 py-1 bg-white/10 text-white text-[10px] font-bold rounded hover:bg-white/20 transition-colors"
+                    >
+                      Скачать
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => handleDelete(entry.id)}
                       className="px-3 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold rounded hover:bg-red-500/40 transition-colors"
                     >
