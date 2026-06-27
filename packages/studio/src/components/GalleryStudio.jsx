@@ -33,10 +33,11 @@ export default function GalleryStudio({ apiKey }) {
     fetchGallery(type);
   };
 
-  const handleDelete = async (entryId) => {
+  const handleDelete = async (entryId, entryUrl = '') => {
     try {
       const response = await axios.delete(`/api/gallery/${entryId}`, {
-        headers: { Authorization: `Bearer ${apiKey}` }
+        headers: { Authorization: `Bearer ${apiKey}` },
+        data: entryUrl ? { url: entryUrl } : undefined,
       });
       setEntries(entries.filter(e => e.id !== entryId));
       toast.success('Удалено');
@@ -172,7 +173,7 @@ export default function GalleryStudio({ apiKey }) {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleDelete(entry.id)}
+                      onClick={() => handleDelete(entry.id, entry.url)}
                       className="px-3 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold rounded hover:bg-red-500/40 transition-colors"
                     >
                       Удалить

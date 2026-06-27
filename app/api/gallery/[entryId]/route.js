@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
-import { getUser } from '../../_lib/balance';
+import { getUserForGallery } from '../../_lib/balance';
 import { getManagedGalleryObjectKeys } from './mediaCleanup';
 
 const TOS_ENDPOINT = process.env.TOS_ENDPOINT || '';
@@ -142,7 +142,7 @@ async function readGalleryEntry(host, userId, entryId, fallbackUrl = '') {
 
 export async function DELETE(request, { params }) {
     try {
-        const user = await getUser(request);
+        const user = await getUserForGallery(request);
         logStep('DELETE start', { user: user?.id || null });
         if (!user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         if (!TOS_ENABLED) { logStep('DELETE aborted: TOS not enabled'); return NextResponse.json({ error: 'TOS not enabled' }, { status: 503 }); }
