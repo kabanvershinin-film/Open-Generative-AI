@@ -28,6 +28,7 @@ export const videoModels = [
   { id: "seedance-v1.5-pro-t2v-fast", name: "Seedance v1.5 Pro T2V Fast", input_params: {} },
   { id: "seedance-v1.5-pro-video-extend", name: "Seedance v1.5 Pro Video Extend", input_params: {} },
   { id: "seedance-v1.5-pro-video-extend-fast", name: "Seedance v1.5 Pro Video Extend Fast", input_params: {} },
+  { id: "doubao-seedance-2-0-mini-260615", name: "Seedance 2.0 Mini", input_params: {} },
   { id: "veo3.1-image-to-video", name: "Veo3.1 I2V", input_params: {} },
   { id: "veo3.1-text-to-video", name: "Veo3.1 T2V", input_params: {} },
   { id: "veo3.1-fast-image-to-video", name: "Veo3.1 Fast I2V", input_params: {} },

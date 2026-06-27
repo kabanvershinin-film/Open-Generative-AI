@@ -55,6 +55,7 @@ test('ensureSeedanceFaceTags appends missing tags for all face references', () =
 
 test('buildSeedanceWorkflowBody avoids collapsing multiple face assets into one top-level face_asset', () => {
   const body = buildSeedanceWorkflowBody({
+    model: 'doubao-seedance-2-0-mini-260615',
     fast: true,
     prompt: 'Два персонажа',
     connectedFaceAssets: [
@@ -72,4 +73,23 @@ test('buildSeedanceWorkflowBody avoids collapsing multiple face assets into one 
   assert.deepStrictEqual(body.image_urls.map((image) => image.url), ['asset://face-1', 'asset://face-2']);
   assert.match(body.prompt, /图片1/);
   assert.match(body.prompt, /图片2/);
+});
+
+test('buildSeedanceWorkflowBody keeps Seedance Mini model and studio-style flags', () => {
+  const body = buildSeedanceWorkflowBody({
+    model: 'doubao-seedance-2-0-mini-260615',
+    prompt: 'Мини-видео',
+    formValues: {
+      resolution: '720p',
+      duration: 6,
+      aspect_ratio: '16:9',
+      seed: 42,
+      return_last_frame: true,
+    },
+  });
+
+  assert.strictEqual(body.model, 'doubao-seedance-2-0-mini-260615');
+  assert.strictEqual(body.seed, 42);
+  assert.strictEqual(body.return_last_frame, true);
+  assert.strictEqual(body.generate_audio, true);
 });

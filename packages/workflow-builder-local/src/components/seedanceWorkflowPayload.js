@@ -62,6 +62,7 @@ export function ensureSeedanceFaceTags(prompt, images) {
 }
 
 export function buildSeedanceWorkflowBody({
+  model,
   fast,
   prompt,
   connectedImages = [],
@@ -78,6 +79,7 @@ export function buildSeedanceWorkflowBody({
 
   return {
     fast,
+    model: model || undefined,
     prompt: ensureSeedanceFaceTags(prompt || formValues.prompt || "", finalImages),
     image_urls: finalImages.length > 0 ? finalImages : undefined,
     video_url: uniqueVideos[0] || formValues.video_url || undefined,
@@ -87,5 +89,12 @@ export function buildSeedanceWorkflowBody({
     resolution: formValues.resolution || undefined,
     ratio: formValues.aspect_ratio || formValues.ratio || undefined,
     duration: formValues.duration || undefined,
+    seed: Number.isFinite(Number(formValues.seed)) && Number(formValues.seed) >= 0
+      ? Number(formValues.seed)
+      : undefined,
+    return_last_frame: typeof formValues.return_last_frame === "boolean"
+      ? formValues.return_last_frame
+      : undefined,
+    generate_audio: formValues.generate_audio !== false,
   };
 }

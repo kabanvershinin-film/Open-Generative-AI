@@ -568,8 +568,8 @@ async function generateVideoARK(model, params, userId = null) {
     const body = { model, content, watermark: false };
     if (params.resolution) {
         let res = String(params.resolution).toLowerCase();
-        // Seedance 2.0 Fast caps at 720p — downgrade 1080p to avoid a 400.
-        if (/fast/i.test(model) && res === '1080p') res = '720p';
+        // Seedance 2.0 Fast и Mini ограничены 720p — не даём получить 400.
+        if (/(fast|mini)/i.test(model) && res === '1080p') res = '720p';
         body.resolution = res;
     }
     if (params.aspect_ratio) body.ratio = params.aspect_ratio;
@@ -577,8 +577,14 @@ async function generateVideoARK(model, params, userId = null) {
         const d = Math.max(4, Math.min(15, Number(params.duration) || 5));
         body.duration = d;
     }
-    // Generate native audio when an audio reference is supplied or explicitly requested.
-    if (audioUrl || params.generate_audio) body.generate_audio = true;
+    if (Number.isFinite(Number(params.seed)) && Number(params.seed) >= 0) {
+        body.seed = Number(params.seed);
+    }
+    if (typeof params.return_last_frame === 'boolean') {
+        body.return_last_frame = params.return_last_frame;
+    }
+    // В студии видео для Seedance 2.0 генерация аудио включена по умолчанию.
+    body.generate_audio = params.generate_audio !== false;
 
     const submitRes = await fetch(`${ARK_BASE}/api/v3/contents/generations/tasks`, {
         method: 'POST',
@@ -641,7 +647,7 @@ function emptyWorkflow(id) {
 
 const VIDEO_MODELS = new Set([
     'video-passthrough',
-    'doubao-seedance-2-0-260128', 'doubao-seedance-2-0-fast-260128',
+    'doubao-seedance-2-0-260128', 'doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128',
     'doubao-seedance-1-0-lite-i2v-250428', 'doubao-seedance-1-0-lite-t2v-250428',
     'doubao-seedance-1-0-pro-250528', 'doubao-seedance-1-0-pro-fast-251015',
     'doubao-seedance-1-5-pro-251215',
@@ -1260,6 +1266,8 @@ function getNodeSchemas() {
         res_video:     { enum: ["480p","720p","1080p"], type: "string", title: "Resolution", default: "1080p" },
         res_video_fast:{ enum: ["480p","720p"], type: "string", title: "Resolution", default: "720p" },
         dur_seed2:     { type: "int", title: "Duration (sec)", default: 5, minValue: 4, maxValue: 15, step: 1 },
+        seed:          { type: "integer", title: "Seed", default: -1 },
+        return_last_frame: { type: "boolean", title: "Вернуть последний кадр", default: false },
         // Quality presets
         quality_hq:    { enum: ["low","medium","high"], type: "string", title: "Quality", default: "low" },
         quality_gpt2:  { enum: ["auto","high","medium","low"], type: "string", title: "Quality", default: "auto" },
@@ -1305,9 +1313,9 @@ function getNodeSchemas() {
         t2v_seed:   ms({ prompt: F.prompt, image_url: F.image_url, aspect_ratio: F.ar_video, duration: { type: "int", title: "Duration (sec)", default: 5, minValue: 5, maxValue: 10, step: 5 } }),
         // Seedance 2.0 — adds optional reference video and audio inputs + resolution.
         // Resolution 480p/720p/1080p, ratio incl. 21:9/3:4, duration 4–15s.
-        t2v_seed2:      ms({ prompt: F.prompt, image_url: F.image_url, video_url: F.video_url, audio_url: F.audio_url, resolution: F.res_video,      aspect_ratio: F.ar_seed2, duration: F.dur_seed2 }),
+        t2v_seed2:      ms({ prompt: F.prompt, image_url: F.image_url, video_url: F.video_url, audio_url: F.audio_url, resolution: F.res_video,      aspect_ratio: F.ar_seed2, duration: F.dur_seed2, seed: F.seed, return_last_frame: F.return_last_frame }),
         // Seedance 2.0 Fast — same, but max resolution is 720p.
-        t2v_seed2_fast: ms({ prompt: F.prompt, image_url: F.image_url, video_url: F.video_url, audio_url: F.audio_url, resolution: F.res_video_fast, aspect_ratio: F.ar_seed2, duration: F.dur_seed2 }),
+        t2v_seed2_fast: ms({ prompt: F.prompt, image_url: F.image_url, video_url: F.video_url, audio_url: F.audio_url, resolution: F.res_video_fast, aspect_ratio: F.ar_seed2, duration: F.dur_seed2, seed: F.seed, return_last_frame: F.return_last_frame }),
         t2v_veo:    ms({ prompt: F.prompt, aspect_ratio: F.ar_video, duration: { type: "int", title: "Duration (sec)", default: 8, minValue: 5, maxValue: 8, step: 1 } }),
         t2v_veo4k:  ms({ prompt: F.prompt, aspect_ratio: F.ar_video, resolution: F.res_4k, duration: { type: "int", title: "Duration (sec)", default: 8, minValue: 5, maxValue: 8, step: 1 } }),
         // Veo with optional image first-frame (image-to-video). image_url is optional — leave empty for pure text-to-video.
@@ -1410,6 +1418,7 @@ function getNodeSchemas() {
                     "video-passthrough":                    T.vidPass,
                     // ByteDance Seedance 2.0 — image + video + audio reference inputs
                     "doubao-seedance-2-0-260128":           T.t2v_seed2,
+                    "doubao-seedance-2-0-mini-260615":      T.t2v_seed2_fast,
                     "doubao-seedance-2-0-fast-260128":      T.t2v_seed2_fast,
                     // ByteDance Seedance 1.x — 5s or 10s, standard AR
                     "doubao-seedance-1-5-pro-251215":       T.t2v_seed,

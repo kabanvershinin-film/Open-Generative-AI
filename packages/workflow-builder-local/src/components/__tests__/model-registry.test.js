@@ -47,6 +47,7 @@ test('passthrough registries require the correct input fields', () => {
 test('workflow builder utility registries keep expected key models', () => {
     assert.ok(imageModels.find((model) => model.id === 'wan2.5-text-to-image'));
     assert.ok(videoModels.find((model) => model.id === 'seedance-lite-i2v'));
+    assert.ok(videoModels.find((model) => model.id === 'doubao-seedance-2-0-mini-260615'));
     assert.ok(concatModels.find((model) => model.id === 'prompt-concatenator'));
     assert.ok(videoCombinerModels.find((model) => model.id === 'video-combiner'));
     assert.ok(apiNodeModels.find((model) => model.id === 'wavespeed'));

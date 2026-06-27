@@ -161,6 +161,7 @@ const SPECIAL_MODEL_NAMES = {
   "video-passthrough": "Видео",
   "audio-passthrough": "Аудио",
   "doubao-seedance-2-0-260128": "Seedance 2.0",
+  "doubao-seedance-2-0-mini-260615": "Seedance 2.0 Mini",
   "doubao-seedance-2-0-fast-260128": "Seedance 2.0 Fast",
 };
 

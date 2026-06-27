@@ -412,6 +412,7 @@ const VideoGeneration = ({ id, data, selected }) => {
     const src = formValues || {};
     
     const body = buildSeedanceWorkflowBody({
+      model: selectedModel?.id || data.selectedModel?.id || "",
       fast,
       prompt: src.prompt || "",
       connectedImages,
