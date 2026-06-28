@@ -2607,6 +2607,8 @@ var NodeFlow = function NodeFlow(_ref) {
     });
   }, [screenToFlowPosition]);
   var onPaneClick = (0, _react.useCallback)(function () {
+    setDropDown(0);
+    setEdgePicker(null);
     setContextMenu(null);
   }, []);
   var getNewNodePosition = function getNewNodePosition(lastNode) {

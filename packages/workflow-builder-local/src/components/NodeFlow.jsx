@@ -2305,6 +2305,8 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   }, [screenToFlowPosition]);
 
   const onPaneClick = useCallback(() => {
+    setDropDown(0);
+    setEdgePicker(null);
     setContextMenu(null);
   }, []);
 
