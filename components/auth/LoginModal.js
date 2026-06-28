@@ -27,7 +27,7 @@ export default function LoginModal() {
     const [otp, setOtp] = useState('');
     const [otpSentTo, setOtpSentTo] = useState('');
     const [busy, setBusy] = useState(false);
-    const [phoneConsent, setPhoneConsent] = useState(false);
+    const [consentAccepted, setConsentAccepted] = useState(false);
 
     if (!loginOpen) return null;
 
@@ -35,6 +35,10 @@ export default function LoginModal() {
 
     const submit = async (e) => {
         e.preventDefault();
+        if (mode === 'register' && !consentAccepted) {
+            toast.error('Подтвердите согласие с условиями и политикой');
+            return;
+        }
         setBusy(true);
         const err = mode === 'login'
             ? await login(email, password)
@@ -70,10 +74,6 @@ export default function LoginModal() {
     };
 
     const requestPhoneCode = async () => {
-        if (!phoneConsent) {
-            toast.error('Подтвердите согласие с политикой конфиденциальности');
-            return;
-        }
         setBusy(true);
         const { phone: normalizedPhone, error } = await sendPhoneOtp(phone);
         setBusy(false);
@@ -100,21 +100,13 @@ export default function LoginModal() {
         if (err) toast.error(err);
     };
 
-    const LegalConsent = ({ includeOffer = false, includeTerms = true }) => (
+    const LegalConsent = ({ includeTerms = true }) => (
         <span>
             Я принимаю{' '}
             {includeTerms && (
                 <>
                     <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
                         Условия использования
-                    </a>
-                    {' '}и{' '}
-                </>
-            )}
-            {includeOffer && (
-                <>
-                    <a href="/offer" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
-                        Публичную оферту
                     </a>
                     {' '}и{' '}
                 </>
@@ -226,15 +218,6 @@ export default function LoginModal() {
                                 <p className="text-xs text-white/35 text-center">
                                     Используйте международный формат телефона, например `+79991234567`.
                                 </p>
-                                <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
-                                    <input
-                                        type="checkbox"
-                                        checked={phoneConsent}
-                                        onChange={(e) => setPhoneConsent(e.target.checked)}
-                                        className={checkboxCls}
-                                    />
-                                    <span><LegalConsent includeTerms={false} /></span>
-                                </label>
                             </div>
                         ) : (
                             <form onSubmit={submit} className="space-y-3">
@@ -246,6 +229,17 @@ export default function LoginModal() {
                                        value={email} onChange={(e) => setEmail(e.target.value)} required />
                                 <input type="password" className={inputCls} placeholder="Пароль"
                                        value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                                {isRegister && (
+                                    <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
+                                        <input
+                                            type="checkbox"
+                                            checked={consentAccepted}
+                                            onChange={(e) => setConsentAccepted(e.target.checked)}
+                                            className={checkboxCls}
+                                        />
+                                        <span><LegalConsent /></span>
+                                    </label>
+                                )}
                                 <button type="submit" disabled={busy}
                                         className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-50 text-white font-semibold text-sm shadow-lg shadow-purple-600/25 transition-all">
                                     {busy ? '...' : (isRegister ? 'Создать аккаунт' : 'Войти')}
