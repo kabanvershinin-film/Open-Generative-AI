@@ -6,6 +6,13 @@ import { FiUpload } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import AudioPlayer from "./AudioPlayer";
 import { IoCloudUploadOutline } from "react-icons/io5";
+import {
+  appendUploadUrls,
+  getDisplayUploadUrls,
+  normalizeUploadUrls,
+  removeUploadUrl,
+  replaceUploadUrl,
+} from "./uploadPreviewState.js";
 
 const UI_TRANSLATIONS = {
   "Prompt": "Промпт",
@@ -53,15 +60,23 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
   const [isOpeningUp, setIsOpeningUp] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const [isMobileUploadUi, setIsMobileUploadUi] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState([]);
   const buttonRef = useRef(null);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const ownedObjectUrlsRef = useRef(new Set());
 
   const isImageField = ['image', 'images_list'].includes(meta.field);
   const isVideoField = meta.field === 'video';
   const isAudioField = meta.field === 'audio';
   const value = formValues[fieldName] ?? meta.default ?? "";
   const isRequired = data.required && data.required.includes(fieldName);
+  const isUploadArrayField = meta.type === "array" || fieldName === "images_list";
+  const actualUploadUrls = isUploadArrayField
+    ? normalizeUploadUrls(formValues[fieldName])
+    : normalizeUploadUrls(formValues[fieldName] ?? "");
+  const displayUploadUrls = getDisplayUploadUrls(uploading ? previewUrls : [], actualUploadUrls);
+  const displayUploadUrl = displayUploadUrls[0] || "";
   
   // Custom Character Preview for Video/Agent nodes
   const faceThumb = formValues.face_thumbnail || formValues.character_photo;
@@ -112,6 +127,15 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
     return () => mediaQuery.removeEventListener?.("change", applyMatch);
   }, []);
 
+  useEffect(() => () => {
+    ownedObjectUrlsRef.current.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+    });
+    ownedObjectUrlsRef.current.clear();
+  }, []);
+
   useLayoutEffect(() => {
     if (dropDown === idx + 1 && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -146,7 +170,17 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
       return;
     };
 
+    const previewUrl = typeof URL !== "undefined" ? URL.createObjectURL(file) : "";
+    if (previewUrl) {
+      ownedObjectUrlsRef.current.add(previewUrl);
+      setPreviewUrls((prev) => appendUploadUrls(
+        prev.length > 0 ? prev : actualUploadUrls,
+        [previewUrl],
+        fieldSchema.type === "array" ? (fieldSchema.maxItems || Number.POSITIVE_INFINITY) : 1,
+      ));
+    }
     setUploading(true);
+    setUploadProgress(0);
     axios.get("/api/upload-file", {
       params: { filename: file.name, type: file.type }
     })
@@ -169,18 +203,39 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
 
             return { ...prev, [field]: updatedValue };
         });
+        setPreviewUrls((prev) => replaceUploadUrl(prev, previewUrl, publicUrl));
+        if (previewUrl && ownedObjectUrlsRef.current.has(previewUrl)) {
+          try {
+            URL.revokeObjectURL(previewUrl);
+          } catch {}
+          ownedObjectUrlsRef.current.delete(previewUrl);
+        }
         setTimeout(() => {
           setUploading(false);
           setUploadProgress(0);
+          setPreviewUrls([]);
         }, 500);
       })
     })
     .catch((error) => {
       console.error("Upload failed", error);
       toast.error(translateUi("Upload failed."), error?.response?.data);
+      setPreviewUrls((prev) => removeUploadUrl(prev, previewUrl));
+      if (previewUrl && ownedObjectUrlsRef.current.has(previewUrl)) {
+        try {
+          URL.revokeObjectURL(previewUrl);
+        } catch {}
+        ownedObjectUrlsRef.current.delete(previewUrl);
+      }
       setUploading(false);
       setUploadProgress(0);
+      setPreviewUrls([]);
     })
+    .finally(() => {
+      if (e?.target && "value" in e.target) {
+        e.target.value = "";
+      }
+    });
   };
 
   const isInputModel = modelName.includes("passthrough");
@@ -303,15 +358,20 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             )}
           </div>
         )}
-        {formValues[fieldName] && (
+        {displayUploadUrl && (
           <div className="flex items-center gap-2 relative group overflow-hidden self-start w-full">
             {meta.field === 'image' ? (
-              <img src={formValues[fieldName]} alt={translateUi("Preview")} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" width={0} height={0} />
+              <img src={displayUploadUrl} alt={translateUi("Preview")} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" width={0} height={0} />
             ) : meta.field === 'video' ? (
-              <video src={formValues[fieldName]} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" />
+              <video src={displayUploadUrl} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" />
             ) : meta.field === 'audio' && (
               <div className="flex flex-col w-full h-20 border border-white/10 rounded-xl overflow-hidden shadow-lg">
-                <AudioPlayer src={formValues[fieldName]} />
+                <AudioPlayer src={displayUploadUrl} />
+              </div>
+            )}
+            {uploading && (
+              <div className="absolute inset-x-2 bottom-2 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-cyan-200">
+                Загрузка... {uploadProgress}%
               </div>
             )}
             <button 
@@ -329,7 +389,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
   };
 
   if (meta.type === "array" || fieldName === "images_list") {
-    const imageList = formValues[fieldName] || [];
+        const imageList = displayUploadUrls;
     return (
       <div key={fieldName} className="flex flex-col gap-1">
         <div className="flex items-center justify-between">

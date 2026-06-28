@@ -8,6 +8,13 @@ import AudioPlayer from "./AudioPlayer";
 import { IoCloudUploadOutline } from "react-icons/io5";
 import { Handle, Position } from "reactflow";
 import { TbBoxModel2, TbExternalLink } from "react-icons/tb";
+import {
+  appendUploadUrls,
+  getDisplayUploadUrls,
+  normalizeUploadUrls,
+  removeUploadUrl,
+  replaceUploadUrl,
+} from "./uploadPreviewState.js";
 
 const UI_TRANSLATIONS = {
   "Prompt": "Промпт",
@@ -54,9 +61,11 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
   const [isOpeningUp, setIsOpeningUp] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState({});
   const [isMobileUploadUi, setIsMobileUploadUi] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState([]);
   const containerRef = useRef(null);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const ownedObjectUrlsRef = useRef(new Set());
 
   const isImageUrl = (url) => {
     if (typeof url !== 'string') return false;
@@ -70,6 +79,12 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
   const isAudioField = ['audio', 'audio_url'].includes(meta.field) || ['audio', 'audio_url'].includes(fieldName);
   const value = formValues[fieldName] ?? meta.default ?? "";
   const isRequired = meta.required || false;
+  const isUploadArrayField = meta.type === "array" || isImagesListField;
+  const actualUploadUrls = isUploadArrayField
+    ? normalizeUploadUrls(formValues[fieldName])
+    : normalizeUploadUrls(formValues[fieldName] ?? "");
+  const displayUploadUrls = getDisplayUploadUrls(uploading ? previewUrls : [], actualUploadUrls);
+  const displayUploadUrl = displayUploadUrls[0] || "";
   const label = (
     <div className="flex items-center justify-between w-full group/label">
       <label htmlFor={fieldName} className="text-xs font-bold text-zinc-500 text-start flex-grow cursor-pointer">
@@ -97,6 +112,15 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     applyMatch();
     mediaQuery.addEventListener?.("change", applyMatch);
     return () => mediaQuery.removeEventListener?.("change", applyMatch);
+  }, []);
+
+  useEffect(() => () => {
+    ownedObjectUrlsRef.current.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+    });
+    ownedObjectUrlsRef.current.clear();
   }, []);
 
   useLayoutEffect(() => {
@@ -133,7 +157,17 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
       return;
     };
 
+    const previewUrl = typeof URL !== "undefined" ? URL.createObjectURL(file) : "";
+    if (previewUrl) {
+      ownedObjectUrlsRef.current.add(previewUrl);
+      setPreviewUrls((prev) => appendUploadUrls(
+        prev.length > 0 ? prev : actualUploadUrls,
+        [previewUrl],
+        fieldSchema.type === "array" ? (fieldSchema.maxItems || Number.POSITIVE_INFINITY) : 1,
+      ));
+    }
     setUploading(true);
+    setUploadProgress(0);
     axios.get("/api/upload-file", {
       params: { filename: file.name, type: file.type }
     })
@@ -156,18 +190,39 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
 
             return { ...prev, [field]: updatedValue };
         });
+        setPreviewUrls((prev) => replaceUploadUrl(prev, previewUrl, publicUrl));
+        if (previewUrl && ownedObjectUrlsRef.current.has(previewUrl)) {
+          try {
+            URL.revokeObjectURL(previewUrl);
+          } catch {}
+          ownedObjectUrlsRef.current.delete(previewUrl);
+        }
         setTimeout(() => {
           setUploading(false);
           setUploadProgress(0);
+          setPreviewUrls([]);
         }, 500);
       })
     })
     .catch((error) => {
       console.error("Upload failed", error);
       toast.error(translateUi("Upload failed."), error?.response?.data);
+      setPreviewUrls((prev) => removeUploadUrl(prev, previewUrl));
+      if (previewUrl && ownedObjectUrlsRef.current.has(previewUrl)) {
+        try {
+          URL.revokeObjectURL(previewUrl);
+        } catch {}
+        ownedObjectUrlsRef.current.delete(previewUrl);
+      }
       setUploading(false);
       setUploadProgress(0);
+      setPreviewUrls([]);
     })
+    .finally(() => {
+      if (e?.target && "value" in e.target) {
+        e.target.value = "";
+      }
+    });
   };
 
   const handleStyle = {
@@ -395,15 +450,20 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
             )}
           </div>
         )}
-        {formValues[fieldName] && (
+        {displayUploadUrl && (
           <div className="flex items-center gap-2 relative group overflow-hidden self-start w-full">
-            {isImageField || isImageUrl(value) ? (
-              <img src={value} alt="Preview" className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" width={0} height={0} />
+            {isImageField || isImageUrl(displayUploadUrl) ? (
+              <img src={displayUploadUrl} alt="Preview" className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" width={0} height={0} />
             ) : isVideoField ? (
-              <video src={value} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" />
+              <video src={displayUploadUrl} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" />
             ) : isAudioField && (
               <div className="flex flex-col w-full h-16 border border-white/10 rounded-xl overflow-hidden shadow-lg">
-                <AudioPlayer src={value} />
+                <AudioPlayer src={displayUploadUrl} />
+              </div>
+            )}
+            {uploading && (
+              <div className="absolute inset-x-2 bottom-2 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-cyan-200">
+                Загрузка... {uploadProgress}%
               </div>
             )}
             <button 
@@ -421,7 +481,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
   };
 
   if (isImagesListField) {
-    const imageList = Array.isArray(formValues[fieldName]) ? formValues[fieldName] : [];
+    const imageList = displayUploadUrls;
     return (
       <div key={fieldName} className="flex flex-col gap-1 relative">
         {hasHandle && (

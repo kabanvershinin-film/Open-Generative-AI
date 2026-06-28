@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { toast } from "react-hot-toast";
 import { FiUpload } from "react-icons/fi";
 import { MdVideocam } from "react-icons/md";
@@ -8,16 +8,41 @@ import AudioPlayer from "./AudioPlayer";
 import VideoPlayer from "./VideoPlayer";
 import { IoImageOutline, IoTrashOutline } from "react-icons/io5";
 import { stableStringify } from "./stableStringify.js";
+import {
+  appendUploadUrls,
+  getDisplayUploadUrls,
+  removeUploadUrl,
+  replaceUploadUrl,
+} from "./uploadPreviewState.js";
 
 const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loading, uploadType, acceptType }) => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageMetadata, setImageMetadata] = useState({ width: 0, height: 0, size: null });
   const [isMobileUploadUi, setIsMobileUploadUi] = useState(false);
+  const [previewUrls, setPreviewUrls] = useState([]);
   const videoRef = useRef(null);
   const prevFormValues = useRef(formValues);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const ownedObjectUrlsRef = useRef(new Set());
+
+  const revokeObjectUrl = useCallback((url) => {
+    if (!url || !ownedObjectUrlsRef.current.has(url)) return;
+    try {
+      URL.revokeObjectURL(url);
+    } catch {}
+    ownedObjectUrlsRef.current.delete(url);
+  }, []);
+
+  useEffect(() => () => {
+    ownedObjectUrlsRef.current.forEach((url) => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch {}
+    });
+    ownedObjectUrlsRef.current.clear();
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -61,7 +86,13 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
       return;
     };
 
+    const previewUrl = typeof URL !== "undefined" ? URL.createObjectURL(file) : "";
+    if (previewUrl) {
+      ownedObjectUrlsRef.current.add(previewUrl);
+      setPreviewUrls((prev) => appendUploadUrls(prev, [previewUrl], 1));
+    }
     setUploading(true);
+    setUploadProgress(0);
     axios.get("/api/upload-file", {
       params: { filename: file.name, type: file.type }
     })
@@ -77,6 +108,8 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
       })
       .then(() => {
         setFormValues(prev => ({ ...prev, [type]: publicUrl }));
+        setPreviewUrls((prev) => replaceUploadUrl(prev, previewUrl, publicUrl));
+        revokeObjectUrl(previewUrl);
 
         setTimeout(() => {
           setUploading(false);
@@ -87,9 +120,16 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     .catch((error) => {
       console.error("Upload failed", error);
       toast.error("Ошибка загрузки.", error?.response?.data);
+      setPreviewUrls((prev) => removeUploadUrl(prev, previewUrl));
+      revokeObjectUrl(previewUrl);
       setUploading(false);
       setUploadProgress(0);
     })
+    .finally(() => {
+      if (e?.target && "value" in e.target) {
+        e.target.value = "";
+      }
+    });
   };
 
   const handleDragOver = (e) => {
@@ -116,10 +156,19 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
 
   const removeData = () => {
     const key = acceptType === "image" ? "image_url": acceptType === "video" ? "video_url": "audio_url";
+    previewUrls.forEach(revokeObjectUrl);
+    setPreviewUrls([]);
     setFormValues(prev => ({ ...prev, [key]: null }))
   };
 
-  const imageUrl = acceptType === "image" ? (formValues.image_url || null) : null;
+  const actualFileUrl =
+    acceptType === "image"
+      ? (formValues.image_url || null)
+      : acceptType === "video"
+        ? (formValues.video_url || null)
+        : (formValues.audio_url || null);
+  const displayFileUrl = getDisplayUploadUrls(uploading ? previewUrls : [], actualFileUrl)?.[0] || null;
+  const imageUrl = acceptType === "image" ? displayFileUrl : null;
 
   // Probe image dimensions / size only when the URL actually changes. Keeping
   // this in its own effect (keyed on the URL, not `data`) is what stops the
@@ -180,7 +229,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formValues, selectedModel, loading, id, acceptType]);
 
-  const hasFileUrl = formValues?.image_url || formValues?.video_url || formValues?.audio_url;
+  const hasFileUrl = displayFileUrl;
   const textareaRef = useRef(null);
 
   // Референс-теги: если этот текст-нод кормит видео/изображение-ноду, к которой
@@ -384,26 +433,19 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
             className="flex flex-col items-center justify-center w-full h-full relative" 
             onDragOver={handleDragOver} onDrop={handleDrop}
           >
-            {uploading ? (
-              <div className="flex flex-col justify-center gap-2 w-full h-full max-w-[95%]">
-                <h4 className="text-xs text-white">Загрузка... {uploadProgress}%</h4>
-                <div className="w-full bg-gray-100 rounded h-1 overflow-hidden">
-                  <div className="bg-blue-500 h-full" style={{ width: `${uploadProgress}%` }}></div>
-                </div>
-              </div>
-            ) : hasFileUrl ? (
+            {hasFileUrl ? (
               <div className="flex-1 w-full h-full group z-0">
-                {formValues?.video_url ? (
+                {(acceptType === "video" ? displayFileUrl : formValues?.video_url) ? (
                   <div className="relative w-full h-full">
                     <VideoPlayer 
-                      src={formValues?.video_url}
+                      src={displayFileUrl}
                       accentColor="#f97316"
                     />
                   </div>
-                ) : formValues?.image_url ? (
+                ) : (acceptType === "image" ? displayFileUrl : formValues?.image_url) ? (
                   <div className="relative w-full h-full group/image">
                     <img
-                      src={formValues?.image_url}
+                      src={displayFileUrl}
                       alt="Uploaded"
                       className="w-full h-full object-contain"
                     />
@@ -428,9 +470,20 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
                   <div className="w-full h-full relative group/audio flex flex-col items-center justify-center">
                     <AudioPlayer 
                       nodeId={id}
-                      src={formValues?.audio_url} 
+                      src={displayFileUrl} 
                       className="flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-2xl"
                     />
+                  </div>
+                )}
+                {uploading && (
+                  <div className="absolute inset-x-4 bottom-4 z-10 rounded-xl border border-cyan-400/20 bg-black/75 p-3 backdrop-blur-sm">
+                    <div className="flex items-center justify-between text-[10px] font-semibold text-cyan-200">
+                      <span>Загрузка...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div className="h-full rounded-full bg-cyan-400 transition-all duration-200" style={{ width: `${uploadProgress}%` }} />
+                    </div>
                   </div>
                 )}
                 <button

@@ -15,6 +15,7 @@ var _AudioPlayer = _interopRequireDefault(require("./AudioPlayer"));
 var _VideoPlayer = _interopRequireDefault(require("./VideoPlayer"));
 var _io = require("react-icons/io5");
 var _stableStringify = require("./stableStringify.js");
+var _uploadPreviewState = require("./uploadPreviewState.js");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
@@ -58,10 +59,22 @@ var UploadNode = function UploadNode(_ref) {
     _useState8 = _slicedToArray(_useState7, 2),
     isMobileUploadUi = _useState8[0],
     setIsMobileUploadUi = _useState8[1];
+  var _useStatePreview = (0, _react.useState)([]),
+    _useStatePreview2 = _slicedToArray(_useStatePreview, 2),
+    previewUrls = _useStatePreview2[0],
+    setPreviewUrls = _useStatePreview2[1];
   var videoRef = (0, _react.useRef)(null);
   var prevFormValues = (0, _react.useRef)(formValues);
   var fileInputRef = (0, _react.useRef)(null);
   var cameraInputRef = (0, _react.useRef)(null);
+  var ownedObjectUrlsRef = (0, _react.useRef)(new Set());
+  var revokeObjectUrl = function revokeObjectUrl(url) {
+    if (!url || !ownedObjectUrlsRef.current.has(url)) return;
+    try {
+      URL.revokeObjectURL(url);
+    } catch (_unused) {}
+    ownedObjectUrlsRef.current["delete"](url);
+  };
   (0, _react.useEffect)(function () {
     var _mediaQuery$addEventL;
     if (typeof window === "undefined") return;
@@ -74,6 +87,16 @@ var UploadNode = function UploadNode(_ref) {
     return function () {
       var _mediaQuery$removeEve;
       return (_mediaQuery$removeEve = mediaQuery.removeEventListener) === null || _mediaQuery$removeEve === void 0 ? void 0 : _mediaQuery$removeEve.call(mediaQuery, "change", applyMatch);
+    };
+  }, []);
+  (0, _react.useEffect)(function () {
+    return function () {
+      ownedObjectUrlsRef.current.forEach(function (url) {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_unused2) {}
+      });
+      ownedObjectUrlsRef.current.clear();
     };
   }, []);
   var handleDrop = function handleDrop(e) {
@@ -100,7 +123,15 @@ var UploadNode = function UploadNode(_ref) {
       return;
     }
     ;
+    var previewUrl = typeof URL !== "undefined" ? URL.createObjectURL(file) : "";
+    if (previewUrl) {
+      ownedObjectUrlsRef.current.add(previewUrl);
+      setPreviewUrls(function (prev) {
+        return (0, _uploadPreviewState.appendUploadUrls)(prev, [previewUrl], 1);
+      });
+    }
     setUploading(true);
+    setUploadProgress(0);
     _axios["default"].get("/api/upload-file", {
       params: {
         filename: file.name,
@@ -122,6 +153,10 @@ var UploadNode = function UploadNode(_ref) {
         setFormValues(function (prev) {
           return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, type, publicUrl));
         });
+        setPreviewUrls(function (prev) {
+          return (0, _uploadPreviewState.replaceUploadUrl)(prev, previewUrl, publicUrl);
+        });
+        revokeObjectUrl(previewUrl);
         setTimeout(function () {
           setUploading(false);
           setUploadProgress(0);
@@ -131,8 +166,16 @@ var UploadNode = function UploadNode(_ref) {
       var _error$response;
       console.error("Upload failed", error);
       _reactHotToast.toast.error("Ошибка загрузки.", error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
+      setPreviewUrls(function (prev) {
+        return (0, _uploadPreviewState.removeUploadUrl)(prev, previewUrl);
+      });
+      revokeObjectUrl(previewUrl);
       setUploading(false);
       setUploadProgress(0);
+    })["finally"](function () {
+      if ((e === null || e === void 0 ? void 0 : e.target) && "value" in e.target) {
+        e.target.value = "";
+      }
     });
   };
   var handleDragOver = function handleDragOver(e) {
@@ -158,11 +201,15 @@ var UploadNode = function UploadNode(_ref) {
   };
   var removeData = function removeData() {
     var key = acceptType === "image" ? "image_url" : acceptType === "video" ? "video_url" : "audio_url";
+    previewUrls.forEach(revokeObjectUrl);
+    setPreviewUrls([]);
     setFormValues(function (prev) {
       return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, key, null));
     });
   };
-  var imageUrl = acceptType === "image" ? formValues.image_url || null : null;
+  var actualFileUrl = acceptType === "image" ? formValues.image_url || null : acceptType === "video" ? formValues.video_url || null : formValues.audio_url || null;
+  var displayFileUrl = (0, _uploadPreviewState.getDisplayUploadUrls)(uploading ? previewUrls : [], actualFileUrl)[0] || null;
+  var imageUrl = acceptType === "image" ? displayFileUrl : null;
 
   // Probe image dimensions / size only when the URL actually changes. Keeping
   // this in its own effect (keyed on the URL, not `data`) is what stops the
@@ -257,7 +304,7 @@ var UploadNode = function UploadNode(_ref) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formValues, selectedModel, loading, id, acceptType]);
-  var hasFileUrl = (formValues === null || formValues === void 0 ? void 0 : formValues.image_url) || (formValues === null || formValues === void 0 ? void 0 : formValues.video_url) || (formValues === null || formValues === void 0 ? void 0 : formValues.audio_url);
+  var hasFileUrl = displayFileUrl;
   var textareaRef = (0, _react.useRef)(null);
 
   // Референс-теги: если этот текст-нод кормит видео/изображение-ноду, к которой
@@ -565,28 +612,17 @@ var UploadNode = function UploadNode(_ref) {
     className: "flex flex-col items-center justify-center w-full h-full relative",
     onDragOver: handleDragOver,
     onDrop: handleDrop
-  }, uploading ? /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex flex-col justify-center gap-2 w-full h-full max-w-[95%]"
-  }, /*#__PURE__*/_react["default"].createElement("h4", {
-    className: "text-xs text-white"
-  }, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430... ", uploadProgress, "%"), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "w-full bg-gray-100 rounded h-1 overflow-hidden"
-  }, /*#__PURE__*/_react["default"].createElement("div", {
-    className: "bg-blue-500 h-full",
-    style: {
-      width: "".concat(uploadProgress, "%")
-    }
-  }))) : hasFileUrl ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, hasFileUrl ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex-1 w-full h-full group z-0"
-  }, formValues !== null && formValues !== void 0 && formValues.video_url ? /*#__PURE__*/_react["default"].createElement("div", {
+  }, (acceptType === "video" ? displayFileUrl : formValues !== null && formValues !== void 0 ? formValues.video_url : void 0) ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "relative w-full h-full"
   }, /*#__PURE__*/_react["default"].createElement(_VideoPlayer["default"], {
-    src: formValues === null || formValues === void 0 ? void 0 : formValues.video_url,
+    src: displayFileUrl,
     accentColor: "#f97316"
-  })) : formValues !== null && formValues !== void 0 && formValues.image_url ? /*#__PURE__*/_react["default"].createElement("div", {
+  })) : (acceptType === "image" ? displayFileUrl : formValues !== null && formValues !== void 0 ? formValues.image_url : void 0) ? /*#__PURE__*/_react["default"].createElement("div", {
     className: "relative w-full h-full group/image"
   }, /*#__PURE__*/_react["default"].createElement("img", {
-    src: formValues === null || formValues === void 0 ? void 0 : formValues.image_url,
+    src: displayFileUrl,
     alt: "Uploaded",
     className: "w-full h-full object-contain"
   }), /*#__PURE__*/_react["default"].createElement("div", {
@@ -609,9 +645,20 @@ var UploadNode = function UploadNode(_ref) {
     className: "w-full h-full relative group/audio flex flex-col items-center justify-center"
   }, /*#__PURE__*/_react["default"].createElement(_AudioPlayer["default"], {
     nodeId: id,
-    src: formValues === null || formValues === void 0 ? void 0 : formValues.audio_url,
+    src: displayFileUrl,
     className: "flex flex-col items-center justify-center px-5 py-4 w-full h-full relative group transition-all duration-500 select-none bg-black/10 rounded-b-2xl"
-  })), /*#__PURE__*/_react["default"].createElement("button", {
+  })), uploading && /*#__PURE__*/_react["default"].createElement("div", {
+    className: "absolute inset-x-4 bottom-4 z-10 rounded-xl border border-cyan-400/20 bg-black/75 p-3 backdrop-blur-sm"
+  }, /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex items-center justify-between text-[10px] font-semibold text-cyan-200"
+  }, /*#__PURE__*/_react["default"].createElement("span", null, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430..."), /*#__PURE__*/_react["default"].createElement("span", null, uploadProgress, "%")), /*#__PURE__*/_react["default"].createElement("div", {
+    className: "mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10"
+  }, /*#__PURE__*/_react["default"].createElement("div", {
+    className: "h-full rounded-full bg-cyan-400 transition-all duration-200",
+    style: {
+      width: "".concat(uploadProgress, "%")
+    }
+  }))), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     className: "text-white hover:text-red-500 bg-black/40 hover:bg-black cursor-pointer absolute left-4 top-4 px-1.5 rounded opacity-0 group-hover:opacity-100 transition-all duration-300",
