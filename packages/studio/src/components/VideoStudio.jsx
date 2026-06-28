@@ -12,6 +12,9 @@ import {
   savePendingGeneration,
   updatePendingGeneration,
   resumeVideoGeneration,
+  validateImageUploadFile,
+  validateImageReferenceUploadFile,
+  optimizeImageUploadFile,
 } from "../muapi.js";
 import {
   getT2vModels,
@@ -918,14 +921,17 @@ export default function VideoStudio({
   // ── Derived UI values ────────────────────────────────────────────────────
 
   const processDroppedImage = async (file) => {
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Изображение превышает лимит 10 МБ.");
+    try {
+      validateImageUploadFile(file);
+    } catch (err) {
+      alert(err.message);
       return;
     }
     setImageUploading(true);
     setImageProgress(0);
     try {
-      const url = await uploadFile(apiKey, file, (pct) => {
+      const preparedFile = await optimizeImageUploadFile(file);
+      const url = await uploadFile(apiKey, preparedFile, (pct) => {
         setImageProgress(pct);
       });
       setUploadedImageUrl(url);
@@ -1052,15 +1058,18 @@ export default function VideoStudio({
   const handleImageFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Изображение превышает лимит 10 МБ.");
+    try {
+      validateImageUploadFile(file);
+    } catch (err) {
+      alert(err.message);
       return;
     }
     setImageUploading(true);
     setImageProgress(0);
 
     try {
-      const url = await uploadFile(apiKey, file, (pct) => {
+      const preparedFile = await optimizeImageUploadFile(file);
+      const url = await uploadFile(apiKey, preparedFile, (pct) => {
         setImageProgress(pct);
       });
       setUploadedImageUrl(url);
@@ -1114,14 +1123,17 @@ export default function VideoStudio({
   const handleEndImageFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
-      alert("Изображение превышает лимит 10 МБ.");
+    try {
+      validateImageUploadFile(file);
+    } catch (err) {
+      alert(err.message);
       return;
     }
     setEndImageUploading(true);
     setEndImageProgress(0);
     try {
-      const url = await uploadFile(apiKey, file, (pct) => {
+      const preparedFile = await optimizeImageUploadFile(file);
+      const url = await uploadFile(apiKey, preparedFile, (pct) => {
         setEndImageProgress(pct);
       });
       setUploadedEndImageUrl(url);
@@ -1169,46 +1181,6 @@ export default function VideoStudio({
     return `${word}${actualIndex}`;
   };
 
-  // Compress image before upload to reduce file size and speed up upload
-  const compressImage = async (file) => {
-    if (!file.type.startsWith('image/')) return file;
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (e) => {
-        const img = new Image();
-        img.src = e.target.result;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          const maxWidth = 1920;
-          const maxHeight = 1920;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height);
-            width = Math.round(width * ratio);
-            height = Math.round(height * ratio);
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-
-          canvas.toBlob(
-            (blob) => {
-              resolve(new File([blob], file.name.replace(/\.[^/.]+$/, '.jpg'), { type: 'image/jpeg' }));
-            },
-            'image/jpeg',
-            0.85 // Quality 85% - good balance between size and quality
-          );
-        };
-      };
-    });
-  };
-
   const handleRefFilesChange = async (e) => {
     const files = Array.from(e.target.files || []);
     if (refFileInputRef.current) refFileInputRef.current.value = "";
@@ -1220,14 +1192,19 @@ export default function VideoStudio({
         alert(`Файл ${file.name}: поддерживаются только изображения, видео и аудио.`);
         return;
       }
-      const limitMb = kind === "image" ? 10 : 100;
-      if (file.size > limitMb * 1024 * 1024) {
-        alert(`Файл ${file.name} превышает лимит ${limitMb} МБ.`);
+      if (kind === "image") {
+        try {
+          validateImageReferenceUploadFile(file);
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      } else if (file.size > 100 * 1024 * 1024) {
+        alert(`Файл ${file.name} превышает лимит 100 МБ.`);
         return;
       }
       
-      // Compress image to speed up upload
-      const processedFile = kind === "image" ? await compressImage(file) : file;
+      const processedFile = kind === "image" ? await optimizeImageUploadFile(file) : file;
       
       const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       let uploadAborted = false;
