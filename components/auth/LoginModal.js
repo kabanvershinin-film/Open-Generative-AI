@@ -27,9 +27,7 @@ export default function LoginModal() {
     const [otp, setOtp] = useState('');
     const [otpSentTo, setOtpSentTo] = useState('');
     const [busy, setBusy] = useState(false);
-    const [registerConsent, setRegisterConsent] = useState(false);
     const [phoneConsent, setPhoneConsent] = useState(false);
-    const [oauthConsent, setOauthConsent] = useState(false);
 
     if (!loginOpen) return null;
 
@@ -37,10 +35,6 @@ export default function LoginModal() {
 
     const submit = async (e) => {
         e.preventDefault();
-        if (mode === 'register' && !registerConsent) {
-            toast.error('Подтвердите согласие с политикой и условиями');
-            return;
-        }
         setBusy(true);
         const err = mode === 'login'
             ? await login(email, password)
@@ -100,10 +94,6 @@ export default function LoginModal() {
     };
 
     const startOAuth = async (run) => {
-        if (!oauthConsent) {
-            toast.error('Подтвердите согласие с политикой и условиями');
-            return;
-        }
         setBusy(true);
         const err = await run();
         setBusy(false);
@@ -256,17 +246,6 @@ export default function LoginModal() {
                                        value={email} onChange={(e) => setEmail(e.target.value)} required />
                                 <input type="password" className={inputCls} placeholder="Пароль"
                                        value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-                                {isRegister && (
-                                    <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
-                                        <input
-                                            type="checkbox"
-                                            checked={registerConsent}
-                                            onChange={(e) => setRegisterConsent(e.target.checked)}
-                                            className={checkboxCls}
-                                        />
-                                        <span><LegalConsent /></span>
-                                    </label>
-                                )}
                                 <button type="submit" disabled={busy}
                                         className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-50 text-white font-semibold text-sm shadow-lg shadow-purple-600/25 transition-all">
                                     {busy ? '...' : (isRegister ? 'Создать аккаунт' : 'Войти')}
@@ -290,16 +269,6 @@ export default function LoginModal() {
                             </svg>
                             Войти через Google
                         </button>
-
-                        <label className="mt-3 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
-                            <input
-                                type="checkbox"
-                                checked={oauthConsent}
-                                onChange={(e) => setOauthConsent(e.target.checked)}
-                                className={checkboxCls}
-                            />
-                            <span><LegalConsent /></span>
-                        </label>
 
                         {yandexAuthEnabled && (
                             <button
