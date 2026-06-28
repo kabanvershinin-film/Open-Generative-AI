@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import {
   buildVideoGalleryDedupeKey,
+  buildVideoPendingDedupeKey,
   getVideoHistoryEntryKey,
   mergeVideoHistoryEntries,
   removeVideoHistoryEntry,
@@ -14,6 +15,24 @@ test("buildVideoGalleryDedupeKey строит стабильный ключ дл
   assert.strictEqual(buildVideoGalleryDedupeKey("mf-video:task-123"), "mf-video:task-123");
   assert.strictEqual(buildVideoGalleryDedupeKey("", "req-456"), "mf-video:req-456");
   assert.strictEqual(buildVideoGalleryDedupeKey("", null, undefined), "");
+});
+
+test("buildVideoPendingDedupeKey использует один и тот же ключ для разных путей восстановления", () => {
+  const directKey = buildVideoPendingDedupeKey({
+    taskId: "ark-task-123",
+    pendingId: "ark-task-123",
+    generationId: "gen-1",
+  });
+
+  const restoredKey = buildVideoPendingDedupeKey({
+    requestId: "",
+    taskId: "ark-task-123",
+    pendingId: "ark-task-123",
+    generationId: "gen-1",
+  });
+
+  assert.strictEqual(directKey, "mf-video:ark-task-123");
+  assert.strictEqual(restoredKey, directKey);
 });
 
 test("getVideoHistoryEntryKey предпочитает dedupeKey перед id и url", () => {

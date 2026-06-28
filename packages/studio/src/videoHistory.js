@@ -18,6 +18,15 @@ export function buildVideoGalleryDedupeKey(...candidates) {
   return raw.startsWith("mf-video:") ? raw : `mf-video:${raw}`;
 }
 
+export function buildVideoPendingDedupeKey({
+  requestId,
+  taskId,
+  pendingId,
+  generationId,
+} = {}) {
+  return buildVideoGalleryDedupeKey(requestId, taskId, pendingId, generationId);
+}
+
 export function getVideoHistoryEntryKey(entry = {}) {
   return (
     getVideoEntryDedupeKey(entry) ||

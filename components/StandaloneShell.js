@@ -329,12 +329,14 @@ export default function StandaloneShell() {
 
       {/* Studio Content */}
       <div className="flex-1 min-h-0 relative overflow-hidden">
-        {/* ImageStudio stays mounted always (hidden when inactive) so an in-progress
-            generation keeps running when the user switches tabs. */}
+        {/* ImageStudio and VideoStudio stay mounted always (hidden when inactive)
+            so an in-progress generation keeps running without recovery re-mounts. */}
         <div className={`absolute inset-0 ${activeTab === 'image' ? '' : 'hidden'}`}>
           <ImageStudio apiKey={apiKey} droppedFiles={activeTab === 'image' ? droppedFiles : null} onFilesHandled={handleFilesHandled} onGeneratingChange={setIsGenerating} />
         </div>
-        {activeTab === 'video'   && <VideoStudio   apiKey={apiKey} droppedFiles={droppedFiles} onFilesHandled={handleFilesHandled} />}
+        <div className={`absolute inset-0 ${activeTab === 'video' ? '' : 'hidden'}`}>
+          <VideoStudio apiKey={apiKey} droppedFiles={activeTab === 'video' ? droppedFiles : null} onFilesHandled={handleFilesHandled} />
+        </div>
         {activeTab === 'workflows' && <WorkflowStudio apiKey={apiKey} isHeaderVisible={isHeaderVisible} onToggleHeader={setIsHeaderVisible} />}
         {activeTab === 'gallery' && <GalleryStudio apiKey={apiKey} />}
         {activeTab === 'prompts' && <PromptStudioTab apiKey={apiKey} />}

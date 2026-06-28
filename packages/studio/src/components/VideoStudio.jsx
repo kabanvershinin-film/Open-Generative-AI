@@ -11,6 +11,7 @@ import {
   listPendingGenerations,
   savePendingGeneration,
   updatePendingGeneration,
+  deletePendingGeneration,
   resumeVideoGeneration,
 } from "../muapi.js";
 import {
@@ -38,7 +39,8 @@ import {
   getVideoHistoryRestoreState,
 } from "../videoHistoryRestore.js";
 import {
-  buildVideoGalleryDedupeKey,
+  buildVideoPendingDedupeKey,
+  getVideoHistoryEntryKey,
   mergeVideoHistoryEntries,
   removeVideoHistoryEntry,
   upsertVideoHistoryEntry,
@@ -529,6 +531,7 @@ export default function VideoStudio({
   const refFileInputRef = useRef(null);
   const resultVideoRef = useRef(null);
   const hasRestored = useRef(false);
+  const processedVideoEntryKeysRef = useRef(new Set());
 
   // ── derived data ──
   // Merge localHistory and remoteHistory, local has priority
@@ -536,6 +539,23 @@ export default function VideoStudio({
     if (historyItems) return historyItems;
     return mergeVideoHistoryEntries([...(localHistory || []), ...(remoteHistory || [])], Infinity);
   }, [historyItems, localHistory, remoteHistory]);
+
+  useEffect(() => {
+    const nextKeys = new Set();
+    history.forEach((entry) => {
+      const key = getVideoHistoryEntryKey(entry);
+      if (key) nextKeys.add(key);
+    });
+    processedVideoEntryKeysRef.current = nextKeys;
+  }, [history]);
+
+  const shouldHandleVideoEntry = useCallback((entry) => {
+    const key = getVideoHistoryEntryKey(entry);
+    if (!key) return true;
+    if (processedVideoEntryKeysRef.current.has(key)) return false;
+    processedVideoEntryKeysRef.current.add(key);
+    return true;
+  }, []);
 
   const getCurrentModels = useCallback(() => {
     if (v2vMode) return v2vModels;
@@ -1702,7 +1722,12 @@ export default function VideoStudio({
             duration: task.meta?.duration || null,
             timestamp: new Date().toISOString(),
             last_frame_url: res.last_frame_url || null,
-            dedupeKey: buildVideoGalleryDedupeKey(task.request_id, task.task_id, task.id, res.id),
+            dedupeKey: buildVideoPendingDedupeKey({
+              requestId: task.request_id,
+              taskId: task.task_id,
+              pendingId: task.id,
+              generationId: res.id,
+            }),
           };
           const updateResult = await updatePendingGeneration({
             ...task,
@@ -1713,6 +1738,10 @@ export default function VideoStudio({
           const finalEntry = { ...nextEntry, url: finalUrl };
 
           if (cancelled) return;
+          if (!shouldHandleVideoEntry(finalEntry)) {
+            await deletePendingGeneration(task.id).catch(() => false);
+            continue;
+          }
           if (task.model?.startsWith("seedance-2.0")) {
             setLastGenerationId(finalEntry.id);
             setLastGenerationModel(task.model);
@@ -1745,7 +1774,7 @@ export default function VideoStudio({
 
     restorePending();
     return () => { cancelled = true; };
-  }, [apiKey, addTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, fetchRemoteHistory, onGenerationComplete]);
+  }, [apiKey, addTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, fetchRemoteHistory, onGenerationComplete, shouldHandleVideoEntry]);
 
   // ── resume an ARK task that survived navigation ───────────────────────────
   // If the user navigated away mid-generation the polling promise kept running
@@ -1773,14 +1802,19 @@ export default function VideoStudio({
         id: genId, url, prompt: stored.prompt || "",
         model: stored.model, aspect_ratio: stored.aspect_ratio,
         duration: stored.duration, timestamp: new Date().toISOString(),
-        dedupeKey: buildVideoGalleryDedupeKey(stored.taskId, genId),
+        dedupeKey: buildVideoPendingDedupeKey({
+          taskId: stored.taskId,
+          generationId: genId,
+        }),
       };
+      if (!shouldHandleVideoEntry(entry)) return;
       addToLocalHistory(entry);
       persistVideoEntryToStorage(entry);
       showVideoInCanvas(url, stored.model);
       persistVideoToGallery(entry).then(() => {
         fetchRemoteHistory({ reset: true }); // Refresh remote history after saving to gallery, bypassing cache
       });
+      deletePendingGeneration(stored.taskId).catch(() => false);
       if (billingError) {
         reportAdminIncident({
           type: "billing_failed",
@@ -1841,7 +1875,7 @@ export default function VideoStudio({
       });
 
     return () => { cancelled = true; };
-  }, [addTask, updateTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, persistVideoToGallery, fetchRemoteHistory]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [addTask, updateTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, persistVideoToGallery, fetchRemoteHistory, shouldHandleVideoEntry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── resume a non-ARK Memefast generation after a tab switch ───────────────
   useEffect(() => {
@@ -2048,7 +2082,12 @@ export default function VideoStudio({
             seed: seed !== -1 ? seed : undefined,
             return_last_frame: returnLastFrame,
             last_frame_url: res.last_frame_url,
-            dedupeKey: buildVideoGalleryDedupeKey(pendingExternalId, pendingTaskId, genId),
+          dedupeKey: buildVideoPendingDedupeKey({
+            requestId: null,
+            taskId: pendingExternalId,
+            pendingId: pendingTaskId,
+            generationId: genId,
+          }),
             restoreState: buildVideoHistoryRestoreState({
               prompt: taskPrompt,
               selectedModel: taskModel,
@@ -2071,6 +2110,13 @@ export default function VideoStudio({
           };
           
           if (isMountedRef.current) {
+            if (!shouldHandleVideoEntry(entry)) {
+              if (pendingTaskId) {
+                deletePendingGeneration(pendingTaskId).catch(() => false);
+              }
+              removeTask(taskId);
+              return;
+            }
             setLastGenerationId(genId);
             setLastGenerationModel(taskModel);
             addToLocalHistory(entry);
@@ -2101,6 +2147,9 @@ export default function VideoStudio({
               onGenerationComplete({ url: finalUrl, model: taskModel, prompt: taskPrompt, type: "video" });
           }
           removeTask(taskId);
+          if (pendingTaskId) {
+            deletePendingGeneration(pendingTaskId).catch(() => false);
+          }
           return;
         }
 
@@ -2210,7 +2259,11 @@ export default function VideoStudio({
           resolution: selectedResolution || undefined,
           duration: selectedDuration,
           timestamp: new Date().toISOString(),
-          dedupeKey: buildVideoGalleryDedupeKey(pendingExternalId, pendingTaskId, genId),
+          dedupeKey: buildVideoPendingDedupeKey({
+            requestId: pendingExternalId,
+            pendingId: pendingTaskId,
+            generationId: genId,
+          }),
           restoreState: buildVideoHistoryRestoreState({
             prompt: (v2vMode && !currentModel?.hasPrompt) ? "" : taskPrompt,
             selectedModel: taskModel,
@@ -2238,6 +2291,13 @@ export default function VideoStudio({
         };
 
         if (isMountedRef.current) {
+          if (!shouldHandleVideoEntry(entry)) {
+            if (pendingTaskId) {
+              deletePendingGeneration(pendingTaskId).catch(() => false);
+            }
+            removeTask(taskId);
+            return;
+          }
           if (taskModel.startsWith("seedance-2.0")) {
             setLastGenerationId(genId);
             setLastGenerationModel(taskModel);
@@ -2276,6 +2336,9 @@ export default function VideoStudio({
             });
         }
         removeTask(taskId);
+        if (pendingTaskId) {
+          deletePendingGeneration(pendingTaskId).catch(() => false);
+        }
       } catch (e) {
         console.error("[VideoStudio]", e);
         reportAdminIncident({
