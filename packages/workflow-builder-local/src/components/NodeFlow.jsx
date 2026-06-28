@@ -2498,15 +2498,15 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
   };
 
   return (
-    <div tabIndex={0} onKeyDown={onKeyDown} className="relative flex h-screen min-h-screen w-full">
+    <div tabIndex={0} onKeyDown={onKeyDown} className="relative flex h-screen min-h-screen w-full bg-app-bg text-slate-900 dark:text-white">
       {isRestoring && (
-        <div className="fixed inset-0 flex items-center justify-center gap-2 bg-black w-full h-full z-20">
-          <div className="w-6 h-6 rounded-full border-[4px] border-white border-t-transparent animate-spin"></div>
-          <div className="text-white text-xl font-bold">Loading...</div>
+        <div className="fixed inset-0 flex items-center justify-center gap-2 bg-white/85 dark:bg-black w-full h-full z-20 backdrop-blur-sm">
+          <div className="w-6 h-6 rounded-full border-[4px] border-slate-300 dark:border-white border-t-transparent animate-spin"></div>
+          <div className="text-slate-900 dark:text-white text-xl font-bold">Loading...</div>
         </div>
       )}
 
-      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-[#0c0d0f] p-1 rounded-full border border-gray-700 shadow-xl ${isRestoring && "hidden"}`}>
+      <div className={`absolute left-4 self-center z-20 flex flex-col gap-2 bg-white/95 dark:bg-[#0c0d0f] p-1 rounded-full border border-slate-200 dark:border-gray-700 shadow-xl ${isRestoring && "hidden"}`}>
         <button
           type="button"
           suppressHydrationWarning={true}
@@ -2536,7 +2536,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               setEdgePicker(null);
               setDropDown((prev) => prev === 1 ? 0 : 1);
             }}
-            className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"}`}
+            className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 disabled:cursor-not-allowed ${dropDown === 1 ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-slate-500 dark:text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"}`}
           >
             <FaPlus size={18} />
           </button>
@@ -2558,7 +2558,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={handleSaveWorkFlow}
-          className={`p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition ${!interactionMode && "hidden"}`}
+          className={`p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-slate-500 dark:text-gray-300 active:bg-purple-700 hover:text-white transition ${!interactionMode && "hidden"}`}
           title="Сохранить"
         >
           <MdSave size={18} />
@@ -2568,7 +2568,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           suppressHydrationWarning={true}
           onClick={handlePublishWorkflow}
           disabled={isRunning === 2}
-          className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 ${!interactionMode && "hidden"} ${publishWorkflow ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"}`}
+          className={`p-3 rounded-full cursor-pointer outline-none transition disabled:opacity-50 ${!interactionMode && "hidden"} ${publishWorkflow ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-slate-500 dark:text-gray-300 active:bg-purple-700 hover:text-white hover:bg-purple-600"}`}
           title={publishWorkflow ? "Снять с публикации" : "Опубликовать"}
         >
           {isRunning === 2 ? (
@@ -2582,7 +2582,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={zoomIn}
-          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-slate-500 dark:text-gray-300 active:bg-purple-700 hover:text-white transition"
           title="Увеличить масштаб"
           aria-label="Увеличить масштаб"
         >
@@ -2592,7 +2592,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={zoomOut}
-          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-slate-500 dark:text-gray-300 active:bg-purple-700 hover:text-white transition"
           title="Уменьшить масштаб"
           aria-label="Уменьшить масштаб"
         >
@@ -2602,7 +2602,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={() => fitView({ padding: 0.4, duration: 500, minZoom: WORKFLOW_FIT_MIN_ZOOM })}
-          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-gray-300 active:bg-purple-700 hover:text-white transition"
+          className="p-3 rounded-full hover:bg-purple-600 cursor-pointer outline-none text-slate-500 dark:text-gray-300 active:bg-purple-700 hover:text-white transition"
           title="Показать весь процесс"
           aria-label="Показать весь процесс"
         >
@@ -2612,7 +2612,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           type="button"
           suppressHydrationWarning={true}
           onClick={() => setIsDragging(!isDragging)}
-          className={`p-3 rounded-full cursor-pointer outline-none active:bg-purple-700 transition ${!isDragging ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-gray-300 hover:bg-purple-600 hover:text-white"}`}
+          className={`p-3 rounded-full cursor-pointer outline-none active:bg-purple-700 transition ${!isDragging ? "bg-purple-600 text-white shadow-lg shadow-purple-900/20" : "text-slate-500 dark:text-gray-300 hover:bg-purple-600 hover:text-white"}`}
           title={isDragging ? "Включить перемещение по холсту" : "Выключить перемещение по холсту"}
           aria-label={isDragging ? "Включить перемещение по холсту" : "Выключить перемещение по холсту"}
         >
@@ -2651,12 +2651,12 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </ReactFlow>
       </div>
       {selectedNode && !["concatNode"].includes(selectedNode.type) && (
-        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-[#0c0d0f] border border-white/10 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-black/50`}>
+        <div className={`${isMobile ? (isPanelOpen ? "fixed inset-0 z-50" : "hidden") : "absolute right-2 top-16 z-50"} w-80 h-full max-h-[90%] bg-white/95 dark:bg-[#0c0d0f] border border-slate-200 dark:border-white/10 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-black/20 dark:shadow-black/50`}>
           {isMobile && (
             <button
               type="button"
               suppressHydrationWarning={true}
-              className="absolute top-2 left-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200 z-10"
+              className="absolute top-2 left-2 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200 z-10"
               onClick={() => setIsPanelOpen(false)}
             >
               &larr;
@@ -2665,7 +2665,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           <button
             type="button"
             suppressHydrationWarning={true}
-            className="absolute top-2 right-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200"
+            className="absolute top-2 right-2 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200"
             onClick={() => {
               setNodes((nds) => nds.map((n) => ({ ...n, selected: false })));
               setIsPanelOpen(false);
@@ -2674,16 +2674,16 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             &#10005;
           </button>
           <div className="flex flex-col gap-4 h-full min-h-0 w-full">
-            <h3 className="text-base font-semibold text-center text-white mt-6 tracking-tight">Свойства</h3>
-            <h1 className="flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800 border border-white/5 rounded-xl px-3 py-2 transition-all">
+            <h3 className="text-base font-semibold text-center text-slate-900 dark:text-white mt-6 tracking-tight">Свойства</h3>
+            <h1 className="flex items-center gap-2 text-sm font-medium text-start text-slate-900 dark:text-white mx-4 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 transition-all">
               {selectedNode.id.startsWith("text") ? <TfiText className="text-blue-400" /> : selectedNode.id.startsWith("image") ? <IoImageOutline className="text-green-400" /> : selectedNode.id.startsWith("video") ? <IoVideocamOutline className="text-orange-400" /> : selectedNode.id.startsWith("audio") ? <AiOutlineAudio className="text-yellow-400" /> : <RiInputMethodLine className="text-purple-400" />}
               {formatNodeTitle(selectedNode.id)}
             </h1>
             <div className="flex flex-col gap-4 w-full flex-1 min-h-0 overflow-y-auto px-4 custom-scrollbar-thin">
               <div className="flex flex-col gap-4 w-full">
                 <div className="flex flex-col gap-1 relative w-full">
-                  <label className="text-[10px] font-bold text-zinc-500 text-start px-1">Модель</label>
-                  <div className="flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-lg">
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 text-start px-1">Модель</label>
+                  <div className="flex items-center justify-between gap-1 text-sm text-slate-900 dark:text-white w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-lg">
                     {selectedNode?.data?.selectedModel?.name || ""}
                   </div>
                 </div>
@@ -2695,14 +2695,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
                     return selectedNode?.data?.loading === 1 ? (
                       <div className="flex flex-col items-center justify-center gap-2 h-full w-full">
-                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs text-white">Загрузка модели...</span>
+                        <div className="w-6 h-6 border-2 border-slate-300 dark:border-white border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs text-slate-700 dark:text-white">Загрузка модели...</span>
                       </div>
                     ) : selectedNode.type === "skylarkNode" ? (
                       <div className="flex flex-col gap-4 w-full">
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center justify-between px-1">
-                            <label className="text-[10px] font-bold text-zinc-500 uppercase">Промпт</label>
+                            <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase">Промпт</label>
                             {edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt") && (
                               <span className="text-[9px] text-blue-400 font-bold bg-blue-500/10 px-1.5 py-0.5 rounded uppercase">Подключено</span>
                             )}
@@ -2712,27 +2712,27 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                             onChange={(e) => updateNodeFromPanel("prompt", e.target.value)}
                             placeholder={edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt") ? "Промпт поступает из другого узла..." : "Опишите, что должен сделать агент..."}
                             readOnly={edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt")}
-                            className={`w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white min-h-[100px] outline-none transition-all resize-none ${
+                            className={`w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white min-h-[100px] outline-none transition-all resize-none ${
                               edges.some(e => e.target === selectedNode.id && e.targetHandle === "prompt") ? "opacity-60 cursor-not-allowed border-blue-500/30" : "focus:border-blue-500/50"
                             }`}
                           />
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Соотношение сторон</label>
+                          <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase px-1">Соотношение сторон</label>
                           <select
                             value={selectedNode.data.formValues?.ratio || "auto"}
                             onChange={(e) => updateNodeFromPanel("ratio", e.target.value)}
-                            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+                            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500/50 transition-all"
                           >
                             {["auto", "16:9", "9:16", "4:3", "3:4"].map(r => <option key={r} value={r}>{r}</option>)}
                           </select>
                         </div>
                         <div className="flex flex-col gap-1.5">
-                          <label className="text-[10px] font-bold text-zinc-500 uppercase px-1">Длительность</label>
+                          <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase px-1">Длительность</label>
                           <select
                             value={selectedNode.data.formValues?.duration || "auto"}
                             onChange={(e) => updateNodeFromPanel("duration", e.target.value)}
-                            className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+                            className="w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500/50 transition-all"
                           >
                             {["auto", "～15s", "～30s", "40～60s"].map(d => <option key={d} value={d}>{d}</option>)}
                           </select>
@@ -2876,13 +2876,13 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                       })()
                     ) : (
                       <div className="text-center py-8">
-                        <p className="text-sm text-gray-400">Нет доступных свойств</p>
+                        <p className="text-sm text-slate-400 dark:text-gray-400">Нет доступных свойств</p>
                       </div>
                     );
                   })()
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-sm text-gray-400">Сначала выберите модель</p>
+                    <p className="text-sm text-slate-400 dark:text-gray-400">Сначала выберите модель</p>
                   </div>
                 )}
               </div>
@@ -2930,7 +2930,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                         <button
                           type="button"
                           onClick={() => removeAt(item)}
-                          className="absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity"
+                          className="absolute top-0.5 right-0.5 bg-white/90 dark:bg-black hover:bg-white dark:hover:bg-black text-slate-700 dark:text-white rounded px-1 text-[10px] opacity-0 group-hover/refimg:opacity-100 transition-opacity"
                         >
                           ×
                         </button>
@@ -2960,12 +2960,12 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                   </p>
                   <div className="grid grid-cols-3 gap-1.5">
                     {all.map((url, i) => (
-                      <div key={`${url}-${i}`} className="relative group/refvid rounded-lg overflow-hidden border border-orange-500/30 bg-black aspect-video flex items-center justify-center">
+                      <div key={`${url}-${i}`} className="relative group/refvid rounded-lg overflow-hidden border border-orange-500/30 bg-slate-100 dark:bg-black aspect-video flex items-center justify-center">
                         <IoVideocamOutline className="text-orange-500/50" size={20} />
                         <button
                           type="button"
                           onClick={() => removeAt(url)}
-                          className="absolute top-0.5 right-0.5 bg-black hover:bg-black text-white rounded px-1 text-[10px] opacity-0 group-hover/refvid:opacity-100 transition-opacity z-10"
+                          className="absolute top-0.5 right-0.5 bg-white/90 dark:bg-black hover:bg-white dark:hover:bg-black text-slate-700 dark:text-white rounded px-1 text-[10px] opacity-0 group-hover/refvid:opacity-100 transition-opacity z-10"
                         >
                           ×
                         </button>
@@ -2992,7 +2992,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                   <div className="grid grid-cols-2 gap-2">
                     {uniqueChars.map((char, i) => (
                       <div key={`${char.nodeId}-${i}`} className="flex flex-col gap-1">
-                        <div className="rounded-xl overflow-hidden border border-purple-500/30 relative aspect-[4/3] bg-zinc-900">
+                        <div className="rounded-xl overflow-hidden border border-purple-500/30 relative aspect-[4/3] bg-slate-100 dark:bg-zinc-900">
                           {char.photo ? (
                             <img
                               src={char.photo}
@@ -3008,14 +3008,14 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                           <div className="absolute top-1 right-1 bg-purple-600 text-white text-[7px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">
                             Face
                           </div>
-                          <div className="absolute bottom-0 inset-x-0 bg-black/60 backdrop-blur-sm px-1.5 py-0.5">
-                            <p className="text-[8px] text-white font-medium truncate">{char.name}</p>
+                          <div className="absolute bottom-0 inset-x-0 bg-white/80 dark:bg-black/60 backdrop-blur-sm px-1.5 py-0.5">
+                            <p className="text-[8px] text-slate-900 dark:text-white font-medium truncate">{char.name}</p>
                           </div>
                         </div>
                         {char.asset && String(char.asset).startsWith("asset://") && (
-                          <div className="flex items-center gap-1 rounded-md bg-purple-900/50 border border-purple-500/20 px-1.5 py-1">
+                          <div className="flex items-center gap-1 rounded-md bg-purple-100 dark:bg-purple-900/50 border border-purple-500/20 px-1.5 py-1">
                             <div className="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0" />
-                            <span className="text-[7px] font-mono text-purple-200 truncate">{char.asset}</span>
+                            <span className="text-[7px] font-mono text-purple-700 dark:text-purple-200 truncate">{char.asset}</span>
                           </div>
                         )}
                       </div>
@@ -3027,7 +3027,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
             <div className="p-4 flex flex-col gap-3">
               {/* Make Output Toggle */}
               <label className="flex items-center justify-between cursor-pointer group">
-                <span className="text-xs text-gray-300 font-medium">Сделать выходом</span>
+                <span className="text-xs text-slate-700 dark:text-gray-300 font-medium">Сделать выходом</span>
                 <div className="relative">
                   <input
                     type="checkbox"
@@ -3053,7 +3053,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                       );
                     }}
                   />
-                  <div className="w-9 h-5 bg-gray-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
+                  <div className="w-9 h-5 bg-slate-300 dark:bg-gray-700 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
                   <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full peer-checked:translate-x-4 transition-transform"></div>
                 </div>
               </label>
@@ -3108,24 +3108,24 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
         </div>
       )}
       <div
-        className={`fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-black transition-all duration-200 ease-in-out ${
+        className={`fixed inset-0 flex flex-col items-center justify-center z-50 overflow-auto bg-white/75 dark:bg-black transition-all duration-200 ease-in-out ${
           dropDown === 2
             ? "pointer-events-auto opacity-100 scale-100 visible"
             : "pointer-events-none opacity-0 scale-80 invisible"
         }`}
         onClick={() => setDropDown(0)}
       >
-        <div className="bg-[#242629] rounded-lg p-4 w-72 shadow-lg flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
-          <h3 className="text-base text-center font-semibold text-white">Save Workflow</h3>
+        <div className="bg-white dark:bg-[#242629] border border-slate-200 dark:border-white/10 rounded-lg p-4 w-72 shadow-lg flex flex-col gap-4" onClick={(e) => e.stopPropagation()}>
+          <h3 className="text-base text-center font-semibold text-slate-900 dark:text-white">Save Workflow</h3>
           <div className="flex flex-col gap-2 w-full">
-            <label className="text-xs text-start text-gray-300">Workflow Name</label>
+            <label className="text-xs text-start text-slate-600 dark:text-gray-300">Workflow Name</label>
             <input
               type="text"
               value={workflowName}
               autoFocus
               onChange={(e) => setWorkflowName(e.target.value)}
               placeholder="Enter Workflow Name"
-              className="border border-gray-700 px-2 py-1.5 text-sm text-white rounded bg-transparent w-full"
+              className="border border-slate-200 dark:border-gray-700 px-2 py-1.5 text-sm text-slate-900 dark:text-white rounded bg-transparent w-full"
             />
           </div>
           <div className="flex items-center w-full gap-2">
@@ -3133,7 +3133,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
               type="button"
               suppressHydrationWarning={true}
               onClick={() => setDropDown(0)}
-              className="px-4 py-2 bg-gray-700 text-white rounded-full text-sm hover:bg-gray-600 transition w-full cursor-pointer"
+              className="px-4 py-2 bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-white rounded-full text-sm hover:bg-slate-300 dark:hover:bg-gray-600 transition w-full cursor-pointer"
             >
               Cancel
             </button>
@@ -3151,30 +3151,30 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
 
       {/* Assistant chat widget (bottom-right robot button) removed per request. */}
       {isCategoryPopupOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black px-4">
-          <div className="bg-[#1b1e23] border border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/75 dark:bg-black px-4">
+          <div className="bg-white dark:bg-[#1b1e23] border border-slate-200 dark:border-gray-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Edit Workflow Category</h3>
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Edit Workflow Category</h3>
               <div className="space-y-4">
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs text-gray-400 uppercase tracking-wider">Category Name</label>
+                  <label className="text-xs text-slate-500 dark:text-gray-400 uppercase tracking-wider">Category Name</label>
                   <input
                     type="text"
                     value={categoryInput}
                     onChange={(e) => setCategoryInput(e.target.value)}
                     placeholder="Enter category..."
-                    className="w-full px-4 py-3 bg-[#151618] border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 hover:border-gray-600 transition-all"
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-[#151618] border border-slate-200 dark:border-gray-700 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 hover:border-slate-300 dark:hover:border-gray-600 transition-all"
                     autoFocus
                   />
                 </div>
               </div>
             </div>
-            <div className="p-4 bg-[#151618] flex items-center justify-end gap-3 border-t border-gray-700">
+            <div className="p-4 bg-slate-50 dark:bg-[#151618] flex items-center justify-end gap-3 border-t border-slate-200 dark:border-gray-700">
               <button
                 type="button"
                 suppressHydrationWarning={true}
                 onClick={() => setIsCategoryPopupOpen(false)}
-                className="px-6 py-2.5 text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl transition-all"
+                className="px-6 py-2.5 text-sm font-medium text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-gray-800 rounded-xl transition-all"
               >
                 Cancel
               </button>
@@ -3193,31 +3193,31 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
       )}
       {publishModal && (
         <div
-          className="fixed inset-0 flex flex-col items-center justify-center z-[100] overflow-auto bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 flex flex-col items-center justify-center z-[100] overflow-auto bg-white/70 dark:bg-black/60 backdrop-blur-sm"
           onClick={() => setPublishModal(null)}
         >
-          <div className="bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4 border border-white/10" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-base text-center font-semibold text-white">Публикация воркфлоу</h3>
+          <div className="bg-white dark:bg-[#242629] rounded-xl p-5 w-80 shadow-2xl flex flex-col gap-4 border border-slate-200 dark:border-white/10" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base text-center font-semibold text-slate-900 dark:text-white">Публикация воркфлоу</h3>
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-xs text-gray-400">Название воркфлоу</label>
+              <label className="text-xs text-slate-500 dark:text-gray-400">Название воркфлоу</label>
               <input
                 type="text"
                 value={publishModal.name}
                 autoFocus
                 onChange={(e) => setPublishModal(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="Введите название..."
-                className="border border-gray-700 px-2 py-1.5 text-sm text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
+                className="border border-slate-200 dark:border-gray-700 px-2 py-1.5 text-sm text-slate-900 dark:text-white rounded-lg bg-transparent w-full focus:outline-none focus:border-gray-500"
               />
             </div>
             <div className="flex flex-col gap-1.5 w-full">
-              <label className="text-xs text-gray-400">Превью (обложка)</label>
+              <label className="text-xs text-slate-500 dark:text-gray-400">Превью (обложка)</label>
               {(publishModal.candidates || []).length > 0 ? (
                 <div className="grid grid-cols-3 gap-1.5 max-h-44 overflow-y-auto custom-scrollbar-thin">
                   {(publishModal.candidates || []).map((url) => (
                     <div
                       key={url}
                       onClick={() => setPublishModal(prev => ({ ...prev, thumbnail: prev.thumbnail === url ? '' : url }))}
-                      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${publishModal.thumbnail === url ? 'border-blue-500' : 'border-gray-700 hover:border-gray-500'}`}
+                      className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${publishModal.thumbnail === url ? 'border-blue-500' : 'border-slate-200 dark:border-gray-700 hover:border-slate-300 dark:hover:border-gray-500'}`}
                     >
                       <img src={url} alt="" className="w-full h-16 object-cover" onError={(e) => { e.target.parentElement.style.display = 'none'; }} />
                       {publishModal.thumbnail === url && (
@@ -3229,7 +3229,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-500 italic py-2 text-center">Нет сгенерированных изображений</p>
+                <p className="text-xs text-slate-400 dark:text-gray-500 italic py-2 text-center">Нет сгенерированных изображений</p>
               )}
             </div>
             <div className="flex items-center w-full gap-2">
@@ -3237,7 +3237,7 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
                 type="button"
                 suppressHydrationWarning={true}
                 onClick={() => setPublishModal(null)}
-                className="px-4 py-2 bg-gray-700 text-white rounded-full text-sm hover:bg-gray-600 transition w-full cursor-pointer"
+                className="px-4 py-2 bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-white rounded-full text-sm hover:bg-slate-300 dark:hover:bg-gray-600 transition w-full cursor-pointer"
               >
                 Отмена
               </button>

@@ -132,8 +132,8 @@ const WorkflowUI = dynamic(() => import("./WorkflowUI"), {
   loading: () => (
     <div className="absolute inset-0 flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-4 border-white/5 border-t-[#d946ef] rounded-full animate-spin" />
-        <div className="text-[10px] font-black text-white/20 uppercase tracking-widest">
+        <div className="w-12 h-12 border-4 border-slate-200 dark:border-white/5 border-t-[#d946ef] rounded-full animate-spin" />
+        <div className="text-[10px] font-black text-slate-400 dark:text-white/20 uppercase tracking-widest">
           Загрузка билдера...
         </div>
       </div>
@@ -147,7 +147,7 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
   return (
     <div
       onClick={() => onClick(workflow)}
-      className="group relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer border border-white/5 bg-[#0f0c18] transition-all hover:border-[#d946ef]/30 hover:scale-[1.02] shadow-2xl"
+      className="group relative aspect-[3/4] rounded-lg overflow-hidden cursor-pointer border border-slate-200 dark:border-white/5 bg-white dark:bg-[#0f0c18] transition-all hover:border-[#d946ef]/30 hover:scale-[1.02] shadow-2xl"
     >
       {workflow.thumbnail ? (
         <img
@@ -156,23 +156,23 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-500/10 dark:to-purple-500/10 flex items-center justify-center">
           <svg
             width="40"
             height="40"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="opacity-20"
+            className="opacity-20 text-slate-700 dark:text-white"
           >
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-white/95 via-white/20 to-transparent dark:from-black/90 dark:via-black/20 dark:to-transparent" />
       
       {/* Options Dropdown for My Workflows */}
       {activeTab === 'my-workflows' && (
@@ -183,7 +183,7 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
           <button
             onClick={() => setShowOptions(!showOptions)}
             onBlur={() => setTimeout(() => setShowOptions(false), 200)}
-            className="w-8 h-8 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center text-white/60 hover:text-white transition-colors"
+            className="w-8 h-8 rounded-full bg-white/90 dark:bg-black/40 backdrop-blur-md border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-500 dark:text-white/60 hover:text-slate-900 dark:hover:text-white transition-colors"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
@@ -191,10 +191,10 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
           </button>
           
           {showOptions && (
-            <div className="absolute top-10 right-0 w-32 bg-[#0f0c18] border border-white/10 rounded-lg shadow-2xl py-1 animate-in fade-in zoom-in duration-200">
+            <div className="absolute top-10 right-0 w-32 bg-white dark:bg-[#0f0c18] border border-slate-200 dark:border-white/10 rounded-lg shadow-2xl py-1 animate-in fade-in zoom-in duration-200">
               <button
                 onClick={() => onRename(workflow)}
-                className="w-full px-4 py-2 text-left text-[11px] font-bold text-white/70 hover:text-[#d946ef] hover:bg-white/5 transition-colors flex items-center gap-2"
+                className="w-full px-4 py-2 text-left text-[11px] font-bold text-slate-600 dark:text-white/70 hover:text-[#d946ef] hover:bg-slate-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
@@ -232,8 +232,8 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
 
       {/* Community nodes count */}
       {activeTab === 'published' && workflow.nodes_count > 0 && (
-        <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-full">
-          <span className="text-[9px] font-black text-white/60 uppercase tracking-widest">{workflow.nodes_count} нод</span>
+        <div className="absolute top-2 left-2 z-20 px-2 py-1 bg-white/90 dark:bg-black/40 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-full">
+          <span className="text-[9px] font-black text-slate-600 dark:text-white/60 uppercase tracking-widest">{workflow.nodes_count} нод</span>
         </div>
       )}
 
@@ -258,14 +258,14 @@ function WorkflowCard({ workflow, onClick, activeTab, onRename, onDelete, onPubl
       )}
 
       <div className="absolute inset-x-0 bottom-0 p-4">
-        <div className="text-[10px] font-bold text-purple-400 uppercase tracking-wider mb-1 opacity-80">
+        <div className="text-[10px] font-bold text-purple-500 dark:text-purple-400 uppercase tracking-wider mb-1 opacity-80">
           {workflow.category || "Общее"}
         </div>
-        <h3 className="text-sm font-bold text-white truncate group-hover:text-purple-300 transition-colors">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-purple-500 dark:group-hover:text-purple-300 transition-colors">
           {workflow.name || "Без названия"}
         </h3>
         {activeTab === 'published' && workflow.can_moderate && (
-          <p className="text-[10px] text-white/45 truncate mt-0.5" title={workflow.author_email || ''}>
+          <p className="text-[10px] text-slate-500 dark:text-white/45 truncate mt-0.5" title={workflow.author_email || ''}>
             👤 {workflow.author_email || 'неизвестно'}
           </p>
         )}
@@ -709,14 +709,14 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
 
   if (selectedWorkflow) {
     return (
-      <div className="h-full flex flex-col bg-[#0a0714] text-white">
+      <div className="h-full flex flex-col bg-app-bg text-slate-900 dark:text-white">
         {/* Immersive Sub-header / Floating Toggle */}
         {isHeaderVisible ? (
-          <div className="flex-shrink-0 h-14 border-b border-purple-500/10 flex items-center justify-between px-6 bg-black/20 z-30">
+          <div className="flex-shrink-0 h-14 border-b border-slate-200 dark:border-purple-500/10 flex items-center justify-between px-6 bg-white/80 dark:bg-black/20 z-30 backdrop-blur-sm">
             <div className="flex items-center gap-4 h-full">
               <button
                 onClick={() => router.push("/studio/workflows")}
-                className="flex items-center gap-2 text-xs font-bold text-white/50 hover:text-white transition-colors"
+                className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-white/50 hover:text-slate-900 dark:hover:text-white transition-colors"
                 type="button"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -750,7 +750,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
               )}
               <button
                 onClick={() => onToggleHeader?.(false)}
-                className="p-1.5 bg-white/5 hover:bg-white/10 rounded-md transition-colors text-white/40 hover:text-white"
+                className="p-1.5 bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 rounded-md transition-colors text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white"
                 title="Enter Zen Mode"
                 type="button"
               >
@@ -762,21 +762,21 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
           </div>
         ) : (
           /* Floating Immersive Mode Controller */
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 px-4 py-2 bg-black/30 backdrop-blur-xl border border-purple-500/20 rounded-full shadow-2xl animate-fade-in-down">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-4 px-4 py-2 bg-white/90 dark:bg-black/30 backdrop-blur-xl border border-slate-200 dark:border-purple-500/20 rounded-full shadow-2xl animate-fade-in-down">
             <button
                onClick={() => router.push("/studio/workflows")}
-               className="p-1.5 text-white/40 hover:text-white transition-colors"
+               className="p-1.5 text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white transition-colors"
                title="Back to All Workflows"
                type="button"
             >
                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             </button>
 
-            <div className="h-4 w-[1px] bg-white/10" />
+            <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10" />
 
             <button
               onClick={() => onToggleHeader?.(true)}
-              className="px-3 py-1 bg-white/10 hover:bg-white/20 text-[9px] font-black text-white uppercase tracking-widest rounded-lg transition-colors flex items-center gap-2"
+              className="px-3 py-1 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-[9px] font-black text-slate-700 dark:text-white uppercase tracking-widest rounded-lg transition-colors flex items-center gap-2"
               type="button"
             >
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M4 14h6v6M20 10h-6V4M10 20l-7-7M14 4l7 7"/></svg>
@@ -786,7 +786,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
         )}
 
         <div className="flex-1 overflow-hidden">
-          <div className="flex-1 relative h-full bg-[#0a0714]">
+          <div className="flex-1 relative h-full bg-app-bg">
             {nodeSchemas && workflowDef ? (
               <WorkflowUI
                 workflowId={selectedWorkflow?.id}
@@ -799,8 +799,8 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-4">
-                  <div className="w-12 h-12 border-4 border-white/5 border-t-[#d946ef] rounded-full animate-spin" />
-                  <div className="text-[10px] font-black text-white/20 uppercase tracking-widest">
+                  <div className="w-12 h-12 border-4 border-slate-200 dark:border-white/5 border-t-[#d946ef] rounded-full animate-spin" />
+                  <div className="text-[10px] font-black text-slate-400 dark:text-white/20 uppercase tracking-widest">
                     Загрузка билдера...
                   </div>
                 </div>
@@ -811,11 +811,11 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
 
         {/* Results overlay */}
         {showResults && (
-          <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-8">
-            <div className="w-full max-w-3xl bg-[#0f0c18] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                <span className="text-xs font-black text-white/50 uppercase tracking-widest">Results</span>
-                <button onClick={() => setShowResults(false)} className="text-white/40 hover:text-white transition-colors" type="button">
+          <div className="absolute inset-0 z-50 bg-white/70 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-8">
+            <div className="w-full max-w-3xl bg-white dark:bg-[#0f0c18] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/5">
+                <span className="text-xs font-black text-slate-500 dark:text-white/50 uppercase tracking-widest">Results</span>
+                <button onClick={() => setShowResults(false)} className="text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white transition-colors" type="button">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
               </div>
@@ -827,12 +827,12 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                   </div>
                 )}
                 {runResult?.error && (
-                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">{runResult.error}</div>
+                  <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-600 dark:text-red-400 text-sm">{runResult.error}</div>
                 )}
                 {runResult?.outputs?.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {runResult.outputs.map((out, i) => (
-                      <div key={i} className="rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                      <div key={i} className="rounded-xl overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5">
                         {out.type === 'image_url' ? (
                           <img src={out.value} alt="output" className="w-full object-cover" />
                         ) : out.type === 'video_url' ? (
@@ -840,14 +840,14 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                         ) : out.type === 'audio_url' ? (
                           <audio src={out.value} controls className="w-full p-4" />
                         ) : (
-                          <div className="p-4 text-white/70 text-sm italic">{out.value}</div>
+                          <div className="p-4 text-slate-700 dark:text-white/70 text-sm italic">{out.value}</div>
                         )}
                       </div>
                     ))}
                   </div>
                 )}
                 {runResult && !runResult.error && (!runResult.outputs || runResult.outputs.length === 0) && (
-                  <div className="text-center py-8 text-white/30 text-sm">No outputs returned</div>
+                  <div className="text-center py-8 text-slate-400 dark:text-white/30 text-sm">No outputs returned</div>
                 )}
               </div>
             </div>
@@ -856,13 +856,13 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
 
         {/* Share Modal */}
         {showShareModal && (
-          <div className="absolute inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-8">
-            <div className="w-full max-w-lg bg-[#0f0c18] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                <span className="text-sm font-black text-white uppercase tracking-widest">Поделиться воркфлоу</span>
+          <div className="absolute inset-0 z-[60] bg-white/70 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-8">
+            <div className="w-full max-w-lg bg-white dark:bg-[#0f0c18] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-white/5">
+                <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Поделиться воркфлоу</span>
                 <button
                   onClick={() => setShowShareModal(false)}
-                  className="text-white/40 hover:text-white transition-colors"
+                  className="text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white transition-colors"
                   type="button"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -872,14 +872,14 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
               </div>
               <div className="p-6 space-y-4">
                 {/* Tabs */}
-                <div className="flex gap-2 border border-white/10 rounded-lg overflow-hidden">
+                <div className="flex gap-2 border border-slate-200 dark:border-white/10 rounded-lg overflow-hidden bg-slate-50 dark:bg-transparent">
                   <button
                     type="button"
                     onClick={() => setShareInputType("email")}
                     className={`flex-1 py-2 text-xs font-semibold transition-colors ${
                       shareInputType === "email"
                         ? "bg-[#d946ef]/20 text-[#d946ef]"
-                        : "text-white/50 hover:text-white/70"
+                        : "text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white/70"
                     }`}
                   >
                     По почте
@@ -890,7 +890,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                     className={`flex-1 py-2 text-xs font-semibold transition-colors ${
                       shareInputType === "id"
                         ? "bg-[#d946ef]/20 text-[#d946ef]"
-                        : "text-white/50 hover:text-white/70"
+                        : "text-slate-500 dark:text-white/50 hover:text-slate-700 dark:hover:text-white/70"
                     }`}
                   >
                     По ID
@@ -904,7 +904,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                       value={shareEmail}
                       onChange={(e) => setShareEmail(e.target.value)}
                       placeholder="Email пользователя"
-                      className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#d946ef]/50"
+                      className="flex-1 px-4 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:outline-none focus:border-[#d946ef]/50"
                     />
                   ) : (
                     <input
@@ -912,7 +912,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                       value={shareUserId}
                       onChange={(e) => setShareUserId(e.target.value)}
                       placeholder="User ID пользователя"
-                      className="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-white/30 focus:outline-none focus:border-[#d946ef]/50 font-mono"
+                      className="flex-1 px-4 py-2 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:outline-none focus:border-[#d946ef]/50 font-mono"
                     />
                   )}
                   <button
@@ -923,19 +923,19 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                   </button>
                 </form>
 
-                <div className="border-t border-white/5 pt-4">
-                  <h3 className="text-xs font-black text-white/40 uppercase tracking-widest mb-3">Доступные пользователи</h3>
+                <div className="border-t border-slate-200 dark:border-white/5 pt-4">
+                  <h3 className="text-xs font-black text-slate-500 dark:text-white/40 uppercase tracking-widest mb-3">Доступные пользователи</h3>
                   {loadingShares ? (
-                    <div className="text-center py-4 text-white/30 text-sm">Загрузка...</div>
+                    <div className="text-center py-4 text-slate-400 dark:text-white/30 text-sm">Загрузка...</div>
                   ) : workflowShares.length === 0 ? (
-                    <div className="text-center py-4 text-white/30 text-sm">Нет пользователей с доступом</div>
+                    <div className="text-center py-4 text-slate-400 dark:text-white/30 text-sm">Нет пользователей с доступом</div>
                   ) : (
                     <div className="space-y-2">
                       {workflowShares.map((share) => (
-                        <div key={share.id} className="flex items-center justify-between px-3 py-2 bg-white/5 rounded-lg">
+                        <div key={share.id} className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-lg">
                           <div>
-                            <div className="text-sm text-white">{share.email || share.user_id}</div>
-                            <div className="text-xs text-white/40">{share.role}</div>
+                            <div className="text-sm text-slate-900 dark:text-white">{share.email || share.user_id}</div>
+                            <div className="text-xs text-slate-500 dark:text-white/40">{share.role}</div>
                           </div>
                           <button
                             onClick={() => handleRemoveShare(share.user_id)}
@@ -964,10 +964,10 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
         <div className="flex flex-col gap-6 mb-12">
           <div className="flex items-end justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+              <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
                 Процессы
               </h1>
-              <p className="text-white/40 text-sm font-medium">
+              <p className="text-slate-500 dark:text-white/40 text-sm font-medium">
                 Создавайте и управляйте своими ИИ-процессами
               </p>
             </div>
@@ -992,13 +992,13 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
             </button>
           </div>
 
-          <div className="flex items-center gap-2 border-b border-white/5">
+          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-white/5">
             <button
               onClick={() => setActiveMainTab("my-workflows")}
               className={`px-6 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all border-b-2 ${
                 activeMainTab === "my-workflows"
                   ? "text-[#d946ef] border-[#d946ef]"
-                  : "text-white/30 border-transparent hover:text-white"
+                  : "text-slate-400 dark:text-white/30 border-transparent hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Мои процессы
@@ -1008,7 +1008,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
               className={`px-6 py-4 text-xs font-black uppercase tracking-[0.2em] transition-all border-b-2 ${
                 activeMainTab === "published"
                   ? "text-[#d946ef] border-[#d946ef]"
-                  : "text-white/30 border-transparent hover:text-white"
+                  : "text-slate-400 dark:text-white/30 border-transparent hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Сообщество
@@ -1038,8 +1038,8 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
               />
             ))}
             {!loading && workflows.length === 0 && (
-              <div className="col-span-full py-24 text-center border-2 border-dashed border-white/5 rounded-2xl bg-white/[0.02]">
-                <div className="text-white/20 text-sm font-medium italic">
+              <div className="col-span-full py-24 text-center border-2 border-dashed border-slate-200 dark:border-white/5 rounded-2xl bg-slate-50 dark:bg-white/[0.02]">
+                <div className="text-slate-400 dark:text-white/20 text-sm font-medium italic">
                   В этом разделе пока нет процессов.
                 </div>
               </div>
@@ -1051,13 +1051,13 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
       {/* Rename Modal */}
       {renamingWorkflow && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setRenamingWorkflow(null)} />
+          <div className="absolute inset-0 bg-white/70 dark:bg-black/80 backdrop-blur-md" onClick={() => setRenamingWorkflow(null)} />
           <form 
             onSubmit={handleRenameWorkflow}
-            className="relative w-full max-w-sm bg-[#0f0c18] border border-white/10 rounded-2xl p-8 shadow-2xl animate-in fade-in zoom-in duration-300"
+            className="relative w-full max-w-sm bg-white dark:bg-[#0f0c18] border border-slate-200 dark:border-white/10 rounded-2xl p-8 shadow-2xl animate-in fade-in zoom-in duration-300"
           >
-            <h3 className="text-xl font-bold text-white mb-2">Переименовать процесс</h3>
-            <p className="text-white/40 text-sm mb-6">Введите новое название для процесса.</p>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Переименовать процесс</h3>
+            <p className="text-slate-500 dark:text-white/40 text-sm mb-6">Введите новое название для процесса.</p>
             
             <div className="space-y-4">
               <div className="space-y-2">
@@ -1068,7 +1068,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                   value={newWorkflowName}
                   onChange={(e) => setNewWorkflowName(e.target.value)}
                   placeholder="напр. Кинематографичный ролик"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#d946ef]/50 transition-colors"
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-4 py-3 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-[#d946ef]/50 transition-colors"
                 />
               </div>
               
@@ -1076,7 +1076,7 @@ export default function WorkflowStudio({ apiKey, isHeaderVisible = true, onToggl
                 <button
                   type="button"
                   onClick={() => setRenamingWorkflow(null)}
-                  className="flex-1 px-4 py-3 text-xs font-black text-white/40 uppercase tracking-widest hover:text-white transition-colors"
+                  className="flex-1 px-4 py-3 text-xs font-black text-slate-500 dark:text-white/40 uppercase tracking-widest hover:text-slate-900 dark:hover:text-white transition-colors"
                 >
                   Отмена
                 </button>

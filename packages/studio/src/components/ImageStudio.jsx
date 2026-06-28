@@ -2322,7 +2322,7 @@ export default function ImageStudio({
   // ── If loading or no models, show appropriate state ─────────────────────────────
   if (loading) {
     return (
-      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+      <div className="h-full w-full bg-app-bg flex flex-col items-center justify-center text-slate-500 dark:text-white/40">
         <div className="text-4xl mb-4">⏳</div>
         <div className="text-lg font-medium">Загрузка...</div>
       </div>
@@ -2331,7 +2331,7 @@ export default function ImageStudio({
   
   if (t2iModels.length === 0 && i2iModels.length === 0) {
     return (
-      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+      <div className="h-full w-full bg-app-bg flex flex-col items-center justify-center text-slate-500 dark:text-white/40">
         <div className="text-4xl mb-4">🎬</div>
         <div className="text-lg font-medium">Студия фото временно недоступна</div>
         <div className="text-sm mt-2">Перейдите в Студию видео для генерации</div>
@@ -2350,9 +2350,9 @@ export default function ImageStudio({
             {/* Generating card(s) — appear first while image(s) are being created */}
             {activeTasks.length > 0 && activeTasks.map((task) => (
               Array.from({ length: task.batchSize }).map((_, i) => (
-                <div key={`gen-${task.id}-${i}`} className="relative rounded-lg overflow-hidden border border-primary/40 bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
+                <div key={`gen-${task.id}-${i}`} className="relative rounded-lg overflow-hidden border border-primary/40 bg-white dark:bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
                   {/* Shimmer thumbnail */}
-                  <div className="w-full aspect-square bg-gradient-to-br from-black via-primary/5 to-black relative flex items-center justify-center overflow-hidden">
+                  <div className="w-full aspect-square bg-gradient-to-br from-slate-100 via-primary/5 to-white dark:from-black dark:via-primary/5 dark:to-black relative flex items-center justify-center overflow-hidden">
                     <div className="absolute inset-0 bg-primary/5 animate-pulse" />
                     <div className="absolute inset-0" style={{
                       background: "linear-gradient(105deg, transparent 40%, rgba(34,211,238,0.06) 50%, transparent 60%)",
@@ -2368,24 +2368,24 @@ export default function ImageStudio({
                     </div>
                   </div>
                   {/* Card footer */}
-                  <div className="p-3 bg-black/80 border-t border-primary/10 flex flex-col gap-2">
-                    <p className="text-white/50 text-xs line-clamp-2 leading-relaxed italic">
+                  <div className="p-3 bg-white/92 dark:bg-black/80 border-t border-primary/10 flex flex-col gap-2">
+                    <p className="text-slate-500 dark:text-white/50 text-xs line-clamp-2 leading-relaxed italic">
                       {task.prompt || "Создаётся изображение…"}
                     </p>
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20">
                         {task.modelName}
                       </span>
-                      <span className="text-[10px] text-white/30 animate-pulse">● обработка</span>
+                      <span className="text-[10px] text-slate-400 dark:text-white/30 animate-pulse">● обработка</span>
                     </div>
                   </div>
                 </div>
               ))
             ))}
             {activeTasks.length === 0 && generating && Array.from({ length: batchSize }).map((_, i) => (
-              <div key={`gen-compat-${i}`} className="relative rounded-lg overflow-hidden border border-primary/40 bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
+              <div key={`gen-compat-${i}`} className="relative rounded-lg overflow-hidden border border-primary/40 bg-white dark:bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up">
                 {/* Shimmer thumbnail */}
-                <div className="w-full aspect-square bg-gradient-to-br from-black via-primary/5 to-black relative flex items-center justify-center overflow-hidden">
+                <div className="w-full aspect-square bg-gradient-to-br from-slate-100 via-primary/5 to-white dark:from-black dark:via-primary/5 dark:to-black relative flex items-center justify-center overflow-hidden">
                   <div className="absolute inset-0 bg-primary/5 animate-pulse" />
                   <div className="absolute inset-0" style={{
                     background: "linear-gradient(105deg, transparent 40%, rgba(34,211,238,0.06) 50%, transparent 60%)",
@@ -2401,15 +2401,15 @@ export default function ImageStudio({
                   </div>
                 </div>
                 {/* Card footer */}
-                <div className="p-3 bg-black/80 border-t border-primary/10 flex flex-col gap-2">
-                  <p className="text-white/50 text-xs line-clamp-2 leading-relaxed italic">
+                <div className="p-3 bg-white/92 dark:bg-black/80 border-t border-primary/10 flex flex-col gap-2">
+                  <p className="text-slate-500 dark:text-white/50 text-xs line-clamp-2 leading-relaxed italic">
                     {generatingPrompt || "Создаётся изображение…"}
                   </p>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20">
                       {selectedModelName}
                     </span>
-                    <span className="text-[10px] text-white/30 animate-pulse">● обработка</span>
+                    <span className="text-[10px] text-slate-400 dark:text-white/30 animate-pulse">● обработка</span>
                   </div>
                 </div>
               </div>
@@ -2417,12 +2417,12 @@ export default function ImageStudio({
             {history.map((entry, idx) => (
               <div
                 key={entry.id || idx}
-                className="relative group rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col"
+                className="relative group rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col"
               >
                 <img
                   src={entry.url}
                   alt={entry.prompt?.substring(0, 30) || "Созданное изображение"}
-                  className="w-full aspect-square object-cover bg-black/40 cursor-pointer hover:opacity-80 transition-opacity"
+                  className="w-full aspect-square object-cover bg-slate-100 dark:bg-black/40 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => setFullscreenUrl(entry.url)}
                   onError={() => {
                     const brokenKey = entry.id || entry.url || `history-${idx}`;
@@ -2444,7 +2444,7 @@ export default function ImageStudio({
                       e.stopPropagation();
                       setFullscreenUrl(entry.url);
                     }}
-                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-primary hover:text-black transition-all border border-white/10"
+                    className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-primary hover:text-black transition-all border border-slate-200 dark:border-white/10"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="15 3 21 3 21 9" />
@@ -2460,7 +2460,7 @@ export default function ImageStudio({
                       e.stopPropagation();
                       downloadImage(entry.url, `muapi-${entry.id || idx}.jpg`);
                     }}
-                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-primary hover:text-black transition-all border border-white/10"
+                    className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-primary hover:text-black transition-all border border-slate-200 dark:border-white/10"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -2473,7 +2473,7 @@ export default function ImageStudio({
                       e.stopPropagation();
                       removeFromHistory(entry, idx);
                     }}
-                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-red-500 hover:text-white transition-all border border-white/10"
+                    className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-red-500 hover:text-white transition-all border border-slate-200 dark:border-white/10"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <polyline points="3 6 5 6 21 6" />
@@ -2489,7 +2489,7 @@ export default function ImageStudio({
                       e.stopPropagation();
                       openWorkflowPicker(entry.url, entry.prompt);
                     }}
-                    className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-[#22d3ee] hover:text-black transition-all border border-white/10"
+                    className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-[#22d3ee] hover:text-black transition-all border border-slate-200 dark:border-white/10"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
@@ -2498,9 +2498,9 @@ export default function ImageStudio({
                 </div>
 
                 {/* Prompt & Details */}
-                <div className="p-3 bg-black/80 backdrop-blur-sm border-t border-white/5 flex-1 flex flex-col justify-between gap-2">
+                <div className="p-3 bg-white/92 dark:bg-black/80 backdrop-blur-sm border-t border-slate-200 dark:border-white/5 flex-1 flex flex-col justify-between gap-2">
                   <div className="flex items-start gap-1.5">
-                    <p className="text-white/70 text-xs line-clamp-3 leading-relaxed flex-1" title={entry.prompt}>
+                    <p className="text-slate-700 dark:text-white/70 text-xs line-clamp-3 leading-relaxed flex-1" title={entry.prompt}>
                       {entry.prompt || "Запрос не указан"}
                     </p>
                     {entry.prompt && (
@@ -2514,7 +2514,7 @@ export default function ImageStudio({
                             setTimeout(() => setCopiedPromptId(null), 1500);
                           }).catch(() => {});
                         }}
-                        className="shrink-0 p-1 rounded-md text-white/30 hover:text-primary hover:bg-primary/10 transition-all"
+                        className="shrink-0 p-1 rounded-md text-slate-400 dark:text-white/30 hover:text-primary hover:bg-primary/10 transition-all"
                       >
                         {copiedPromptId === (entry.id || idx) ? (
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="3">
@@ -2533,7 +2533,7 @@ export default function ImageStudio({
                     <span className="text-[10px] font-bold text-primary px-2 py-0.5 bg-primary/10 rounded border border-primary/20">
                       {entry.model?.replace("-", " ")}
                     </span>
-                    <span className="text-[10px] text-white/40">{entry.aspect_ratio}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-white/40">{entry.aspect_ratio}</span>
                   </div>
                   <button
                     type="button"
@@ -2553,7 +2553,7 @@ export default function ImageStudio({
           <div className="flex flex-col items-center justify-center h-full animate-fade-in-up transition-all duration-700 min-h-[50vh]">
             <div className="mb-12 relative group">
               <div className="absolute inset-0 bg-primary/10 blur-[120px] rounded-full opacity-30 group-hover:opacity-60 transition-opacity duration-1000" />
-              <div className="relative w-24 h-24 md:w-32 md:h-32 bg-white/[0.02] rounded-[2rem] flex items-center justify-center border border-white/[0.05] overflow-hidden backdrop-blur-sm">
+              <div className="relative w-24 h-24 md:w-32 md:h-32 bg-white/80 dark:bg-white/[0.02] rounded-[2rem] flex items-center justify-center border border-slate-200 dark:border-white/[0.05] overflow-hidden backdrop-blur-sm">
                 <div className="w-16 h-16 bg-primary/5 rounded-2xl flex items-center justify-center border border-primary/10 relative z-10 transition-transform duration-500 group-hover:scale-110">
                   <svg
                     width="32"
@@ -2574,11 +2574,11 @@ export default function ImageStudio({
                 </div>
               </div>
             </div>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-4 text-center px-4">
-              <span className="text-purple-300/50 font-medium text-2xl sm:text-3xl md:text-4xl">НАЧНИТЕ СОЗДАВАТЬ В</span><br />
-              <span className="text-purple-300">СТУДИИ ИЗОБРАЖЕНИЙ</span>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-4 text-center px-4">
+              <span className="text-purple-500/60 dark:text-purple-300/50 font-medium text-2xl sm:text-3xl md:text-4xl">НАЧНИТЕ СОЗДАВАТЬ В</span><br />
+              <span className="text-purple-600 dark:text-purple-300">СТУДИИ ИЗОБРАЖЕНИЙ</span>
             </h1>
-            <p className="text-white/40 text-sm md:text-base font-medium tracking-wide text-center max-w-lg leading-relaxed">
+            <p className="text-slate-500 dark:text-white/40 text-sm md:text-base font-medium tracking-wide text-center max-w-lg leading-relaxed">
               Опишите сцену, персонажа, настроение или стиль — и наблюдайте как это оживает
             </p>
           </div>
@@ -2590,7 +2590,7 @@ export default function ImageStudio({
         className="absolute bottom-4 w-full max-w-[95%] lg:max-w-4xl z-40 animate-fade-in-up" 
         style={{ animationDelay: "0.2s" }}
       >
-        <div className="w-full bg-[#0a0a0a] rounded-md border border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
+        <div className="w-full bg-white/95 dark:bg-[#0a0a0a] rounded-md border border-slate-200 dark:border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
           {/* Top row: upload picker + textarea */}
           <div className="flex items-start gap-2">
             <UploadButton
@@ -2611,7 +2611,7 @@ export default function ImageStudio({
                 onInput={handleTextareaInput}
                 placeholder={placeholderText}
                 rows={1}
-                className="w-full bg-transparent border-none text-white text-sm placeholder:text-white/20 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar"
+                className="w-full bg-transparent border-none text-slate-900 dark:text-white text-sm placeholder:text-slate-400 dark:placeholder:text-white/20 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar"
               />
               </div>
               {prompt.trim() && (
@@ -2631,7 +2631,7 @@ export default function ImageStudio({
                       <path d="M6 6l12 12" />
                     </svg>
                   </button>
-                  <div className="pointer-events-none absolute right-0 bottom-full mb-2 whitespace-nowrap rounded-md border border-white/10 bg-black/90 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                  <div className="pointer-events-none absolute right-0 bottom-full mb-2 whitespace-nowrap rounded-md border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-black/90 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
                     Удалить промт
                   </div>
                 </div>
@@ -2640,7 +2640,7 @@ export default function ImageStudio({
           </div>
 
           {/* Bottom row: controls + generate */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2 border-t border-white/[0.03] relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2 border-t border-slate-200 dark:border-white/[0.03] relative">
             {/* Left controls */}
             <div className="flex items-center gap-2 relative flex-wrap pb-1 md:pb-0">
               {/* Model button */}
@@ -2651,12 +2651,12 @@ export default function ImageStudio({
                     e.stopPropagation();
                     setDropdownOpen((o) => (o === "model" ? null : "model"));
                   }}
-                  className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] rounded-md transition-all border border-white/[0.03] group whitespace-nowrap"
+                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.06] rounded-md transition-all border border-slate-200 dark:border-white/[0.03] group whitespace-nowrap"
                 >
                   <div className="w-4 h-4 bg-[#22d3ee] rounded flex items-center justify-center">
                     <span className="text-[9px] font-bold text-black uppercase">G</span>
                   </div>
-                  <span className="text-xs font-semibold text-white/70 group-hover:text-[#22d3ee] transition-colors">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-white/70 group-hover:text-[#22d3ee] transition-colors">
                     {selectedModelName}
                   </span>
                   <svg
@@ -2676,7 +2676,7 @@ export default function ImageStudio({
                   <div
                     ref={dropdownRef}
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-[#0a0a0a] rounded-lg p-3 shadow-2xl border border-white/[0.05] w-[calc(100vw-3rem)] max-w-xs"
+                    className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-white dark:bg-[#0a0a0a] rounded-lg p-3 shadow-2xl border border-slate-200 dark:border-white/[0.05] w-[calc(100vw-3rem)] max-w-xs"
                   >
                     <ModelDropdown
                       models={currentModels}
@@ -2698,12 +2698,12 @@ export default function ImageStudio({
                     e.stopPropagation();
                     setDropdownOpen((o) => (o === "ar" ? null : "ar"));
                   }}
-                  className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] rounded-md transition-all border border-white/[0.03] group whitespace-nowrap"
+                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.06] rounded-md transition-all border border-slate-200 dark:border-white/[0.03] group whitespace-nowrap"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40 text-white">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40 text-slate-500 dark:text-white">
                     <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                   </svg>
-                  <span className="text-[11px] font-semibold text-white/70 group-hover:text-[#22d3ee] transition-colors">
+                  <span className="text-[11px] font-semibold text-slate-700 dark:text-white/70 group-hover:text-[#22d3ee] transition-colors">
                     {selectedAr}
                   </span>
                 </button>
@@ -2711,7 +2711,7 @@ export default function ImageStudio({
                 {dropdownOpen === "ar" && (
                   <div
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-[#0a0a0a] rounded-md p-3 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-2xl border border-white/10 min-w-[160px]"
+                    className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-white dark:bg-[#0a0a0a] rounded-md p-3 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-2xl border border-slate-200 dark:border-white/10 min-w-[160px]"
                   >
                     <SimpleDropdown
                       title="Соотношение сторон"
@@ -2735,12 +2735,12 @@ export default function ImageStudio({
                       e.stopPropagation();
                       setDropdownOpen((o) => (o === "quality" ? null : "quality"));
                     }}
-                    className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] rounded-md transition-all border border-white/[0.03] group whitespace-nowrap"
+                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.06] rounded-md transition-all border border-slate-200 dark:border-white/[0.03] group whitespace-nowrap"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40 text-white">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40 text-slate-500 dark:text-white">
                       <path d="M6 2L3 6v15a2 2 0 002 2h14a2 2 0 002-2V6l-3-4H6z" />
                     </svg>
-                    <span className="text-[11px] font-semibold text-white/70 group-hover:text-[#22d3ee] transition-colors">
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-white/70 group-hover:text-[#22d3ee] transition-colors">
                       {selectedQuality || currentResolutions[0]}
                     </span>
                   </button>
@@ -2748,7 +2748,7 @@ export default function ImageStudio({
                   {dropdownOpen === "quality" && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-[#0a0a0a] rounded-md p-3 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-2xl border border-white/[0.05] min-w-[160px]"
+                      className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-white dark:bg-[#0a0a0a] rounded-md p-3 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-2xl border border-slate-200 dark:border-white/[0.05] min-w-[160px]"
                     >
                       <SimpleDropdown
                         title="Разрешение"
@@ -2771,12 +2771,12 @@ export default function ImageStudio({
                       e.stopPropagation();
                       setDropdownOpen((o) => (o === "qualopt" ? null : "qualopt"));
                     }}
-                    className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] rounded-md transition-all border border-white/[0.03] group whitespace-nowrap"
+                    className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.06] rounded-md transition-all border border-slate-200 dark:border-white/[0.03] group whitespace-nowrap"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40 text-white">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-40 text-slate-500 dark:text-white">
                       <polygon points="12 2 15 9 22 9 17 14 19 21 12 17 5 21 7 14 2 9 9 9" />
                     </svg>
-                    <span className="text-[11px] font-semibold text-white/70 group-hover:text-[#22d3ee] transition-colors">
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-white/70 group-hover:text-[#22d3ee] transition-colors">
                       {QUALITY_LABELS[selectedQualityOpt || currentQualityOptions[0]] || selectedQualityOpt || currentQualityOptions[0]}
                     </span>
                   </button>
@@ -2784,7 +2784,7 @@ export default function ImageStudio({
                   {dropdownOpen === "qualopt" && (
                     <div
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-[#0a0a0a] rounded-md p-3 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-2xl border border-white/[0.05] min-w-[160px]"
+                      className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-white dark:bg-[#0a0a0a] rounded-md p-3 max-h-[40vh] overflow-y-auto custom-scrollbar shadow-2xl border border-slate-200 dark:border-white/[0.05] min-w-[160px]"
                     >
                       <SimpleDropdown
                         title="Качество"
@@ -2836,7 +2836,7 @@ export default function ImageStudio({
               )}
 
               {imageSetSupported && (
-                <div className="flex items-center gap-1 bg-white/[0.03] rounded-md p-1 border border-white/[0.03]">
+                <div className="flex items-center gap-1 bg-white dark:bg-white/[0.03] rounded-md p-1 border border-slate-200 dark:border-white/[0.03]">
                   {[
                     { value: false, label: "1", title: "Сгенерировать одно изображение" },
                     { value: true, label: "Set", title: "Сгенерировать набор изображений" },
@@ -2849,7 +2849,7 @@ export default function ImageStudio({
                       className={`px-3 h-7 flex items-center justify-center rounded-md text-[10px] font-black transition-all ${
                         imageSetMode === option.value
                           ? "bg-[#22d3ee] text-black shadow-lg shadow-[#22d3ee]/20"
-                          : "text-white/40 hover:text-white/80 hover:bg-white/5"
+                          : "text-slate-500 dark:text-white/40 hover:text-slate-900 dark:hover:text-white/80 hover:bg-slate-100 dark:hover:bg-white/5"
                       }`}
                     >
                       {option.label}
@@ -3138,15 +3138,15 @@ export default function ImageStudio({
       {workflowPicker && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setWorkflowPicker(null)} />
-          <div className="relative w-full max-w-xs bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl animate-fade-in-up">
-            <h3 className="text-sm font-black text-white mb-1 uppercase tracking-widest">Добавить в воркфлоу</h3>
-            <p className="text-white/40 text-xs mb-5">Изображение добавится как входной нод</p>
+          <div className="relative w-full max-w-xs bg-white dark:bg-[#0a0a0a] border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-2xl animate-fade-in-up">
+            <h3 className="text-sm font-black text-slate-900 dark:text-white mb-1 uppercase tracking-widest">Добавить в воркфлоу</h3>
+            <p className="text-slate-500 dark:text-white/40 text-xs mb-5">Изображение добавится как входной нод</p>
             {pickerLoading ? (
               <div className="py-8 flex justify-center">
-                <div className="w-8 h-8 border-2 border-white/10 border-t-[#22d3ee] rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-slate-200 dark:border-white/10 border-t-[#22d3ee] rounded-full animate-spin" />
               </div>
             ) : pickerWorkflows.length === 0 ? (
-              <p className="text-white/30 text-xs text-center py-6">Нет воркфлоу</p>
+              <p className="text-slate-400 dark:text-white/30 text-xs text-center py-6">Нет воркфлоу</p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">
                 {pickerWorkflows.map((wf) => (
@@ -3154,17 +3154,17 @@ export default function ImageStudio({
                     key={wf.id}
                     type="button"
                     onClick={() => sendToWorkflow(wf)}
-                    className="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-[#22d3ee]/10 border border-white/5 hover:border-[#22d3ee]/30 transition-all group flex items-center gap-3"
+                    className="w-full text-left px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 hover:bg-[#22d3ee]/10 border border-slate-200 dark:border-white/5 hover:border-[#22d3ee]/30 transition-all group flex items-center gap-3"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/30 group-hover:text-[#22d3ee] flex-shrink-0">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-400 dark:text-white/30 group-hover:text-[#22d3ee] flex-shrink-0">
                       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
                     </svg>
-                    <span className="text-sm font-bold text-white group-hover:text-[#22d3ee] truncate">{wf.name || "Untitled Workflow"}</span>
+                    <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#22d3ee] truncate">{wf.name || "Untitled Workflow"}</span>
                   </button>
                 ))}
               </div>
             )}
-            <button type="button" onClick={() => setWorkflowPicker(null)} className="mt-4 w-full py-2 text-xs text-white/30 hover:text-white transition-colors">
+            <button type="button" onClick={() => setWorkflowPicker(null)} className="mt-4 w-full py-2 text-xs text-slate-500 dark:text-white/30 hover:text-slate-900 dark:hover:text-white transition-colors">
               Отмена
             </button>
           </div>

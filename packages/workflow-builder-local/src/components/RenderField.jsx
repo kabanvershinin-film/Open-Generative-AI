@@ -87,10 +87,10 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
   if (fieldName === 'face_asset' && faceThumb) {
     return (
       <div key={fieldName} className="flex flex-col gap-2 mt-2">
-        <label className="text-[10px] font-bold text-zinc-500 text-start px-1 mb-1 uppercase tracking-wider">
+        <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 text-start px-1 mb-1 uppercase tracking-wider">
           Персонаж
         </label>
-        <div className="relative group/char-preview w-24 h-24 rounded-xl overflow-hidden border border-purple-500/30 bg-black shadow-lg shadow-purple-500/10">
+        <div className="relative group/char-preview w-24 h-24 rounded-xl overflow-hidden border border-purple-500/30 bg-slate-100 dark:bg-black shadow-lg shadow-purple-500/10">
           <img src={faceThumb} alt="Character" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-purple-900/60 to-transparent pointer-events-none" />
           <div className="absolute bottom-1 left-0 right-0 text-[8px] text-white font-bold text-center uppercase tracking-tighter">
@@ -101,7 +101,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             onClick={() => {
               setFormValues(prev => ({ ...prev, face_asset: null, face_thumbnail: null, character_photo: null }));
             }}
-            className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-black text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover/char-preview:opacity-100 transition-opacity z-10"
+            className="absolute top-1.5 right-1.5 bg-white/90 dark:bg-black/80 hover:bg-white dark:hover:bg-black text-slate-700 dark:text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] opacity-0 group-hover/char-preview:opacity-100 transition-opacity z-10"
           >
             ×
           </button>
@@ -112,7 +112,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
   if (fieldName === 'face_thumbnail' || fieldName === 'character_photo') return null;
 
   const label = (
-    <label className="text-[10px] font-bold text-zinc-500 text-start px-1 mb-1">
+    <label className="text-[10px] font-bold text-slate-500 dark:text-zinc-500 text-start px-1 mb-1">
       {translateUi(meta.title || fieldName)}
       {isRequired && <span className="text-blue-500 text-[9px] ml-1">* обязательно</span>}
     </label>
@@ -266,7 +266,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           <select
             value={value}
             onChange={(e) => handleChange(fieldName, e.target.value)}
-            className="w-full appearance-none rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 pr-9 text-xs text-white outline-none transition-all hover:border-white/20 focus:border-blue-500/50"
+            className="w-full appearance-none rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 px-3 py-2 pr-9 text-xs text-slate-900 dark:text-white outline-none transition-all hover:border-slate-300 dark:hover:border-white/20 focus:border-blue-500/50"
           >
             {meta.enum.map((option, i) => (
               <option key={i} value={option}>
@@ -293,7 +293,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             value={formValues[fieldName] || ''} 
             readOnly
             // onChange={(e) => handleChange(fieldName, e.target.value)} 
-            className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 transition-all hover:border-white/20 w-full outline-none focus:border-blue-500/50" 
+            className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-white text-xs py-2 px-3 rounded-lg border border-slate-200 dark:border-white/10 transition-all hover:border-slate-300 dark:hover:border-white/20 w-full outline-none focus:border-blue-500/50" 
             placeholder={translateUi("Add a file or provide an URL")} 
           />
           {/* <input 
@@ -332,7 +332,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
+              className="min-h-11 px-4 rounded-lg bg-cyan-500/15 border border-cyan-400/30 text-cyan-700 dark:text-cyan-300 text-xs font-semibold hover:bg-cyan-500/20 transition-colors"
             >
               Выбрать файл
             </button>
@@ -340,7 +340,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               <button
                 type="button"
                 onClick={() => cameraInputRef.current?.click()}
-                className="min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
+                className="min-h-11 px-4 rounded-lg bg-purple-500/15 border border-purple-400/30 text-purple-700 dark:text-purple-300 text-xs font-semibold hover:bg-purple-500/20 transition-colors"
               >
                 Камера
               </button>
@@ -369,16 +369,16 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
         {displayUploadUrl && (
           <div className="flex items-center gap-2 relative group overflow-hidden self-start w-full">
             {meta.field === 'image' ? (
-              <img src={displayUploadUrl} alt={translateUi("Preview")} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" width={0} height={0} />
+              <img src={displayUploadUrl} alt={translateUi("Preview")} className="w-24 h-24 object-cover border border-slate-200 dark:border-white/10 rounded-xl shadow-lg" width={0} height={0} />
             ) : meta.field === 'video' ? (
-              <video src={displayUploadUrl} className="w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg" />
+              <video src={displayUploadUrl} className="w-24 h-24 object-cover border border-slate-200 dark:border-white/10 rounded-xl shadow-lg" />
             ) : meta.field === 'audio' && (
-              <div className="flex flex-col w-full h-20 border border-white/10 rounded-xl overflow-hidden shadow-lg">
+              <div className="flex flex-col w-full h-20 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-lg">
                 <AudioPlayer src={displayUploadUrl} />
               </div>
             )}
             {uploading && (
-              <div className="absolute inset-x-2 bottom-2 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-cyan-200">
+              <div className="absolute inset-x-2 bottom-2 rounded-lg bg-white/90 dark:bg-black/70 px-2 py-1 text-[10px] text-cyan-700 dark:text-cyan-200">
                 Загрузка... {uploadProgress}%
               </div>
             )}
@@ -386,7 +386,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               type="button" 
               suppressHydrationWarning={true}
               onClick={() => handleChange(fieldName, '')} 
-              className="text-gray-500 group-hover:text-red-600 group-hover:font-black cursor-pointer absolute top-2 left-2"
+              className="text-slate-400 dark:text-gray-500 group-hover:text-red-600 group-hover:font-black cursor-pointer absolute top-2 left-2"
             >
               &#10005;
             </button>
@@ -411,15 +411,15 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
                 <img 
                   src={url} 
                   alt={translateUi("Preview")} 
-                  className="w-full h-full aspect-[1/1] object-cover border border-gray-500 rounded" 
+                  className="w-full h-full aspect-[1/1] object-cover border border-slate-300 dark:border-gray-500 rounded" 
                 />
               ) : ['videos_list', 'video_files'].includes(meta.field) ? (
                 <video 
                   src={url} 
-                  className="w-full h-full aspect-[1/1] object-cover border border-gray-500 rounded" 
+                  className="w-full h-full aspect-[1/1] object-cover border border-slate-300 dark:border-gray-500 rounded" 
                 />
               ) : ['audios_list', 'audio_files'].includes(meta.field) && (
-                <div className="flex flex-col w-full h-20 border border-white/10 rounded-xl overflow-hidden shadow-lg">
+                <div className="flex flex-col w-full h-20 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden shadow-lg">
                   <AudioPlayer src={url} />
                 </div>
               )}
@@ -432,7 +432,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
                     updated.splice(idx, 1);
                     handleChange(fieldName, updated);
                   }} 
-                  className="text-gray-500 group-hover:text-red-600 hover:font-bold cursor-pointer absolute top-2 left-2"
+                  className="text-slate-400 dark:text-gray-500 group-hover:text-red-600 hover:font-bold cursor-pointer absolute top-2 left-2"
                 >
                   &#10005;
                 </button>
@@ -479,7 +479,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
             step={meta.step}
             value={formValues[fieldName] ?? meta.default ?? 0}
             onChange={(e) => handleChange(fieldName, parseFloat(e.target.value))}
-            className="h-1.5 rounded-full cursor-pointer accent-blue-600 outline-none w-full bg-zinc-800"
+            className="h-1.5 rounded-full cursor-pointer accent-blue-600 outline-none w-full bg-slate-200 dark:bg-zinc-800"
           />
           <input 
             type="number" 
@@ -499,7 +499,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               const clamped = Math.max(meta.minValue, Math.min(val, meta.maxValue));
               handleChange(fieldName, clamped);
             }} 
-            className="w-12 h-8 text-center text-white rounded-lg border border-white/10 text-[10px] font-bold bg-zinc-900 outline-none focus:border-blue-500/50 transition-all" 
+            className="w-12 h-8 text-center text-slate-900 dark:text-white rounded-lg border border-slate-200 dark:border-white/10 text-[10px] font-bold bg-white dark:bg-zinc-900 outline-none focus:border-blue-500/50 transition-all" 
           />
         </div>
       </div>
@@ -512,7 +512,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
 
     return (
       <div key={fieldName} className="flex flex-col gap-1 w-full">
-        <label htmlFor={fieldName} className="flex items-center gap-2 text-sm text-white font-medium relative">
+        <label htmlFor={fieldName} className="flex items-center gap-2 text-sm text-slate-900 dark:text-white font-medium relative">
           {label}
           {isRequired && <span className="text-blue-500 text-xs">* обязательно</span>}
         </label>
@@ -535,7 +535,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               num = Math.max(min, Math.min(num, max));
               handleChange(fieldName, num);
             }} 
-            className="w-full rounded-lg border border-white/10 px-3 py-2 text-white text-xs bg-zinc-900 hover:border-white/20 focus:border-blue-500/50 outline-none transition-all" 
+            className="w-full rounded-lg border border-slate-200 dark:border-white/10 px-3 py-2 text-slate-900 dark:text-white text-xs bg-white dark:bg-zinc-900 hover:border-slate-300 dark:hover:border-white/20 focus:border-blue-500/50 outline-none transition-all" 
           />
         </div>
       </div>
@@ -569,7 +569,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           value={value}
           placeholder={translateUi(meta.placeholder || "")}
           onChange={(e) => handleChange(fieldName, e.target.value)}
-          className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
+          className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-white text-xs py-2 px-3 rounded-lg border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
         />
       </div>
     );
@@ -588,11 +588,11 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
               checked={!!formValues[fieldName]}
               onChange={(e) => handleChange(fieldName, e.target.checked)}
             />
-            <span className={`flex items-center h-[20px] w-[36px] rounded-full p-1 duration-200 transition-all ${!!formValues[fieldName] ? "bg-blue-600 shadow-lg shadow-blue-900/40" : "bg-zinc-800 border border-white/10"}`}>
+            <span className={`flex items-center h-[20px] w-[36px] rounded-full p-1 duration-200 transition-all ${!!formValues[fieldName] ? "bg-blue-600 shadow-lg shadow-blue-900/40" : "bg-slate-200 dark:bg-zinc-800 border border-slate-300 dark:border-white/10"}`}>
               <span className={`h-[12px] w-[12px] rounded-full bg-white duration-200 shadow-sm ${!!formValues[fieldName] && "translate-x-[16px]"}`}></span>
             </span>
           </label>
-          <p className="text-xs text-white">{translateUi(meta.description)}</p>
+          <p className="text-xs text-slate-700 dark:text-white">{translateUi(meta.description)}</p>
         </div>
       </div>
     )
@@ -606,7 +606,7 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           value={value}
           onChange={(e) => handleChange(fieldName, e.target.value)}
           placeholder={translateUi(meta.description || "")}
-          className="bg-zinc-900 text-white text-xs py-2 px-3 rounded-lg border border-white/10 hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
+          className="bg-white dark:bg-zinc-900 text-slate-900 dark:text-white text-xs py-2 px-3 rounded-lg border border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20 transition-all w-full outline-none focus:border-blue-500/50"
           rows={6}
         />
       </div>

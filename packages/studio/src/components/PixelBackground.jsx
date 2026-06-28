@@ -12,11 +12,34 @@ const PixelBackground = ({ className, text = 'OPEN\nGENERATIVE\nAI' }) => {
     const ctx = canvas.getContext('2d');
     let animationId;
     let targetPixels = [];
+    let themePalette = {
+      textColor: '#0f172a',
+      clearColor: 'rgba(248, 250, 252, 0.55)',
+      colors: ['#d946ef', '#a855f7', '#7c3aed', '#f0abfc', '#c084fc', '#e879f9'],
+    };
+
+    const readThemePalette = () => {
+      if (typeof window === 'undefined') return themePalette;
+      const styles = window.getComputedStyle(document.documentElement);
+      const textPrimary = styles.getPropertyValue('--text-primary').trim() || '#0f172a';
+      const bgBody = styles.getPropertyValue('--bg-body').trim() || '#f8fafc';
+      const primary = styles.getPropertyValue('--color-primary').trim() || '#d946ef';
+      const secondary = styles.getPropertyValue('--color-secondary').trim() || '#a855f7';
+      const accent = styles.getPropertyValue('--color-accent').trim() || '#ec4899';
+      const muted = styles.getPropertyValue('--text-muted').trim() || '#64748b';
+      themePalette = {
+        textColor: textPrimary,
+        clearColor: `${bgBody}66`,
+        colors: [primary, secondary, accent, '#c084fc', '#f0abfc', muted],
+      };
+      return themePalette;
+    };
 
     const resize = () => {
       const rect = container.getBoundingClientRect();
       canvas.width = rect.width;
       canvas.height = rect.height;
+      readThemePalette();
       // Обновляем целевые позиции пикселей (текст) при ресайзе
       updateTargetPixels();
     };
@@ -34,7 +57,7 @@ const PixelBackground = ({ className, text = 'OPEN\nGENERATIVE\nAI' }) => {
       tempCtx.font = `900 ${fontSize}px Inter, sans-serif`;
       tempCtx.textAlign = 'center';
       tempCtx.textBaseline = 'middle';
-      tempCtx.fillStyle = '#ffffff';
+      tempCtx.fillStyle = readThemePalette().textColor;
       
       const lines = text.split('\n');
       const lineHeight = fontSize * 1.3;
@@ -66,15 +89,6 @@ const PixelBackground = ({ className, text = 'OPEN\nGENERATIVE\nAI' }) => {
     resizeObserver.observe(container);
 
     const pixelSize = 5;
-    const colors = [
-      '#d946ef', // fuchsia
-      '#a855f7', // purple
-      '#7c3aed', // darker purple
-      '#f0abfc', // light pink-purple
-      '#c084fc', // light purple
-      '#e879f9', // bright fuchsia
-    ];
-
     // Создаем пиксели
     const pixels = [];
     const totalPixels = targetPixels.length + 600; // Текст + случайные
@@ -93,7 +107,7 @@ const PixelBackground = ({ className, text = 'OPEN\nGENERATIVE\nAI' }) => {
         // Скорость
         vx: 0,
         vy: 0,
-        color: colors[Math.floor(Math.random() * colors.length)],
+        color: themePalette.colors[Math.floor(Math.random() * themePalette.colors.length)],
         opacity: Math.random() * 0.9 + 0.1,
         hasTarget,
         phase: Math.random() * Math.PI * 2, // Для плавного движения
@@ -101,7 +115,8 @@ const PixelBackground = ({ className, text = 'OPEN\nGENERATIVE\nAI' }) => {
     }
 
     const draw = () => {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.3)';
+      const palette = readThemePalette();
+      ctx.fillStyle = palette.clearColor;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       pixels.forEach(p => {
@@ -146,7 +161,16 @@ const PixelBackground = ({ className, text = 'OPEN\nGENERATIVE\nAI' }) => {
 
     draw();
 
+    const observer = typeof MutationObserver !== 'undefined'
+      ? new MutationObserver(() => {
+          readThemePalette();
+          updateTargetPixels();
+        })
+      : null;
+    observer?.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
     return () => {
+      observer?.disconnect();
       resizeObserver.disconnect();
       cancelAnimationFrame(animationId);
     };

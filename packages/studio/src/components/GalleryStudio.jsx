@@ -84,10 +84,10 @@ export default function GalleryStudio({ apiKey }) {
   };
 
   return (
-    <div className="w-full h-full bg-[#050505] flex flex-col">
+    <div className="w-full h-full bg-app-bg text-slate-900 dark:text-white flex flex-col">
       {/* Header */}
-      <div className="flex-shrink-0 h-16 border-b border-white/10 flex items-center px-6 gap-4">
-        <h1 className="text-lg font-bold text-white">Галерея</h1>
+      <div className="flex-shrink-0 h-16 border-b border-slate-200 dark:border-white/10 flex items-center px-6 gap-4 bg-white/70 dark:bg-transparent backdrop-blur-sm">
+        <h1 className="text-lg font-bold text-slate-900 dark:text-white">Галерея</h1>
         <div className="flex gap-2 ml-auto">
           {['all', 'image', 'video', 'audio', 'text'].map(type => (
             <button
@@ -95,8 +95,8 @@ export default function GalleryStudio({ apiKey }) {
               onClick={() => handleTypeChange(type)}
               className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
                 activeType === type
-                  ? 'bg-[#22d3ee] text-black'
-                  : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
+                  ? 'bg-[#22d3ee] text-black shadow-sm'
+                  : 'bg-white text-slate-600 border border-slate-200 hover:text-slate-900 hover:border-cyan-300 hover:bg-cyan-50 dark:bg-white/5 dark:text-white/60 dark:border-white/10 dark:hover:text-white dark:hover:bg-white/10'
               }`}
             >
               {type === 'all' ? 'Все' : type === 'image' ? 'Фото' : type === 'video' ? 'Видео' : type === 'audio' ? 'Звук' : 'Текст'}
@@ -109,10 +109,10 @@ export default function GalleryStudio({ apiKey }) {
       <div className="flex-1 overflow-auto p-6">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-white/40">Загрузка...</div>
+            <div className="text-slate-500 dark:text-white/40">Загрузка...</div>
           </div>
         ) : entries.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-white/40">
+          <div className="flex items-center justify-center h-full text-slate-500 dark:text-white/40">
             Галерея пуста
           </div>
         ) : (
@@ -120,7 +120,7 @@ export default function GalleryStudio({ apiKey }) {
             {entries.map(entry => (
               <div
                 key={entry.id}
-                className="group relative bg-white/5 rounded-lg overflow-hidden border border-white/10 hover:border-[#22d3ee]/50 transition-all aspect-square"
+                className="group relative bg-white dark:bg-white/5 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 hover:border-cyan-300 dark:hover:border-[#22d3ee]/50 transition-all aspect-square shadow-sm dark:shadow-none"
               >
                 {/* Thumbnail */}
                 {entry.type === 'image' && (
@@ -140,19 +140,19 @@ export default function GalleryStudio({ apiKey }) {
                   />
                 )}
                 {(entry.type === 'audio' || entry.type === 'text') && (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center">
+                  <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center bg-slate-50 dark:bg-transparent">
                     <div className="text-4xl mb-2">{getIcon(entry.type)}</div>
-                    <div className="text-xs text-white/60 truncate">{entry.model}</div>
+                    <div className="text-xs text-slate-500 dark:text-white/60 truncate">{entry.model}</div>
                   </div>
                 )}
 
                 {/* Overlay */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-3">
-                  <div className="text-xs text-white/80 font-medium mb-2 truncate w-full text-center">
+                <div className="absolute inset-0 bg-white/85 dark:bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-3 backdrop-blur-sm">
+                  <div className="text-xs text-slate-700 dark:text-white/80 font-medium mb-2 truncate w-full text-center">
                     {entry.model}
                   </div>
                   {entry.prompt && (
-                    <div className="text-[10px] text-white/50 mb-3 line-clamp-3 text-center">
+                    <div className="text-[10px] text-slate-500 dark:text-white/50 mb-3 line-clamp-3 text-center">
                       {entry.prompt}
                     </div>
                   )}
@@ -167,7 +167,7 @@ export default function GalleryStudio({ apiKey }) {
                     <button
                       type="button"
                       onClick={() => handleDownload(entry)}
-                      className="px-3 py-1 bg-white/10 text-white text-[10px] font-bold rounded hover:bg-white/20 transition-colors"
+                      className="px-3 py-1 bg-slate-900/10 text-slate-700 dark:bg-white/10 dark:text-white text-[10px] font-bold rounded hover:bg-slate-900/20 dark:hover:bg-white/20 transition-colors"
                     >
                       Скачать
                     </button>
@@ -182,12 +182,12 @@ export default function GalleryStudio({ apiKey }) {
                 </div>
 
                 {/* Type Badge */}
-                <div className="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white/80">
+                <div className="absolute top-2 right-2 bg-white/85 text-slate-700 border border-slate-200 dark:bg-black/60 dark:text-white/80 dark:border-white/10 px-2 py-1 rounded text-[10px] backdrop-blur-sm">
                   {getIcon(entry.type)}
                 </div>
 
                 {/* Date */}
-                <div className="absolute bottom-2 left-2 text-[9px] text-white/50">
+                <div className="absolute bottom-2 left-2 text-[9px] text-slate-500 dark:text-white/50">
                   {new Date(entry.created_at).toLocaleDateString('ru-RU')}
                 </div>
               </div>

@@ -200,7 +200,7 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
     <button
       ref={rootRef}
       type="button"
-      className="w-full aspect-video bg-black/40 cursor-pointer hover:opacity-80 transition-opacity relative flex items-center justify-center overflow-hidden"
+      className="w-full aspect-video bg-slate-100 dark:bg-black/40 cursor-pointer hover:opacity-80 transition-opacity relative flex items-center justify-center overflow-hidden"
       onClick={onOpen}
       title="Открыть видео"
     >
@@ -228,9 +228,9 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
           onError={() => setVideoError(true)}
         />
       ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-black to-cyan-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-100 via-white to-fuchsia-100 dark:from-purple-950/30 dark:via-black dark:to-cyan-950/20" />
       )}
-      <span className="relative z-10 w-14 h-14 rounded-full bg-black/60 border border-white/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
+      <span className="relative z-10 w-14 h-14 rounded-full bg-white/90 border border-slate-200 dark:bg-black/60 dark:border-white/10 flex items-center justify-center text-primary shadow-lg shadow-primary/10">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
           <path d="M8 5v14l11-7z" />
         </svg>
@@ -244,10 +244,10 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
 function DropdownItem({ label, selected, onClick }) {
   return (
     <div
-      className="flex items-center justify-between p-3.5 hover:bg-white/5 rounded-2xl cursor-pointer transition-all group"
+      className="flex items-center justify-between p-3.5 hover:bg-slate-100 dark:hover:bg-white/5 rounded-2xl cursor-pointer transition-all group"
       onClick={onClick}
     >
-      <span className="text-xs font-bold text-white opacity-80 group-hover:opacity-100 capitalize">
+      <span className="text-xs font-bold text-slate-700 dark:text-white opacity-80 group-hover:opacity-100 capitalize">
         {label}
       </span>
       {selected && <CheckSvg />}
@@ -313,8 +313,8 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
 
   return (
     <div className="flex flex-col h-full max-h-[70vh]">
-      <div className="px-2 pb-3 mb-2 border-b border-white/5 shrink-0">
-        <div className="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-2.5 border border-white/5 focus-within:border-primary/50 transition-colors">
+      <div className="px-2 pb-3 mb-2 border-b border-slate-200 dark:border-white/5 shrink-0">
+        <div className="flex items-center gap-3 bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-2.5 border border-slate-200 dark:border-white/5 focus-within:border-primary/50 transition-colors">
           <svg
             width="14"
             height="14"
@@ -333,7 +333,7 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            className="bg-transparent border-none text-xs text-white focus:ring-0 w-full p-0 outline-none"
+            className="bg-transparent border-none text-xs text-slate-900 dark:text-white focus:ring-0 w-full p-0 outline-none"
           />
         </div>
       </div>
@@ -344,7 +344,7 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
         {filteredMain.map((m) => renderItem(m, false))}
         {filteredV2V.length > 0 && (
           <>
-            <div className="text-xs font-bold text-orange-400/70 px-3 py-2 mt-1 border-t border-white/5">
+            <div className="text-xs font-bold text-orange-400/70 px-3 py-2 mt-1 border-t border-slate-200 dark:border-white/5">
               Видеоинструменты
             </div>
             {filteredV2V.map((m) => renderItem(m, true))}
@@ -363,10 +363,10 @@ function ControlBtn({ icon, label, onClick, style }) {
       type="button"
       onClick={onClick}
       style={style}
-      className="flex items-center gap-1.5 md:gap-2.5 px-3 md:px-4 py-2 md:py-2.5 bg-white/5 hover:bg-white/10 rounded-xl md:rounded-2xl transition-all border border-white/5 group whitespace-nowrap"
+      className="flex items-center gap-1.5 md:gap-2.5 px-3 md:px-4 py-2 md:py-2.5 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 rounded-xl md:rounded-2xl transition-all border border-slate-200 dark:border-white/5 group whitespace-nowrap"
     >
       {icon}
-      <span className="text-xs font-bold text-white group-hover:text-primary transition-colors">
+      <span className="text-xs font-bold text-slate-700 dark:text-white group-hover:text-primary transition-colors">
         {label}
       </span>
       <svg
@@ -2604,7 +2604,7 @@ export default function VideoStudio({
   // ── If loading or no models, show appropriate state ───────────────────────
   if (loading) {
     return (
-      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+      <div className="h-full w-full bg-app-bg flex flex-col items-center justify-center text-slate-500 dark:text-white/40">
         <div className="text-4xl mb-4">⏳</div>
         <div className="text-lg font-medium">Загрузка...</div>
       </div>
@@ -2613,7 +2613,7 @@ export default function VideoStudio({
   
   if (t2vModels.length === 0 && i2vModels.length === 0 && v2vModels.length === 0) {
     return (
-      <div className="h-full w-full bg-black flex flex-col items-center justify-center text-white/40">
+      <div className="h-full w-full bg-app-bg flex flex-col items-center justify-center text-slate-500 dark:text-white/40">
         <div className="text-4xl mb-4">🎬</div>
         <div className="text-lg font-medium">Студия видео временно недоступна</div>
         <div className="text-sm mt-2">Попробуйте позже</div>
@@ -2637,9 +2637,9 @@ export default function VideoStudio({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {/* Active generation cards */}
             {activeTasks.map((task) => (
-              <div key={task.id} className={`relative rounded-lg overflow-hidden border ${task.status === 'error' ? 'border-red-500/40' : 'border-primary/40'} bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up`}>
+              <div key={task.id} className={`relative rounded-lg overflow-hidden border ${task.status === 'error' ? 'border-red-500/40' : 'border-primary/40'} bg-white dark:bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up`}>
                 {/* Shimmer thumbnail area */}
-                <div className="w-full aspect-video bg-gradient-to-br from-black via-primary/5 to-black relative flex items-center justify-center overflow-hidden">
+                <div className="w-full aspect-video bg-gradient-to-br from-slate-100 via-primary/5 to-white dark:from-black dark:via-primary/5 dark:to-black relative flex items-center justify-center overflow-hidden">
                   {/* Animated glow */}
                   <div className={`absolute inset-0 ${task.status === 'error' ? 'bg-red-500/5' : 'bg-primary/5 animate-pulse'}`} />
                   {task.status !== 'error' && (
@@ -2671,8 +2671,8 @@ export default function VideoStudio({
                   </div>
                 </div>
                 {/* Card footer */}
-                <div className="p-3 bg-black/80 border-t border-primary/10 flex flex-col gap-2">
-                  <p className="text-white/50 text-xs line-clamp-2 leading-relaxed italic">
+                <div className="p-3 bg-white/92 dark:bg-black/80 border-t border-primary/10 flex flex-col gap-2">
+                  <p className="text-slate-500 dark:text-white/50 text-xs line-clamp-2 leading-relaxed italic">
                     {task.prompt || "Создаётся видео…"}
                   </p>
                   <div className="flex items-center justify-between">
@@ -2682,14 +2682,14 @@ export default function VideoStudio({
                     {task.status === 'error' ? (
                       <span className="text-[10px] text-red-400 truncate max-w-[100px]">{task.error || 'Сбой'}</span>
                     ) : (
-                      <span className="text-[10px] text-white/30 animate-pulse">● обработка</span>
+                      <span className="text-[10px] text-slate-400 dark:text-white/30 animate-pulse">● обработка</span>
                     )}
                   </div>
                 </div>
               </div>
             ))}
             {isLoadingRemoteHistory && activeTasks.length === 0 && localHistory.length === 0 && (
-              <div className="relative rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl flex flex-col items-center justify-center aspect-video">
+              <div className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shadow-xl flex flex-col items-center justify-center aspect-video">
                 <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
                   <path d="M22 12a10 10 0 0 1-10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
@@ -2702,7 +2702,7 @@ export default function VideoStudio({
               return (
                 <div
                   key={entry.id || idx}
-                  className="relative group rounded-lg overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col"
+                  className="relative group rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shadow-xl hover:border-primary/50 transition-all duration-300 flex flex-col"
                   style={{ contentVisibility: "auto", containIntrinsicSize: "360px 260px" }}
                 >
                   <LazyVideoFirstFramePreview
@@ -2719,7 +2719,7 @@ export default function VideoStudio({
                         e.stopPropagation();
                         setFullscreenUrl(entry.url);
                       }}
-                      className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-primary hover:text-black transition-all border border-white/10"
+                      className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-primary hover:text-black transition-all border border-slate-200 dark:border-white/10"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <polyline points="15 3 21 3 21 9" />
@@ -2735,7 +2735,7 @@ export default function VideoStudio({
                         e.stopPropagation();
                         downloadFile(entry.url, `video-${entry.id || idx}.mp4`);
                       }}
-                      className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-primary hover:text-black transition-all border border-white/10"
+                      className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-primary hover:text-black transition-all border border-slate-200 dark:border-white/10"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -2748,7 +2748,7 @@ export default function VideoStudio({
                         e.stopPropagation();
                         deleteHistoryEntry(entry, idx);
                       }}
-                      className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-red-500 hover:text-white transition-all border border-white/10"
+                      className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-red-500 hover:text-white transition-all border border-slate-200 dark:border-white/10"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <line x1="18" y1="6" x2="6" y2="18" />
@@ -2763,7 +2763,7 @@ export default function VideoStudio({
                           e.stopPropagation();
                           handleExtend(entry);
                         }}
-                        className="p-2 bg-black/60 backdrop-blur-md rounded-full text-white hover:bg-primary hover:text-black transition-all border border-white/10"
+                        className="p-2 bg-white/85 dark:bg-black/60 backdrop-blur-md rounded-full text-slate-700 dark:text-white hover:bg-primary hover:text-black transition-all border border-slate-200 dark:border-white/10"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M5 12h14M12 5l7 7-7 7" />
@@ -2773,9 +2773,9 @@ export default function VideoStudio({
                   </div>
 
                   {/* Prompt & Details */}
-                  <div className="p-3 bg-black/80 backdrop-blur-sm border-t border-white/5 flex-1 flex flex-col justify-between gap-2">
+                  <div className="p-3 bg-white/92 dark:bg-black/80 backdrop-blur-sm border-t border-slate-200 dark:border-white/5 flex-1 flex flex-col justify-between gap-2">
                     <div className="flex items-start gap-1.5">
-                      <p className="text-white/70 text-xs line-clamp-3 leading-relaxed flex-1" title={entry.prompt}>
+                      <p className="text-slate-700 dark:text-white/70 text-xs line-clamp-3 leading-relaxed flex-1" title={entry.prompt}>
                         {entry.prompt || "Запрос не указан"}
                       </p>
                       {entry.prompt && (
@@ -2789,7 +2789,7 @@ export default function VideoStudio({
                               setTimeout(() => setCopiedPromptId(null), 1500);
                             }).catch(() => {});
                           }}
-                          className="shrink-0 p-1 rounded-md text-white/30 hover:text-primary hover:bg-primary/10 transition-all"
+                          className="shrink-0 p-1 rounded-md text-slate-400 dark:text-white/30 hover:text-primary hover:bg-primary/10 transition-all"
                         >
                           {copiedPromptId === (entry.id || idx) ? (
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22d3ee" strokeWidth="3">
@@ -2810,10 +2810,10 @@ export default function VideoStudio({
                       </span>
                       <div className="flex gap-2">
                         {entry.resolution && (
-                          <span className="text-[10px] text-white/40">{entry.resolution}</span>
+                          <span className="text-[10px] text-slate-500 dark:text-white/40">{entry.resolution}</span>
                         )}
                         {entry.duration && (
-                          <span className="text-[10px] text-white/40">{entry.duration}s</span>
+                          <span className="text-[10px] text-slate-500 dark:text-white/40">{entry.duration}s</span>
                         )}
                       </div>
                     </div>
@@ -2837,7 +2837,7 @@ export default function VideoStudio({
                   <button
                     type="button"
                     onClick={() => fetchRemoteHistory()}
-                    className="px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-200 text-xs hover:bg-red-500/20 transition-colors"
+                    className="px-4 py-2 rounded-lg border border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-200 text-xs hover:bg-red-500/20 transition-colors"
                   >
                     Ошибка загрузки истории. Повторить
                   </button>
@@ -2847,7 +2847,7 @@ export default function VideoStudio({
                   <button
                     type="button"
                     onClick={() => fetchRemoteHistory()}
-                    className="px-4 py-2 rounded-lg border border-white/10 bg-white/5 text-white/60 text-xs hover:text-primary hover:border-primary/40 transition-colors"
+                    className="px-4 py-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-white/60 text-xs hover:text-primary hover:border-primary/40 transition-colors"
                   >
                     Загрузить ещё
                   </button>
@@ -2859,7 +2859,7 @@ export default function VideoStudio({
           <div className="flex flex-col items-center justify-center h-full animate-fade-in-up transition-all duration-700 min-h-[50vh]">
             <div className="mb-12 relative group">
               <div className="absolute inset-0 bg-primary/10 blur-[120px] rounded-full opacity-30 group-hover:opacity-60 transition-opacity duration-1000" />
-              <div className="relative w-24 h-24 md:w-32 md:h-32 bg-white/[0.02] rounded-[2rem] flex items-center justify-center border border-white/[0.05] overflow-hidden backdrop-blur-sm">
+              <div className="relative w-24 h-24 md:w-32 md:h-32 bg-white/80 dark:bg-white/[0.02] rounded-[2rem] flex items-center justify-center border border-slate-200 dark:border-white/[0.05] overflow-hidden backdrop-blur-sm">
                 <div className="w-16 h-16 bg-primary/5 rounded-2xl flex items-center justify-center border border-primary/10 relative z-10 transition-transform duration-500 group-hover:scale-110">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-primary opacity-80">
                     <polygon points="23 7 16 12 23 17 23 7" />
@@ -2869,11 +2869,11 @@ export default function VideoStudio({
                 <div className="absolute top-4 right-4 text-[10px] text-primary/40 animate-pulse">✨</div>
               </div>
             </div>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight mb-4 text-center px-4">
-              <span className="text-purple-300/50 font-medium text-2xl sm:text-3xl md:text-4xl">НАЧНИТЕ СОЗДАВАТЬ В</span><br />
-              <span className="text-purple-300">ВИДЕОСТУДИИ</span>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-4 text-center px-4">
+              <span className="text-purple-500/60 dark:text-purple-300/50 font-medium text-2xl sm:text-3xl md:text-4xl">НАЧНИТЕ СОЗДАВАТЬ В</span><br />
+              <span className="text-purple-600 dark:text-purple-300">ВИДЕОСТУДИИ</span>
             </h1>
-            <p className="text-white/40 text-sm md:text-base font-medium tracking-wide text-center max-w-lg leading-relaxed">
+            <p className="text-slate-500 dark:text-white/40 text-sm md:text-base font-medium tracking-wide text-center max-w-lg leading-relaxed">
               Оживляйте изображения в потрясающие ИИ-видео с эффектами движения
             </p>
           </div>
@@ -2882,7 +2882,7 @@ export default function VideoStudio({
 
       {/* ── BOTTOM PROMPT BAR ── */}
       <div className="absolute bottom-4 w-full max-w-[95%] lg:max-w-4xl z-40 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-        <div className="w-full bg-[#0a0a0a] backdrop-blur-3xl rounded-md border border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
+        <div className="w-full bg-white/95 dark:bg-[#0a0a0a] backdrop-blur-3xl rounded-md border border-slate-200 dark:border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
           {/* Registered face chip — the generated video keeps this face */}
           {isSeedanceArk && faceAsset && (
             <div className="flex flex-wrap gap-2 px-1 pb-1">
@@ -2903,7 +2903,7 @@ export default function VideoStudio({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setFaceAsset(null); }}
-                  className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                  className="ml-0.5 text-slate-400 dark:text-white/40 hover:text-red-400 transition-colors"
                   title="Убрать лицо"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2941,7 +2941,7 @@ export default function VideoStudio({
                   chips.push(
                     <div
                       key="uploaded-image"
-                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer transition-all"
+                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-slate-700 dark:text-white/80 hover:border-primary/60 cursor-pointer transition-all"
                       title={`Изображение — вставить ${label} в промпт`}
                       onClick={() => insertRefToken(label)}
                     >
@@ -2950,7 +2950,7 @@ export default function VideoStudio({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); clearImageUpload(); }}
-                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        className="ml-0.5 text-slate-400 dark:text-white/40 hover:text-red-400 transition-colors"
                         title="Удалить изображение"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2969,7 +2969,7 @@ export default function VideoStudio({
                   chips.push(
                     <div
                       key="uploaded-video"
-                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer transition-all"
+                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-slate-700 dark:text-white/80 hover:border-primary/60 cursor-pointer transition-all"
                       title={`Видео — вставить ${label} в промпт`}
                       onClick={() => insertRefToken(label)}
                     >
@@ -2978,7 +2978,7 @@ export default function VideoStudio({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); clearVideoUpload(); }}
-                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        className="ml-0.5 text-slate-400 dark:text-white/40 hover:text-red-400 transition-colors"
                         title="Удалить видео"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2997,16 +2997,16 @@ export default function VideoStudio({
                   chips.push(
                     <div
                       key="uploaded-audio"
-                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer transition-all"
+                      className="group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border border-primary/30 bg-primary/5 text-slate-700 dark:text-white/80 hover:border-primary/60 cursor-pointer transition-all"
                       title={`Аудио — вставить ${label} в промпт`}
                       onClick={() => insertRefToken(label)}
                     >
-                      <span className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-[9px]">🎵</span>
+                      <span className="w-5 h-5 rounded bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[9px]">🎵</span>
                       <span className="whitespace-nowrap">{label}</span>
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); clearAudioUpload(); }}
-                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        className="ml-0.5 text-slate-400 dark:text-white/40 hover:text-red-400 transition-colors"
                         title="Удалить аудио"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -3030,14 +3030,14 @@ export default function VideoStudio({
                   chips.push(
                     <div
                       key={f.id}
-                      className={`group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border text-[11px] font-medium transition-all ${f.uploading ? "border-white/10 bg-white/5 text-white/40" : "border-primary/30 bg-primary/5 text-white/80 hover:border-primary/60 cursor-pointer"}`}
+                      className={`group relative flex items-center gap-1.5 h-8 pl-1.5 pr-2 rounded-lg border text-[11px] font-medium transition-all ${f.uploading ? "border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-white/40" : "border-primary/30 bg-primary/5 text-slate-700 dark:text-white/80 hover:border-primary/60 cursor-pointer"}`}
                       title={f.uploading ? `${f.name} — загрузка ${f.progress}%` : `${f.name} — вставить ${label} в промпт`}
                       onClick={() => !f.uploading && insertRefToken(label)}
                     >
                       {f.kind === "image" && f.url ? (
                         <img src={f.url} alt="" className="w-5 h-5 rounded object-cover" />
                       ) : (
-                        <span className="w-5 h-5 rounded bg-white/10 flex items-center justify-center text-[9px]">
+                        <span className="w-5 h-5 rounded bg-slate-200 dark:bg-white/10 flex items-center justify-center text-[9px]">
                           {f.kind === "video" ? "🎬" : f.kind === "audio" ? "🎵" : "🖼"}
                         </span>
                       )}
@@ -3046,7 +3046,7 @@ export default function VideoStudio({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); f.cancel?.(); if (!f.cancel) removeRefFile(f.id); }}
-                          className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                          className="ml-0.5 text-slate-400 dark:text-white/40 hover:text-red-400 transition-colors"
                           title="Отменить загрузку"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -3058,7 +3058,7 @@ export default function VideoStudio({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeRefFile(f.id); }}
-                          className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                          className="ml-0.5 text-slate-400 dark:text-white/40 hover:text-red-400 transition-colors"
                           title="Удалить"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -3091,13 +3091,13 @@ export default function VideoStudio({
                   type="button"
                   title="Загрузить изображения / видео / аудио (можно несколько)"
                   onClick={() => refFileInputRef.current?.click()}
-                  className="h-10 px-3 shrink-0 rounded-full border bg-white/[0.03] border-white/[0.06] hover:bg-white/10 hover:border-primary/40 transition-all flex items-center gap-2 group"
+                  className="h-10 px-3 shrink-0 rounded-full border bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.06] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40 transition-all flex items-center gap-2 group"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-white/50 group-hover:text-primary transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-slate-500 dark:text-white/50 group-hover:text-primary transition-colors">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
-                  <span className="text-[11px] font-medium text-white/50 group-hover:text-primary transition-colors whitespace-nowrap">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-white/50 group-hover:text-primary transition-colors whitespace-nowrap">
                     Изображения/видео/аудио
                   </span>
                 </button>
@@ -3126,7 +3126,7 @@ export default function VideoStudio({
                     ? clearImageUpload()
                     : imageFileInputRef.current?.click()
                 }
-                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedImageUrl ? "border-primary/60 bg-primary/5" : "bg-white/5 border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedImageUrl ? "border-primary/60 bg-primary/5" : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
               >
                 {imageUploading ? (
                   <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
@@ -3138,7 +3138,7 @@ export default function VideoStudio({
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        className="text-white/10"
+                        className="text-slate-300 dark:text-white/10"
                       />
                       <circle
                         cx="16"
@@ -3173,7 +3173,7 @@ export default function VideoStudio({
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="text-white/40 group-hover:text-primary transition-colors"
+                      className="text-slate-500 dark:text-white/40 group-hover:text-primary transition-colors"
                     >
                       <rect
                         x="3"
@@ -3209,12 +3209,12 @@ export default function VideoStudio({
                       ? clearEndImage()
                       : endImageFileInputRef.current?.click()
                   }
-                  className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedEndImageUrl ? "border-primary/60 bg-primary/5" : "bg-white/5 border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                  className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedEndImageUrl ? "border-primary/60 bg-primary/5" : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
                 >
                   {endImageUploading ? (
                     <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
                       <svg className="w-8 h-8 -rotate-90">
-                        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/10" />
+                        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-slate-300 dark:text-white/10" />
                         <circle
                           cx="16"
                           cy="16"
@@ -3241,14 +3241,14 @@ export default function VideoStudio({
                     />
                   ) : (
                     !endImageUploading && (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40 group-hover:text-primary transition-colors">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 dark:text-white/40 group-hover:text-primary transition-colors">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />
                       </svg>
                     )
                   )}
-                  <span className="absolute top-0.5 left-0.5 px-1 h-3.5 bg-black/60 rounded-md text-[7px] font-black text-primary leading-none flex items-center justify-center pointer-events-none">
+                  <span className="absolute top-0.5 left-0.5 px-1 h-3.5 bg-white/90 border border-slate-200 dark:bg-black/60 dark:border-white/10 rounded-md text-[7px] font-black text-primary leading-none flex items-center justify-center pointer-events-none">
                     END
                   </span>
                 </button>
@@ -3278,7 +3278,7 @@ export default function VideoStudio({
                     ? clearVideoUpload()
                     : videoFileInputRef.current?.click()
                 }
-                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedVideoUrl ? "border-primary/60 bg-white/5" : "bg-white/[0.03] border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedVideoUrl ? "border-primary/60 bg-white dark:bg-white/5" : "bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
               >
                 {videoUploading ? (
                   <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
@@ -3290,7 +3290,7 @@ export default function VideoStudio({
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        className="text-white/10"
+                        className="text-slate-300 dark:text-white/10"
                       />
                       <circle
                         cx="16"
@@ -3315,7 +3315,7 @@ export default function VideoStudio({
                     muted
                   />
                 ) : (
-                  <VideoIconSvg className="text-white/40 group-hover:text-primary transition-colors" />
+                  <VideoIconSvg className="text-slate-500 dark:text-white/40 group-hover:text-primary transition-colors" />
                 )}
               </button>
             </div>
@@ -3343,7 +3343,7 @@ export default function VideoStudio({
                     ? clearAudioUpload()
                     : audioFileInputRef.current?.click()
                 }
-                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedAudioUrl ? "border-primary/60 bg-white/5" : "bg-white/[0.03] border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedAudioUrl ? "border-primary/60 bg-white dark:bg-white/5" : "bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
               >
                 {audioUploading ? (
                   <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
@@ -3353,7 +3353,7 @@ export default function VideoStudio({
                   </div>
                 ) : (
                   <svg
-                    className={`w-5 h-5 ${uploadedAudioUrl ? "text-primary" : "text-white/40 group-hover:text-primary"} transition-colors`}
+                    className={`w-5 h-5 ${uploadedAudioUrl ? "text-primary" : "text-slate-500 dark:text-white/40 group-hover:text-primary"} transition-colors`}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -3382,7 +3382,7 @@ export default function VideoStudio({
                   placeholder={promptPlaceholder}
                   disabled={promptDisabled}
                   rows={1}
-                  className="relative z-10 w-full bg-transparent border-none text-white caret-white text-sm placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
+                  className="relative z-10 w-full bg-transparent border-none text-slate-900 dark:text-white caret-slate-900 dark:caret-white text-sm placeholder:text-slate-400 dark:placeholder:text-white/10 focus:outline-none resize-none pt-1 leading-relaxed min-h-[40px] max-h-[300px] md:max-h-[400px] overflow-y-auto custom-scrollbar disabled:opacity-40"
                 />
               </div>
               {prompt.trim() && !promptDisabled && (
@@ -3405,7 +3405,7 @@ export default function VideoStudio({
                       <path d="M6 6l12 12" />
                     </svg>
                   </button>
-                  <div className="pointer-events-none absolute right-0 bottom-full mb-2 whitespace-nowrap rounded-md border border-white/10 bg-black/90 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
+                  <div className="pointer-events-none absolute right-0 bottom-full mb-2 whitespace-nowrap rounded-md border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-black/90 px-2 py-1 text-[11px] font-medium text-slate-700 dark:text-white opacity-0 shadow-xl transition-opacity group-hover:opacity-100">
                     Удалить промт
                   </div>
                 </div>
@@ -3431,21 +3431,21 @@ export default function VideoStudio({
           )}
 
           {/* Bottom row: controls + generate */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2 border-t border-white/[0.03] relative">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2 border-t border-slate-200 dark:border-white/[0.03] relative">
             <div className="flex items-center gap-2 relative flex-wrap pb-1 md:pb-0">
               {/* Model btn */}
               <div className="relative">
                 <button
                   type="button"
                   onClick={toggleDropdown("model")}
-                  className="flex items-center gap-2 px-3 py-2 bg-white/[0.03] hover:bg-white/[0.06] rounded-md transition-all border border-white/[0.03] group whitespace-nowrap"
+                  className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/[0.06] rounded-md transition-all border border-slate-200 dark:border-white/[0.03] group whitespace-nowrap"
                 >
                   <div className="w-4 h-4 bg-[#22d3ee] rounded flex items-center justify-center shadow-lg shadow-[#22d3ee]/10">
                     <span className="text-[9px] font-bold text-black uppercase">
                       V
                     </span>
                   </div>
-                  <span className="text-xs font-semibold text-white/70 group-hover:text-[#22d3ee] transition-colors">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-white/70 group-hover:text-[#22d3ee] transition-colors">
                     {selectedModelName}
                   </span>
                   <svg
@@ -3464,7 +3464,7 @@ export default function VideoStudio({
                   <div
                     ref={dropdownRef}
                     onClick={(e) => e.stopPropagation()}
-                    className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-[#0a0a0a] rounded-[1.5rem] p-3 shadow-2xl border border-white/[0.05] w-[calc(100vw-3rem)] max-w-xs"
+                    className="absolute bottom-[calc(100%+12px)] left-0 z-50 bg-white dark:bg-[#0a0a0a] rounded-[1.5rem] p-3 shadow-2xl border border-slate-200 dark:border-white/[0.05] w-[calc(100vw-3rem)] max-w-xs"
                   >
                     <ModelDropdown
                       imageMode={imageMode}

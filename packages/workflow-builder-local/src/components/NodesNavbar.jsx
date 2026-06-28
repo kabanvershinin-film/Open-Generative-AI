@@ -243,7 +243,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             type="button"
             suppressHydrationWarning={true}
             key={idx}
-            className={`flex items-center gap-2 px-3 py-2 text-xs text-white rounded transition text-left ${item.isSoon ? "opacity-50 cursor-not-allowed" : "hover:bg-[#2c3037] cursor-pointer"}`}
+            className={`flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-white rounded transition text-left ${item.isSoon ? "opacity-50 cursor-not-allowed" : "hover:bg-slate-100 dark:hover:bg-[#2c3037] cursor-pointer"}`}
             onClick={() => !item.isSoon && handleAddNode(item.type, item)}
           >
             {item.type === "imageNode" && <IoImageOutline />}
@@ -262,7 +262,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
             )}
           </button>
         )) : (
-          <div className="px-3 py-2 text-xs text-gray-500">Ничего не найдено</div>
+          <div className="px-3 py-2 text-xs text-slate-400 dark:text-gray-500">Ничего не найдено</div>
         )}
       </div>
     );
@@ -341,17 +341,17 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
     >
       <div 
         ref={menuRef}
-      className={`relative flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl opacity-100 ${
+      className={`relative flex flex-col gap-2 bg-white dark:bg-[#0c0d0f] border border-slate-200 dark:border-gray-700 p-2 rounded-xl opacity-100 ${
         isSidebar ? "h-full w-full shadow-none" : "w-72 shadow-2xl"
         }`}
         style={isSidebar ? undefined : menuStyle}
       >
-        <div className="flex items-center relative w-full pl-2 bg-[#161719] border border-gray-600 rounded-lg shrink-0">
-          <AiOutlineSearch className="text-gray-400" />
+        <div className="flex items-center relative w-full pl-2 bg-slate-50 dark:bg-[#161719] border border-slate-200 dark:border-gray-600 rounded-lg shrink-0">
+          <AiOutlineSearch className="text-slate-400 dark:text-gray-400" />
           <input
             type="search"
             placeholder="Поиск нод или моделей"
-            className="w-full h-full py-2 px-1 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-gray-500 bg-transparent"
+            className="w-full h-full py-2 px-1 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-gray-500 focus:outline-none focus:border-gray-500 bg-transparent"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -361,12 +361,12 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
           <div className="flex flex-col gap-3 overflow-y-auto custom-scrollbar min-h-0">
             {filteredMenuStructure.map((section, idx) => (
               <div key={idx} className="flex flex-col gap-1">
-                <h3 className="text-[10px] text-gray-500 text-left px-2 font-medium sticky top-0 bg-[#0c0d0f] z-10">{section.label}</h3>
+                <h3 className="text-[10px] text-slate-500 dark:text-gray-500 text-left px-2 font-medium sticky top-0 bg-white dark:bg-[#0c0d0f] z-10">{section.label}</h3>
                 <div className="flex flex-col gap-0.5">
                   {section.items.map((item, i) => (
                     <div
                       key={i}
-                      className={`flex items-center justify-between px-2 py-2 rounded-lg transition-colors relative ${item.isSoon ? "opacity-50 cursor-not-allowed" : "cursor-pointer group hover:bg-[#212326] hover:text-white"} ${activeSubMenu === item.id ? "bg-[#2c3037] text-white" : "text-gray-300"}`}
+                      className={`flex items-center justify-between px-2 py-2 rounded-lg transition-colors relative ${item.isSoon ? "opacity-50 cursor-not-allowed" : "cursor-pointer group hover:bg-slate-100 dark:hover:bg-[#212326] hover:text-slate-900 dark:hover:text-white"} ${activeSubMenu === item.id ? "bg-slate-100 dark:bg-[#2c3037] text-slate-900 dark:text-white" : "text-slate-600 dark:text-gray-300"}`}
                       onMouseEnter={(e) => {
                         if (item.isSoon) return;
                         if (item.hasSubmenu) {
@@ -386,7 +386,7 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
                       }}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={`${item.isSoon ? "text-gray-500" : "text-gray-400 group-hover:text-white"}`}>{item.icon}</span>
+                        <span className={`${item.isSoon ? "text-slate-400 dark:text-gray-500" : "text-slate-500 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white"}`}>{item.icon}</span>
                         <span className="text-xs font-medium">{item.label}</span>
                         {item.isSoon && (
                           <span className="text-[9px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
@@ -395,8 +395,8 @@ const NodesNavbar = ({ addNode, apiNodeModels, filterNodeTypes = null, nodeSchem
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        {item.shortcut && <span className="text-[10px] text-gray-600">{item.shortcut}</span>}
-                        {item.hasSubmenu && !item.isSoon && <FaAngleRight size={10} className="text-gray-500" />}
+                        {item.shortcut && <span className="text-[10px] text-slate-400 dark:text-gray-600">{item.shortcut}</span>}
+                        {item.hasSubmenu && !item.isSoon && <FaAngleRight size={10} className="text-slate-400 dark:text-gray-500" />}
                       </div>
                     </div>
                   ))}
@@ -509,10 +509,10 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
     <div
       ref={submenuRef}
       style={submenuStyle}
-      className={`absolute flex flex-col gap-2 bg-[#0c0d0f] border border-gray-700 p-2 rounded-xl w-72 shadow-2xl overflow-hidden z-50 ${currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]"}`}
+      className={`absolute flex flex-col gap-2 bg-white dark:bg-[#0c0d0f] border border-slate-200 dark:border-gray-700 p-2 rounded-xl w-72 shadow-2xl overflow-hidden z-50 ${currentSide === "overlay" ? "h-full w-full" : "max-h-[80vh]"}`}
     >
       <div
-        className="flex items-center gap-2 text-[10px] text-gray-400 px-2 py-2 font-medium border-b border-gray-800 cursor-pointer hover:text-white transition-colors"
+        className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-gray-400 px-2 py-2 font-medium border-b border-slate-200 dark:border-gray-800 cursor-pointer hover:text-slate-900 dark:hover:text-white transition-colors"
         onClick={() => currentSide === "overlay" && onBack()}
       >
         {currentSide === "overlay" && <FaAngleLeft />}
@@ -525,17 +525,17 @@ const Submenu = ({ activeSubMenu, menuStructure, getSubmenuItems, handleAddNode,
               type="button"
               suppressHydrationWarning={true}
               key={idx}
-              className="flex items-center gap-2 px-2 py-2 text-xs text-gray-300 hover:bg-[#2c3037] hover:text-white rounded-lg cursor-pointer transition text-left"
+              className="flex items-center gap-2 px-2 py-2 text-xs text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-[#2c3037] hover:text-slate-900 dark:hover:text-white rounded-lg cursor-pointer transition text-left"
               onClick={() => handleAddNode(item.type, item.model)}
             >
-              <span className="text-gray-400 group-hover:text-white text-sm">
+              <span className="text-slate-500 dark:text-gray-400 group-hover:text-slate-900 dark:group-hover:text-white text-sm">
                 {getLabelIcon(menuStructure.flatMap(s => s.items).find(i => i.id === activeSubMenu)?.label)}
               </span>
               <span className="truncate">{item.label}</span>
             </button>
           ))
         ) : (
-          <div className="px-2 py-4 text-xs text-gray-500 text-center">Нет доступных элементов</div>
+          <div className="px-2 py-4 text-xs text-slate-400 dark:text-gray-500 text-center">Нет доступных элементов</div>
         )}
       </div>
     </div>
