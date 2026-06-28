@@ -257,6 +257,43 @@ export default function CabinetModal() {
                     )}
                 </div>
 
+                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
+                    <div className="text-sm text-white/70">Документы и реквизиты</div>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/55">
+                        <a
+                            href="/privacy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-purple-300 transition-colors hover:text-purple-200"
+                        >
+                            Политика
+                        </a>
+                        <a
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-purple-300 transition-colors hover:text-purple-200"
+                        >
+                            Условия
+                        </a>
+                        <a
+                            href="/offer"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-purple-300 transition-colors hover:text-purple-200"
+                        >
+                            Оферта
+                        </a>
+                    </div>
+                    <div className="mt-3 text-[11px] leading-relaxed text-white/35">
+                        ИП Вершинин Евгений Александрович
+                        <br />
+                        ИНН 692700514344 · ОГРНИП 326690000024874
+                        <br />
+                        Контакт: kaban.vershinin@gmail.com
+                    </div>
+                </div>
+
                 {ADMIN_EMAILS.some(e => e.toLowerCase() === (user?.email || '').toLowerCase()) && (
                     <a href="/admin"
                        className="w-full py-2 text-sm text-purple-400 hover:text-purple-300 transition-colors text-center block">
