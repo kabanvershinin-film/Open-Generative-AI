@@ -1,6 +1,7 @@
 import './globals.css';
 import { Inter } from "next/font/google";
 import AuthShell from '@/components/auth/AuthShell';
+import LegalFooter from '@/components/legal/LegalFooter';
 
 const inter = Inter({
     variable: "--font-inter",
@@ -39,6 +40,7 @@ export default function RootLayout({ children }) {
         <html lang="ru">
             <body className={inter.variable}>
                 <AuthShell>{children}</AuthShell>
+                <LegalFooter />
             </body>
         </html>
     );

@@ -27,6 +27,9 @@ export default function LoginModal() {
     const [otp, setOtp] = useState('');
     const [otpSentTo, setOtpSentTo] = useState('');
     const [busy, setBusy] = useState(false);
+    const [registerConsent, setRegisterConsent] = useState(false);
+    const [phoneConsent, setPhoneConsent] = useState(false);
+    const [oauthConsent, setOauthConsent] = useState(false);
 
     if (!loginOpen) return null;
 
@@ -34,6 +37,10 @@ export default function LoginModal() {
 
     const submit = async (e) => {
         e.preventDefault();
+        if (mode === 'register' && !registerConsent) {
+            toast.error('Подтвердите согласие с политикой и условиями');
+            return;
+        }
         setBusy(true);
         const err = mode === 'login'
             ? await login(email, password)
@@ -53,10 +60,15 @@ export default function LoginModal() {
     
     // Don't show the modal if we are on a legal page, even if loginOpen is true.
     // This prevents the modal from blocking the terms/privacy text.
-    const isLegalPage = typeof window !== 'undefined' && (window.location.pathname === '/terms' || window.location.pathname === '/privacy');
+    const isLegalPage = typeof window !== 'undefined' && (
+        window.location.pathname === '/terms' ||
+        window.location.pathname === '/privacy' ||
+        window.location.pathname === '/offer'
+    );
     if (!loginOpen || isLegalPage) return null;
 
     const inputCls = 'w-full px-4 py-3 rounded-xl bg-white/[0.08] border border-purple-300/25 text-white text-sm outline-none transition-colors placeholder:text-white/45 focus:border-purple-400 focus:bg-white/[0.12] shadow-sm shadow-purple-500/10';
+    const checkboxCls = 'h-4 w-4 rounded border border-purple-300/30 bg-black/40 text-purple-500 focus:ring-2 focus:ring-purple-500/40 focus:ring-offset-0';
     const switchMethod = (nextMethod) => {
         setMethod(nextMethod);
         setOtp('');
@@ -64,6 +76,10 @@ export default function LoginModal() {
     };
 
     const requestPhoneCode = async () => {
+        if (!phoneConsent) {
+            toast.error('Подтвердите согласие с политикой конфиденциальности');
+            return;
+        }
         setBusy(true);
         const { phone: normalizedPhone, error } = await sendPhoneOtp(phone);
         setBusy(false);
@@ -84,11 +100,41 @@ export default function LoginModal() {
     };
 
     const startOAuth = async (run) => {
+        if (!oauthConsent) {
+            toast.error('Подтвердите согласие с политикой и условиями');
+            return;
+        }
         setBusy(true);
         const err = await run();
         setBusy(false);
         if (err) toast.error(err);
     };
+
+    const LegalConsent = ({ includeOffer = false, includeTerms = true }) => (
+        <span>
+            Я принимаю{' '}
+            {includeTerms && (
+                <>
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
+                        Условия использования
+                    </a>
+                    {' '}и{' '}
+                </>
+            )}
+            {includeOffer && (
+                <>
+                    <a href="/offer" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
+                        Публичную оферту
+                    </a>
+                    {' '}и{' '}
+                </>
+            )}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
+                Политику конфиденциальности
+            </a>
+            , даю согласие на обработку персональных данных.
+        </span>
+    );
 
     return (
         <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-md">
@@ -190,6 +236,15 @@ export default function LoginModal() {
                                 <p className="text-xs text-white/35 text-center">
                                     Используйте международный формат телефона, например `+79991234567`.
                                 </p>
+                                <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
+                                    <input
+                                        type="checkbox"
+                                        checked={phoneConsent}
+                                        onChange={(e) => setPhoneConsent(e.target.checked)}
+                                        className={checkboxCls}
+                                    />
+                                    <span><LegalConsent includeTerms={false} /></span>
+                                </label>
                             </div>
                         ) : (
                             <form onSubmit={submit} className="space-y-3">
@@ -201,6 +256,17 @@ export default function LoginModal() {
                                        value={email} onChange={(e) => setEmail(e.target.value)} required />
                                 <input type="password" className={inputCls} placeholder="Пароль"
                                        value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+                                {isRegister && (
+                                    <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
+                                        <input
+                                            type="checkbox"
+                                            checked={registerConsent}
+                                            onChange={(e) => setRegisterConsent(e.target.checked)}
+                                            className={checkboxCls}
+                                        />
+                                        <span><LegalConsent /></span>
+                                    </label>
+                                )}
                                 <button type="submit" disabled={busy}
                                         className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 disabled:opacity-50 text-white font-semibold text-sm shadow-lg shadow-purple-600/25 transition-all">
                                     {busy ? '...' : (isRegister ? 'Создать аккаунт' : 'Войти')}
@@ -224,6 +290,16 @@ export default function LoginModal() {
                             </svg>
                             Войти через Google
                         </button>
+
+                        <label className="mt-3 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
+                            <input
+                                type="checkbox"
+                                checked={oauthConsent}
+                                onChange={(e) => setOauthConsent(e.target.checked)}
+                                className={checkboxCls}
+                            />
+                            <span><LegalConsent /></span>
+                        </label>
 
                         {yandexAuthEnabled && (
                             <button
@@ -305,6 +381,16 @@ export default function LoginModal() {
                                     Конфиденциальность
                                     <span className="opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
                                 </a>
+                                <div className="h-2.5 w-px bg-white/10" />
+                                <a
+                                    href="/offer"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1 group"
+                                >
+                                    Оферта
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
+                                </a>
                             </div>
 
                             {/* Credentials */}
@@ -325,9 +411,10 @@ export default function LoginModal() {
                             <span className="text-[10px] text-white/30 font-medium uppercase tracking-wide">
                                 ИП Вершинин Евгений Александрович
                             </span>
-                            <span className="text-[9px] text-white/15 uppercase tracking-[0.2em]">
-                                © 2026 Сапог AI
-                            </span>
+                            <div className="text-right">
+                                <div className="text-[9px] text-white/15 uppercase tracking-[0.2em]">© 2026 Сапог AI</div>
+                                <div className="text-[10px] text-white/30">kaban.vershinin@gmail.com</div>
+                            </div>
                         </div>
                     </div>
                 </div>

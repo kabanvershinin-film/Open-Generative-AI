@@ -22,6 +22,7 @@ export default function CabinetModal() {
     const { cabinetOpen, setCabinetOpen, profile, balance, logout, refreshBalance, user } = useAuth();
     const [amount, setAmount] = useState('1000');
     const [busy, setBusy] = useState(false);
+    const [paymentConsent, setPaymentConsent] = useState(false);
     const [txns, setTxns] = useState(null); // null = not loaded, [] = loaded empty
     const [txnsLoading, setTxnsLoading] = useState(false);
     const paymentReturnAttemptedRef = useRef(false);
@@ -99,6 +100,7 @@ export default function CabinetModal() {
     const topup = async () => {
         const value = Number(amount);
         if (!Number.isFinite(value) || value < 100) { toast.error('Минимум 100 руб'); return; }
+        if (!paymentConsent) { toast.error('Подтвердите согласие с офертой и политикой'); return; }
         setBusy(true);
         try {
             const { data: { session } } = await supabase.auth.getSession();
@@ -198,6 +200,29 @@ export default function CabinetModal() {
                            onChange={(e) => setAmount(e.target.value)}
                            className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-purple-500"
                            placeholder="Сумма, ₽" />
+                    <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
+                        <input
+                            type="checkbox"
+                            checked={paymentConsent}
+                            onChange={(e) => setPaymentConsent(e.target.checked)}
+                            className="mt-0.5 h-4 w-4 rounded border border-purple-300/30 bg-black/40 text-purple-500 focus:ring-2 focus:ring-purple-500/40 focus:ring-offset-0"
+                        />
+                        <span>
+                            Я принимаю{' '}
+                            <a href="/offer" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
+                                Публичную оферту
+                            </a>
+                            ,{' '}
+                            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
+                                Политику конфиденциальности
+                            </a>
+                            {' '}и{' '}
+                            <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-purple-300 hover:text-purple-200 underline underline-offset-2">
+                                Условия использования
+                            </a>
+                            .
+                        </span>
+                    </label>
                     <button onClick={topup} disabled={busy}
                             className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors">
                         {busy ? '...' : 'Пополнить'}
