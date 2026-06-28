@@ -3,6 +3,7 @@ import { useAuth } from './AuthProvider';
 import LoginModal from './LoginModal';
 import CabinetModal from './CabinetModal';
 import SiteAnnouncementBell from '@/components/announcements/SiteAnnouncementBell';
+import { useTheme } from '@/components/theme/ThemeProvider';
 
 function InsufficientFundsDialog() {
     const { needFunds, setNeedFunds, setCabinetOpen, balance } = useAuth();
@@ -32,14 +33,6 @@ function InsufficientFundsDialog() {
                         className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-xl transition-colors">
                     Пополнить баланс
                 </button>
-                <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-center">
-                    <div className="text-sm font-bold uppercase tracking-wide text-amber-300">
-                        Пополнение только через российский банк
-                    </div>
-                    <div className="mt-1 text-xs font-medium text-amber-100">
-                        Карта российского банка или СБП
-                    </div>
-                </div>
             </div>
         </div>
     );
@@ -47,14 +40,32 @@ function InsufficientFundsDialog() {
 
 export default function AccountBar() {
     const { user, balance, loading, setLoginOpen, setCabinetOpen } = useAuth();
+    const { theme, toggleTheme, mounted, isLight } = useTheme();
+
+    const shellClass = isLight
+        ? 'bg-white/92 border-slate-200 text-slate-900 hover:border-fuchsia-300 shadow-sm shadow-slate-200/70'
+        : 'bg-neutral-900/90 border-white/10 text-white hover:border-purple-500';
+
+    const themeButtonClass = isLight
+        ? 'bg-white/92 border-slate-200 text-slate-700 hover:text-slate-900 hover:border-fuchsia-300 shadow-sm shadow-slate-200/70'
+        : 'bg-neutral-900/90 border-white/10 text-white/75 hover:text-white hover:border-purple-500';
 
     return (
         <>
             <div className="fixed top-3 right-3 z-[60] flex items-center gap-2">
                 <SiteAnnouncementBell />
+                <button
+                    type="button"
+                    onClick={toggleTheme}
+                    aria-label={mounted && theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
+                    title={mounted && theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur transition-colors ${themeButtonClass}`}
+                >
+                    <span className="text-sm leading-none">{mounted && theme === 'dark' ? '☀' : '☾'}</span>
+                </button>
                 {!loading && (user ? (
                     <button onClick={() => setCabinetOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900/90 border border-white/10 text-white text-sm hover:border-purple-500 transition-colors backdrop-blur">
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition-colors backdrop-blur ${shellClass}`}>
                         <span className="text-purple-400">●</span>
                         <span className="font-medium">{balance.toFixed(0)} ₽</span>
                     </button>

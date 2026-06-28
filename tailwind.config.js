@@ -6,6 +6,8 @@ module.exports = {
         "./app/**/*.{js,ts,jsx,tsx}",
         "./components/**/*.{js,ts,jsx,tsx}",
         "./packages/studio/src/**/*.{js,jsx}",
+        "./packages/workflow-builder-local/src/**/*.{js,jsx,ts,tsx}",
+        "./packages/workflow-builder-local/dist/**/*.{js,jsx,ts,tsx}",
         "./packages/Open-AI-Design-Agent/packages/design-agent/src/**/*.{js,jsx}",
         "./packages/Open-Poe-AI/packages/agents/src/**/*.{js,jsx,ts,tsx}",
         "./packages/Vibe-Workflow/packages/workflow-builder/src/**/*.{js,jsx,ts,tsx}",
@@ -14,14 +16,14 @@ module.exports = {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: '#d946ef',
+                    DEFAULT: 'rgb(var(--primary-rgb) / <alpha-value>)',
                     hover: '#c026d3',
                 },
-                'app-bg': '#0a0714',
-                'panel-bg': '#0f0c18',
-                'card-bg': '#141020',
-                secondary: '#a855f7',
-                muted: '#6b7280',
+                'app-bg': 'rgb(var(--app-bg-rgb) / <alpha-value>)',
+                'panel-bg': 'rgb(var(--panel-bg-rgb) / <alpha-value>)',
+                'card-bg': 'rgb(var(--card-bg-rgb) / <alpha-value>)',
+                secondary: 'rgb(var(--secondary-rgb) / <alpha-value>)',
+                muted: 'rgb(var(--text-muted-rgb) / <alpha-value>)',
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
