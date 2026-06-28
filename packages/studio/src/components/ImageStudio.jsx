@@ -30,6 +30,10 @@ import { saveMediaToGallery } from "./gallerySave.js";
 import { mergeImageHistoryEntries } from "./imageHistory.js";
 import { getUploadPickerMaxImages } from "../imageStudioUploadConfig.js";
 import {
+  DEFAULT_IMAGE_BATCH_SIZE,
+  normalizeImageBatchSize,
+} from "../imageBatching.js";
+import {
   addSelectedUploadEntry,
   replaceSelectedUploadEntry,
   getDisplayUploadUrls,
@@ -1061,7 +1065,7 @@ export default function ImageStudio({
   // ── Canvas / history state ──────────────────────────────────────────────
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [activeHistoryIdx, setActiveHistoryIdx] = useState(0);
-  const [batchSize, setBatchSize] = useState(1);
+  const [batchSize, setBatchSize] = useState(DEFAULT_IMAGE_BATCH_SIZE);
   const [localHistory, setLocalHistory] = useState([]); // [{id,url,prompt,model,aspect_ratio,timestamp}]
 
   // Use prop history if provided, otherwise local
@@ -1102,7 +1106,6 @@ export default function ImageStudio({
         if (data.maxImages) setMaxImages(data.maxImages);
         if (data.prompt) setPrompt(data.prompt);
         if (data.uploadedImageUrls) setUploadedImageUrls(data.uploadedImageUrls);
-        if (data.batchSize) setBatchSize(data.batchSize);
         if (data.localHistory) setLocalHistory(data.localHistory);
       }
       if (recentStored.length > 0) {
@@ -1248,6 +1251,7 @@ export default function ImageStudio({
       setSelectedBackground(getImageInputDefault(firstModel.id, "background"));
       setSelectedModeration(getImageInputDefault(firstModel.id, "moderation"));
       setSelectedImageSize(getImageInputDefault(firstModel.id, "imageSize"));
+      setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
       if (imageMode) {
         const effects = getEffectsForI2IModel(firstModel.id);
         setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(firstModel.id) || effects[0]) : "");
@@ -1295,6 +1299,7 @@ export default function ImageStudio({
     setSelectedBackground(getImageInputDefault(matchedI2I.id, "background"));
     setSelectedModeration(getImageInputDefault(matchedI2I.id, "moderation"));
     setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
+    setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
     setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
     setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
   }, [i2iModels, imageMode, selectedModelId, t2iModels]);
@@ -1404,6 +1409,7 @@ export default function ImageStudio({
       setSelectedImageSize(getImageInputDefault(firstT2I.id, "imageSize"));
       setSelectedEffect("");
       setMaxImages(1);
+      setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
     }
   }, [t2iModels]);
 
@@ -1424,6 +1430,7 @@ export default function ImageStudio({
     setSelectedBackground(getImageInputDefault(m.id, "background"));
     setSelectedModeration(getImageInputDefault(m.id, "moderation"));
     setSelectedImageSize(getImageInputDefault(m.id, "imageSize"));
+    setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
     if (imageMode) {
       setMaxImages(getMaxImagesForI2IModel(m.id));
       const effects = getEffectsForI2IModel(m.id);
@@ -1547,7 +1554,7 @@ export default function ImageStudio({
     async (snap) => {
       const taskId = snap.requestId;
       const promptTrim = (snap.prompt || "").trim();
-      const batch = snap.batchSize || 1;
+      const batch = normalizeImageBatchSize(snap.batchSize);
 
       // Add task to active tasks and set backwards-compatible states
       // Find model name from model ID for correct display
@@ -1758,7 +1765,7 @@ export default function ImageStudio({
       selectedRouting,
       effect: showEffectBtn ? selectedEffect : "",
       selectedAr,
-      batchSize,
+      batchSize: normalizeImageBatchSize(batchSize),
       requestId: Math.random().toString(36).slice(2, 11),
       ts: Date.now(),
     };
@@ -2644,7 +2651,7 @@ export default function ImageStudio({
                   <button
                     key={num}
                     type="button"
-                    onClick={() => setBatchSize(num)}
+                    onClick={() => setBatchSize(normalizeImageBatchSize(num))}
                     className={`w-7 h-7 flex items-center justify-center rounded-md text-[10px] font-black transition-all ${
                       batchSize === num
                         ? "bg-[#22d3ee] text-black shadow-lg shadow-[#22d3ee]/20"
