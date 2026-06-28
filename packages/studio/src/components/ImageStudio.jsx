@@ -43,6 +43,10 @@ import {
   replaceSelectedUploadEntry,
   getDisplayUploadUrls,
 } from "./uploadPreviewState.js";
+import {
+  DEFAULT_IMAGE_BATCH_SIZE,
+  normalizeImageBatchSize,
+} from "../imageBatching.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -1165,7 +1169,7 @@ export default function ImageStudio({
   // ── Canvas / history state ──────────────────────────────────────────────
   const [currentImageUrl, setCurrentImageUrl] = useState(null);
   const [activeHistoryIdx, setActiveHistoryIdx] = useState(0);
-  const [batchSize, setBatchSize] = useState(1);
+  const [batchSize, setBatchSize] = useState(DEFAULT_IMAGE_BATCH_SIZE);
   const [localHistory, setLocalHistory] = useState([]); // [{id,url,prompt,model,aspect_ratio,timestamp}]
 
   // Use prop history if provided, otherwise local
@@ -1208,7 +1212,6 @@ export default function ImageStudio({
         if (data.imageSetMaxImages) setImageSetMaxImages(Math.max(1, Number(data.imageSetMaxImages) || 1));
         if (data.prompt) setPrompt(data.prompt);
         if (data.uploadedImageUrls) setUploadedImageUrls(data.uploadedImageUrls);
-        if (data.batchSize) setBatchSize(data.batchSize);
         if (data.localHistory) setLocalHistory(sanitizePersistedImageHistoryEntries(data.localHistory));
       }
       if (recentStored.length > 0) {
@@ -1377,7 +1380,10 @@ export default function ImageStudio({
       if (imageMode) {
         const effects = getEffectsForI2IModel(firstModel.id);
         setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(firstModel.id) || effects[0]) : "");
+      } else {
+        setSelectedEffect("");
       }
+      setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
     }
   }, [currentModels, selectedModelId, imageMode]);
 
@@ -1428,6 +1434,7 @@ export default function ImageStudio({
     setSelectedImageSize(getImageInputDefault(matchedI2I.id, "imageSize"));
     setSelectedEffect(effects.length > 0 ? (getDefaultEffectForI2IModel(matchedI2I.id) || effects[0]) : "");
     setMaxImages(getMaxImagesForI2IModel(matchedI2I.id));
+    setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
   }, [i2iModels, imageMode, selectedModelId, t2iModels]);
 
   useEffect(() => {
@@ -1585,6 +1592,7 @@ export default function ImageStudio({
       setMaxImages(1);
       setImageSetMode(false);
       setImageSetMaxImages(4);
+      setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
     }
   }, [t2iModels]);
 
@@ -1607,6 +1615,7 @@ export default function ImageStudio({
     setSelectedImageSize(getImageInputDefault(m.id, "imageSize"));
     setImageSetMode(false);
     setImageSetMaxImages(4);
+    setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
     if (imageMode) {
       setMaxImages(getMaxImagesForI2IModel(m.id));
       const effects = getEffectsForI2IModel(m.id);
@@ -1796,7 +1805,7 @@ export default function ImageStudio({
         : (nextImageMode ? (getDefaultEffectForI2IModel(targetModel.id) || nextEffects[0] || "") : ""),
     );
     setMaxImages(nextImageMode ? getMaxImagesForI2IModel(targetModel.id) : Math.max(1, Number(restoreState.maxImages) || 1));
-    setBatchSize(Math.max(1, Number(restoreState.batchSize) || 1));
+    setBatchSize(normalizeImageBatchSize(restoreState.batchSize));
     setPrompt(restoreState.prompt || "");
     setUploadedImageUrls(Array.isArray(restoreState.uploadedImageUrls) ? restoreState.uploadedImageUrls : []);
     setPreviewImageUrls(Array.isArray(restoreState.uploadedImageUrls) ? restoreState.uploadedImageUrls : []);
@@ -1838,6 +1847,7 @@ export default function ImageStudio({
       setMaxImages(1);
       setImageSetMode(false);
       setImageSetMaxImages(4);
+      setBatchSize(DEFAULT_IMAGE_BATCH_SIZE);
     }
   };
 
@@ -1849,7 +1859,7 @@ export default function ImageStudio({
       const taskId = snap.requestId;
       const promptTrim = (snap.prompt || "").trim();
       const isImageSetMode = !!snap.imageSetMode;
-      const batch = isImageSetMode ? 1 : (snap.batchSize || 1);
+      const batch = isImageSetMode ? 1 : normalizeImageBatchSize(snap.batchSize);
       const expectedOutputs = isImageSetMode ? Math.max(1, Number(snap.imageSetMaxImages) || 1) : batch;
 
       // Add task to active tasks and set backwards-compatible states
@@ -1954,7 +1964,7 @@ export default function ImageStudio({
                 selectedRouting: snap.selectedRouting,
                 selectedEffect: snap.effect,
                 maxImages: snap.imageMode ? getMaxImagesForI2IModel(snap.selectedModelId) : 1,
-                batchSize: snap.batchSize,
+                batchSize: normalizeImageBatchSize(snap.batchSize),
                 prompt: promptTrim,
                 uploadedImageUrls: snap.uploadedImageUrls,
               }),
@@ -2083,7 +2093,7 @@ export default function ImageStudio({
       selectedRouting,
       effect: showEffectBtn ? selectedEffect : "",
       selectedAr,
-      batchSize,
+      batchSize: normalizeImageBatchSize(batchSize),
       requestId: Math.random().toString(36).slice(2, 11),
       ts: Date.now(),
     };
@@ -2187,7 +2197,7 @@ export default function ImageStudio({
         prompt: snap.prompt || '',
         model: snap.selectedModelId,
         modelName: findModelName(snap.selectedModelId), // Fallback
-        batchSize: snap.batchSize || 1,
+        batchSize: normalizeImageBatchSize(snap.batchSize),
         status: 'generating',
         createdAt: snap.ts
       }];
@@ -3046,7 +3056,7 @@ export default function ImageStudio({
                     <button
                       key={num}
                       type="button"
-                      onClick={() => setBatchSize(num)}
+                      onClick={() => setBatchSize(normalizeImageBatchSize(num))}
                       className={`w-7 h-7 flex items-center justify-center rounded-md text-[10px] font-black transition-all ${
                         batchSize === num
                           ? "bg-[#22d3ee] text-black shadow-lg shadow-[#22d3ee]/20"
