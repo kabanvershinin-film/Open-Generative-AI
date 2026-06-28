@@ -14,6 +14,7 @@ var _AudioPlayer = _interopRequireDefault(require("./AudioPlayer"));
 var _io = require("react-icons/io5");
 var _reactflow = require("reactflow");
 var _tb = require("react-icons/tb");
+var _uploadPreviewState = require("./uploadPreviewState.js");
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
@@ -105,9 +106,14 @@ var RenderApiField = function RenderApiField(_ref) {
     _useState10 = _slicedToArray(_useState1, 2),
     isMobileUploadUi = _useState10[0],
     setIsMobileUploadUi = _useState10[1];
+  var _useState11 = (0, _react.useState)([]),
+    _useState12 = _slicedToArray(_useState11, 2),
+    previewUrls = _useState12[0],
+    setPreviewUrls = _useState12[1];
   var containerRef = (0, _react.useRef)(null);
   var fileInputRef = (0, _react.useRef)(null);
   var cameraInputRef = (0, _react.useRef)(null);
+  var ownedObjectUrlsRef = (0, _react.useRef)(new Set());
   var isImageUrl = function isImageUrl(url) {
     if (typeof url !== 'string') return false;
     return url.match(/\.(jpeg|jpg|gif|png|webp|avif|HEIC)(\?.*)?$/i) !== null || url.startsWith('https://cdn.muapi.ai/');
@@ -118,6 +124,10 @@ var RenderApiField = function RenderApiField(_ref) {
   var isAudioField = ['audio', 'audio_url'].includes(meta.field) || ['audio', 'audio_url'].includes(fieldName);
   var value = (_ref2 = (_formValues$fieldName = formValues[fieldName]) !== null && _formValues$fieldName !== void 0 ? _formValues$fieldName : meta["default"]) !== null && _ref2 !== void 0 ? _ref2 : "";
   var isRequired = meta.required || false;
+  var isUploadArrayField = meta.type === "array" || isImagesListField;
+  var actualUploadUrls = isUploadArrayField ? (0, _uploadPreviewState.normalizeUploadUrls)(formValues[fieldName]) : (0, _uploadPreviewState.normalizeUploadUrls)((formValues === null || formValues === void 0 ? void 0 : formValues[fieldName]) || "");
+  var displayUploadUrls = (0, _uploadPreviewState.getDisplayUploadUrls)(uploading ? previewUrls : [], actualUploadUrls);
+  var displayUploadUrl = displayUploadUrls[0] || "";
   var label = /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex items-center justify-between w-full group/label"
   }, /*#__PURE__*/_react["default"].createElement("label", {
@@ -151,6 +161,16 @@ var RenderApiField = function RenderApiField(_ref) {
       return (_mediaQuery$removeEve = mediaQuery.removeEventListener) === null || _mediaQuery$removeEve === void 0 ? void 0 : _mediaQuery$removeEve.call(mediaQuery, "change", applyMatch);
     };
   }, []);
+  (0, _react.useEffect)(function () {
+    return function () {
+      ownedObjectUrlsRef.current.forEach(function (url) {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (_unused) {}
+      });
+      ownedObjectUrlsRef.current.clear();
+    };
+  }, []);
   (0, _react.useLayoutEffect)(function () {
     if (dropDown === idx + 1 && containerRef.current) {
       var rect = containerRef.current.getBoundingClientRect();
@@ -176,7 +196,15 @@ var RenderApiField = function RenderApiField(_ref) {
       return;
     }
     ;
+    var previewUrl = typeof URL !== "undefined" ? URL.createObjectURL(file) : "";
+    if (previewUrl) {
+      ownedObjectUrlsRef.current.add(previewUrl);
+      setPreviewUrls(function (prev) {
+        return (0, _uploadPreviewState.appendUploadUrls)(prev.length > 0 ? prev : actualUploadUrls, [previewUrl], fieldSchema.type === 'array' ? fieldSchema.maxItems || Number.POSITIVE_INFINITY : 1);
+      });
+    }
     setUploading(true);
+    setUploadProgress(0);
     _axios["default"].get("/api/upload-file", {
       params: {
         filename: file.name,
@@ -200,17 +228,41 @@ var RenderApiField = function RenderApiField(_ref) {
           var updatedValue = fieldSchema.type === 'array' ? [].concat(_toConsumableArray(current || []), [publicUrl]) : publicUrl;
           return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, field, updatedValue));
         });
+        setPreviewUrls(function (prev) {
+          return (0, _uploadPreviewState.replaceUploadUrl)(prev, previewUrl, publicUrl);
+        });
+        if (previewUrl && ownedObjectUrlsRef.current.has(previewUrl)) {
+          try {
+            URL.revokeObjectURL(previewUrl);
+          } catch (_unused2) {}
+          ownedObjectUrlsRef.current["delete"](previewUrl);
+        }
         setTimeout(function () {
           setUploading(false);
           setUploadProgress(0);
+          setPreviewUrls([]);
         }, 500);
       });
     })["catch"](function (error) {
       var _error$response;
       console.error("Upload failed", error);
       _reactHotToast.toast.error(translateUi("Upload failed."), error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
+      setPreviewUrls(function (prev) {
+        return (0, _uploadPreviewState.removeUploadUrl)(prev, previewUrl);
+      });
+      if (previewUrl && ownedObjectUrlsRef.current.has(previewUrl)) {
+        try {
+          URL.revokeObjectURL(previewUrl);
+        } catch (_unused3) {}
+        ownedObjectUrlsRef.current["delete"](previewUrl);
+      }
       setUploading(false);
       setUploadProgress(0);
+      setPreviewUrls([]);
+    })["finally"](function () {
+      if ((e === null || e === void 0 ? void 0 : e.target) && "value" in e.target) {
+        e.target.value = "";
+      }
     });
   };
   var handleStyle = {
@@ -384,22 +436,24 @@ var RenderApiField = function RenderApiField(_ref) {
       onChange: function onChange(e) {
         return handleFileUpload(fieldName, meta, e);
       }
-    })), formValues[fieldName] && /*#__PURE__*/_react["default"].createElement("div", {
+    })), displayUploadUrl && /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex items-center gap-2 relative group overflow-hidden self-start w-full"
-    }, isImageField || isImageUrl(value) ? /*#__PURE__*/_react["default"].createElement("img", {
-      src: value,
+    }, isImageField || isImageUrl(displayUploadUrl) ? /*#__PURE__*/_react["default"].createElement("img", {
+      src: displayUploadUrl,
       alt: "Preview",
       className: "w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg",
       width: 0,
       height: 0
     }) : isVideoField ? /*#__PURE__*/_react["default"].createElement("video", {
-      src: value,
+      src: displayUploadUrl,
       className: "w-24 h-24 object-cover border border-white/10 rounded-xl shadow-lg"
     }) : isAudioField && /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col w-full h-16 border border-white/10 rounded-xl overflow-hidden shadow-lg"
     }, /*#__PURE__*/_react["default"].createElement(_AudioPlayer["default"], {
-      src: value
-    })), /*#__PURE__*/_react["default"].createElement("button", {
+      src: displayUploadUrl
+    })), uploading && /*#__PURE__*/_react["default"].createElement("div", {
+      className: "absolute inset-x-2 bottom-2 rounded-lg bg-black/70 px-2 py-1 text-[10px] text-cyan-200"
+    }, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430... ", uploadProgress, "%"), /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
       suppressHydrationWarning: true,
       onClick: function onClick() {
@@ -410,7 +464,7 @@ var RenderApiField = function RenderApiField(_ref) {
   }
   ;
   if (isImagesListField) {
-    var imageList = Array.isArray(formValues[fieldName]) ? formValues[fieldName] : [];
+    var imageList = displayUploadUrls;
     return /*#__PURE__*/_react["default"].createElement("div", {
       key: fieldName,
       className: "flex flex-col gap-1 relative"
