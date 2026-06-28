@@ -1,7 +1,6 @@
 import './globals.css';
 import { Inter } from "next/font/google";
 import AuthShell from '@/components/auth/AuthShell';
-import { ThemeProvider } from '@/components/theme/ThemeProvider';
 
 const inter = Inter({
     variable: "--font-inter",
@@ -37,27 +36,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="ru" suppressHydrationWarning>
-            <body className={inter.variable} suppressHydrationWarning>
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `
-                            (function() {
-                                try {
-                                    var theme = localStorage.getItem('sapog_theme');
-                                    var nextTheme = theme === 'dark' ? 'dark' : 'light';
-                                    document.documentElement.dataset.theme = nextTheme;
-                                    document.body.dataset.theme = nextTheme;
-                                } catch (e) {
-                                    document.documentElement.dataset.theme = 'light';
-                                }
-                            })();
-                        `,
-                    }}
-                />
-                <ThemeProvider>
-                    <AuthShell>{children}</AuthShell>
-                </ThemeProvider>
+        <html lang="ru">
+            <body className={inter.variable}>
+                <AuthShell>{children}</AuthShell>
             </body>
         </html>
     );

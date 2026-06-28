@@ -7,15 +7,15 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  background: rgb(var(--surface-app-rgb));
-  color: rgb(var(--text-main-rgb));
+  background: #050308;
+  color: white;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   position: relative;
   overflow-x: hidden;
-  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
+/* Subtle gradient overlay */
 body::before {
   content: '';
   position: fixed;
@@ -23,10 +23,9 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(var(--accent-rgb), 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(var(--secondary-rgb), 0.10) 0%, transparent 50%),
-    radial-gradient(circle at 40% 80%, rgba(var(--accent-soft-rgb), 0.08) 0%, transparent 50%);
+  background: radial-gradient(circle at 20% 30%, rgba(217, 70, 239, 0.08) 0%, transparent 50%),
+              radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+              radial-gradient(circle at 40% 80%, rgba(244, 63, 94, 0.04) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -35,54 +34,13 @@ body::before {
   --color-primary: #d946ef;
   --color-secondary: #a855f7;
   --color-accent: #ec4899;
-  --primary-rgb: 217, 70, 239;
-  --secondary-rgb: 168, 85, 247;
-  --accent-rgb: 236, 72, 153;
-  --accent-soft-rgb: 244, 114, 182;
-  --app-bg-rgb: 248, 250, 252;
-  --panel-bg-rgb: 255, 255, 255;
-  --card-bg-rgb: 248, 250, 252;
-  --surface-app-rgb: 244, 247, 251;
-  --surface-panel-rgb: 255, 255, 255;
-  --surface-card-rgb: 248, 250, 252;
-  --surface-muted-rgb: 237, 242, 247;
-  --text-main-rgb: 17, 24, 39;
-  --text-soft-rgb: 75, 85, 99;
-  --text-muted-rgb: 107, 114, 128;
-  --text-on-accent-rgb: 255, 255, 255;
-  --border-soft-rgb: 226, 232, 240;
-  --border-strong-rgb: 203, 213, 225;
-  --overlay-rgb: 255, 255, 255;
-  --bg-app: rgb(var(--app-bg-rgb));
-  --bg-panel: rgba(var(--panel-bg-rgb), 0.92);
-  --bg-card: rgba(var(--card-bg-rgb), 0.96);
-  --border-color: rgba(var(--secondary-rgb), 0.18);
+  --bg-app: #0a0714;
+  --bg-panel: rgba(15, 12, 24);
+  --bg-card: rgba(20, 16, 32);
+  --border-color: rgba(168, 85, 247, 0.15);
   --border-radius-xl: 0.75rem;
-  --glass-bg: rgba(var(--panel-bg-rgb), 0.72);
-  --glass-border: rgba(var(--secondary-rgb), 0.14);
-}
-
-:root[data-theme='dark'] {
-  --app-bg-rgb: 10, 7, 20;
-  --panel-bg-rgb: 15, 12, 24;
-  --card-bg-rgb: 20, 16, 32;
-  --surface-app-rgb: 5, 3, 8;
-  --surface-panel-rgb: 15, 12, 24;
-  --surface-card-rgb: 20, 16, 32;
-  --surface-muted-rgb: 31, 41, 55;
-  --text-main-rgb: 255, 255, 255;
-  --text-soft-rgb: 209, 213, 219;
-  --text-muted-rgb: 156, 163, 175;
-  --text-on-accent-rgb: 255, 255, 255;
-  --border-soft-rgb: 255, 255, 255;
-  --border-strong-rgb: 168, 85, 247;
-  --overlay-rgb: 3, 3, 3;
-  --bg-app: rgb(var(--app-bg-rgb));
-  --bg-panel: rgba(var(--panel-bg-rgb), 0.92);
-  --bg-card: rgba(var(--card-bg-rgb), 0.96);
-  --border-color: rgba(var(--secondary-rgb), 0.18);
-  --glass-bg: rgba(var(--panel-bg-rgb), 0.72);
-  --glass-border: rgba(var(--secondary-rgb), 0.14);
+  --glass-bg: rgba(15, 12, 24, 0.7);
+  --glass-border: rgba(168, 85, 247, 0.12);
 }
 
 .glass-panel {
@@ -94,7 +52,7 @@ body::before {
 
 .custom-scrollbar::-webkit-scrollbar { width: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(var(--secondary-rgb), 0.25); border-radius: 2px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.2); border-radius: 2px; }
 
 .scrollbar-none::-webkit-scrollbar {
   height: 2px;
@@ -104,15 +62,15 @@ body::before {
   background: transparent;
 }
 .scrollbar-none::-webkit-scrollbar-thumb {
-  background: rgba(var(--primary-rgb), 0.25);
+  background: rgba(217, 70, 239, 0.25);
   border-radius: 999px;
 }
 .scrollbar-none::-webkit-scrollbar-thumb:hover {
-  background: rgba(var(--primary-rgb), 0.4);
+  background: rgba(217, 70, 239, 0.4);
 }
 .scrollbar-none {
   scrollbar-width: thin;
-  scrollbar-color: rgba(var(--primary-rgb), 0.25) transparent;
+  scrollbar-color: rgba(217, 70, 239, 0.25) transparent;
 }
 
 @keyframes fade-in-up {

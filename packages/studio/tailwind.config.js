@@ -4,12 +4,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'app-bg': 'rgb(var(--app-bg-rgb) / <alpha-value>)',
-        'panel-bg': 'rgb(var(--panel-bg-rgb) / <alpha-value>)',
-        'card-bg': 'rgb(var(--card-bg-rgb) / <alpha-value>)',
-        primary: 'rgb(var(--primary-rgb) / <alpha-value>)',
-        secondary: 'rgb(var(--secondary-rgb) / <alpha-value>)',
-        muted: 'rgb(var(--text-muted-rgb) / <alpha-value>)',
+        'app-bg': '#050505',
+        'panel-bg': '#0a0a0a',
+        'card-bg': '#111111',
+        primary: '#22d3ee',
+        secondary: '#a1a1aa',
+        muted: '#52525b',
       },
     },
   },
