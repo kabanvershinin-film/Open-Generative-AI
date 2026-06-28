@@ -28,6 +28,12 @@ test('validateImageReferenceUploadFile accepts various image formats under 50MB 
     assert.throws(() => muapi.validateImageReferenceUploadFile(createFile('ref.png', 'image/png', 51 * 1024 * 1024)), /50 МБ/);
 });
 
+test('validateImageUploadFile accepts images up to 50MB and rejects larger files', () => {
+    assert.strictEqual(muapi.validateImageUploadFile(createFile('frame.png', 'image/png', 1024)), true);
+    assert.strictEqual(muapi.validateImageUploadFile(createFile('frame.png', 'image/png', 50 * 1024 * 1024)), true);
+    assert.throws(() => muapi.validateImageUploadFile(createFile('frame.png', 'image/png', 50 * 1024 * 1024 + 1)), /50 МБ/);
+});
+
 test('optimizeImageUploadFile leaves small images unchanged', async () => {
     const file = createFile('small.png', 'image/png', 1024);
     const result = await muapi.optimizeImageUploadFile(file);
