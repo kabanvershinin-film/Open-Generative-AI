@@ -2516,9 +2516,17 @@ const NodeFlow = ({ initialNodeSchemas, initialWorkflowData }) => {
           <MdLockOutline size={18} />
         </button>
         <div
-          className={`relative ${!interactionMode && "hidden"}`}
+          className={`relative z-50 ${!interactionMode && "hidden"}`}
           tabIndex={0}
         >
+          {dropDown === 1 && (
+            <button
+              type="button"
+              aria-label="Закрыть меню добавления нод"
+              className="fixed inset-0 z-40 cursor-default"
+              onClick={() => setDropDown(0)}
+            />
+          )}
           <button
             type="button"
             suppressHydrationWarning={true}

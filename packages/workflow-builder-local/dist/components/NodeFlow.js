@@ -2814,9 +2814,16 @@ var NodeFlow = function NodeFlow(_ref) {
   }, /*#__PURE__*/_react["default"].createElement(_md.MdLockOutline, {
     size: 18
   })), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "relative ".concat(!interactionMode && "hidden"),
+    className: "relative z-50 ".concat(!interactionMode && "hidden"),
     tabIndex: 0
-  }, /*#__PURE__*/_react["default"].createElement("button", {
+  }, dropDown === 1 && /*#__PURE__*/_react["default"].createElement("button", {
+    type: "button",
+    "aria-label": "\u0417\u0430\u043A\u0440\u044B\u0442\u044C \u043C\u0435\u043D\u044E \u0434\u043E\u0431\u0430\u0432\u043B\u0435\u043D\u0438\u044F \u043D\u043E\u0434",
+    className: "fixed inset-0 z-40 cursor-default",
+    onClick: function onClick() {
+      return setDropDown(0);
+    }
+  }), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
     disabled: !interactionMode,
