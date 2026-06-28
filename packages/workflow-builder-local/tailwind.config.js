@@ -1,9 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class',
   content: ["./src/**/*.{js,jsx}"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'app-bg': 'var(--bg-app)',
+        'panel-bg': 'var(--bg-panel)',
+        'card-bg': 'var(--bg-card)',
+        primary: 'var(--color-primary)',
+        secondary: 'var(--text-secondary)',
+        muted: 'var(--text-muted)',
+      },
+    },
   },
   plugins: [],
 }
-

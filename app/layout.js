@@ -36,8 +36,26 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
     return (
-        <html lang="ru">
-            <body className={inter.variable}>
+        <html lang="ru" className="light" suppressHydrationWarning>
+            <body className={inter.variable} suppressHydrationWarning>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            (function () {
+                                try {
+                                    var theme = localStorage.getItem('theme');
+                                    var nextTheme = theme === 'dark' ? 'dark' : 'light';
+                                    var root = document.documentElement;
+                                    root.classList.remove('light', 'dark');
+                                    root.classList.add(nextTheme);
+                                } catch (error) {
+                                    document.documentElement.classList.remove('dark');
+                                    document.documentElement.classList.add('light');
+                                }
+                            })();
+                        `,
+                    }}
+                />
                 <AuthShell>{children}</AuthShell>
             </body>
         </html>

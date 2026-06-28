@@ -1,8 +1,19 @@
 'use client';
+import { useEffect, useState } from 'react';
 import { useAuth } from './AuthProvider';
 import LoginModal from './LoginModal';
 import CabinetModal from './CabinetModal';
 import SiteAnnouncementBell from '@/components/announcements/SiteAnnouncementBell';
+
+const THEME_KEY = 'theme';
+
+function applyTheme(theme) {
+    if (typeof document === 'undefined') return;
+    const root = document.documentElement;
+    const nextTheme = theme === 'dark' ? 'dark' : 'light';
+    root.classList.remove('light', 'dark');
+    root.classList.add(nextTheme);
+}
 
 function InsufficientFundsDialog() {
     const { needFunds, setNeedFunds, setCabinetOpen, balance } = useAuth();
@@ -47,11 +58,38 @@ function InsufficientFundsDialog() {
 
 export default function AccountBar() {
     const { user, balance, loading, setLoginOpen, setCabinetOpen } = useAuth();
+    const [theme, setTheme] = useState('light');
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const savedTheme = window.localStorage.getItem(THEME_KEY);
+        const nextTheme = savedTheme === 'dark' ? 'dark' : 'light';
+        applyTheme(nextTheme);
+        setTheme(nextTheme);
+    }, []);
+
+    const toggleTheme = () => {
+        const nextTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(nextTheme);
+        applyTheme(nextTheme);
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(THEME_KEY, nextTheme);
+        }
+    };
 
     return (
         <>
             <div className="fixed top-3 right-3 z-[60] flex items-center gap-2">
                 <SiteAnnouncementBell />
+                <button
+                    type="button"
+                    onClick={toggleTheme}
+                    title={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
+                    aria-label={theme === 'dark' ? 'Включить светлую тему' : 'Включить тёмную тему'}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-300/70 bg-white/80 text-slate-700 shadow-sm backdrop-blur transition-colors hover:border-purple-400 hover:text-purple-600 dark:border-white/10 dark:bg-neutral-900/90 dark:text-white/75 dark:hover:border-purple-500 dark:hover:text-white"
+                >
+                    <span className="text-sm leading-none">{theme === 'dark' ? '☀' : '☾'}</span>
+                </button>
                 {!loading && (user ? (
                     <button onClick={() => setCabinetOpen(true)}
                             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900/90 border border-white/10 text-white text-sm hover:border-purple-500 transition-colors backdrop-blur">

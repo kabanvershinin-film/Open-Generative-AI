@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    darkMode: 'class',
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
@@ -14,14 +15,14 @@ module.exports = {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: '#d946ef',
-                    hover: '#c026d3',
+                    DEFAULT: 'var(--color-primary)',
+                    hover: 'var(--color-primary-hover)',
                 },
-                'app-bg': '#0a0714',
-                'panel-bg': '#0f0c18',
-                'card-bg': '#141020',
-                secondary: '#a855f7',
-                muted: '#6b7280',
+                'app-bg': 'var(--bg-app)',
+                'panel-bg': 'var(--bg-panel)',
+                'card-bg': 'var(--bg-card)',
+                secondary: 'var(--color-secondary)',
+                muted: 'var(--text-muted)',
             },
             fontFamily: {
                 sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
