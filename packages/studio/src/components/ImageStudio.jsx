@@ -1181,6 +1181,7 @@ export default function ImageStudio({
   const textareaRef = useRef(null);
   const dropdownRef = useRef(null);
   const uploadPickerResetRef = useRef(null); // not used directly — managed via key
+  const brokenHistoryEntriesRef = useRef(new Set());
 
   // ── Close dropdown on outside click ─────────────────────────────────────
   useEffect(() => {
@@ -1628,7 +1629,8 @@ export default function ImageStudio({
   };
 
   // ── History helpers ──────────────────────────────────────────────────────
-  const removeFromHistory = useCallback(async (entry, entryIdx) => {
+  const removeFromHistory = useCallback(async (entry, entryIdx, options = {}) => {
+    const { silent = false, restoreOnDeleteFailure = true } = options || {};
     const deleteId = entry?.id || "local-media";
     const deleteUrl = typeof entry?.url === "string" ? entry.url : "";
     const previousHistory = Array.isArray(history) ? [...history] : [];
@@ -1651,7 +1653,9 @@ export default function ImageStudio({
       setActiveHistoryIdx((prev) => Math.max(0, prev - 1));
     }
 
-    toast.success("Удалено");
+    if (!silent) {
+      toast.success("Удалено");
+    }
 
     if (deleteUrl) {
       try {
@@ -1665,16 +1669,22 @@ export default function ImageStudio({
           throw new Error(payload?.error || `HTTP ${response.status}`);
         }
       } catch (err) {
-        if (historyItems !== undefined) {
-          onHistoryChange?.(previousHistory);
+        if (restoreOnDeleteFailure) {
+          if (historyItems !== undefined) {
+            onHistoryChange?.(previousHistory);
+          } else {
+            setLocalHistory(previousHistory);
+          }
+          if (previousCurrentImageUrl) {
+            setCurrentImageUrl(previousCurrentImageUrl);
+          }
+          setActiveHistoryIdx(previousActiveHistoryIdx);
+        }
+        if (!silent) {
+          toast.error(`Не удалось удалить файл: ${err.message || "ошибка"}`);
         } else {
-          setLocalHistory(previousHistory);
+          console.warn("Broken ImageStudio history entry cleanup failed:", err?.message || err);
         }
-        if (previousCurrentImageUrl) {
-          setCurrentImageUrl(previousCurrentImageUrl);
-        }
-        setActiveHistoryIdx(previousActiveHistoryIdx);
-        toast.error(`Не удалось удалить файл: ${err.message || "ошибка"}`);
         return;
       }
     }
@@ -2414,6 +2424,15 @@ export default function ImageStudio({
                   alt={entry.prompt?.substring(0, 30) || "Созданное изображение"}
                   className="w-full aspect-square object-cover bg-black/40 cursor-pointer hover:opacity-80 transition-opacity"
                   onClick={() => setFullscreenUrl(entry.url)}
+                  onError={() => {
+                    const brokenKey = entry.id || entry.url || `history-${idx}`;
+                    if (brokenHistoryEntriesRef.current.has(brokenKey)) return;
+                    brokenHistoryEntriesRef.current.add(brokenKey);
+                    removeFromHistory(entry, idx, {
+                      silent: true,
+                      restoreOnDeleteFailure: false,
+                    });
+                  }}
                 />
                 
                 {/* Overlay actions */}
