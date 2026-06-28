@@ -4,7 +4,9 @@
 
 @layer base {
     body {
-        @apply bg-app-bg text-white font-sans antialiased h-screen overflow-hidden;
+        @apply font-sans antialiased h-screen overflow-hidden;
+        background: var(--bg-app);
+        color: var(--text-primary);
     }
 
     /* Custom Scrollbar Refinement */
@@ -17,17 +19,28 @@
     }
 
     ::-webkit-scrollbar-thumb {
-        @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+        background: var(--scrollbar-thumb, rgba(148, 163, 184, 0.25));
+        border-radius: 9999px;
+        transition: background-color 0.2s ease;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--scrollbar-thumb-strong, rgba(148, 163, 184, 0.4));
     }
 }
 
 @layer components {
     .glass {
-        @apply bg-black/80 backdrop-blur-2xl border border-white/10 shadow-3xl;
+        backdrop-filter: blur(24px);
+        background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+        border: 1px solid var(--glass-border, rgba(148, 163, 184, 0.2));
+        box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.18);
     }
 
     .glass-panel {
-        @apply bg-black/60 backdrop-blur-xl border border-white/5;
+        backdrop-filter: blur(20px);
+        background: color-mix(in srgb, var(--bg-panel) 72%, transparent);
+        border: 1px solid color-mix(in srgb, var(--glass-border, rgba(148, 163, 184, 0.2)) 70%, transparent);
     }
 
     .neon-border {
@@ -143,7 +156,7 @@
     left: 50%;
     transform: translateX(-50%) translateY(8px);
     border: 6px solid transparent;
-    border-top-color: #1a1a1a;
+    border-top-color: color-mix(in srgb, var(--bg-panel) 98%, transparent);
     opacity: 0;
     pointer-events: none;
     transition: all 0.2s ease;
@@ -158,18 +171,18 @@
     left: 50%;
     transform: translateX(-50%) translateY(12px);
     padding: 8px 14px;
-    background: #1a1a1a;
-    border: 1px solid rgba(255,255,255,0.1);
+    background: color-mix(in srgb, var(--bg-panel) 98%, transparent);
+    border: 1px solid var(--glass-border, rgba(148, 163, 184, 0.2));
     border-radius: 10px;
     font-size: 12px;
     font-weight: 600;
-    color: #fff;
+    color: var(--text-primary);
     white-space: nowrap;
     opacity: 0;
     pointer-events: none;
     transition: all 0.2s ease;
     z-index: 9999;
-    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.25);
 }
 
 /* Show tooltip on hover */
@@ -184,7 +197,7 @@
     bottom: auto;
     top: 100%;
     border-top-color: transparent;
-    border-bottom-color: #1a1a1a;
+    border-bottom-color: color-mix(in srgb, var(--bg-panel) 98%, transparent);
     transform: translateX(-50%) translateY(-8px);
 }
 
