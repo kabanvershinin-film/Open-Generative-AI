@@ -65,8 +65,8 @@ export default function LoginModal() {
     );
     if (!loginOpen || isLegalPage) return null;
 
-    const inputCls = 'w-full px-4 py-3 rounded-xl bg-white/[0.08] border border-purple-300/25 text-white text-sm outline-none transition-colors placeholder:text-white/45 focus:border-purple-400 focus:bg-white/[0.12] shadow-sm shadow-purple-500/10';
-    const checkboxCls = 'h-4 w-4 rounded border border-purple-300/30 bg-black/40 text-purple-500 focus:ring-2 focus:ring-purple-500/40 focus:ring-offset-0';
+    const inputCls = 'w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-slate-900 text-sm outline-none transition-colors placeholder:text-slate-400 focus:border-purple-400 focus:bg-white shadow-sm shadow-slate-200/70 dark:bg-white/[0.08] dark:border-purple-300/25 dark:text-white dark:placeholder:text-white/45 dark:focus:bg-white/[0.12] dark:shadow-purple-500/10';
+    const checkboxCls = 'h-4 w-4 rounded border border-purple-300/30 bg-white text-purple-500 focus:ring-2 focus:ring-purple-500/40 focus:ring-offset-0 dark:bg-black/40';
     const switchMethod = (nextMethod) => {
         setMethod(nextMethod);
         setOtp('');
@@ -119,7 +119,7 @@ export default function LoginModal() {
     );
 
     return (
-        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-md">
+        <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center p-4 overflow-y-auto bg-white/65 dark:bg-black/60 backdrop-blur-md">
             {/* Background Image */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <Image
@@ -134,7 +134,7 @@ export default function LoginModal() {
             
             <div className="relative flex flex-col items-center gap-6 w-full max-w-2xl animate-in zoom-in-95 fade-in duration-300 md:translate-x-32">
                 {/* Main Auth Card */}
-                <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-black/80 backdrop-blur-2xl shadow-[0_30px_100px_rgba(0,0,0,0.5)]">
+                <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200/90 bg-white/88 dark:border-white/10 dark:bg-black/80 backdrop-blur-2xl shadow-[0_30px_100px_rgba(15,23,42,0.14)] dark:shadow-[0_30px_100px_rgba(0,0,0,0.5)]">
                     {/* glow */}
                     <div className="pointer-events-none absolute -top-28 left-1/2 -translate-x-1/2 h-56 w-56 rounded-full bg-purple-600/30 blur-3xl" />
                     <div className="pointer-events-none absolute -bottom-28 -right-10 h-56 w-56 rounded-full bg-fuchsia-600/20 blur-3xl" />
@@ -143,13 +143,13 @@ export default function LoginModal() {
                         {/* Brand */}
                         <div className="flex items-center justify-center gap-2.5 mb-2">
                             <span className="grid place-items-center h-9 w-9 rounded-xl bg-gradient-to-br from-purple-500 to-fuchsia-600 shadow-lg shadow-purple-600/30 text-white text-lg font-black">◆</span>
-                            <span className="text-white font-bold text-lg tracking-tight">Сапог AI</span>
+                            <span className="text-slate-900 dark:text-white font-bold text-lg tracking-tight">Сапог AI</span>
                         </div>
-                        <p className="text-center text-[11px] tracking-[0.22em] text-purple-300/70 uppercase mb-7">
+                        <p className="text-center text-[11px] tracking-[0.22em] text-purple-500/70 dark:text-purple-300/70 uppercase mb-7">
                             От креаторов · для креаторов
                         </p>
 
-                        <h2 className="text-2xl font-bold text-white text-center mb-6">
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white text-center mb-6">
                             {isPhone ? 'Вход по телефону' : (isRegister ? 'Создайте аккаунт' : 'С возвращением')}
                         </h2>
 
@@ -160,7 +160,7 @@ export default function LoginModal() {
                                 className={`py-2.5 rounded-xl text-sm border transition-colors ${
                                     !isPhone
                                         ? 'bg-purple-600 border-purple-500 text-white'
-                                        : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
+                                        : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:border-white/10 dark:text-white/60 dark:hover:text-white'
                                 }`}
                             >
                                 Почта
@@ -171,7 +171,7 @@ export default function LoginModal() {
                                 className={`py-2.5 rounded-xl text-sm border transition-colors ${
                                     isPhone
                                         ? 'bg-purple-600 border-purple-500 text-white'
-                                        : 'bg-white/[0.03] border-white/10 text-white/60 hover:text-white'
+                                        : 'bg-slate-100 border-slate-200 text-slate-600 hover:text-slate-900 dark:bg-white/[0.03] dark:border-white/10 dark:text-white/60 dark:hover:text-white'
                                 }`}
                             >
                                 Телефон
@@ -210,12 +210,12 @@ export default function LoginModal() {
                                         type="button"
                                         onClick={requestPhoneCode}
                                         disabled={busy}
-                                        className="w-full py-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                                    className="w-full py-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] dark:border-white/10 dark:text-white text-sm font-medium transition-colors disabled:opacity-50"
                                     >
                                         Отправить код ещё раз
                                     </button>
                                 )}
-                                <p className="text-xs text-white/35 text-center">
+                                <p className="text-xs text-slate-500 dark:text-white/35 text-center">
                                     Используйте международный формат телефона, например `+79991234567`.
                                 </p>
                             </div>
@@ -230,7 +230,7 @@ export default function LoginModal() {
                                 <input type="password" className={inputCls} placeholder="Пароль"
                                        value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
                                 {isRegister && (
-                                    <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
+                                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs leading-relaxed text-slate-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-white/60">
                                         <input
                                             type="checkbox"
                                             checked={consentAccepted}
@@ -249,12 +249,12 @@ export default function LoginModal() {
 
                         <div className="flex items-center gap-3 my-5">
                             <div className="h-px flex-1 bg-purple-400/20" />
-                            <span className="text-[11px] text-purple-200/70 uppercase tracking-wider">быстрый вход</span>
+                            <span className="text-[11px] text-purple-500/70 dark:text-purple-200/70 uppercase tracking-wider">быстрый вход</span>
                             <div className="h-px flex-1 bg-purple-400/20" />
                         </div>
 
                         <button type="button" onClick={() => startOAuth(loginWithGoogle)} disabled={busy}
-                                className="w-full py-3 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] border border-purple-300/25 text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm shadow-purple-500/10">
+                                className="w-full py-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 dark:bg-white/[0.07] dark:hover:bg-white/[0.12] dark:border-purple-300/25 text-slate-800 dark:text-white text-sm font-medium flex items-center justify-center gap-2 transition-colors shadow-sm shadow-slate-200/70 dark:shadow-purple-500/10">
                             <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden="true">
                                 <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8a12 12 0 1 1 7.9-21.1l5.7-5.7A20 20 0 1 0 24 44c11 0 19.6-8 19.6-20 0-1.3-.1-2.3-.4-3.5z"/>
                                 <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3.1 0 5.9 1.2 7.9 3.1l5.7-5.7A20 20 0 0 0 6.3 14.7z"/>
@@ -280,11 +280,11 @@ export default function LoginModal() {
                             <button
                                 type="button"
                                 disabled
-                                className="w-full mt-3 py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white/70 text-sm font-medium flex items-center justify-center gap-2 opacity-80 cursor-not-allowed"
+                                className="w-full mt-3 py-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 dark:bg-white/[0.05] dark:border-white/10 dark:text-white/70 text-sm font-medium flex items-center justify-center gap-2 opacity-80 cursor-not-allowed"
                             >
                                 <span className="text-base font-black leading-none">VK</span>
                                 Войти через ВКонтакте
-                                <span className="ml-1 rounded-full bg-purple-500/20 border border-purple-400/20 px-2 py-0.5 text-[10px] uppercase tracking-wide text-purple-200">
+                                <span className="ml-1 rounded-full bg-purple-500/15 border border-purple-400/20 px-2 py-0.5 text-[10px] uppercase tracking-wide text-purple-600 dark:text-purple-200">
                                     Скоро
                                 </span>
                             </button>
@@ -293,17 +293,17 @@ export default function LoginModal() {
                         <button
                             type="button"
                             disabled
-                            className="w-full mt-3 py-3 rounded-xl bg-white/[0.05] border border-white/10 text-white/70 text-sm font-medium flex items-center justify-center gap-2 opacity-80 cursor-not-allowed"
+                            className="w-full mt-3 py-3 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 dark:bg-white/[0.05] dark:border-white/10 dark:text-white/70 text-sm font-medium flex items-center justify-center gap-2 opacity-80 cursor-not-allowed"
                         >
                             <span className="text-base font-black leading-none">TG</span>
                             Войти через Telegram
-                            <span className="ml-1 rounded-full bg-purple-500/20 border border-purple-400/20 px-2 py-0.5 text-[10px] uppercase tracking-wide text-purple-200">
+                            <span className="ml-1 rounded-full bg-purple-500/15 border border-purple-400/20 px-2 py-0.5 text-[10px] uppercase tracking-wide text-purple-600 dark:text-purple-200">
                                 Скоро
                             </span>
                         </button>
 
                         {!isPhone && (
-                            <div className="text-center text-sm text-white/45 mt-5">
+                            <div className="text-center text-sm text-slate-500 dark:text-white/45 mt-5">
                                 {isRegister ? (
                                     <>Уже есть аккаунт?{' '}
                                         <button type="button" onClick={() => setMode('login')} className="text-purple-300 font-medium hover:text-purple-200 hover:underline">Войти</button>
@@ -320,7 +320,7 @@ export default function LoginModal() {
 
                 {/* Bottom Information Card */}
                 <div className="w-full max-w-md animate-in slide-in-from-bottom-5 fade-in duration-500 delay-150">
-                    <div className="px-6 py-4 rounded-3xl bg-black/80 backdrop-blur-2xl border border-white/10 shadow-2xl">
+                    <div className="px-6 py-4 rounded-3xl bg-white/88 dark:bg-black/80 backdrop-blur-2xl border border-slate-200/90 dark:border-white/10 shadow-2xl">
                         {/* Row 1: Legal & Credentials */}
                         <div className="flex flex-wrap items-center justify-between gap-y-3 gap-x-6 mb-4">
                             {/* Legal Links */}
@@ -329,27 +329,27 @@ export default function LoginModal() {
                                     href="/terms" 
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[10px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1 group"
+                                    className="text-[10px] text-slate-500 dark:text-white/40 hover:text-purple-500 dark:hover:text-purple-300 transition-colors flex items-center gap-1 group"
                                 >
                                     Условия
                                     <span className="opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
                                 </a>
-                                <div className="h-2.5 w-px bg-white/10" />
+                                <div className="h-2.5 w-px bg-slate-200 dark:bg-white/10" />
                                 <a 
                                     href="/privacy" 
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[10px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1 group"
+                                    className="text-[10px] text-slate-500 dark:text-white/40 hover:text-purple-500 dark:hover:text-purple-300 transition-colors flex items-center gap-1 group"
                                 >
                                     Конфиденциальность
                                     <span className="opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
                                 </a>
-                                <div className="h-2.5 w-px bg-white/10" />
+                                <div className="h-2.5 w-px bg-slate-200 dark:bg-white/10" />
                                 <a
                                     href="/offer"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-[10px] text-white/40 hover:text-purple-300 transition-colors flex items-center gap-1 group"
+                                    className="text-[10px] text-slate-500 dark:text-white/40 hover:text-purple-500 dark:hover:text-purple-300 transition-colors flex items-center gap-1 group"
                                 >
                                     Оферта
                                     <span className="opacity-0 group-hover:opacity-100 transition-opacity">↗</span>
@@ -357,26 +357,26 @@ export default function LoginModal() {
                             </div>
 
                             {/* Credentials */}
-                            <div className="flex items-center gap-4 text-[9px] uppercase tracking-wider text-white/20">
+                            <div className="flex items-center gap-4 text-[9px] uppercase tracking-wider text-slate-400 dark:text-white/20">
                                 <div className="flex gap-1.5">
                                     <span>ИНН</span>
-                                    <span className="text-white/35 font-mono tracking-normal">692700514344</span>
+                                    <span className="text-slate-600 dark:text-white/35 font-mono tracking-normal">692700514344</span>
                                 </div>
                                 <div className="flex gap-1.5">
                                     <span>ОГРНИП</span>
-                                    <span className="text-white/35 font-mono tracking-normal">326690000024874</span>
+                                    <span className="text-slate-600 dark:text-white/35 font-mono tracking-normal">326690000024874</span>
                                 </div>
                             </div>
                         </div>
                         
                         {/* Row 2: Entity & Copyright */}
-                        <div className="pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
-                            <span className="text-[10px] text-white/30 font-medium uppercase tracking-wide">
+                        <div className="pt-3 border-t border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2">
+                            <span className="text-[10px] text-slate-500 dark:text-white/30 font-medium uppercase tracking-wide">
                                 ИП Вершинин Евгений Александрович
                             </span>
                             <div className="text-right">
-                                <div className="text-[9px] text-white/15 uppercase tracking-[0.2em]">© 2026 Сапог AI</div>
-                                <div className="text-[10px] text-white/30">kaban.vershinin@gmail.com</div>
+                                <div className="text-[9px] text-slate-300 dark:text-white/15 uppercase tracking-[0.2em]">© 2026 Сапог AI</div>
+                                <div className="text-[10px] text-slate-500 dark:text-white/30">kaban.vershinin@gmail.com</div>
                             </div>
                         </div>
                     </div>

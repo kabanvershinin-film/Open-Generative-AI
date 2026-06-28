@@ -121,20 +121,20 @@ export default function CabinetModal() {
     };
 
     return (
-        <div className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-[70] bg-white/65 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
              onClick={() => setCabinetOpen(false)}>
-            <div className="bg-neutral-900 border border-white/10 rounded-2xl p-6 w-full max-w-md space-y-5 max-h-[90vh] overflow-y-auto"
+            <div className="bg-white dark:bg-neutral-900 border border-slate-200 dark:border-white/10 rounded-2xl p-6 w-full max-w-md space-y-5 max-h-[90vh] overflow-y-auto shadow-2xl"
                  onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-white">Личный кабинет</h3>
-                    <button onClick={() => setCabinetOpen(false)} className="text-white/40 hover:text-white">✕</button>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Личный кабинет</h3>
+                    <button onClick={() => setCabinetOpen(false)} className="text-slate-400 hover:text-slate-900 dark:text-white/40 dark:hover:text-white">✕</button>
                 </div>
 
                 {/* Contact (Email/Phone) */}
                 <div className="mt-1">
-                    <div className="text-xs text-white/30 mb-1">Ваша почта:</div>
+                    <div className="text-xs text-slate-400 dark:text-white/30 mb-1">Ваша почта:</div>
                     <div className="flex items-center gap-2">
-                        <code className="text-[11px] text-white/60 bg-black/40 border border-white/10 px-2 py-1 rounded-lg flex-1 select-all font-mono">
+                        <code className="text-[11px] text-slate-600 dark:text-white/60 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 px-2 py-1 rounded-lg flex-1 select-all font-mono">
                             {contact}
                         </code>
                         <button
@@ -142,7 +142,7 @@ export default function CabinetModal() {
                                 navigator.clipboard.writeText(contact);
                                 toast.success('Почта скопирована!');
                             }}
-                            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                            className="text-xs text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 transition-colors"
                         >
                             Копировать
                         </button>
@@ -152,9 +152,9 @@ export default function CabinetModal() {
                 {/* User ID */}
                 {user?.id && (
                     <div className="mt-4">
-                        <div className="text-xs text-white/30 mb-1">Ваш ID:</div>
+                        <div className="text-xs text-slate-400 dark:text-white/30 mb-1">Ваш ID:</div>
                         <div className="flex items-center gap-2">
-                            <code className="text-[11px] text-white/60 bg-black/40 border border-white/10 px-2 py-1 rounded-lg flex-1 select-all font-mono">
+                            <code className="text-[11px] text-slate-600 dark:text-white/60 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 px-2 py-1 rounded-lg flex-1 select-all font-mono">
                                 {user.id}
                             </code>
                             <button
@@ -162,7 +162,7 @@ export default function CabinetModal() {
                                     navigator.clipboard.writeText(user.id);
                                     toast.success('ID скопирован!');
                                 }}
-                                className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
+                                className="text-xs text-purple-500 hover:text-purple-600 dark:text-purple-400 dark:hover:text-purple-300 transition-colors"
                             >
                                 Копировать
                             </button>
@@ -171,17 +171,17 @@ export default function CabinetModal() {
                 )}
 
                 <div className="p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                    <div className="text-xs text-white/50">Ваш баланс</div>
-                    <div className="text-2xl font-bold text-white">{balance.toFixed(2)} ₽</div>
+                    <div className="text-xs text-slate-500 dark:text-white/50">Ваш баланс</div>
+                    <div className="text-2xl font-bold text-slate-900 dark:text-white">{balance.toFixed(2)} ₽</div>
                 </div>
 
                 <div className="space-y-3">
-                    <div className="text-sm text-white/70">Пополнить баланс</div>
+                    <div className="text-sm text-slate-700 dark:text-white/70">Пополнить баланс</div>
                     <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-center">
-                        <div className="text-base font-bold uppercase tracking-wide text-amber-300">
+                        <div className="text-base font-bold uppercase tracking-wide text-amber-600 dark:text-amber-300">
                             Пополнение только через российский банк
                         </div>
-                        <div className="mt-1 text-sm font-medium text-amber-100">
+                        <div className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-100">
                             Поддерживаются только карты российских банков и СБП
                         </div>
                     </div>
@@ -191,21 +191,21 @@ export default function CabinetModal() {
                                     className={`py-2 rounded-lg text-sm border transition-colors ${
                                         amount === String(p)
                                             ? 'bg-purple-600 border-purple-500 text-white'
-                                            : 'bg-black/40 border-white/10 text-white/70 hover:border-white/30'}`}>
+                                            : 'bg-slate-100 dark:bg-black/40 border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/70 hover:border-slate-300 dark:hover:border-white/30'}`}>
                                 {p}₽
                             </button>
                         ))}
                     </div>
                     <input type="number" min={100} max={100000} value={amount}
                            onChange={(e) => setAmount(e.target.value)}
-                           className="w-full px-3 py-2 rounded-lg bg-black/40 border border-white/10 text-white text-sm outline-none focus:border-purple-500"
+                           className="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white text-sm outline-none focus:border-purple-500"
                            placeholder="Сумма, ₽" />
-                    <label className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-white/60">
+                    <label className="flex items-start gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] px-3 py-3 text-xs leading-relaxed text-slate-600 dark:text-white/60">
                         <input
                             type="checkbox"
                             checked={paymentConsent}
                             onChange={(e) => setPaymentConsent(e.target.checked)}
-                            className="mt-0.5 h-4 w-4 rounded border border-purple-300/30 bg-black/40 text-purple-500 focus:ring-2 focus:ring-purple-500/40 focus:ring-offset-0"
+                            className="mt-0.5 h-4 w-4 rounded border border-purple-300/30 bg-white dark:bg-black/40 text-purple-500 focus:ring-2 focus:ring-purple-500/40 focus:ring-offset-0"
                         />
                         <span>
                             Я принимаю{' '}
@@ -227,23 +227,23 @@ export default function CabinetModal() {
                             className="w-full py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-medium rounded-xl transition-colors">
                         {busy ? '...' : 'Пополнить'}
                     </button>
-                    <div className="text-sm font-semibold text-amber-300 text-center">Только российский банк · карта РФ или СБП · от 100 ₽</div>
+                    <div className="text-sm font-semibold text-amber-600 dark:text-amber-300 text-center">Только российский банк · карта РФ или СБП · от 100 ₽</div>
                 </div>
 
                 <div className="space-y-2">
-                    <div className="text-sm text-white/70">История операций</div>
+                    <div className="text-sm text-slate-700 dark:text-white/70">История операций</div>
                     {txnsLoading && (txns === null) ? (
-                        <div className="text-xs text-white/40 py-3 text-center">Загрузка…</div>
+                        <div className="text-xs text-slate-400 dark:text-white/40 py-3 text-center">Загрузка…</div>
                     ) : (txns && txns.length > 0) ? (
-                        <div className="rounded-xl border border-white/10 divide-y divide-white/5 max-h-60 overflow-y-auto">
+                        <div className="rounded-xl border border-slate-200 dark:border-white/10 divide-y divide-slate-200 dark:divide-white/5 max-h-60 overflow-y-auto">
                             {txns.map((t) => {
                                 const amt = Number(t.amount) || 0;
                                 const spend = amt < 0;
                                 return (
                                     <div key={t.id} className="flex items-center justify-between gap-3 px-3 py-2">
                                         <div className="min-w-0">
-                                            <div className="text-sm text-white/90 truncate">{txnLabel(t)}</div>
-                                            <div className="text-[11px] text-white/35">{fmtDate(t.created_at)}</div>
+                                            <div className="text-sm text-slate-900 dark:text-white/90 truncate">{txnLabel(t)}</div>
+                                            <div className="text-[11px] text-slate-400 dark:text-white/35">{fmtDate(t.created_at)}</div>
                                         </div>
                                         <div className={`text-sm font-medium whitespace-nowrap ${spend ? 'text-red-400' : 'text-green-400'}`}>
                                             {spend ? '' : '+'}{amt.toFixed(2)} ₽
@@ -253,18 +253,18 @@ export default function CabinetModal() {
                             })}
                         </div>
                     ) : (
-                        <div className="text-xs text-white/40 py-3 text-center">Пока нет операций</div>
+                        <div className="text-xs text-slate-400 dark:text-white/40 py-3 text-center">Пока нет операций</div>
                     )}
                 </div>
 
-                <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                    <div className="text-sm text-white/70">Документы и реквизиты</div>
-                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-white/55">
+                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-black/30 p-4">
+                    <div className="text-sm text-slate-700 dark:text-white/70">Документы и реквизиты</div>
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-white/55">
                         <a
                             href="/privacy"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-medium text-purple-300 transition-colors hover:text-purple-200"
+                            className="font-medium text-purple-500 dark:text-purple-300 transition-colors hover:text-purple-600 dark:hover:text-purple-200"
                         >
                             Политика
                         </a>
@@ -272,7 +272,7 @@ export default function CabinetModal() {
                             href="/terms"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-medium text-purple-300 transition-colors hover:text-purple-200"
+                            className="font-medium text-purple-500 dark:text-purple-300 transition-colors hover:text-purple-600 dark:hover:text-purple-200"
                         >
                             Условия
                         </a>
@@ -280,12 +280,12 @@ export default function CabinetModal() {
                             href="/offer"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-medium text-purple-300 transition-colors hover:text-purple-200"
+                            className="font-medium text-purple-500 dark:text-purple-300 transition-colors hover:text-purple-600 dark:hover:text-purple-200"
                         >
                             Оферта
                         </a>
                     </div>
-                    <div className="mt-3 text-[11px] leading-relaxed text-white/35">
+                    <div className="mt-3 text-[11px] leading-relaxed text-slate-500 dark:text-white/35">
                         ИП Вершинин Евгений Александрович
                         <br />
                         ИНН 692700514344 · ОГРНИП 326690000024874
@@ -296,13 +296,13 @@ export default function CabinetModal() {
 
                 {ADMIN_EMAILS.some(e => e.toLowerCase() === (user?.email || '').toLowerCase()) && (
                     <a href="/admin"
-                       className="w-full py-2 text-sm text-purple-400 hover:text-purple-300 transition-colors text-center block">
+                       className="w-full py-2 text-sm text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors text-center block">
                         ⚙ Админ-панель
                     </a>
                 )}
 
                 <button onClick={logout}
-                        className="w-full py-2 text-sm text-white/50 hover:text-red-400 transition-colors">
+                        className="w-full py-2 text-sm text-slate-500 dark:text-white/50 hover:text-red-500 dark:hover:text-red-400 transition-colors">
                     Выйти из аккаунта
                 </button>
             </div>
