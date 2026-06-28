@@ -8,6 +8,32 @@ export function isDurableImageHistoryUrl(url) {
   return false;
 }
 
+export function getImageHistoryEntryDedupeKey(entry) {
+  const value = entry?.dedupe_key ?? entry?.dedupeKey ?? "";
+  return typeof value === "string" ? value.trim() : "";
+}
+
+export function isSameImageHistoryEntry(existing, incoming) {
+  const existingDedupeKey = getImageHistoryEntryDedupeKey(existing);
+  const incomingDedupeKey = getImageHistoryEntryDedupeKey(incoming);
+
+  if (existingDedupeKey && incomingDedupeKey && existingDedupeKey === incomingDedupeKey) {
+    return true;
+  }
+
+  if (existing?.id && incoming?.id && existing.id === incoming.id) {
+    return true;
+  }
+
+  const existingUrl = typeof existing?.url === "string" ? existing.url : "";
+  const incomingUrl = typeof incoming?.url === "string" ? incoming.url : "";
+  if (existingUrl && incomingUrl && existingUrl === incomingUrl) {
+    return true;
+  }
+
+  return false;
+}
+
 function getEntryTime(entry) {
   const value = Date.parse(entry?.timestamp || entry?.created_at || 0);
   return Number.isFinite(value) ? value : 0;
@@ -43,9 +69,7 @@ export function mergeImageHistoryEntries(primary, secondary = []) {
 
   for (const entry of [...(Array.isArray(primary) ? primary : []), ...(Array.isArray(secondary) ? secondary : [])]) {
     if (!entry?.url) continue;
-    const matchIndex = merged.findIndex((item) =>
-      (entry.id && item.id === entry.id) || item.url === entry.url,
-    );
+    const matchIndex = merged.findIndex((item) => isSameImageHistoryEntry(item, entry));
     if (matchIndex === -1) {
       merged.push(entry);
       continue;
@@ -59,13 +83,8 @@ export function mergeImageHistoryEntries(primary, secondary = []) {
 }
 
 export function excludeImageHistoryEntry(entries, entry) {
-  const targetId = entry?.id || null;
-  const targetUrl = typeof entry?.url === "string" ? entry.url : "";
-
   return (Array.isArray(entries) ? entries : []).filter((item) => {
     if (!item) return false;
-    if (targetId && item.id === targetId) return false;
-    if (targetUrl && item.url === targetUrl) return false;
-    return true;
+    return !isSameImageHistoryEntry(item, entry);
   });
 }

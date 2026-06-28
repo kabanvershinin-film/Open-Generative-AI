@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 
 import {
   excludeImageHistoryEntry,
+  getImageHistoryEntryDedupeKey,
   isDurableImageHistoryUrl,
+  isSameImageHistoryEntry,
   mergeImageHistoryEntries,
   sanitizePersistedImageHistoryEntries,
 } from '../components/imageHistory.js';
@@ -60,6 +62,40 @@ test('mergeImageHistoryEntries оставляет более новый prompt �
   ]);
 });
 
+test('mergeImageHistoryEntries схлопывает одну картинку по dedupe_key даже если id и url различаются', () => {
+  const result = mergeImageHistoryEntries(
+    [
+      {
+        id: 'server-entry',
+        url: 'https://cdn.example.com/raw.png',
+        dedupe_key: 'mf-image:https://cdn.example.com/raw.png',
+        prompt: 'слон на море',
+        timestamp: '2026-06-24T10:00:00.000Z',
+      },
+    ],
+    [
+      {
+        id: 'client-entry',
+        url: 'https://bucket.tos-cn-beijing.volces.com/users/1/final.png',
+        dedupe_key: 'mf-image:https://cdn.example.com/raw.png',
+        prompt: 'слон на море',
+        timestamp: '2026-06-24T11:00:00.000Z',
+      },
+    ],
+  );
+
+  assert.deepStrictEqual(result, [
+    {
+      id: 'client-entry',
+      url: 'https://bucket.tos-cn-beijing.volces.com/users/1/final.png',
+      dedupe_key: 'mf-image:https://cdn.example.com/raw.png',
+      prompt: 'слон на море',
+      timestamp: '2026-06-24T11:00:00.000Z',
+      restoreState: undefined,
+    },
+  ]);
+});
+
 test('mergeImageHistoryEntries сортирует по времени и ограничивает размер истории', () => {
   const entries = Array.from({ length: 55 }, (_, index) => ({
     id: `id-${index}`,
@@ -88,6 +124,29 @@ test('excludeImageHistoryEntry сразу убирает запись по id и
     { id: 'one', url: 'https://cdn.example.com/a.png' },
     { id: 'three', url: 'https://cdn.example.com/c.png' },
   ]);
+});
+
+test('excludeImageHistoryEntry убирает дубль по dedupe_key', () => {
+  const result = excludeImageHistoryEntry(
+    [
+      { id: 'server-entry', url: 'https://cdn.example.com/raw.png', dedupe_key: 'mf-image:https://cdn.example.com/raw.png' },
+      { id: 'other', url: 'https://cdn.example.com/other.png', dedupe_key: 'mf-image:https://cdn.example.com/other.png' },
+    ],
+    { id: 'client-entry', url: 'https://tos.example.com/final.png', dedupe_key: 'mf-image:https://cdn.example.com/raw.png' },
+  );
+
+  assert.deepStrictEqual(result, [
+    { id: 'other', url: 'https://cdn.example.com/other.png', dedupe_key: 'mf-image:https://cdn.example.com/other.png' },
+  ]);
+});
+
+test('isSameImageHistoryEntry и getImageHistoryEntryDedupeKey находят одну запись по dedupe_key', () => {
+  const existing = { id: 'old', url: 'https://cdn.example.com/raw.png', dedupe_key: 'mf-image:https://cdn.example.com/raw.png' };
+  const incoming = { id: 'new', url: 'https://tos.example.com/final.png', dedupeKey: 'mf-image:https://cdn.example.com/raw.png' };
+
+  assert.strictEqual(getImageHistoryEntryDedupeKey(existing), 'mf-image:https://cdn.example.com/raw.png');
+  assert.strictEqual(getImageHistoryEntryDedupeKey(incoming), 'mf-image:https://cdn.example.com/raw.png');
+  assert.strictEqual(isSameImageHistoryEntry(existing, incoming), true);
 });
 
 test('isDurableImageHistoryUrl принимает только постоянные URL истории', () => {

@@ -6,3 +6,8 @@ export function buildImageChargeMeta(pathParts, model, data) {
     usage: data?.usage ?? null,
   };
 }
+
+export function buildMfImageGalleryDedupeKey(imageUrl) {
+  const value = typeof imageUrl === 'string' ? imageUrl.trim() : '';
+  return value ? `mf-image:${value}` : '';
+}

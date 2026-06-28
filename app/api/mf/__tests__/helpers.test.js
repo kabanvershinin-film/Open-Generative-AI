@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildImageChargeMeta } from '../helpers.js';
+import { buildImageChargeMeta, buildMfImageGalleryDedupeKey } from '../helpers.js';
 
 test('buildImageChargeMeta берет usage из ответа провайдера', () => {
   const meta = buildImageChargeMeta(
@@ -31,4 +31,15 @@ test('buildImageChargeMeta возвращает null usage, если прова�
     path: '/v1/images/generations',
     usage: null,
   });
+});
+
+test('buildMfImageGalleryDedupeKey строит одинаковый ключ для одной и той же исходной картинки', () => {
+  const first = buildMfImageGalleryDedupeKey('https://cdn.example.com/raw-image.png');
+  const second = buildMfImageGalleryDedupeKey('https://cdn.example.com/raw-image.png');
+  const third = buildMfImageGalleryDedupeKey('https://cdn.example.com/other-image.png');
+
+  assert.strictEqual(first, 'mf-image:https://cdn.example.com/raw-image.png');
+  assert.strictEqual(second, first);
+  assert.notStrictEqual(third, first);
+  assert.strictEqual(buildMfImageGalleryDedupeKey(''), '');
 });

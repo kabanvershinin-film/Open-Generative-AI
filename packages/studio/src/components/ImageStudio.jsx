@@ -29,6 +29,7 @@ import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { saveMediaToGallery } from "./gallerySave.js";
 import {
   excludeImageHistoryEntry,
+  isSameImageHistoryEntry,
   mergeImageHistoryEntries,
   sanitizePersistedImageHistoryEntries,
 } from "./imageHistory.js";
@@ -965,6 +966,7 @@ export default function ImageStudio({
       .map((entry) => ({
         id: entry.id,
         url: typeof entry.url === "string" ? entry.url : null,
+        dedupe_key: typeof entry.dedupe_key === "string" ? entry.dedupe_key : undefined,
         prompt: typeof entry.prompt === "string" ? entry.prompt.slice(0, 500) : "",
         model: entry.model || null,
         aspect_ratio: entry.aspect_ratio || null,
@@ -1681,7 +1683,7 @@ export default function ImageStudio({
   const addToHistory = useCallback(
     (entry) => {
       if (!historyItems) {
-        setLocalHistory((prev) => [entry, ...prev.slice(0, 49)]);
+        setLocalHistory((prev) => mergeImageHistoryEntries([entry], prev));
       }
       setActiveHistoryIdx(0);
       setCurrentImageUrl(entry.url);
@@ -1698,11 +1700,10 @@ export default function ImageStudio({
       const raw = localStorage.getItem(PERSIST_KEY);
       const data = raw ? JSON.parse(raw) : {};
       const prevHistory = Array.isArray(data.localHistory) ? data.localHistory : [];
-      // Avoid duplicates by id.
-      if (prevHistory.some((e) => e.id === entry.id)) return;
-      data.localHistory = sanitizeHistoryForStorage([entry, ...prevHistory]);
+      const mergedHistory = mergeImageHistoryEntries([entry], prevHistory);
+      data.localHistory = sanitizeHistoryForStorage(mergedHistory);
       writePersistentState(data);
-      writeRecentResults([entry, ...prevHistory]);
+      writeRecentResults(mergedHistory);
     } catch (err) {
       console.warn("persistEntryToStorage failed:", err?.message);
     }
@@ -1941,9 +1942,11 @@ export default function ImageStudio({
           urls.forEach((rawUrl, imageIndex) => {
             added++;
             const id = `${res?.id || Math.random().toString(36).substring(7)}_${responseIndex}_${imageIndex}`;
+            const dedupeKey = rawUrl ? `mf-image:${rawUrl}` : `mf-image:${id}`;
             const entry = {
               id,
               url: rawUrl,
+              dedupe_key: dedupeKey,
               prompt: promptTrim,
               model: snap.selectedModelId,
               aspect_ratio: snap.selectedAr,
@@ -1989,7 +1992,7 @@ export default function ImageStudio({
               }
               persistEntryToStorage(finalEntry);
               await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model, {
-                dedupeKey: `mf-image:${finalEntry.id}`,
+                dedupeKey: finalEntry.dedupe_key || dedupeKey,
                 aspect_ratio: finalEntry.aspect_ratio,
                 restoreState: finalEntry.restoreState,
               });
@@ -2141,7 +2144,11 @@ export default function ImageStudio({
     const alreadyDone = findResults();
     if (alreadyDone.length > 0) {
       alreadyDone.forEach((e) => {
-        setLocalHistory(prev => prev.some(p => p.id === e.id) ? prev : [e, ...prev.slice(0, 49)]);
+        setLocalHistory((prev) => (
+          prev.some((p) => isSameImageHistoryEntry(p, e))
+            ? mergeImageHistoryEntries(prev, [e])
+            : mergeImageHistoryEntries([e], prev)
+        ));
         setCurrentImageUrl(e.url);
       });
       setActiveHistoryIdx(0);
@@ -2164,7 +2171,7 @@ export default function ImageStudio({
             setCurrentImageUrl((cur) => (cur === entry.url ? permUrl : cur));
             persistEntryToStorage(finalEntry);
             await saveImageToGallery(finalEntry.url, finalEntry.prompt, finalEntry.model, {
-              dedupeKey: `mf-image:${finalEntry.id}`,
+              dedupeKey: finalEntry.dedupe_key || "",
               aspect_ratio: finalEntry.aspect_ratio,
               restoreState: finalEntry.restoreState,
             });
@@ -2218,7 +2225,11 @@ export default function ImageStudio({
         clearInterval(intervalId);
         const entries = findResults();
         entries.forEach(e => {
-          setLocalHistory(prev => prev.some(p => p.id === e.id) ? prev : [e, ...prev.slice(0, 49)]);
+          setLocalHistory((prev) => (
+            prev.some((p) => isSameImageHistoryEntry(p, e))
+              ? mergeImageHistoryEntries(prev, [e])
+              : mergeImageHistoryEntries([e], prev)
+          ));
           setCurrentImageUrl(e.url);
         });
         if (entries.length > 0) {

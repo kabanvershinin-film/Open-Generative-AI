@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../../_lib/pricing';
 import { BILLING_ENABLED, spendBalance, getUserForGallery } from '../../_lib/balance';
 import { saveGalleryEntry } from '../../_lib/tosGallery';
-import { buildImageChargeMeta } from '../helpers.js';
+import { buildImageChargeMeta, buildMfImageGalleryDedupeKey } from '../helpers.js';
 
 // Debug: log env vars (without exposing secrets)
 console.log('MF route init', {
@@ -141,7 +141,7 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
             model: model || '',
             prompt: payload?.params?.prompt || '',
             extra: {
-                dedupeKey: `mf-image:${data?.id || data?.request_id || imageUrl}`,
+                dedupeKey: buildMfImageGalleryDedupeKey(imageUrl),
             },
         }).catch(() => {});
     }
