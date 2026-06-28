@@ -14,6 +14,10 @@ import {
   removeUploadUrl,
   replaceUploadUrl,
 } from "./uploadPreviewState.js";
+import {
+  optimizeWorkflowImageUploadFile,
+  validateWorkflowImageUploadFile,
+} from "./imageUploadOptimization.js";
 
 const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loading, uploadType, acceptType }) => {
   const [uploading, setUploading] = useState(false);
@@ -59,7 +63,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     handleFileUpload(e);
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     let file = null;
 
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
@@ -84,7 +88,7 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
       const typeRus = acceptType === "image" ? "изображение" : acceptType === "video" ? "видео" : "аудио";
       toast.error(`Пожалуйста, загрузите корректный файл (${typeRus})`);
       return;
-    };
+    }
 
     const previewUrl = typeof URL !== "undefined" ? URL.createObjectURL(file) : "";
     if (previewUrl) {
@@ -93,43 +97,48 @@ const UploadNode = ({ id, data, formValues, setFormValues, selectedModel, loadin
     }
     setUploading(true);
     setUploadProgress(0);
-    axios.get("/api/upload-file", {
-      params: { filename: file.name, type: file.type }
-    })
-    .then((response) => {
+
+    try {
+      let uploadFile = file;
+      if (acceptType === "image") {
+        validateWorkflowImageUploadFile(file);
+        uploadFile = await optimizeWorkflowImageUploadFile(file);
+      }
+
+      const response = await axios.get("/api/upload-file", {
+        params: { filename: uploadFile.name || file.name, type: uploadFile.type || file.type }
+      });
       const { putUrl, publicUrl } = response.data;
 
-      axios.put(putUrl, file, {
-        headers: { "Content-Type": file.type },
+      await axios.put(putUrl, uploadFile, {
+        headers: { "Content-Type": uploadFile.type || file.type },
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const total = progressEvent.total || uploadFile.size || file.size || 1;
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / total);
           setUploadProgress(percentCompleted);
         }
-      })
-      .then(() => {
-        setFormValues(prev => ({ ...prev, [type]: publicUrl }));
-        setPreviewUrls((prev) => replaceUploadUrl(prev, previewUrl, publicUrl));
-        revokeObjectUrl(previewUrl);
+      });
 
-        setTimeout(() => {
-          setUploading(false);
-          setUploadProgress(0);
-        }, 500);
-      })
-    })
-    .catch((error) => {
+      setFormValues(prev => ({ ...prev, [type]: publicUrl }));
+      setPreviewUrls((prev) => replaceUploadUrl(prev, previewUrl, publicUrl));
+      revokeObjectUrl(previewUrl);
+
+      setTimeout(() => {
+        setUploading(false);
+        setUploadProgress(0);
+      }, 500);
+    } catch (error) {
       console.error("Upload failed", error);
-      toast.error("Ошибка загрузки.", error?.response?.data);
+      toast.error(error?.message || "Ошибка загрузки.", error?.response?.data);
       setPreviewUrls((prev) => removeUploadUrl(prev, previewUrl));
       revokeObjectUrl(previewUrl);
       setUploading(false);
       setUploadProgress(0);
-    })
-    .finally(() => {
+    } finally {
       if (e?.target && "value" in e.target) {
         e.target.value = "";
       }
-    });
+    }
   };
 
   const handleDragOver = (e) => {

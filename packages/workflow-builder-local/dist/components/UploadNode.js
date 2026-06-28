@@ -16,6 +16,7 @@ var _VideoPlayer = _interopRequireDefault(require("./VideoPlayer"));
 var _io = require("react-icons/io5");
 var _stableStringify = require("./stableStringify.js");
 var _uploadPreviewState = require("./uploadPreviewState.js");
+var _imageUploadOptimization = require("./imageUploadOptimization.js");
 function _interopRequireDefault(e) { return e && e.__esModule ? e : { "default": e }; }
 function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function _interopRequireWildcard(e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, "default": e }; if (null === e || "object" != _typeof(e) && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
 function _createForOfIteratorHelper(r, e) { var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"]; if (!t) { if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e && r && "number" == typeof r.length) { t && (r = t); var _n = 0, F = function F() {}; return { s: F, n: function n() { return _n >= r.length ? { done: !0 } : { done: !1, value: r[_n++] }; }, e: function e(r) { throw r; }, f: F }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); } var o, a = !0, u = !1; return { s: function s() { t = t.call(r); }, n: function n() { var r = t.next(); return a = r.done, r; }, e: function e(r) { u = !0, o = r; }, f: function f() { try { a || null == t["return"] || t["return"](); } finally { if (u) throw o; } } }; }
@@ -104,7 +105,7 @@ var UploadNode = function UploadNode(_ref) {
     e.stopPropagation();
     handleFileUpload(e);
   };
-  var handleFileUpload = function handleFileUpload(e) {
+  var handleFileUpload = async function handleFileUpload(e) {
     var _e$dataTransfer;
     var file = null;
     if ((_e$dataTransfer = e.dataTransfer) !== null && _e$dataTransfer !== void 0 && _e$dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -132,51 +133,57 @@ var UploadNode = function UploadNode(_ref) {
     }
     setUploading(true);
     setUploadProgress(0);
-    _axios["default"].get("/api/upload-file", {
-      params: {
-        filename: file.name,
-        type: file.type
+    try {
+      var uploadFile = file;
+      if (acceptType === "image") {
+        (0, _imageUploadOptimization.validateWorkflowImageUploadFile)(file);
+        uploadFile = await (0, _imageUploadOptimization.optimizeWorkflowImageUploadFile)(file);
       }
-    }).then(function (response) {
+      var response = await _axios["default"].get("/api/upload-file", {
+        params: {
+          filename: uploadFile.name || file.name,
+          type: uploadFile.type || file.type
+        }
+      });
       var _response$data = response.data,
         putUrl = _response$data.putUrl,
         publicUrl = _response$data.publicUrl;
-      _axios["default"].put(putUrl, file, {
+      await _axios["default"].put(putUrl, uploadFile, {
         headers: {
-          "Content-Type": file.type
+          "Content-Type": uploadFile.type || file.type
         },
         onUploadProgress: function onUploadProgress(progressEvent) {
-          var percentCompleted = Math.round(progressEvent.loaded * 100 / progressEvent.total);
+          var total = progressEvent.total || uploadFile.size || file.size || 1;
+          var percentCompleted = Math.round(progressEvent.loaded * 100 / total);
           setUploadProgress(percentCompleted);
         }
-      }).then(function () {
-        setFormValues(function (prev) {
-          return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, type, publicUrl));
-        });
-        setPreviewUrls(function (prev) {
-          return (0, _uploadPreviewState.replaceUploadUrl)(prev, previewUrl, publicUrl);
-        });
-        revokeObjectUrl(previewUrl);
-        setTimeout(function () {
-          setUploading(false);
-          setUploadProgress(0);
-        }, 500);
       });
-    })["catch"](function (error) {
+      setFormValues(function (prev) {
+        return _objectSpread(_objectSpread({}, prev), {}, _defineProperty({}, type, publicUrl));
+      });
+      setPreviewUrls(function (prev) {
+        return (0, _uploadPreviewState.replaceUploadUrl)(prev, previewUrl, publicUrl);
+      });
+      revokeObjectUrl(previewUrl);
+      setTimeout(function () {
+        setUploading(false);
+        setUploadProgress(0);
+      }, 500);
+    } catch (error) {
       var _error$response;
       console.error("Upload failed", error);
-      _reactHotToast.toast.error("Ошибка загрузки.", error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
+      _reactHotToast.toast.error((error === null || error === void 0 ? void 0 : error.message) || "Ошибка загрузки.", error === null || error === void 0 || (_error$response = error.response) === null || _error$response === void 0 ? void 0 : _error$response.data);
       setPreviewUrls(function (prev) {
         return (0, _uploadPreviewState.removeUploadUrl)(prev, previewUrl);
       });
       revokeObjectUrl(previewUrl);
       setUploading(false);
       setUploadProgress(0);
-    })["finally"](function () {
+    } finally {
       if ((e === null || e === void 0 ? void 0 : e.target) && "value" in e.target) {
         e.target.value = "";
       }
-    });
+    }
   };
   var handleDragOver = function handleDragOver(e) {
     e.preventDefault();

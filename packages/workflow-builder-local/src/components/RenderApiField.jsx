@@ -15,6 +15,10 @@ import {
   removeUploadUrl,
   replaceUploadUrl,
 } from "./uploadPreviewState.js";
+import {
+  optimizeWorkflowImageUploadFile,
+  validateWorkflowImageUploadFile,
+} from "./imageUploadOptimization.js";
 
 const UI_TRANSLATIONS = {
   "Prompt": "Промпт",
@@ -132,7 +136,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     }
   }, [dropDown, idx]);
 
-  const handleFileUpload = (field, fieldSchema, e) => {
+  const handleFileUpload = async (field, fieldSchema, e) => {
     let file = null;
 
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
@@ -155,7 +159,7 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     if (!isAcceptedType) {
       toast.error(translateUi("Unsupported file type"));
       return;
-    };
+    }
 
     const previewUrl = typeof URL !== "undefined" ? URL.createObjectURL(file) : "";
     if (previewUrl) {
@@ -168,20 +172,27 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
     }
     setUploading(true);
     setUploadProgress(0);
-    axios.get("/api/upload-file", {
-      params: { filename: file.name, type: file.type }
-    })
-    .then((response) => {
+    try {
+      let uploadFile = file;
+      if (isImageField) {
+        validateWorkflowImageUploadFile(file);
+        uploadFile = await optimizeWorkflowImageUploadFile(file);
+      }
+
+      const response = await axios.get("/api/upload-file", {
+        params: { filename: uploadFile.name || file.name, type: uploadFile.type || file.type }
+      });
       const { putUrl, publicUrl } = response.data;
 
-      axios.put(putUrl, file, {
-        headers: { "Content-Type": file.type },
+      await axios.put(putUrl, uploadFile, {
+        headers: { "Content-Type": uploadFile.type || file.type },
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          const total = progressEvent.total || uploadFile.size || file.size || 1;
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / total);
           setUploadProgress(percentCompleted);
         }
-      })
-      .then(() => {
+      });
+
         setFormValues((prev) => {
           const current = prev[field];
           const updatedValue = fieldSchema.type === 'array'
@@ -202,11 +213,9 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
           setUploadProgress(0);
           setPreviewUrls([]);
         }, 500);
-      })
-    })
-    .catch((error) => {
+    } catch (error) {
       console.error("Upload failed", error);
-      toast.error(translateUi("Upload failed."), error?.response?.data);
+      toast.error(error?.message || translateUi("Upload failed."), error?.response?.data);
       setPreviewUrls((prev) => removeUploadUrl(prev, previewUrl));
       if (previewUrl && ownedObjectUrlsRef.current.has(previewUrl)) {
         try {
@@ -217,12 +226,11 @@ const RenderApiField = ({ fieldName, meta, idx, formValues, setFormValues, handl
       setUploading(false);
       setUploadProgress(0);
       setPreviewUrls([]);
-    })
-    .finally(() => {
+    } finally {
       if (e?.target && "value" in e.target) {
         e.target.value = "";
       }
-    });
+    }
   };
 
   const handleStyle = {
