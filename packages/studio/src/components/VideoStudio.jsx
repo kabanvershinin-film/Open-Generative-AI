@@ -49,6 +49,7 @@ import {
   removeVideoHistoryEntry,
   upsertVideoHistoryEntry,
 } from "../videoHistory.js";
+import { getVisibleVideoActiveTasks } from "../videoActiveTasks.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { pickCompatibleControlValue } from "../videoStudioControls.js";
 import {
@@ -586,6 +587,18 @@ export default function VideoStudio({
 
     return merged;
   }, [historyItems, localHistory, remoteHistory]);
+
+  const visibleActiveTasks = useMemo(() => {
+    return getVisibleVideoActiveTasks(activeTasks, history);
+  }, [activeTasks, history]);
+
+  useEffect(() => {
+    const visibleIds = new Set(visibleActiveTasks.map((task) => task.id));
+    if (!activeTasks.some((task) => task?.status !== "error" && !visibleIds.has(task.id))) return;
+    setActiveTasks((prev) =>
+      prev.filter((task) => task?.status === "error" || visibleIds.has(task.id)),
+    );
+  }, [activeTasks, visibleActiveTasks]);
 
   useEffect(() => {
     const nextKeys = new Set();
@@ -1895,7 +1908,16 @@ export default function VideoStudio({
 
     // Task still in progress — resume polling.
     const tempId = stored.taskId || `recovered_${Date.now()}`;
-    addTask({ id: tempId, prompt: stored.prompt, model: stored.model });
+    addTask({
+      id: tempId,
+      prompt: stored.prompt,
+      model: stored.model,
+      taskId: stored.taskId || null,
+      dedupeKey: buildVideoPendingDedupeKey({
+        taskId: stored.taskId,
+        generationId: stored.genId,
+      }),
+    });
 
     pollArkTask(stored.taskId, stored.bill)
       .then((res) => showResult(res.url, res.id || stored.taskId, res.billing_error || null))
@@ -1970,7 +1992,15 @@ export default function VideoStudio({
     if (alreadyDone) { restore(alreadyDone); return; }
 
     const tempId = snap.requestId || `pending_${Date.now()}`;
-    addTask({ id: tempId, prompt: snap.prompt, model: snap.model });
+    addTask({
+      id: tempId,
+      prompt: snap.prompt,
+      model: snap.model,
+      requestId: snap.requestId || null,
+      dedupeKey: buildVideoPendingDedupeKey({
+        requestId: snap.requestId,
+      }),
+    });
 
     let cancelled = false;
     const intervalId = setInterval(() => {
@@ -2043,12 +2073,14 @@ export default function VideoStudio({
     const taskModel = selectedModel;
     const taskPrompt = trimmedPrompt;
     
-    addTask({ 
-      id: taskId, 
-      prompt: taskPrompt, 
+    addTask({
+      id: taskId,
+      prompt: taskPrompt,
       model: taskModel,
       aspect_ratio: selectedAr,
-      duration: selectedDuration
+      duration: selectedDuration,
+      pendingId: taskId,
+      dedupeKey: buildVideoPendingDedupeKey({ pendingId: taskId }),
     });
 
     setGenerateError(null);
@@ -2089,7 +2121,12 @@ export default function VideoStudio({
             returnLastFrame,
           });
           params.onTaskId = (arkTaskId, bill) => {
-            updateTask(taskId, { arkTaskId, bill });
+            updateTask(taskId, {
+              arkTaskId,
+              taskId: arkTaskId,
+              bill,
+              dedupeKey: buildVideoPendingDedupeKey({ taskId: arkTaskId, pendingId: taskId }),
+            });
             pendingExternalId = arkTaskId;
             pendingBill = bill;
             pendingTaskPromise = savePendingGeneration({
@@ -2219,6 +2256,10 @@ export default function VideoStudio({
           };
           v2vParams.onRequestId = (requestId) => {
             pendingExternalId = requestId;
+            updateTask(taskId, {
+              requestId,
+              dedupeKey: buildVideoPendingDedupeKey({ requestId, pendingId: taskId }),
+            });
             pendingTaskPromise = savePendingGeneration({
               ...basePendingTask,
               id: requestId,
@@ -2241,6 +2282,10 @@ export default function VideoStudio({
           const i2vParams = { model: taskModel, image_url: uploadedImageUrl };
           i2vParams.onRequestId = (requestId) => {
             pendingExternalId = requestId;
+            updateTask(taskId, {
+              requestId,
+              dedupeKey: buildVideoPendingDedupeKey({ requestId, pendingId: taskId }),
+            });
             pendingTaskPromise = savePendingGeneration({
               ...basePendingTask,
               id: requestId,
@@ -2274,6 +2319,10 @@ export default function VideoStudio({
           const params = { model: taskModel };
           params.onRequestId = (requestId) => {
             pendingExternalId = requestId;
+            updateTask(taskId, {
+              requestId,
+              dedupeKey: buildVideoPendingDedupeKey({ requestId, pendingId: taskId }),
+            });
             pendingTaskPromise = savePendingGeneration({
               ...basePendingTask,
               id: requestId,
@@ -2715,10 +2764,10 @@ export default function VideoStudio({
         onScroll={handleHistoryScroll}
         className="flex-1 w-full max-w-7xl mx-auto overflow-y-auto custom-scrollbar pb-40 lg:pb-32 px-2"
       >
-        {(activeTasks.length > 0 || history.length > 0 || isLoadingRemoteHistory) ? (
+        {(visibleActiveTasks.length > 0 || history.length > 0 || isLoadingRemoteHistory) ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full pt-4 animate-fade-in-up">
             {/* Active generation cards */}
-            {activeTasks.map((task) => (
+            {visibleActiveTasks.map((task) => (
               <div key={task.id} className={`relative rounded-lg overflow-hidden border ${task.status === 'error' ? 'border-red-500/40' : 'border-primary/40'} bg-white dark:bg-[#0a0a0a] shadow-xl flex flex-col animate-fade-in-up`}>
                 {/* Shimmer thumbnail area */}
                 <div className="w-full aspect-video bg-gradient-to-br from-slate-100 via-primary/5 to-white dark:from-black dark:via-primary/5 dark:to-black relative flex items-center justify-center overflow-hidden">
@@ -2770,7 +2819,7 @@ export default function VideoStudio({
                 </div>
               </div>
             ))}
-            {isLoadingRemoteHistory && activeTasks.length === 0 && localHistory.length === 0 && (
+            {isLoadingRemoteHistory && visibleActiveTasks.length === 0 && localHistory.length === 0 && (
               <div className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0a] shadow-xl flex flex-col items-center justify-center aspect-video">
                 <svg className="animate-spin text-primary" width="36" height="36" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" className="opacity-20" />
