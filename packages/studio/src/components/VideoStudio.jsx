@@ -58,6 +58,7 @@ import {
 } from "../videoPromptTokens.js";
 import { buildSeedanceExtendSession } from "../seedanceExtend.js";
 import { normalizePersistedRefFiles, serializeRefFilesForPersistence } from "../refFilesState.js";
+import { ensureVideoEntryStoredInTos } from "../videoTosPersistence.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 const HISTORY_PAGE_SIZE = 18;
@@ -1778,8 +1779,12 @@ export default function VideoStudio({
             status: "completed",
             entry: nextEntry,
           }).catch(() => null);
-          const finalUrl = updateResult?.entry?.url || updateResult?.task?.entry?.url || nextEntry.url;
-          const finalEntry = { ...nextEntry, url: finalUrl };
+          const persisted = await ensureVideoEntryStoredInTos({
+            entry: nextEntry,
+            pendingResult: updateResult,
+            persistToGallery: persistVideoToGallery,
+          });
+          const finalEntry = persisted.entry || nextEntry;
 
           if (cancelled) return;
           if (!shouldHandleVideoEntry(finalEntry)) {
@@ -1818,7 +1823,7 @@ export default function VideoStudio({
 
     restorePending();
     return () => { cancelled = true; };
-  }, [apiKey, addTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, fetchRemoteHistory, onGenerationComplete, shouldHandleVideoEntry]);
+  }, [apiKey, addTask, removeTask, addToLocalHistory, persistVideoEntryToStorage, showVideoInCanvas, fetchRemoteHistory, onGenerationComplete, shouldHandleVideoEntry, persistVideoToGallery]);
 
   // ── resume an ARK task that survived navigation ───────────────────────────
   // If the user navigated away mid-generation the polling promise kept running
@@ -1837,7 +1842,7 @@ export default function VideoStudio({
     // and all of them would fire gallery saves when the task eventually finishes).
     let cancelled = false;
 
-    const showResult = (url, genId, billingError = null) => {
+    const showResult = async (url, genId, billingError = null) => {
       if (cancelled) return;
       localStorage.removeItem(ARK_TASK_KEY);
       setLastGenerationId(genId);
@@ -1852,12 +1857,16 @@ export default function VideoStudio({
         }),
       };
       if (!shouldHandleVideoEntry(entry)) return;
-      addToLocalHistory(entry);
-      persistVideoEntryToStorage(entry);
-      showVideoInCanvas(url, stored.model);
-      persistVideoToGallery(entry).then(() => {
-        fetchRemoteHistory({ reset: true }); // Refresh remote history after saving to gallery, bypassing cache
+      const persisted = await ensureVideoEntryStoredInTos({
+        entry,
+        pendingResult: null,
+        persistToGallery: persistVideoToGallery,
       });
+      const finalEntry = persisted.entry || entry;
+      addToLocalHistory(finalEntry);
+      persistVideoEntryToStorage(finalEntry);
+      showVideoInCanvas(finalEntry.url, stored.model);
+      fetchRemoteHistory({ reset: true }); // Refresh remote history after saving to gallery, bypassing cache
       deletePendingGeneration(stored.taskId).catch(() => false);
       if (billingError) {
         reportAdminIncident({
@@ -2179,14 +2188,16 @@ export default function VideoStudio({
                 entry,
               }).catch(() => null)
               : null;
-            const finalUrl = pendingResult?.entry?.url || pendingResult?.task?.entry?.url || entry.url;
+            const persisted = await ensureVideoEntryStoredInTos({
+              entry,
+              pendingResult,
+              persistToGallery: persistVideoToGallery,
+            });
+            const finalEntry = persisted.entry || entry;
+            const finalUrl = finalEntry.url || entry.url;
             if (finalUrl !== entry.url) {
               replaceVideoEntryUrl(entry.id, finalUrl);
               setCanvasUrl((prev) => (prev === entry.url ? finalUrl : prev));
-            } else if (!pendingTaskId) {
-              persistVideoToGallery(entry).then(() => {
-                fetchRemoteHistory({ reset: true });
-              });
             }
             fetchRemoteHistory({ reset: true });
             if (onGenerationComplete)
@@ -2363,13 +2374,15 @@ export default function VideoStudio({
               entry,
             }).catch(() => null)
             : null;
-          const finalUrl = pendingResult?.entry?.url || pendingResult?.task?.entry?.url || entry.url;
+          const persisted = await ensureVideoEntryStoredInTos({
+            entry,
+            pendingResult,
+            persistToGallery: persistVideoToGallery,
+          });
+          const finalEntry = persisted.entry || entry;
+          const finalUrl = finalEntry.url || entry.url;
           if (finalUrl !== entry.url) {
             replaceVideoEntryUrl(entry.id, finalUrl);
-          } else if (!pendingTaskId) {
-            persistVideoToGallery(entry).then(() => {
-              fetchRemoteHistory({ reset: true });
-            });
           }
           fetchRemoteHistory({ reset: true });
           showVideoInCanvas(finalUrl, taskModel);
