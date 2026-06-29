@@ -56,6 +56,7 @@ import {
   MAX_CONCURRENT_HISTORY_PREVIEWS,
   VIDEO_HISTORY_PAGE_SIZE,
 } from "../videoPreviewPolicy.js";
+import { resolveVideoHistoryFetchFailure } from "../videoHistoryFetchState.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { pickCompatibleControlValue } from "../videoStudioControls.js";
 import {
@@ -1005,7 +1006,12 @@ export default function VideoStudio({
       setRemoteHistoryNextCursor(data.nextCursor ?? null);
     } catch (err) {
       console.warn("Failed to fetch remote history:", err);
-      setRemoteHistoryError(err.message || "Ошибка загрузки истории");
+      const failureState = resolveVideoHistoryFetchFailure({
+        reset,
+        existingEntriesCount: remoteHistory.length,
+        error: err,
+      });
+      setRemoteHistoryError(failureState.remoteHistoryError);
     } finally {
       remoteHistoryLoadingRef.current = false;
       setIsLoadingRemoteHistory(false);
