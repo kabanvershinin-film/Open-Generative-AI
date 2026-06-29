@@ -24,17 +24,17 @@ export function buildVideoPendingDedupeKey({
   pendingId,
   generationId,
 } = {}) {
-  const generation = normalizeString(generationId);
-  if (generation) return buildVideoGalleryDedupeKey(generation);
-
-  const request = normalizeString(requestId);
   const task = normalizeString(taskId);
-  if (request && task) return buildVideoGalleryDedupeKey(`${request}:${task}`);
-  if (request) return buildVideoGalleryDedupeKey(request);
   if (task) return buildVideoGalleryDedupeKey(task);
 
   const pending = normalizeString(pendingId);
   if (pending) return buildVideoGalleryDedupeKey(pending);
+
+  const generation = normalizeString(generationId);
+  if (generation) return buildVideoGalleryDedupeKey(generation);
+
+  const request = normalizeString(requestId);
+  if (request) return buildVideoGalleryDedupeKey(request);
 
   return "";
 }
