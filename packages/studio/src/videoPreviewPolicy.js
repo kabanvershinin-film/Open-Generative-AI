@@ -2,7 +2,7 @@ export const VIDEO_HISTORY_PAGE_SIZE = 12;
 export const MAX_CONCURRENT_HISTORY_PREVIEWS = 2;
 export const VIDEO_HISTORY_PREVIEW_ROOT_MARGIN = "200px 0px";
 export const VIDEO_HISTORY_PREVIEW_SLOT_TIMEOUT_MS = 1500;
-export const VIDEO_HISTORY_PRELOAD = "metadata";
+export const VIDEO_HISTORY_PRELOAD = "auto";
 
 export function getVideoPreviewLoadPolicy({ hasImagePreview = false } = {}) {
   return {
