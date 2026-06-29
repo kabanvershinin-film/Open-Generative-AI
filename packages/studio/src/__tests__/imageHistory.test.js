@@ -7,6 +7,7 @@ import {
   isDurableImageHistoryUrl,
   isSameImageHistoryEntry,
   mergeImageHistoryEntries,
+  normalizeImageGalleryEntries,
   sanitizePersistedImageHistoryEntries,
 } from '../components/imageHistory.js';
 
@@ -94,6 +95,31 @@ test('mergeImageHistoryEntries схлопывает одну картинку п
       restoreState: undefined,
     },
   ]);
+});
+
+test('normalizeImageGalleryEntries сохраняет dedupe_key из галереи для последующего дедупа', () => {
+  const result = normalizeImageGalleryEntries([
+    {
+      id: 'server-entry',
+      url: 'https://bucket.tos-cn-beijing.volces.com/users/1/final.png',
+      dedupe_key: 'mf-image:https://cdn.example.com/raw.png',
+      prompt: 'кот',
+      model: 'doubao-seedream-5-0-260128',
+      aspect_ratio: '1:1',
+      created_at: '2026-06-29T12:00:00.000Z',
+      restoreState: { prompt: 'кот' },
+    },
+  ]);
+
+  assert.strictEqual(result.length, 1);
+  assert.strictEqual(result[0].id, 'server-entry');
+  assert.strictEqual(result[0].url, 'https://bucket.tos-cn-beijing.volces.com/users/1/final.png');
+  assert.strictEqual(result[0].dedupe_key, 'mf-image:https://cdn.example.com/raw.png');
+  assert.strictEqual(result[0].prompt, 'кот');
+  assert.strictEqual(result[0].model, 'doubao-seedream-5-0-260128');
+  assert.strictEqual(result[0].aspect_ratio, '1:1');
+  assert.strictEqual(result[0].timestamp, '2026-06-29T12:00:00.000Z');
+  assert.strictEqual(result[0].restoreState?.prompt, 'кот');
 });
 
 test('mergeImageHistoryEntries сортирует по времени и ограничивает размер истории', () => {

@@ -1,3 +1,5 @@
+import { getImageHistoryRestoreState } from "../imageHistoryRestore.js";
+
 export function isDurableImageHistoryUrl(url) {
   if (typeof url !== "string") return false;
   const value = url.trim();
@@ -62,6 +64,23 @@ export function sanitizePersistedImageHistoryEntries(entries = []) {
   return (Array.isArray(entries) ? entries : [])
     .filter(Boolean)
     .filter((entry) => isDurableImageHistoryUrl(entry?.url));
+}
+
+export function normalizeImageGalleryEntries(entries = []) {
+  return (Array.isArray(entries) ? entries : [])
+    .filter((entry) => entry?.url)
+    .map((entry) => ({
+      id: entry.id,
+      url: entry.url,
+      dedupe_key: getImageHistoryEntryDedupeKey(entry) || undefined,
+      prompt: entry.prompt || "",
+      model: entry.model || null,
+      aspect_ratio: entry.aspect_ratio || null,
+      timestamp: entry.created_at || entry.timestamp || new Date().toISOString(),
+      restoreState: entry.restoreState && typeof entry.restoreState === "object"
+        ? getImageHistoryRestoreState(entry)
+        : undefined,
+    }));
 }
 
 export function mergeImageHistoryEntries(primary, secondary = []) {
