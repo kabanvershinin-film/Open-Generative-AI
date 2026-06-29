@@ -45,6 +45,7 @@ import {
   buildVideoPendingDedupeKey,
   getVideoHistoryEntryKey,
   mergeVideoHistoryEntries,
+  mergeVideoHistorySources,
   normalizeVideoHistoryEntry,
   removeVideoHistoryEntry,
   upsertVideoHistoryEntry,
@@ -563,29 +564,7 @@ export default function VideoStudio({
   // Merge localHistory and remoteHistory, local has priority
   const history = useMemo(() => {
     if (historyItems) return historyItems;
-    const local = Array.isArray(localHistory) ? localHistory : [];
-    const remote = Array.isArray(remoteHistory) ? remoteHistory : [];
-    const seen = new Set();
-    const merged = [];
-
-    local
-      .slice()
-      .reverse()
-      .forEach((entry) => {
-        const key = getHistoryKey(entry);
-        if (!key || seen.has(key)) return;
-        seen.add(key);
-        merged.unshift(entry);
-      });
-
-    remote.forEach((entry) => {
-      const key = getHistoryKey(entry);
-      if (!key || seen.has(key)) return;
-      seen.add(key);
-      merged.push(entry);
-    });
-
-    return merged;
+    return mergeVideoHistorySources(localHistory, remoteHistory, Infinity);
   }, [historyItems, localHistory, remoteHistory]);
 
   const visibleActiveTasks = useMemo(() => {

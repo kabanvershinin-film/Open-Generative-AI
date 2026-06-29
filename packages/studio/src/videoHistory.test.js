@@ -6,6 +6,8 @@ import {
   buildVideoPendingDedupeKey,
   getVideoHistoryEntryKey,
   mergeVideoHistoryEntries,
+  mergeVideoHistorySourceEntry,
+  mergeVideoHistorySources,
   normalizeVideoHistoryEntry,
   normalizeVideoHistoryUrl,
   removeVideoHistoryEntry,
@@ -143,6 +145,100 @@ test("mergeVideoHistoryEntries схлопывает локальный и сер
     {
       id: "local-gen",
       url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4",
+      preview_url: undefined,
+      thumbnail: undefined,
+      last_frame_url: undefined,
+      first_frame_url: undefined,
+    },
+  ]);
+});
+
+test("mergeVideoHistorySourceEntry предпочитает серверный media url и кадры, сохраняя локальный restoreState", () => {
+  const merged = mergeVideoHistorySourceEntry(
+    {
+      id: "local-gen",
+      url: "https://cdn.example.com/raw.mp4",
+      dedupeKey: "mf-video:req-123",
+      restoreState: { prompt: "локальный снимок" },
+    },
+    {
+      id: "gallery-entry",
+      url: "https://tos.example.com/final.mp4",
+      dedupe_key: "mf-video:req-123",
+      last_frame_url: "https://tos.example.com/final-last.jpg",
+      preview_url: "https://tos.example.com/final-preview.jpg",
+      mirrored_to_tos: true,
+    },
+  );
+
+  assert.deepStrictEqual(merged, {
+    id: "gallery-entry",
+    url: "https://tos.example.com/final.mp4",
+    dedupe_key: "mf-video:req-123",
+    dedupeKey: "mf-video:req-123",
+    last_frame_url: "https://tos.example.com/final-last.jpg",
+    preview_url: "https://tos.example.com/final-preview.jpg",
+    thumbnail: undefined,
+    first_frame_url: undefined,
+    restoreState: { prompt: "локальный снимок" },
+    mirrored_to_tos: true,
+    prompt: undefined,
+    model: undefined,
+    aspect_ratio: undefined,
+    resolution: undefined,
+    duration: undefined,
+    created_at: undefined,
+    timestamp: undefined,
+  });
+});
+
+test("mergeVideoHistorySources объединяет локальную и серверную историю без потери серверного видео url", () => {
+  const entries = mergeVideoHistorySources(
+    [
+      {
+        id: "local-gen",
+        url: "https://cdn.example.com/raw.mp4",
+        dedupeKey: "mf-video:req-123",
+        restoreState: { prompt: "кот" },
+      },
+    ],
+    [
+      {
+        id: "gallery-entry",
+        url: "https://tos.example.com/final.mp4",
+        dedupe_key: "mf-video:req-123",
+        last_frame_url: "https://tos.example.com/final-last.jpg",
+      },
+      {
+        id: "other-entry",
+        url: "https://tos.example.com/other.mp4",
+      },
+    ],
+    Infinity,
+  );
+
+  assert.deepStrictEqual(entries, [
+    {
+      id: "gallery-entry",
+      url: "https://tos.example.com/final.mp4",
+      dedupe_key: "mf-video:req-123",
+      dedupeKey: "mf-video:req-123",
+      preview_url: undefined,
+      thumbnail: undefined,
+      last_frame_url: "https://tos.example.com/final-last.jpg",
+      first_frame_url: undefined,
+      restoreState: { prompt: "кот" },
+      prompt: undefined,
+      model: undefined,
+      aspect_ratio: undefined,
+      resolution: undefined,
+      duration: undefined,
+      created_at: undefined,
+      timestamp: undefined,
+    },
+    {
+      id: "other-entry",
+      url: "https://tos.example.com/other.mp4",
       preview_url: undefined,
       thumbnail: undefined,
       last_frame_url: undefined,
