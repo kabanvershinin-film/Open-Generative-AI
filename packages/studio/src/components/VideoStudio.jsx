@@ -549,29 +549,29 @@ export default function VideoStudio({
   // Merge localHistory and remoteHistory, local has priority
   const history = useMemo(() => {
     if (historyItems) return historyItems;
-<<<<<<< HEAD
-    return mergeVideoHistoryEntries([...(localHistory || []), ...(remoteHistory || [])], Infinity);
-=======
+    const local = Array.isArray(localHistory) ? localHistory : [];
+    const remote = Array.isArray(remoteHistory) ? remoteHistory : [];
     const seen = new Set();
     const merged = [];
-    // Add local entries first (priority for new generations)
-    [...localHistory].reverse().forEach(entry => {
-      const key = getHistoryKey(entry);
-      if (key && !seen.has(key)) {
+
+    local
+      .slice()
+      .reverse()
+      .forEach((entry) => {
+        const key = getHistoryKey(entry);
+        if (!key || seen.has(key)) return;
         seen.add(key);
         merged.unshift(entry);
-      }
-    });
-    // Then add remote entries that aren't already in local
-    remoteHistory.forEach(entry => {
+      });
+
+    remote.forEach((entry) => {
       const key = getHistoryKey(entry);
-      if (key && !seen.has(key)) {
-        seen.add(key);
-        merged.push(entry);
-      }
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      merged.push(entry);
     });
+
     return merged;
->>>>>>> c4f8ae9 (feat: Проверить откат коммита)
   }, [historyItems, localHistory, remoteHistory]);
 
   useEffect(() => {
@@ -824,11 +824,8 @@ export default function VideoStudio({
           if (data.uploadedAudioUrl) setUploadedAudioUrl(data.uploadedAudioUrl);
           if (data.uploadedAudioName) setUploadedAudioName(data.uploadedAudioName);
           if (data.prompt) setPrompt(data.prompt);
-<<<<<<< HEAD
           if (Array.isArray(data.refFiles)) setRefFiles(normalizePersistedRefFiles(data.refFiles));
           if (data.faceAsset) setFaceAsset(data.faceAsset);
-          if (data.localHistory) setLocalHistory(mergeVideoHistoryEntries(data.localHistory));
-=======
           if (Array.isArray(data.localHistory)) {
             const seen = new Set();
             const cleaned = [];
@@ -840,7 +837,6 @@ export default function VideoStudio({
             });
             setLocalHistory(cleaned);
           }
->>>>>>> c4f8ae9 (feat: Проверить откат коммита)
           if (data.seed !== undefined) setSeed(data.seed);
           if (data.returnLastFrame !== undefined) setReturnLastFrame(data.returnLastFrame);
 
@@ -963,9 +959,6 @@ export default function VideoStudio({
       const nextEntries = Array.isArray(data.entries) ? data.entries : [];
       setRemoteHistory((prev) => {
         const base = reset ? [] : prev;
-<<<<<<< HEAD
-        return mergeVideoHistoryEntries([...base, ...nextEntries], Infinity);
-=======
         const seen = new Set(base.map((e) => getHistoryKey(e)).filter(Boolean));
         const merged = [...base];
         nextEntries.forEach((entry) => {
@@ -976,7 +969,6 @@ export default function VideoStudio({
           }
         });
         return merged;
->>>>>>> c4f8ae9 (feat: Проверить откат коммита)
       });
       setRemoteHistoryNextCursor(data.nextCursor ?? null);
     } catch (err) {
@@ -1556,14 +1548,10 @@ export default function VideoStudio({
       const raw = localStorage.getItem(PERSIST_KEY);
       const data = raw ? JSON.parse(raw) : {};
       const prev = Array.isArray(data.localHistory) ? data.localHistory : [];
-<<<<<<< HEAD
-      data.localHistory = upsertVideoHistoryEntry(prev, entry, 30);
-=======
       const key = getHistoryKey(entry);
       if (!key) return;
       if (prev.some((e) => getHistoryKey(e) === key)) return;
       data.localHistory = [entry, ...prev].slice(0, 30);
->>>>>>> c4f8ae9 (feat: Проверить откат коммита)
       localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
     } catch {}
   }, []);
@@ -1623,9 +1611,6 @@ export default function VideoStudio({
 
   // ── add to local history ──────────────────────────────────────────────────
   const addToLocalHistory = useCallback((entry) => {
-<<<<<<< HEAD
-    setLocalHistory((prev) => upsertVideoHistoryEntry(prev, entry, 30));
-=======
     setLocalHistory((prev) => {
       const key = getHistoryKey(entry);
       // Skip duplicates
@@ -1634,7 +1619,6 @@ export default function VideoStudio({
       // Add new entry at start
       return [entry, ...prev].slice(0, 30);
     });
->>>>>>> c4f8ae9 (feat: Проверить откат коммита)
     setActiveHistoryIdx(0);
   }, []);
 
@@ -1957,13 +1941,9 @@ export default function VideoStudio({
     };
 
     const restore = (entry) => {
-<<<<<<< HEAD
-      setLocalHistory((prev) => upsertVideoHistoryEntry(prev, entry, 30));
-=======
       const key = getHistoryKey(entry);
       if (!key) return;
       setLocalHistory((prev) => prev.some((p) => getHistoryKey(p) === key) ? prev : [entry, ...prev].slice(0, 30));
->>>>>>> c4f8ae9 (feat: Проверить откат коммита)
       setActiveHistoryIdx(0);
       showVideoInCanvas(entry.url, entry.model);
       try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
