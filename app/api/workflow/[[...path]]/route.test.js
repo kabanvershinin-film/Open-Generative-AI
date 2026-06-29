@@ -240,9 +240,9 @@ export function buildUserTosRoot(userId) {
   });
 
   tempRouteUrl.searchParams.set('case', unique);
-  const module = await import(tempRouteUrl.href);
+  const routeModule = await import(tempRouteUrl.href);
   return {
-    module,
+    module: routeModule,
     balanceState,
     pricingState,
     store: globalThis._mf_workflows,
@@ -256,14 +256,14 @@ async function callPost(module, path, request) {
 }
 
 test('POST create назначает owner и вырезает длинные base64 из нод', { concurrency: false }, async (t) => {
-  const { module, store } = await importWorkflowModule(t, {
+  const { module: routeModule, store } = await importWorkflowModule(t, {
     balanceOverrides: {
       getUserForGallery: async () => ({ id: 'user-1', email: 'cat@example.com' }),
     },
   });
 
   const longBase64 = `data:image/png;base64,${'a'.repeat(700)}`;
-  const response = await callPost(module, ['create'], makeRequest({
+  const response = await callPost(routeModule, ['create'], makeRequest({
     url: 'https://memefast.example/api/workflow/create',
     jsonBody: {
       workflow_id: 'wf-create',
@@ -294,7 +294,7 @@ test('POST create назначает owner и вырезает длинные ba
 });
 
 test('POST workflow run возвращает 402 при нехватке средств для обычной модели', { concurrency: false }, async (t) => {
-  const { module, balanceState, pricingState } = await importWorkflowModule(t, {
+  const { module: routeModule, balanceState, pricingState } = await importWorkflowModule(t, {
     balanceOverrides: {
       BILLING_ENABLED: true,
       getUserForGallery: async () => ({ id: 'user-1', email: 'cat@example.com' }),
@@ -305,7 +305,7 @@ test('POST workflow run возвращает 402 при нехватке сре�
     },
   });
 
-  await callPost(module, ['create'], makeRequest({
+  await callPost(routeModule, ['create'], makeRequest({
     url: 'https://memefast.example/api/workflow/create',
     jsonBody: {
       workflow_id: 'wf-money',
@@ -323,7 +323,7 @@ test('POST workflow run возвращает 402 при нехватке сре�
     },
   }));
 
-  const response = await callPost(module, ['wf-money', 'run'], makeRequest({
+  const response = await callPost(routeModule, ['wf-money', 'run'], makeRequest({
     url: 'https://memefast.example/api/workflow/wf-money/run',
     jsonBody: { inputs: {} },
   }));
@@ -347,7 +347,7 @@ test('POST workflow run возвращает 402 при нехватке сре�
 });
 
 test('POST node run выполняет passthrough-ноду без списания и возвращает output', { concurrency: false }, async (t) => {
-  const { module, balanceState, pricingState } = await importWorkflowModule(t, {
+  const { module: routeModule, balanceState, pricingState } = await importWorkflowModule(t, {
     balanceOverrides: {
       BILLING_ENABLED: true,
       getUserForGallery: async () => ({ id: 'user-1', email: 'cat@example.com' }),
@@ -357,7 +357,7 @@ test('POST node run выполняет passthrough-ноду без списан�
     },
   });
 
-  await callPost(module, ['create'], makeRequest({
+  await callPost(routeModule, ['create'], makeRequest({
     url: 'https://memefast.example/api/workflow/create',
     jsonBody: {
       workflow_id: 'wf-pass',
@@ -375,7 +375,7 @@ test('POST node run выполняет passthrough-ноду без списан�
     },
   }));
 
-  const response = await callPost(module, ['wf-pass', 'node', 'node-pass', 'run'], makeRequest({
+  const response = await callPost(routeModule, ['wf-pass', 'node', 'node-pass', 'run'], makeRequest({
     url: 'https://memefast.example/api/workflow/wf-pass/node/node-pass/run',
     jsonBody: {
       run_id: 'run-pass',
@@ -398,7 +398,7 @@ test('POST node run выполняет passthrough-ноду без списан�
 });
 
 test('POST node run для Seedance 2.0 останавливается на estimate gate без списания', { concurrency: false }, async (t) => {
-  const { module, balanceState, pricingState } = await importWorkflowModule(t, {
+  const { module: routeModule, balanceState, pricingState } = await importWorkflowModule(t, {
     balanceOverrides: {
       BILLING_ENABLED: true,
       getUserForGallery: async () => ({ id: 'user-1', email: 'cat@example.com' }),
@@ -410,7 +410,7 @@ test('POST node run для Seedance 2.0 останавливается на esti
     },
   });
 
-  await callPost(module, ['create'], makeRequest({
+  await callPost(routeModule, ['create'], makeRequest({
     url: 'https://memefast.example/api/workflow/create',
     jsonBody: {
       workflow_id: 'wf-seedance',
@@ -428,7 +428,7 @@ test('POST node run для Seedance 2.0 останавливается на esti
     },
   }));
 
-  const response = await callPost(module, ['wf-seedance', 'node', 'node-seed', 'run'], makeRequest({
+  const response = await callPost(routeModule, ['wf-seedance', 'node', 'node-seed', 'run'], makeRequest({
     url: 'https://memefast.example/api/workflow/wf-seedance/node/node-seed/run',
     jsonBody: {
       run_id: 'run-seed',

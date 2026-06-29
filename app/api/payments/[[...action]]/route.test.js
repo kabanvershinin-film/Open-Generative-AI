@@ -190,8 +190,8 @@ test('POST create создаёт платёж, запись в базе и во�
     throw new Error(`Неожиданный запрос: ${request.method} ${request.url}`);
   });
 
-  const module = await importRouteModule(t);
-  const response = await callPost(module, 'create', makeRequest({
+  const routeModule = await importRouteModule(t);
+  const response = await callPost(routeModule, 'create', makeRequest({
     url: 'https://memefast.example/api/payments/create',
     headers: { authorization: 'Bearer jwt-create' },
     jsonBody: { amount: 250 },
@@ -275,8 +275,8 @@ test('POST verify подтверждает оплату и зачисляет б
     throw new Error(`Неожиданный запрос: ${request.method} ${request.url}`);
   });
 
-  const module = await importRouteModule(t);
-  const response = await callPost(module, 'verify', makeRequest({
+  const routeModule = await importRouteModule(t);
+  const response = await callPost(routeModule, 'verify', makeRequest({
     url: 'https://memefast.example/api/payments/verify',
     headers: { authorization: 'Bearer jwt-verify' },
     jsonBody: { orderId: 'order-1' },
@@ -294,8 +294,8 @@ test('POST verify подтверждает оплату и зачисляет б
 });
 
 test('POST webhook отклоняет запрос без секрета', { concurrency: false }, async (t) => {
-  const module = await importRouteModule(t);
-  const response = await callPost(module, 'webhook', makeRequest({
+  const routeModule = await importRouteModule(t);
+  const response = await callPost(routeModule, 'webhook', makeRequest({
     url: 'https://memefast.example/api/payments/webhook',
     textBody: 'orderId=order-1',
   }));
@@ -364,8 +364,8 @@ test('GET poll-pending обрабатывает pending-платежи и счи
     throw new Error(`Неожиданный запрос: ${request.method} ${request.url}`);
   });
 
-  const module = await importRouteModule(t);
-  const response = await callGet(module, 'poll-pending', makeRequest({
+  const routeModule = await importRouteModule(t);
+  const response = await callGet(routeModule, 'poll-pending', makeRequest({
     url: 'https://memefast.example/api/payments/poll-pending',
     headers: { authorization: 'Bearer cron-secret' },
   }));
@@ -398,8 +398,8 @@ test('GET balance возвращает текущий баланс через о
     throw new Error(`Неожиданный запрос: ${request.method} ${request.url}`);
   });
 
-  const module = await importRouteModule(t);
-  const response = await callGet(module, 'balance', makeRequest({
+  const routeModule = await importRouteModule(t);
+  const response = await callGet(routeModule, 'balance', makeRequest({
     url: 'https://memefast.example/api/payments/balance',
     headers: { 'x-sb-token': 'jwt-balance' },
   }));

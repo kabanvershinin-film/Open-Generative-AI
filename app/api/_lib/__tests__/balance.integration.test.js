@@ -80,18 +80,18 @@ test('getUserForGallery использует anon-клиент и читает �
     return makeJsonResponse({ id: 'user-1', email: 'cat@example.com' });
   });
 
-  const module = await importBalanceModule(t, {
+  const balanceModule = await importBalanceModule(t, {
     SUPABASE_URL: 'https://supabase.example',
     SUPABASE_ANON_KEY: 'anon-key',
     SUPABASE_SERVICE_ROLE_KEY: '',
   });
 
-  const user = await module.getUserForGallery(
+  const user = await balanceModule.getUserForGallery(
     makeRequest({ cookie: 'foo=1; sb_access_token=cookie-token; bar=2' }),
   );
 
   assert.deepStrictEqual(user, { id: 'user-1', email: 'cat@example.com' });
-  assert.strictEqual(module.BILLING_ENABLED, false);
+  assert.strictEqual(balanceModule.BILLING_ENABLED, false);
   assert.strictEqual(calls.length, 1);
 });
 
@@ -116,18 +116,18 @@ test('getBalance получает пользователя по x-sb-token и в
     return makeJsonResponse({ balance: 123.456 });
   });
 
-  const module = await importBalanceModule(t, {
+  const balanceModule = await importBalanceModule(t, {
     SUPABASE_URL: 'https://supabase.example',
     SUPABASE_ANON_KEY: 'anon-key',
     SUPABASE_SERVICE_ROLE_KEY: 'service-key',
   });
 
-  const balance = await module.getBalance(
+  const balance = await balanceModule.getBalance(
     makeRequest({ 'x-sb-token': 'header-token' }),
   );
 
   assert.strictEqual(balance, 123.46);
-  assert.strictEqual(module.BILLING_ENABLED, true);
+  assert.strictEqual(balanceModule.BILLING_ENABLED, true);
   assert.strictEqual(calls.length, 2);
 });
 
@@ -166,13 +166,13 @@ test('deduct делает CAS-списание и пишет отрицател�
     throw new Error(`Неожиданный запрос: ${request.method} ${request.url}`);
   });
 
-  const module = await importBalanceModule(t, {
+  const balanceModule = await importBalanceModule(t, {
     SUPABASE_URL: 'https://supabase.example',
     SUPABASE_ANON_KEY: 'anon-key',
     SUPABASE_SERVICE_ROLE_KEY: 'service-key',
   });
 
-  const result = await module.deduct('user-7', 3.22, 'Генерация', { model: 'seedance' });
+  const result = await balanceModule.deduct('user-7', 3.22, 'Генерация', { model: 'seedance' });
   await new Promise((resolve) => setTimeout(resolve, 0));
 
   assert.deepStrictEqual(result, { ok: true, balance: 6.78 });
@@ -198,13 +198,13 @@ test('spendBalance создаёт пользовательский anon-клие
     return makeJsonResponse({ ok: true, balance: 77.65 });
   });
 
-  const module = await importBalanceModule(t, {
+  const balanceModule = await importBalanceModule(t, {
     SUPABASE_URL: 'https://supabase.example',
     SUPABASE_ANON_KEY: 'anon-key',
     SUPABASE_SERVICE_ROLE_KEY: 'service-key',
   });
 
-  const result = await module.spendBalance(
+  const result = await balanceModule.spendBalance(
     makeRequest({ 'x-sb-token': 'jwt-123' }),
     12.345,
     'Генерация фото',
