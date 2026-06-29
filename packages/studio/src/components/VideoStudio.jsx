@@ -178,6 +178,21 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
   const [imageError, setImageError] = useState(false);
   const rootRef = useRef(null);
 
+  const seekPreviewFrame = useCallback((video) => {
+    if (!video) return;
+    try {
+      const duration = Number(video.duration) || 0;
+      if (duration <= 0) {
+        video.currentTime = 0.05;
+        return;
+      }
+      // A lot of generated clips start from a black fade-in frame, so use a
+      // later safe point instead of the very first frame.
+      const targetTime = Math.min(Math.max(duration * 0.15, 0.35), Math.max(duration - 0.1, 0.05), 1.5);
+      video.currentTime = targetTime;
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (previewUrl || !entry?.url || typeof IntersectionObserver === "undefined") return;
     const root = rootRef.current;
@@ -223,12 +238,12 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
         <video
           src={entry.url}
           className="absolute inset-0 w-full h-full object-cover"
-          preload="metadata"
+          preload="auto"
           muted
           playsInline
           controls={false}
           onLoadedMetadata={(e) => {
-            try { e.currentTarget.currentTime = 0.05; } catch {}
+            seekPreviewFrame(e.currentTarget);
           }}
           onCanPlay={(e) => e.currentTarget.pause()}
           onError={() => setVideoError(true)}
