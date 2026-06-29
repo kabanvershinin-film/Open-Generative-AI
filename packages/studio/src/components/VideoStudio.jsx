@@ -288,7 +288,7 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
   const renderItem = (m, isV2V = false) => (
     <div
       key={m.id}
-      className={`flex items-center justify-between p-3.5 ${(!m.disabled || isAdmin) ? "hover:bg-white/5 cursor-pointer" : "opacity-50 cursor-not-allowed"} rounded-2xl transition-all border border-transparent ${(!m.disabled || isAdmin) && "hover:border-white/5"} ${selectedModel === m.id && (!m.disabled || isAdmin) ? "bg-white/5 border-white/5" : ""}`}
+      className={`flex items-center justify-between p-3.5 ${(!m.disabled || isAdmin) ? "hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer" : "opacity-50 cursor-not-allowed"} rounded-2xl transition-all border border-transparent ${(!m.disabled || isAdmin) && "hover:border-slate-200 dark:hover:border-white/5"} ${selectedModel === m.id && (!m.disabled || isAdmin) ? "bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5" : ""}`}
       onClick={(e) => {
         if (m.disabled && !isAdmin) return;
         e.stopPropagation();
@@ -298,12 +298,12 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
     >
       <div className="flex items-center gap-3.5">
         <div
-          className={`w-10 h-10 ${m.disabled && !isAdmin ? "bg-gray-500/10 text-gray-400" : getIconColor(m, isV2V)} border border-white/5 rounded-xl flex items-center justify-center font-black text-sm shadow-inner uppercase`}
+          className={`w-10 h-10 ${m.disabled && !isAdmin ? "bg-gray-100 dark:bg-gray-500/10 text-gray-400" : getIconColor(m, isV2V)} border border-slate-200 dark:border-white/5 rounded-xl flex items-center justify-center font-black text-sm shadow-inner uppercase`}
         >
           {m.name.charAt(0)}
         </div>
         <div className="flex flex-col gap-0.5">
-          <span className={`text-xs font-bold ${m.disabled && !isAdmin ? "text-gray-400" : "text-white"} tracking-tight`}>
+          <span className={`text-xs font-bold ${m.disabled && !isAdmin ? "text-gray-400" : "text-slate-800 dark:text-white"} tracking-tight`}>
             {m.name}
           </span>
           {m.comingSoon && (
@@ -323,7 +323,7 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
   return (
     <div className="flex flex-col h-full max-h-[70vh]">
       <div className="px-2 pb-3 mb-2 border-b border-slate-200 dark:border-white/5 shrink-0">
-        <div className="flex items-center gap-3 bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-2.5 border border-slate-200 dark:border-white/5 focus-within:border-primary/50 transition-colors">
+        <div className="flex items-center gap-3 bg-slate-50 dark:bg-white/5 rounded-xl px-4 py-2.5 border border-slate-200 dark:border-white/5 focus-within:border-primary/50 transition-colors">
           <svg
             width="14"
             height="14"
@@ -331,7 +331,7 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
             fill="none"
             stroke="currentColor"
             strokeWidth="3"
-            className="text-muted"
+            className="text-slate-400 dark:text-muted"
           >
             <circle cx="11" cy="11" r="8" />
             <path d="M21 21l-4.35-4.35" />
@@ -342,7 +342,7 @@ function ModelDropdown({ imageMode, selectedModel, onSelect, onClose, t2vModels,
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            className="bg-transparent border-none text-xs text-slate-900 dark:text-white focus:ring-0 w-full p-0 outline-none"
+            className="bg-transparent border-none text-xs text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/30 focus:ring-0 w-full p-0 outline-none"
           />
         </div>
       </div>
