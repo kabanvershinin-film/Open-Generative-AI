@@ -49,6 +49,7 @@ import {
   DEFAULT_IMAGE_BATCH_SIZE,
   normalizeImageBatchSize,
 } from "../imageBatching.js";
+import { buildImageGenerationStartState } from "../imageGenerationStart.js";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -2078,31 +2079,37 @@ export default function ImageStudio({
       }
     }
 
-    const snap = {
+    const { snap, nextPrompt } = buildImageGenerationStartState({
       imageMode,
       selectedModelId,
       uploadedImageUrls,
       prompt,
-      qualityField: currentQualityField,
+      currentQualityField,
       selectedQuality,
-      selectedQualityOpt: currentQualityOptions.length > 0 ? selectedQualityOpt : null,
-      selectedFormat: currentFormatOptions.length > 0 ? selectedFormat : null,
-      selectedBackground: currentBackgroundOptions.length > 0 ? selectedBackground : null,
-      selectedModeration: currentModerationOptions.length > 0 ? selectedModeration : null,
-      selectedImageSize: currentImageSizeOptions.length > 0 ? selectedImageSize : null,
-      imageSetMode: imageSetSupported ? imageSetMode : false,
-      imageSetMaxImages: imageSetSupported ? effectiveImageSetMaxImages : 1,
+      currentQualityOptions,
+      selectedQualityOpt,
+      currentFormatOptions,
+      selectedFormat,
+      currentBackgroundOptions,
+      selectedBackground,
+      currentModerationOptions,
+      selectedModeration,
+      currentImageSizeOptions,
+      selectedImageSize,
+      imageSetSupported,
+      imageSetMode,
+      effectiveImageSetMaxImages,
       selectedRouting,
-      effect: showEffectBtn ? selectedEffect : "",
+      showEffectBtn,
+      selectedEffect,
       selectedAr,
-      batchSize: normalizeImageBatchSize(batchSize),
-      requestId: Math.random().toString(36).slice(2, 11),
-      ts: Date.now(),
-    };
+      batchSize,
+    });
 
     // Persist the in-flight request so it survives a tab switch.
     try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
     try { localStorage.setItem(PENDING_KEY, JSON.stringify(snap)); } catch {}
+    setPrompt(nextPrompt);
 
     runGeneration(snap);
   };
@@ -2128,8 +2135,6 @@ export default function ImageStudio({
       try { localStorage.removeItem(PENDING_KEY); } catch {}
       return;
     }
-
-    if (snap.prompt) setPrompt(snap.prompt);
 
     const findResults = () => {
       try {
