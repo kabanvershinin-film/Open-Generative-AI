@@ -57,6 +57,7 @@ import {
   VIDEO_HISTORY_PAGE_SIZE,
 } from "../videoPreviewPolicy.js";
 import { resolveVideoHistoryFetchFailure } from "../videoHistoryFetchState.js";
+import { getVideoPreviewSeekTime } from "../videoPreviewFrame.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { pickCompatibleControlValue } from "../videoStudioControls.js";
 import {
@@ -190,6 +191,7 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
   const rootRef = useRef(null);
   const releasePreviewSlotRef = useRef(null);
   const releasePreviewSlotTimerRef = useRef(null);
+  const requestedPreviewSeekRef = useRef(false);
 
   const releasePreviewSlot = useCallback(() => {
     if (releasePreviewSlotTimerRef.current) {
@@ -206,15 +208,8 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
   const seekPreviewFrame = useCallback((video) => {
     if (!video) return;
     try {
-      const duration = Number(video.duration) || 0;
-      if (duration <= 0) {
-        video.currentTime = 0.05;
-        return;
-      }
-      // A lot of generated clips start from a black fade-in frame, so use a
-      // later safe point instead of the very first frame.
-      const targetTime = Math.min(Math.max(duration * 0.15, 0.35), Math.max(duration - 0.1, 0.05), 1.5);
-      video.currentTime = targetTime;
+      requestedPreviewSeekRef.current = true;
+      video.currentTime = getVideoPreviewSeekTime(video.duration);
     } catch {}
   }, []);
 
@@ -243,6 +238,7 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
     return () => {
       cancelled = true;
       observer.disconnect();
+      requestedPreviewSeekRef.current = false;
       releasePreviewSlot();
     };
   }, [entry?.url, previewPolicy, releasePreviewSlot]);
@@ -278,12 +274,21 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
             seekPreviewFrame(e.currentTarget);
           }}
           onLoadedData={(e) => {
+            if (!requestedPreviewSeekRef.current) {
+              requestedPreviewSeekRef.current = false;
+              e.currentTarget.pause();
+              releasePreviewSlot();
+            }
+          }}
+          onSeeked={(e) => {
+            requestedPreviewSeekRef.current = false;
             e.currentTarget.pause();
             releasePreviewSlot();
           }}
           onCanPlay={(e) => e.currentTarget.pause()}
           onError={() => {
             setVideoError(true);
+            requestedPreviewSeekRef.current = false;
             releasePreviewSlot();
           }}
         />
