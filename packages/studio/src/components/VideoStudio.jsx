@@ -51,6 +51,11 @@ import {
   upsertVideoHistoryEntry,
 } from "../videoHistory.js";
 import { getVisibleVideoActiveTasks } from "../videoActiveTasks.js";
+import {
+  getVideoPreviewLoadPolicy,
+  MAX_CONCURRENT_HISTORY_PREVIEWS,
+  VIDEO_HISTORY_PAGE_SIZE,
+} from "../videoPreviewPolicy.js";
 import { formatGenerationErrorNotice } from "./generationErrorNotice.js";
 import { pickCompatibleControlValue } from "../videoStudioControls.js";
 import {
@@ -63,8 +68,6 @@ import { normalizePersistedRefFiles, serializeRefFilesForPersistence } from "../
 import { ensureVideoEntryStoredInTos } from "../videoTosPersistence.js";
 
 // ── tiny helpers ──────────────────────────────────────────────────────────────
-const HISTORY_PAGE_SIZE = 18;
-const MAX_CONCURRENT_HISTORY_PREVIEWS = 3;
 let activeHistoryPreviewLoads = 0;
 const pendingHistoryPreviewLoads = [];
 
@@ -176,10 +179,28 @@ const VideoReadySvg = () => (
 
 function LazyVideoFirstFramePreview({ entry, onOpen }) {
   const previewUrl = getFirstFramePreviewUrl(entry);
+  const previewPolicy = useMemo(
+    () => getVideoPreviewLoadPolicy({ hasImagePreview: !!previewUrl }),
+    [previewUrl],
+  );
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [imageError, setImageError] = useState(false);
   const rootRef = useRef(null);
+  const releasePreviewSlotRef = useRef(null);
+  const releasePreviewSlotTimerRef = useRef(null);
+
+  const releasePreviewSlot = useCallback(() => {
+    if (releasePreviewSlotTimerRef.current) {
+      window.clearTimeout(releasePreviewSlotTimerRef.current);
+      releasePreviewSlotTimerRef.current = null;
+    }
+    if (releasePreviewSlotRef.current) {
+      const release = releasePreviewSlotRef.current;
+      releasePreviewSlotRef.current = null;
+      release();
+    }
+  }, []);
 
   const seekPreviewFrame = useCallback((video) => {
     if (!video) return;
@@ -197,7 +218,7 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
   }, []);
 
   useEffect(() => {
-    if (previewUrl || !entry?.url || typeof IntersectionObserver === "undefined") return;
+    if (!previewPolicy.shouldAttemptVideoFallback || !entry?.url || typeof IntersectionObserver === "undefined") return;
     const root = rootRef.current;
     if (!root) return;
     let cancelled = false;
@@ -209,16 +230,23 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
           release();
           return;
         }
+        releasePreviewSlotRef.current = release;
         setShouldLoadVideo(true);
-        window.setTimeout(release, 5000);
+        releasePreviewSlotTimerRef.current = window.setTimeout(
+          releasePreviewSlot,
+          previewPolicy.releaseTimeoutMs,
+        );
       });
-    }, { rootMargin: "600px 0px", threshold: 0.01 });
+    }, previewPolicy.observerOptions);
     observer.observe(root);
     return () => {
       cancelled = true;
       observer.disconnect();
+      releasePreviewSlot();
     };
-  }, [entry?.url, previewUrl]);
+  }, [entry?.url, previewPolicy, releasePreviewSlot]);
+
+  useEffect(() => releasePreviewSlot, [releasePreviewSlot]);
 
   return (
     <button
@@ -241,15 +269,22 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
         <video
           src={entry.url}
           className="absolute inset-0 w-full h-full object-cover"
-          preload="auto"
+          preload={previewPolicy.preload}
           muted
           playsInline
           controls={false}
           onLoadedMetadata={(e) => {
             seekPreviewFrame(e.currentTarget);
           }}
+          onLoadedData={(e) => {
+            e.currentTarget.pause();
+            releasePreviewSlot();
+          }}
           onCanPlay={(e) => e.currentTarget.pause()}
-          onError={() => setVideoError(true)}
+          onError={() => {
+            setVideoError(true);
+            releasePreviewSlot();
+          }}
         />
       ) : (
         <div className="absolute inset-0 bg-gradient-to-br from-cyan-100 via-white to-fuchsia-100 dark:from-purple-950/30 dark:via-black dark:to-cyan-950/20" />
