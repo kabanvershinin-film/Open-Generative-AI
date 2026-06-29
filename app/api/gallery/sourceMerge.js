@@ -10,6 +10,22 @@ function getEntryIdentity(entry = {}) {
   };
 }
 
+function inferCreatedAtFromTosUrl(url) {
+  const normalized = normalizeString(url);
+  if (!normalized) return null;
+  try {
+    const pathname = new URL(normalized).pathname;
+    const filename = pathname.split('/').pop() || '';
+    const match = filename.match(/^(\d{13})_[a-z0-9]+\.[a-z0-9]+$/i);
+    if (!match) return null;
+    const timestamp = Number(match[1]);
+    if (!Number.isFinite(timestamp)) return null;
+    return new Date(timestamp).toISOString();
+  } catch {
+    return null;
+  }
+}
+
 export function buildGalleryEntriesFromCompletedTasks(tasks = [], normalizeUrl = (value) => value) {
   const list = Array.isArray(tasks) ? tasks : [];
   return list
@@ -32,6 +48,21 @@ export function buildGalleryEntriesFromCompletedTasks(tasks = [], normalizeUrl =
       };
     })
     .filter(Boolean);
+}
+
+export function buildGalleryEntriesFromTosMediaUrls(urls = [], normalizeUrl = (value) => value) {
+  const list = Array.isArray(urls) ? urls : [];
+  return list
+    .map((rawUrl) => normalizeUrl(normalizeString(rawUrl)))
+    .filter((url) => url && /\.(mp4|mov|webm)(?:$|\?)/i.test(url))
+    .map((url, index) => ({
+      id: `tos-media-${index}-${Buffer.from(url).toString('base64url').slice(0, 16)}`,
+      type: 'video',
+      url,
+      model: '',
+      prompt: '',
+      created_at: inferCreatedAtFromTosUrl(url) || new Date(0).toISOString(),
+    }));
 }
 
 export function mergeGalleryEntriesWithFallback(entries = [], fallbackEntries = []) {
