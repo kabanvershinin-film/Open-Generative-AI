@@ -20,6 +20,17 @@ const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SHARE_ENABLED = !!(SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY);
 
+function normalizeTosMediaUrl(url, tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`) {
+    if (!url || !tosHost) return url;
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:' || parsed.host !== tosHost) return url;
+        return `https://${parsed.host}${parsed.pathname}`;
+    } catch {
+        return url;
+    }
+}
+
 let _supabaseAdmin = null;
 function supabaseAdmin() {
     if (!_supabaseAdmin) _supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
@@ -167,7 +178,7 @@ async function resolveImageUrl(url) {
     const tosHost = TOS_ENABLED ? `${TOS_BUCKET}.${TOS_ENDPOINT}` : '';
     if (tosHost && url.startsWith(`https://${tosHost}`)) {
         try {
-            const r = await fetch(url);
+            const r = await fetch(normalizeTosMediaUrl(url, tosHost));
             if (!r.ok) return url;
             const buf = await r.arrayBuffer();
             const ct = r.headers.get('content-type') || 'image/png';
@@ -287,7 +298,7 @@ async function saveToGallery(userId, outputs, model, prompt) {
 async function maybeUploadVideoToTOS(videoUrl, userId = null) {
     if (!videoUrl || !TOS_ENABLED) return videoUrl;
     const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-    if (videoUrl.startsWith(`https://${tosHost}`)) return videoUrl; // already in TOS
+    if (videoUrl.startsWith(`https://${tosHost}`)) return normalizeTosMediaUrl(videoUrl, tosHost);
     try {
         const r = await fetch(videoUrl);
         if (!r.ok) return videoUrl;
@@ -307,7 +318,7 @@ async function maybeUploadImageToTOS(imageUrl, userId = null) {
     if (!imageUrl || !TOS_ENABLED) return imageUrl;
     if (imageUrl.startsWith('data:')) return maybeUploadToTOS(imageUrl, userId);
     const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-    if (imageUrl.startsWith(`https://${tosHost}`)) return imageUrl; // already in TOS
+    if (imageUrl.startsWith(`https://${tosHost}`)) return normalizeTosMediaUrl(imageUrl, tosHost);
     try {
         const r = await fetch(imageUrl);
         if (!r.ok) return imageUrl;

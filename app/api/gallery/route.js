@@ -32,6 +32,17 @@ function logStep(step, data) {
 function sha256hex(data) { return createHash('sha256').update(data).digest('hex'); }
 function hmac(key, data) { return createHmac('sha256', key).update(data).digest(); }
 
+function normalizeTosMediaUrl(url, tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`) {
+    if (!url || !tosHost) return url;
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:' || parsed.host !== tosHost) return url;
+        return `https://${parsed.host}${parsed.pathname}`;
+    } catch {
+        return url;
+    }
+}
+
 function tosDateParts() {
     const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
     return { date: iso.slice(0, 8), datetime: iso };
@@ -256,6 +267,7 @@ export async function GET(request) {
         let entries = [...byId.values()].sort(
             (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
         );
+        entries = entries.map((e) => ({ ...e, url: normalizeTosMediaUrl(e?.url) }));
         // Collapse entries that point at the same media url (the client POST and
         // the server-side save can each persist the same image under different
         // ids) — keep the newest, which is already first after the sort above.

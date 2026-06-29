@@ -16,6 +16,17 @@ function hmac(key, data) {
     return createHmac('sha256', key).update(data).digest();
 }
 
+export function normalizeTosMediaUrl(url, tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`) {
+    if (!url || !tosHost) return url;
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:' || parsed.host !== tosHost) return url;
+        return `https://${parsed.host}${parsed.pathname}`;
+    } catch {
+        return url;
+    }
+}
+
 function tosDateParts() {
     const iso = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
     return { date: iso.slice(0, 8), datetime: iso };
@@ -83,7 +94,7 @@ async function tosGetSignedJson(host, key) {
 async function maybeUploadMediaToTOS(srcUrl, kind, userId = null) {
     if (!srcUrl) return null;
     const tosHost = `${TOS_BUCKET}.${TOS_ENDPOINT}`;
-    if (srcUrl.startsWith(`https://${tosHost}`)) return srcUrl;
+    if (srcUrl.startsWith(`https://${tosHost}`)) return normalizeTosMediaUrl(srcUrl, tosHost);
     try {
         const r = await fetch(srcUrl);
         if (!r.ok) return null;
@@ -159,7 +170,7 @@ export async function saveGalleryEntry({ userId, url, type = 'video', model = ''
     if (!TOS_ENABLED || !userId || !url) return null;
     const permanentUrl = await maybeUploadMediaToTOS(url, type, userId);
     if (type === 'video' && !permanentUrl) return null;
-    const finalUrl = permanentUrl || url;
+    const finalUrl = normalizeTosMediaUrl(permanentUrl || url);
     const safeExtra = extra && typeof extra === 'object' ? { ...extra } : {};
     const dedupeKey = typeof safeExtra.dedupeKey === 'string' ? safeExtra.dedupeKey.trim() : '';
     delete safeExtra.dedupeKey;
