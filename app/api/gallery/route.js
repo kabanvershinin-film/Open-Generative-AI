@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server';
 import { createHmac, createHash } from 'crypto';
 import { getUserForGallery } from '../_lib/balance';
 import { buildUserMediaKey } from '../_lib/tosPaths';
+import { listPendingTasks } from '../_lib/tosPending';
 import { paginateGalleryEntries } from './pagination.js';
 import { saveGalleryEntry } from '../_lib/tosGallery';
+import { buildGalleryEntriesFromCompletedTasks, mergeGalleryEntriesWithFallback } from './sourceMerge.js';
 
 // Allow time to download the generated video from the CDN and re-upload to TOS.
 // Videos cross two regions (ARK CDN in China → Vercel → TOS in China), so 60s was
@@ -264,7 +266,13 @@ export async function GET(request) {
             }
         } catch { /* no legacy file */ }
 
-        let entries = [...byId.values()].sort(
+        const completedTasks = await listPendingTasks(user.id, { statuses: ['completed'] }).catch(() => []);
+        const fallbackEntries = buildGalleryEntriesFromCompletedTasks(
+            completedTasks,
+            (value) => normalizeTosMediaUrl(value),
+        );
+
+        let entries = mergeGalleryEntriesWithFallback([...byId.values()], fallbackEntries).sort(
             (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0),
         );
         entries = entries.map((e) => ({ ...e, url: normalizeTosMediaUrl(e?.url) }));
