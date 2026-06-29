@@ -659,8 +659,6 @@ var NodeFlow = function NodeFlow(_ref) {
       return function () {
         return clearTimeout(timeout);
       };
-    } else if (nodes.length === 0) {
-      setIsPresetsDismissed(false);
     }
     ;
   }, [nodes, hasFit, _fitView, isRestoring]);
