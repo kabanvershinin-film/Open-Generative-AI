@@ -45,6 +45,7 @@ import {
   buildVideoPendingDedupeKey,
   getVideoHistoryEntryKey,
   mergeVideoHistoryEntries,
+  normalizeVideoHistoryEntry,
   removeVideoHistoryEntry,
   upsertVideoHistoryEntry,
 } from "../videoHistory.js";
@@ -82,11 +83,7 @@ function acquireHistoryPreviewSlot() {
 }
 
 function getHistoryKey(entry) {
-  const url = typeof entry?.url === "string" ? entry.url : "";
-  if (url) return url;
-  const id = typeof entry?.id === "string" ? entry.id : "";
-  if (id) return id;
-  return null;
+  return getVideoHistoryEntryKey(entry) || null;
 }
 
 function getFirstFramePreviewUrl(entry) {
@@ -827,15 +824,7 @@ export default function VideoStudio({
           if (Array.isArray(data.refFiles)) setRefFiles(normalizePersistedRefFiles(data.refFiles));
           if (data.faceAsset) setFaceAsset(data.faceAsset);
           if (Array.isArray(data.localHistory)) {
-            const seen = new Set();
-            const cleaned = [];
-            data.localHistory.forEach((entry) => {
-              const key = getHistoryKey(entry);
-              if (!key || seen.has(key)) return;
-              seen.add(key);
-              cleaned.push(entry);
-            });
-            setLocalHistory(cleaned);
+            setLocalHistory(mergeVideoHistoryEntries(data.localHistory, 30));
           }
           if (data.seed !== undefined) setSeed(data.seed);
           if (data.returnLastFrame !== undefined) setReturnLastFrame(data.returnLastFrame);
@@ -956,9 +945,9 @@ export default function VideoStudio({
       });
       if (!response.ok) throw new Error(`Gallery ${response.status}`);
       const data = await response.json();
-      const nextEntries = Array.isArray(data.entries) ? data.entries : [];
+      const nextEntries = mergeVideoHistoryEntries(Array.isArray(data.entries) ? data.entries : [], Infinity);
       setRemoteHistory((prev) => {
-        const base = reset ? [] : prev;
+        const base = mergeVideoHistoryEntries(reset ? [] : prev, Infinity);
         const seen = new Set(base.map((e) => getHistoryKey(e)).filter(Boolean));
         const merged = [...base];
         nextEntries.forEach((entry) => {
@@ -1547,26 +1536,28 @@ export default function VideoStudio({
     try {
       const raw = localStorage.getItem(PERSIST_KEY);
       const data = raw ? JSON.parse(raw) : {};
-      const prev = Array.isArray(data.localHistory) ? data.localHistory : [];
-      const key = getHistoryKey(entry);
+      const prev = mergeVideoHistoryEntries(Array.isArray(data.localHistory) ? data.localHistory : [], Infinity);
+      const normalizedEntry = normalizeVideoHistoryEntry(entry);
+      const key = getHistoryKey(normalizedEntry);
       if (!key) return;
       if (prev.some((e) => getHistoryKey(e) === key)) return;
-      data.localHistory = [entry, ...prev].slice(0, 30);
+      data.localHistory = [normalizedEntry, ...prev].slice(0, 30);
       localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
     } catch {}
   }, []);
 
   const replaceVideoEntryUrl = useCallback((entryId, nextUrl) => {
     if (!entryId || !nextUrl) return;
+    const normalizedUrl = normalizeVideoHistoryEntry({ url: nextUrl }).url || nextUrl;
     setLocalHistory((prev) =>
-      prev.map((item) => (item.id === entryId ? { ...item, url: nextUrl } : item)),
+      prev.map((item) => (item.id === entryId ? { ...item, url: normalizedUrl } : item)),
     );
     try {
       const raw = localStorage.getItem(PERSIST_KEY);
       const data = raw ? JSON.parse(raw) : {};
       const prev = Array.isArray(data.localHistory) ? data.localHistory : [];
       data.localHistory = prev.map((item) =>
-        item.id === entryId ? { ...item, url: nextUrl } : item,
+        item.id === entryId ? { ...item, url: normalizedUrl } : item,
       );
       localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
     } catch {}
@@ -1574,7 +1565,7 @@ export default function VideoStudio({
       const raw = localStorage.getItem(PENDING_RESULT_KEY);
       const data = raw ? JSON.parse(raw) : null;
       if (data?.entry?.id === entryId) {
-        data.entry.url = nextUrl;
+        data.entry.url = normalizedUrl;
         localStorage.setItem(PENDING_RESULT_KEY, JSON.stringify(data));
       }
     } catch {}
@@ -1612,12 +1603,13 @@ export default function VideoStudio({
   // ── add to local history ──────────────────────────────────────────────────
   const addToLocalHistory = useCallback((entry) => {
     setLocalHistory((prev) => {
-      const key = getHistoryKey(entry);
+      const normalizedEntry = normalizeVideoHistoryEntry(entry);
+      const key = getHistoryKey(normalizedEntry);
       // Skip duplicates
       const existing = prev.find((e) => getHistoryKey(e) === key);
       if (existing) return prev;
       // Add new entry at start
-      return [entry, ...prev].slice(0, 30);
+      return [normalizedEntry, ...prev].slice(0, 30);
     });
     setActiveHistoryIdx(0);
   }, []);

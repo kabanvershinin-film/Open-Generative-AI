@@ -6,6 +6,8 @@ import {
   buildVideoPendingDedupeKey,
   getVideoHistoryEntryKey,
   mergeVideoHistoryEntries,
+  normalizeVideoHistoryEntry,
+  normalizeVideoHistoryUrl,
   removeVideoHistoryEntry,
   upsertVideoHistoryEntry,
 } from "./videoHistory.js";
@@ -35,7 +37,7 @@ test("buildVideoPendingDedupeKey использует один и тот же к
   assert.strictEqual(restoredKey, directKey);
 });
 
-test("getVideoHistoryEntryKey предпочитает dedupeKey перед id и url", () => {
+test("getVideoHistoryEntryKey предпочитает dedupeKey, потом url, потом id", () => {
   assert.strictEqual(
     getVideoHistoryEntryKey({
       dedupeKey: "mf-video:req-1",
@@ -52,6 +54,38 @@ test("getVideoHistoryEntryKey предпочитает dedupeKey перед id �
     }),
     "mf-video:req-2",
   );
+
+  assert.strictEqual(
+    getVideoHistoryEntryKey({
+      id: "gen-3",
+      url: "https://cdn.example.com/video-3.mp4",
+    }),
+    "https://cdn.example.com/video-3.mp4",
+  );
+});
+
+test("normalizeVideoHistoryUrl убирает истёкшую TOS-подпись", () => {
+  assert.strictEqual(
+    normalizeVideoHistoryUrl(
+      "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4?X-Tos-Algorithm=TOS4-HMAC-SHA256&X-Tos-Expires=86400&X-Tos-Signature=deadbeef",
+    ),
+    "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4",
+  );
+});
+
+test("normalizeVideoHistoryEntry очищает url и preview у записи истории", () => {
+  const entry = normalizeVideoHistoryEntry({
+    url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4?X-Tos-Expires=86400",
+    preview_url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.jpg?X-Tos-Expires=86400",
+  });
+
+  assert.deepStrictEqual(entry, {
+    url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4",
+    preview_url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.jpg",
+    thumbnail: undefined,
+    last_frame_url: undefined,
+    first_frame_url: undefined,
+  });
 });
 
 test("mergeVideoHistoryEntries схлопывает дубли по dedupeKey и оставляет первую запись", () => {
@@ -77,10 +111,42 @@ test("mergeVideoHistoryEntries схлопывает дубли по dedupeKey и
       id: "local-gen",
       url: "https://cdn.example.com/raw.mp4",
       dedupeKey: "mf-video:req-123",
+      preview_url: undefined,
+      thumbnail: undefined,
+      last_frame_url: undefined,
+      first_frame_url: undefined,
     },
     {
       id: "other-entry",
       url: "https://tos.example.com/other.mp4",
+      preview_url: undefined,
+      thumbnail: undefined,
+      last_frame_url: undefined,
+      first_frame_url: undefined,
+    },
+  ]);
+});
+
+test("mergeVideoHistoryEntries схлопывает локальный и серверный TOS-url одной записи", () => {
+  const entries = mergeVideoHistoryEntries([
+    {
+      id: "local-gen",
+      url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4?X-Tos-Expires=86400",
+    },
+    {
+      id: "server-entry",
+      url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4",
+    },
+  ], Infinity);
+
+  assert.deepStrictEqual(entries, [
+    {
+      id: "local-gen",
+      url: "https://bucket.tos-cn-beijing.volces.com/users/1/videos/a.mp4",
+      preview_url: undefined,
+      thumbnail: undefined,
+      last_frame_url: undefined,
+      first_frame_url: undefined,
     },
   ]);
 });
@@ -107,10 +173,18 @@ test("upsertVideoHistoryEntry заменяет старую запись с те
       id: "new-entry",
       url: "https://tos.example.com/final.mp4",
       dedupe_key: "mf-video:req-123",
+      preview_url: undefined,
+      thumbnail: undefined,
+      last_frame_url: undefined,
+      first_frame_url: undefined,
     },
     {
       id: "other-entry",
       url: "https://tos.example.com/other.mp4",
+      preview_url: undefined,
+      thumbnail: undefined,
+      last_frame_url: undefined,
+      first_frame_url: undefined,
     },
   ]);
 });
