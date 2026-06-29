@@ -62,8 +62,16 @@ function acquireHistoryPreviewSlot() {
   });
 }
 
+function getHistoryKey(entry) {
+  const url = typeof entry?.url === "string" ? entry.url : "";
+  if (url) return url;
+  const id = typeof entry?.id === "string" ? entry.id : "";
+  if (id) return id;
+  return null;
+}
+
 function getFirstFramePreviewUrl(entry) {
-  return entry?.preview_url || entry?.thumbnail || null;
+  return entry?.preview_url || entry?.thumbnail || entry?.last_frame_url || entry?.first_frame_url || null;
 }
 
 function getQualitiesForModel(modelList, modelId) {
@@ -151,6 +159,7 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
   const previewUrl = getFirstFramePreviewUrl(entry);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [videoError, setVideoError] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const rootRef = useRef(null);
 
   useEffect(() => {
@@ -185,14 +194,14 @@ function LazyVideoFirstFramePreview({ entry, onOpen }) {
       onClick={onOpen}
       title="Открыть видео"
     >
-      {previewUrl ? (
+      {previewUrl && !imageError ? (
         <img
           src={previewUrl}
           alt=""
           loading="lazy"
           decoding="async"
           className="absolute inset-0 w-full h-full object-cover"
-          onError={(e) => { e.currentTarget.style.display = "none"; }}
+          onError={() => setImageError(true)}
         />
       ) : shouldLoadVideo && !videoError ? (
         <video
@@ -523,7 +532,7 @@ export default function VideoStudio({
     const merged = [];
     // Add local entries first (priority for new generations)
     [...localHistory].reverse().forEach(entry => {
-      const key = entry.id || entry.url;
+      const key = getHistoryKey(entry);
       if (key && !seen.has(key)) {
         seen.add(key);
         merged.unshift(entry);
@@ -531,7 +540,7 @@ export default function VideoStudio({
     });
     // Then add remote entries that aren't already in local
     remoteHistory.forEach(entry => {
-      const key = entry.id || entry.url;
+      const key = getHistoryKey(entry);
       if (key && !seen.has(key)) {
         seen.add(key);
         merged.push(entry);
@@ -770,7 +779,17 @@ export default function VideoStudio({
           if (data.uploadedVideoUrl) setUploadedVideoUrl(data.uploadedVideoUrl);
           if (data.uploadedVideoName) setUploadedVideoName(data.uploadedVideoName);
           if (data.prompt) setPrompt(data.prompt);
-          if (data.localHistory) setLocalHistory(data.localHistory);
+          if (Array.isArray(data.localHistory)) {
+            const seen = new Set();
+            const cleaned = [];
+            data.localHistory.forEach((entry) => {
+              const key = getHistoryKey(entry);
+              if (!key || seen.has(key)) return;
+              seen.add(key);
+              cleaned.push(entry);
+            });
+            setLocalHistory(cleaned);
+          }
           if (data.seed !== undefined) setSeed(data.seed);
           if (data.returnLastFrame !== undefined) setReturnLastFrame(data.returnLastFrame);
 
@@ -883,10 +902,10 @@ export default function VideoStudio({
       const nextEntries = Array.isArray(data.entries) ? data.entries : [];
       setRemoteHistory((prev) => {
         const base = reset ? [] : prev;
-        const seen = new Set(base.map((e) => e.id || e.url));
+        const seen = new Set(base.map((e) => getHistoryKey(e)).filter(Boolean));
         const merged = [...base];
         nextEntries.forEach((entry) => {
-          const key = entry.id || entry.url;
+          const key = getHistoryKey(entry);
           if (!seen.has(key)) {
             seen.add(key);
             merged.push(entry);
@@ -1468,7 +1487,9 @@ export default function VideoStudio({
       const raw = localStorage.getItem(PERSIST_KEY);
       const data = raw ? JSON.parse(raw) : {};
       const prev = Array.isArray(data.localHistory) ? data.localHistory : [];
-      if (prev.some((e) => e.id === entry.id)) return;
+      const key = getHistoryKey(entry);
+      if (!key) return;
+      if (prev.some((e) => getHistoryKey(e) === key)) return;
       data.localHistory = [entry, ...prev].slice(0, 30);
       localStorage.setItem(PERSIST_KEY, JSON.stringify(data));
     } catch {}
@@ -1532,9 +1553,9 @@ export default function VideoStudio({
   // ── add to local history ──────────────────────────────────────────────────
   const addToLocalHistory = useCallback((entry) => {
     setLocalHistory((prev) => {
-      const key = entry.id || entry.url;
+      const key = getHistoryKey(entry);
       // Skip duplicates
-      const existing = prev.find(e => (e.id || e.url) === key);
+      const existing = prev.find((e) => getHistoryKey(e) === key);
       if (existing) return prev;
       // Add new entry at start
       return [entry, ...prev].slice(0, 30);
@@ -1782,7 +1803,9 @@ export default function VideoStudio({
     };
 
     const restore = (entry) => {
-      setLocalHistory(prev => prev.some(p => p.id === entry.id) ? prev : [entry, ...prev].slice(0, 30));
+      const key = getHistoryKey(entry);
+      if (!key) return;
+      setLocalHistory((prev) => prev.some((p) => getHistoryKey(p) === key) ? prev : [entry, ...prev].slice(0, 30));
       setActiveHistoryIdx(0);
       showVideoInCanvas(entry.url, entry.model);
       try { localStorage.removeItem(PENDING_RESULT_KEY); } catch {}
