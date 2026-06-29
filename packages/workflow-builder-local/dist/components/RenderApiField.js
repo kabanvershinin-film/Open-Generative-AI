@@ -312,7 +312,7 @@ var RenderApiField = function RenderApiField(_ref) {
       className: "flex flex-col gap-1 relative w-full"
     }, /*#__PURE__*/_react["default"].createElement("div", {
       ref: containerRef,
-      className: "flex items-center gap-1 border border-white/10 rounded-lg bg-zinc-900 hover:border-white/20 transition-all relative overflow-hidden"
+      className: "flex items-center gap-1 border border-slate-200 dark:border-white/10 rounded-lg bg-white dark:bg-zinc-900 hover:border-slate-300 dark:hover:border-white/20 transition-all relative overflow-hidden"
     }, isManual ? /*#__PURE__*/_react["default"].createElement("input", {
       type: "text",
       value: value,
@@ -323,7 +323,7 @@ var RenderApiField = function RenderApiField(_ref) {
         return setDropDown(idx + 1);
       },
       placeholder: translateUi("Select or type..."),
-      className: "flex-grow text-xs text-white bg-transparent outline-none px-2 py-[5px] w-full"
+      className: "flex-grow text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 bg-transparent outline-none px-2 py-[5px] w-full"
     }) : /*#__PURE__*/_react["default"].createElement("button", {
       type: "button",
       suppressHydrationWarning: true,
@@ -332,7 +332,7 @@ var RenderApiField = function RenderApiField(_ref) {
           return prev === idx + 1 ? -1 : idx + 1;
         });
       },
-      className: "flex items-center justify-between gap-1 text-xs text-center text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-1.5 focus:outline-none"
+      className: "flex items-center justify-between gap-1 text-xs text-center text-slate-900 dark:text-white w-full h-full cursor-pointer whitespace-nowrap px-3 py-1.5 focus:outline-none"
     }, /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex items-center gap-2 truncate"
     }, /*#__PURE__*/_react["default"].createElement("span", {
@@ -351,20 +351,20 @@ var RenderApiField = function RenderApiField(_ref) {
           return prev === idx + 1 ? -1 : idx + 1;
         });
       },
-      className: "px-2 text-gray-400 hover:text-white cursor-pointer border-l border-gray-700 h-full flex items-center justify-center"
+      className: "px-2 text-slate-400 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white cursor-pointer border-l border-slate-200 dark:border-gray-700 h-full flex items-center justify-center"
     }, /*#__PURE__*/_react["default"].createElement(_fa.FaAngleDown, {
       size: 14,
       className: "transition-all duration-300 ease-in-out ".concat(dropDown === idx + 1 ? "rotate-180" : "")
     }))), /*#__PURE__*/_react["default"].createElement("div", {
       tabIndex: -1,
       style: dropdownStyle,
-      className: "absolute left-0 ".concat(isOpeningUp ? "bottom-full mb-2" : "top-full mt-2", " border border-white/10 p-2 rounded-lg flex flex-col overflow-y-auto bg-zinc-900 shadow-2xl z-50 transition-all duration-200 w-full max-h-60 custom-scrollbar-thin ").concat(dropDown === idx + 1 ? "opacity-100 scale-100 visible translate-y-0" : "opacity-0 scale-95 invisible ".concat(isOpeningUp ? "translate-y-2" : "-translate-y-2"))
+      className: "absolute left-0 ".concat(isOpeningUp ? "bottom-full mb-2" : "top-full mt-2", " border border-slate-200 dark:border-white/10 p-2 rounded-lg flex flex-col overflow-y-auto bg-white dark:bg-zinc-900 shadow-2xl z-50 transition-all duration-200 w-full max-h-60 custom-scrollbar-thin ").concat(dropDown === idx + 1 ? "opacity-100 scale-100 visible translate-y-0" : "opacity-0 scale-95 invisible ".concat(isOpeningUp ? "translate-y-2" : "-translate-y-2"))
     }, filteredOptions.length > 0 ? filteredOptions.map(function (option, i) {
       return /*#__PURE__*/_react["default"].createElement("button", {
         type: "button",
         suppressHydrationWarning: true,
         key: i,
-        className: "flex items-center gap-2 px-3 py-2 text-xs cursor-pointer rounded-lg transition-all ".concat((_typeof(option) === "object" ? formValues[fieldName] === option.value : formValues[fieldName] === option) ? "bg-blue-500/10 text-blue-400" : "text-zinc-400 hover:bg-white/5 hover:text-white"),
+        className: "flex items-center gap-2 px-3 py-2 text-xs cursor-pointer rounded-lg transition-all ".concat((_typeof(option) === "object" ? formValues[fieldName] === option.value : formValues[fieldName] === option) ? "bg-blue-500/10 text-blue-500 dark:text-blue-400" : "text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"),
         onClick: function onClick() {
           handleChange(fieldName, _typeof(option) === "object" ? option.value : option);
           setDropDown(-1);

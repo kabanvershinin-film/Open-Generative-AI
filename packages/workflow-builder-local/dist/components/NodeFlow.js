@@ -2939,18 +2939,18 @@ var NodeFlow = function NodeFlow(_ref) {
       hideAttribution: true
     }
   }, /*#__PURE__*/_react["default"].createElement(_reactflow.Background, null))), selectedNode && !["concatNode"].includes(selectedNode.type) && /*#__PURE__*/_react["default"].createElement("div", {
-    className: "".concat(isMobile ? isPanelOpen ? "fixed inset-0 z-50" : "hidden" : "absolute right-2 top-16 z-50", " w-80 h-full max-h-[90%] bg-[#0c0d0f] border border-white/10 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-black/50")
+    className: "".concat(isMobile ? isPanelOpen ? "fixed inset-0 z-50" : "hidden" : "absolute right-2 top-16 z-50", " w-80 h-full max-h-[90%] bg-white/95 dark:bg-[#0c0d0f] border border-slate-200 dark:border-white/10 rounded-2xl flex transition-all duration-300 ease-in-out shadow-2xl shadow-black/20 dark:shadow-black/50")
   }, isMobile && /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
-    className: "absolute top-2 left-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200 z-10",
+    className: "absolute top-2 left-2 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200 z-10",
     onClick: function onClick() {
       return setIsPanelOpen(false);
     }
   }, "\u2190"), /*#__PURE__*/_react["default"].createElement("button", {
     type: "button",
     suppressHydrationWarning: true,
-    className: "absolute top-2 right-2 text-zinc-400 hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all duration-200",
+    className: "absolute top-2 right-2 text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white cursor-pointer w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-white/10 transition-all duration-200",
     onClick: function onClick() {
       setNodes(function (nds) {
         return nds.map(function (n) {
@@ -2964,9 +2964,9 @@ var NodeFlow = function NodeFlow(_ref) {
   }, "\u2715"), /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-4 h-full min-h-0 w-full"
   }, /*#__PURE__*/_react["default"].createElement("h3", {
-    className: "text-base font-semibold text-center text-white mt-6 tracking-tight"
+    className: "text-base font-semibold text-center text-slate-900 dark:text-white mt-6 tracking-tight"
   }, "\u0421\u0432\u043E\u0439\u0441\u0442\u0432\u0430"), /*#__PURE__*/_react["default"].createElement("h1", {
-    className: "flex items-center gap-2 text-sm font-medium text-start text-white mx-4 bg-zinc-800 border border-white/5 rounded-xl px-3 py-2 transition-all"
+    className: "flex items-center gap-2 text-sm font-medium text-start text-slate-900 dark:text-white mx-4 bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-white/5 rounded-xl px-3 py-2 transition-all"
   }, selectedNode.id.startsWith("text") ? /*#__PURE__*/_react["default"].createElement(_tfi.TfiText, {
     className: "text-blue-400"
   }) : selectedNode.id.startsWith("image") ? /*#__PURE__*/_react["default"].createElement(_io.IoImageOutline, {
@@ -2984,9 +2984,9 @@ var NodeFlow = function NodeFlow(_ref) {
   }, /*#__PURE__*/_react["default"].createElement("div", {
     className: "flex flex-col gap-1 relative w-full"
   }, /*#__PURE__*/_react["default"].createElement("label", {
-    className: "text-[10px] font-bold text-zinc-500 text-start px-1"
+    className: "text-[10px] font-bold text-slate-500 dark:text-zinc-500 text-start px-1"
   }, "\u041C\u043E\u0434\u0435\u043B\u044C"), /*#__PURE__*/_react["default"].createElement("div", {
-    className: "flex items-center justify-between gap-1 text-sm text-white w-full px-3 py-2 bg-zinc-900 border border-white/10 rounded-lg"
+    className: "flex items-center justify-between gap-1 text-sm text-slate-900 dark:text-white w-full px-3 py-2 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-lg"
   }, (selectedNode === null || selectedNode === void 0 || (_selectedNode$data3 = selectedNode.data) === null || _selectedNode$data3 === void 0 || (_selectedNode$data3 = _selectedNode$data3.selectedModel) === null || _selectedNode$data3 === void 0 ? void 0 : _selectedNode$data3.name) || "")), selectedNode !== null && selectedNode !== void 0 && (_selectedNode$data4 = selectedNode.data) !== null && _selectedNode$data4 !== void 0 && _selectedNode$data4.selectedModel ? function (_nodeSchemas$categori10, _selectedNode$data5, _fullSchema$schemas, _selectedNode$data6, _selectedNode$data$fo, _selectedNode$data$fo2, _selectedNode$data$fo3, _selectedNode$data7, _selectedNode$data8, _selectedNode$data9) {
     var nodeType = selectedNode.id.startsWith("text") ? "text" : selectedNode.id.startsWith("image") ? "image" : selectedNode.id.startsWith("video") ? "video" : selectedNode.id.startsWith("audio") ? "audio" : "utility";
     var fullSchema = nodeSchemas === null || nodeSchemas === void 0 || (_nodeSchemas$categori10 = nodeSchemas.categories) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10[nodeType]) === null || _nodeSchemas$categori10 === void 0 || (_nodeSchemas$categori10 = _nodeSchemas$categori10.models[selectedNode === null || selectedNode === void 0 || (_selectedNode$data5 = selectedNode.data) === null || _selectedNode$data5 === void 0 || (_selectedNode$data5 = _selectedNode$data5.selectedModel) === null || _selectedNode$data5 === void 0 ? void 0 : _selectedNode$data5.id]) === null || _nodeSchemas$categori10 === void 0 ? void 0 : _nodeSchemas$categori10.input_schema;
@@ -2994,9 +2994,9 @@ var NodeFlow = function NodeFlow(_ref) {
     return (selectedNode === null || selectedNode === void 0 || (_selectedNode$data6 = selectedNode.data) === null || _selectedNode$data6 === void 0 ? void 0 : _selectedNode$data6.loading) === 1 ? /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col items-center justify-center gap-2 h-full w-full"
     }, /*#__PURE__*/_react["default"].createElement("div", {
-      className: "w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"
+      className: "w-6 h-6 border-2 border-slate-300 dark:border-white border-t-transparent rounded-full animate-spin"
     }), /*#__PURE__*/_react["default"].createElement("span", {
-      className: "text-xs text-white"
+      className: "text-xs text-slate-700 dark:text-white"
     }, "\u0417\u0430\u0433\u0440\u0443\u0437\u043A\u0430 \u043C\u043E\u0434\u0435\u043B\u0438...")) : selectedNode.type === "skylarkNode" ? /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col gap-4 w-full"
     }, /*#__PURE__*/_react["default"].createElement("div", {
@@ -3004,7 +3004,7 @@ var NodeFlow = function NodeFlow(_ref) {
     }, /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex items-center justify-between px-1"
     }, /*#__PURE__*/_react["default"].createElement("label", {
-      className: "text-[10px] font-bold text-zinc-500 uppercase"
+      className: "text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase"
     }, "\u041F\u0440\u043E\u043C\u043F\u0442"), edges.some(function (e) {
       return e.target === selectedNode.id && e.targetHandle === "prompt";
     }) && /*#__PURE__*/_react["default"].createElement("span", {
@@ -3020,19 +3020,19 @@ var NodeFlow = function NodeFlow(_ref) {
       readOnly: edges.some(function (e) {
         return e.target === selectedNode.id && e.targetHandle === "prompt";
       }),
-      className: "w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white min-h-[100px] outline-none transition-all resize-none ".concat(edges.some(function (e) {
+      className: "w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white min-h-[100px] outline-none transition-all resize-none ".concat(edges.some(function (e) {
         return e.target === selectedNode.id && e.targetHandle === "prompt";
       }) ? "opacity-60 cursor-not-allowed border-blue-500/30" : "focus:border-blue-500/50")
     })), /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col gap-1.5"
     }, /*#__PURE__*/_react["default"].createElement("label", {
-      className: "text-[10px] font-bold text-zinc-500 uppercase px-1"
+      className: "text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase px-1"
     }, "\u0421\u043E\u043E\u0442\u043D\u043E\u0448\u0435\u043D\u0438\u0435 \u0441\u0442\u043E\u0440\u043E\u043D"), /*#__PURE__*/_react["default"].createElement("select", {
       value: ((_selectedNode$data$fo2 = selectedNode.data.formValues) === null || _selectedNode$data$fo2 === void 0 ? void 0 : _selectedNode$data$fo2.ratio) || "auto",
       onChange: function onChange(e) {
         return updateNodeFromPanel("ratio", e.target.value);
       },
-      className: "w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+      className: "w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500/50 transition-all"
     }, ["auto", "16:9", "9:16", "4:3", "3:4"].map(function (r) {
       return /*#__PURE__*/_react["default"].createElement("option", {
         key: r,
@@ -3041,13 +3041,13 @@ var NodeFlow = function NodeFlow(_ref) {
     }))), /*#__PURE__*/_react["default"].createElement("div", {
       className: "flex flex-col gap-1.5"
     }, /*#__PURE__*/_react["default"].createElement("label", {
-      className: "text-[10px] font-bold text-zinc-500 uppercase px-1"
+      className: "text-[10px] font-bold text-slate-500 dark:text-zinc-500 uppercase px-1"
     }, "\u0414\u043B\u0438\u0442\u0435\u043B\u044C\u043D\u043E\u0441\u0442\u044C"), /*#__PURE__*/_react["default"].createElement("select", {
       value: ((_selectedNode$data$fo3 = selectedNode.data.formValues) === null || _selectedNode$data$fo3 === void 0 ? void 0 : _selectedNode$data$fo3.duration) || "auto",
       onChange: function onChange(e) {
         return updateNodeFromPanel("duration", e.target.value);
       },
-      className: "w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500/50 transition-all"
+      className: "w-full bg-white dark:bg-zinc-900 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm text-slate-900 dark:text-white outline-none focus:border-blue-500/50 transition-all"
     }, ["auto", "～15s", "～30s", "40～60s"].map(function (d) {
       return /*#__PURE__*/_react["default"].createElement("option", {
         key: d,
@@ -3184,12 +3184,12 @@ var NodeFlow = function NodeFlow(_ref) {
     }() : /*#__PURE__*/_react["default"].createElement("div", {
       className: "text-center py-8"
     }, /*#__PURE__*/_react["default"].createElement("p", {
-      className: "text-sm text-gray-400"
+      className: "text-sm text-slate-400 dark:text-gray-400"
     }, "\u041D\u0435\u0442 \u0434\u043E\u0441\u0442\u0443\u043F\u043D\u044B\u0445 \u0441\u0432\u043E\u0439\u0441\u0442\u0432"));
   }() : /*#__PURE__*/_react["default"].createElement("div", {
     className: "text-center py-8"
   }, /*#__PURE__*/_react["default"].createElement("p", {
-    className: "text-sm text-gray-400"
+    className: "text-sm text-slate-400 dark:text-gray-400"
   }, "\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u0432\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u043C\u043E\u0434\u0435\u043B\u044C")))), ((selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "videoNode" || (selectedNode === null || selectedNode === void 0 ? void 0 : selectedNode.type) === "skylarkNode") && function (_selectedNode$data14) {
     var fv = (selectedNode === null || selectedNode === void 0 || (_selectedNode$data14 = selectedNode.data) === null || _selectedNode$data14 === void 0 ? void 0 : _selectedNode$data14.formValues) || {};
     var extra = Array.isArray(fv.images_list || fv.img_url_list) ? (fv.images_list || fv.img_url_list).filter(Boolean) : [];
