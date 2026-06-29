@@ -2713,7 +2713,7 @@ export default function VideoStudio({
                 <button
                   type="button"
                   onClick={(e) => { e.stopPropagation(); setFaceAsset(null); }}
-                  className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                  className="ml-0.5 text-slate-500 dark:text-white/40 hover:text-red-400 transition-colors"
                   title="Убрать лицо"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2760,7 +2760,7 @@ export default function VideoStudio({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); clearImageUpload(); }}
-                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        className="ml-0.5 text-slate-500 dark:text-white/40 hover:text-red-400 transition-colors"
                         title="Удалить изображение"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2788,7 +2788,7 @@ export default function VideoStudio({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); clearVideoUpload(); }}
-                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        className="ml-0.5 text-slate-500 dark:text-white/40 hover:text-red-400 transition-colors"
                         title="Удалить видео"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2816,7 +2816,7 @@ export default function VideoStudio({
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); clearAudioUpload(); }}
-                        className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                        className="ml-0.5 text-slate-500 dark:text-white/40 hover:text-red-400 transition-colors"
                         title="Удалить аудио"
                       >
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2856,7 +2856,7 @@ export default function VideoStudio({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); f.cancel?.(); }}
-                          className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                          className="ml-0.5 text-slate-500 dark:text-white/40 hover:text-red-400 transition-colors"
                           title="Отменить загрузку"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2868,7 +2868,7 @@ export default function VideoStudio({
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeRefFile(f.id); }}
-                          className="ml-0.5 text-white/40 hover:text-red-400 transition-colors"
+                          className="ml-0.5 text-slate-500 dark:text-white/40 hover:text-red-400 transition-colors"
                           title="Удалить"
                         >
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -2901,13 +2901,13 @@ export default function VideoStudio({
                   type="button"
                   title="Загрузить изображения / видео / аудио (можно несколько)"
                   onClick={() => refFileInputRef.current?.click()}
-                  className="h-10 px-3 shrink-0 rounded-full border bg-white/[0.03] border-white/[0.06] hover:bg-white/10 hover:border-primary/40 transition-all flex items-center gap-2 group"
+                  className="h-10 px-3 shrink-0 rounded-full border bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.06] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40 transition-all flex items-center gap-2 group"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-white/50 group-hover:text-primary transition-colors">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className="text-slate-500 dark:text-white/50 group-hover:text-primary transition-colors">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
-                  <span className="text-[11px] font-medium text-white/50 group-hover:text-primary transition-colors whitespace-nowrap">
+                  <span className="text-[11px] font-medium text-slate-700 dark:text-white/50 group-hover:text-primary transition-colors whitespace-nowrap">
                     Изображения/видео/аудио
                   </span>
                 </button>
@@ -2936,7 +2936,7 @@ export default function VideoStudio({
                     ? clearImageUpload()
                     : imageFileInputRef.current?.click()
                 }
-                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedImageUrl ? "border-primary/60 bg-primary/5" : "bg-white/5 border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedImageUrl ? "border-primary/60 bg-primary/5" : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
               >
                 {imageUploading ? (
                   <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
@@ -2948,7 +2948,7 @@ export default function VideoStudio({
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        className="text-white/10"
+                        className="text-slate-300 dark:text-white/10"
                       />
                       <circle
                         cx="16"
@@ -2983,7 +2983,7 @@ export default function VideoStudio({
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
-                      className="text-white/40 group-hover:text-primary transition-colors"
+                      className="text-slate-500 dark:text-white/40 group-hover:text-primary transition-colors"
                     >
                       <rect
                         x="3"
@@ -3019,12 +3019,12 @@ export default function VideoStudio({
                       ? clearEndImage()
                       : endImageFileInputRef.current?.click()
                   }
-                  className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedEndImageUrl ? "border-primary/60 bg-primary/5" : "bg-white/5 border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                  className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedEndImageUrl ? "border-primary/60 bg-primary/5" : "bg-white dark:bg-white/5 border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
                 >
                   {endImageUploading ? (
                     <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
                       <svg className="w-8 h-8 -rotate-90">
-                        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/10" />
+                        <circle cx="16" cy="16" r="14" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-slate-300 dark:text-white/10" />
                         <circle
                           cx="16"
                           cy="16"
@@ -3051,7 +3051,7 @@ export default function VideoStudio({
                     />
                   ) : (
                     !endImageUploading && (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/40 group-hover:text-primary transition-colors">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-slate-500 dark:text-white/40 group-hover:text-primary transition-colors">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />
@@ -3088,7 +3088,7 @@ export default function VideoStudio({
                     ? clearVideoUpload()
                     : videoFileInputRef.current?.click()
                 }
-                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedVideoUrl ? "border-primary/60 bg-white/5" : "bg-white/[0.03] border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedVideoUrl ? "border-primary/60 bg-white/5" : "bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
               >
                 {videoUploading ? (
                   <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
@@ -3100,7 +3100,7 @@ export default function VideoStudio({
                         stroke="currentColor"
                         strokeWidth="2"
                         fill="transparent"
-                        className="text-white/10"
+                        className="text-slate-300 dark:text-white/10"
                       />
                       <circle
                         cx="16"
@@ -3125,7 +3125,7 @@ export default function VideoStudio({
                     muted
                   />
                 ) : (
-                  <VideoIconSvg className="text-white/40 group-hover:text-primary transition-colors" />
+                  <VideoIconSvg className="text-slate-500 dark:text-white/40 group-hover:text-primary transition-colors" />
                 )}
               </button>
             </div>
@@ -3153,7 +3153,7 @@ export default function VideoStudio({
                     ? clearAudioUpload()
                     : audioFileInputRef.current?.click()
                 }
-                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedAudioUrl ? "border-primary/60 bg-white/5" : "bg-white/[0.03] border-white/[0.03] hover:bg-white/10 hover:border-primary/40"} group`}
+                className={`w-10 h-10 shrink-0 rounded-full border transition-all flex items-center justify-center relative overflow-hidden ${uploadedAudioUrl ? "border-primary/60 bg-white/5" : "bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.03] hover:bg-slate-50 dark:hover:bg-white/10 hover:border-primary/40"} group`}
               >
                 {audioUploading ? (
                   <div className="flex flex-col items-center justify-center w-full h-full absolute inset-0 bg-black/80 z-20 backdrop-blur-[2px]">
@@ -3163,7 +3163,7 @@ export default function VideoStudio({
                   </div>
                 ) : (
                   <svg
-                    className={`w-5 h-5 ${uploadedAudioUrl ? "text-primary" : "text-white/40 group-hover:text-primary"} transition-colors`}
+                    className={`w-5 h-5 ${uploadedAudioUrl ? "text-primary" : "text-slate-500 dark:text-white/40 group-hover:text-primary"} transition-colors`}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
