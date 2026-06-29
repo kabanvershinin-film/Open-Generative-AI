@@ -259,25 +259,73 @@ const RenderField = ({ fieldName, meta, idx, formValues, setFormValues, handleCh
           : "image/*,video/*,.heic,.heif,.mov,.m4v";
 
   if (meta.enum) {
+    const filteredOptions = meta.enum;
+
     return (
       <div key={fieldName} className="flex flex-col gap-1 w-full">
         {label}
-        <div className="relative w-full">
-          <select
-            value={value}
-            onChange={(e) => handleChange(fieldName, e.target.value)}
-            className="w-full appearance-none rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 px-3 py-2 pr-9 text-xs text-slate-900 dark:text-white outline-none transition-all hover:border-slate-300 dark:hover:border-white/20 focus:border-blue-500/50"
+        <div
+          tabIndex={0}
+          onBlur={(e) => {
+            const currentTarget = e.currentTarget;
+            setTimeout(() => {
+              if (
+                currentTarget &&
+                !currentTarget.contains(document.activeElement)
+              ) {
+                setDropDown(-1);
+              }
+            }, 100);
+          }}
+          className="relative w-full"
+        >
+          <button
+            ref={buttonRef}
+            type="button"
+            suppressHydrationWarning={true}
+            onClick={() => handleDropdownToggle(idx + 1)}
+            className="flex items-center justify-between gap-2 w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-zinc-900 px-3 py-2 text-xs text-slate-900 dark:text-white outline-none transition-all hover:border-slate-300 dark:hover:border-white/20 focus:border-blue-500/50"
           >
-            {meta.enum.map((option, i) => (
-              <option key={i} value={option}>
-                {translateUi(option)}
-              </option>
+            <span className="truncate text-left">
+              {translateUi(value)}
+            </span>
+            <FaAngleDown
+              size={14}
+              className={`shrink-0 text-slate-400 dark:text-zinc-400 transition-all duration-300 ease-in-out ${
+                dropDown === idx + 1 ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+          <div
+            style={dropdownStyle}
+            className={`absolute left-0 ${isOpeningUp ? "bottom-full mb-2" : "top-full mt-2"} border border-slate-200 dark:border-white/10 p-2 rounded-lg flex flex-col overflow-y-auto bg-white dark:bg-zinc-900 shadow-2xl z-50 transition-all duration-200 w-full max-h-60 custom-scrollbar-thin ${
+              dropDown === idx + 1
+                ? "opacity-100 scale-100 visible translate-y-0"
+                : `opacity-0 scale-95 invisible ${isOpeningUp ? "translate-y-2" : "-translate-y-2"}`
+            }`}
+          >
+            {filteredOptions.map((option, i) => (
+              <button
+                type="button"
+                suppressHydrationWarning={true}
+                key={i}
+                className={`flex items-center gap-2 px-3 py-2 text-xs cursor-pointer rounded-lg transition-all ${
+                  value === option
+                    ? "bg-blue-500/10 text-blue-500"
+                    : "text-slate-500 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-white"
+                }`}
+                onClick={() => {
+                  handleChange(fieldName, option);
+                  setDropDown(-1);
+                }}
+              >
+                <span className="truncate">{translateUi(option)}</span>
+                {value === option && (
+                  <span className="ml-auto text-blue-400 font-bold">✓</span>
+                )}
+              </button>
             ))}
-          </select>
-          <FaAngleDown
-            size={14}
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400"
-          />
+          </div>
         </div>
       </div>
     );
