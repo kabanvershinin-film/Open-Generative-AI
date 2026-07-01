@@ -56,6 +56,9 @@ export default function RootLayout({ children }) {
                                 Мы обновляем сервис, чтобы он работал стабильнее и быстрее.
                                 Пожалуйста, зайдите позже.
                             </p>
+                            <p className="mt-5 text-sm md:text-base font-medium text-fuchsia-200/90 leading-relaxed max-w-2xl mx-auto">
+                                Баланс ваших аккаунтов не пропадет, не переживайте.
+                            </p>
                         </section>
                     </main>
                 </body>
