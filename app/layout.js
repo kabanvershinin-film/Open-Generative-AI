@@ -7,7 +7,7 @@ const inter = Inter({
     subsets: ["latin"],
 });
 
-const SITE_MAINTENANCE_MODE = true;
+const SITE_MAINTENANCE_MODE = false;
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://open-generative-ai-sand.vercel.app';
 const siteTitle = 'Сапог AI — платформа для создания видео и фото';
