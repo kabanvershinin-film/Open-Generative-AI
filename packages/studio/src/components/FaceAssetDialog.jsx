@@ -59,7 +59,7 @@ function FaceThumb({ face, onSelect, onDelete, onUpdateThumb, isAvatar }) {
         ) : (
           <div className="flex flex-col items-center justify-center gap-1">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-purple-300/50">
-              <path d="M20 21v-2a4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
               <circle cx="12" cy="7" r="4" />
             </svg>
             <span className="text-[7px] text-purple-300/40 uppercase font-bold">Нет фото</span>
@@ -404,7 +404,7 @@ export default function FaceAssetDialog({ open, onClose, onSelect, onRegisterNew
                         className="flex items-center gap-1.5 min-w-0 flex-1 text-left"
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-purple-300 shrink-0">
-                          <path d="M20 21v-2a4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
                         <span className="text-xs text-white truncate">{a.name || a.id}</span>

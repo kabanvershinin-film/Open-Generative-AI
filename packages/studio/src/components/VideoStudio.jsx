@@ -69,6 +69,31 @@ import { buildSeedanceExtendSession } from "../seedanceExtend.js";
 import { normalizePersistedRefFiles, serializeRefFilesForPersistence } from "../refFilesState.js";
 import { ensureVideoEntryStoredInTos } from "../videoTosPersistence.js";
 
+// ── Mode labels & icons ───────────────────────────────────────────────────────
+const MODE_LABELS = {
+  't2v':           'Текст',
+  'text-to-video': 'Текст',
+  'first-frame':   'Первый кадр',
+  'first-last':    'Первый + последний',
+  'reference':     'Референс',
+  'edit':          'Редактировать',
+  'extend':        'Продлить',
+  'director':      'Режиссёр',
+  'keyframes':     'Ключевые кадры',
+};
+
+const MODE_ICONS = {
+  't2v':           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 6h16M4 12h16M4 18h7"/></svg>,
+  'text-to-video': <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M4 6h16M4 12h16M4 18h7"/></svg>,
+  'first-frame':   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  'first-last':    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="6" width="8" height="12" rx="1"/><rect x="14" y="6" width="8" height="12" rx="1"/><path d="M10 12h4"/></svg>,
+  'reference':     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>,
+  'edit':          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  'extend':        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>,
+  'director':      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  'keyframes':     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="4"/><path d="M2 12h4M18 12h4"/></svg>,
+};
+
 // ── tiny helpers ──────────────────────────────────────────────────────────────
 let activeHistoryPreviewLoads = 0;
 const pendingHistoryPreviewLoads = [];
@@ -2638,10 +2663,11 @@ export default function VideoStudio({
         const currentModel = getCurrentModel();
         const isArk = currentModel?.provider === "ark";
         const isElSpy = currentModel?.platform === "elspy";
-        
-        console.log("[calculateCost] Starting...", { selectedModel, isArk, isElSpy, selectedDuration, selectedResolution });
-        if (!isArk && !isElSpy) {
-          console.log("[calculateCost] Not Seedance Ark or ElSpy, clearing cost");
+        const isTokenGo = currentModel?.platform === "tokengo";
+
+        console.log("[calculateCost] Starting...", { selectedModel, isArk, isElSpy, isTokenGo, selectedDuration, selectedResolution });
+        if (!isArk && !isElSpy && !isTokenGo) {
+          console.log("[calculateCost] Unknown platform, clearing cost");
           setEstimatedCost(null);
           return;
         }
@@ -2659,11 +2685,12 @@ export default function VideoStudio({
               "seedance-2.0-fast-i2v": "doubao-seedance-2-0-fast-260128"
             };
             pricingModelId = modelMap[selectedModel] || "doubao-seedance-2-0-260128";
+          } else if (isTokenGo) {
+            // TokenGo models: use apiId directly (falls back to ¥2 default in pricing.js)
+            pricingModelId = currentModel?.apiId || selectedModel;
           } else if (selectedModel === "kling-motion-control-v3") {
-            // Kling-Motion Control: используем 'kling-motion-control' как pricing model id (если есть, иначе 'kling-motion-control-v3'
             pricingModelId = "kling-motion-control";
           } else {
-            // Omni Flash и другие модели
             pricingModelId = "omni-flash";
           }
 
@@ -3039,6 +3066,29 @@ export default function VideoStudio({
       {/* ── BOTTOM PROMPT BAR ── */}
       <div className="absolute bottom-4 w-full max-w-[95%] lg:max-w-4xl z-40 animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
         <div className="w-full bg-white/95 dark:bg-[#0a0a0a] backdrop-blur-3xl rounded-md border border-slate-200 dark:border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
+          {/* ── Mode tabs ── */}
+          {showMode && getModesForModel(selectedModel).length > 1 && (
+            <div className="flex flex-wrap gap-1.5 pb-2 border-b border-slate-200 dark:border-white/[0.03]">
+              {getModesForModel(selectedModel).map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => {
+                    setSelectedMode(mode);
+                    setOpenDropdown(null);
+                  }}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all border whitespace-nowrap
+                    ${selectedMode === mode
+                      ? 'bg-primary/15 border-primary/40 text-primary'
+                      : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/[0.05] text-slate-600 dark:text-white/50 hover:border-primary/30 hover:text-primary/80'
+                    }`}
+                >
+                  <span className="opacity-70">{MODE_ICONS[mode]}</span>
+                  {MODE_LABELS[mode] || mode}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Registered face chip — the generated video keeps this face */}
           {isSeedanceArk && faceAsset && (
             <div className="flex flex-wrap gap-2 px-1 pb-1">
@@ -3051,7 +3101,7 @@ export default function VideoStudio({
                   <img src={faceAsset.thumbnail} alt="" className="w-5 h-5 rounded-full object-cover border border-purple-500/30" />
                 ) : (
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                     <circle cx="12" cy="7" r="4" />
                   </svg>
                 )}
@@ -3901,7 +3951,7 @@ export default function VideoStudio({
                 className={`h-9 px-3 rounded-md font-medium text-sm transition-all border flex items-center gap-2 ${faceAsset ? "bg-purple-600/30 border-purple-500/50 text-purple-100" : "bg-gradient-to-r from-purple-600/20 to-pink-600/20 hover:from-purple-600/40 hover:to-pink-600/40 text-purple-300 border-purple-500/30"}`}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 0 0 0-4 4v2" />
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
                 </svg>
                 {faceAsset ? faceAsset.name : "Лицо"}
