@@ -1,23 +1,22 @@
-import { NextResponse } from 'next/server';
-import { requireAdmin, getAdminClient } from '@/lib/supabaseServer';
+import { requireAdmin } from '@/lib/supabaseServer';
+import { prisma } from '@/lib/db';
 
 export async function GET(request) {
     const { error } = await requireAdmin(request);
-    if (error) return NextResponse.json({ error }, { status: error === 'Forbidden' ? 403 : 401 });
-    const sb = getAdminClient();
-    const { data } = await sb.from('site_settings').select('*');
-    const settings = Object.fromEntries((data || []).map(r => [r.key, r.value]));
-    return NextResponse.json({ settings });
+    if (error) return Response.json({ error }, { status: error === 'Forbidden' ? 403 : 401 });
+    const rows = await prisma.siteSetting.findMany();
+    const settings = Object.fromEntries(rows.map(r => [r.key, r.value]));
+    return Response.json({ settings });
 }
 
 export async function POST(request) {
     const { error } = await requireAdmin(request);
-    if (error) return NextResponse.json({ error }, { status: error === 'Forbidden' ? 403 : 401 });
+    if (error) return Response.json({ error }, { status: error === 'Forbidden' ? 403 : 401 });
     const body = await request.json().catch(() => ({}));
-    const sb = getAdminClient();
-    const rows = Object.entries(body).map(([key, value]) => ({ key, value: String(value), updated_at: new Date().toISOString() }));
-    if (!rows.length) return NextResponse.json({ error: 'No settings provided' }, { status: 400 });
-    const { error: dbErr } = await sb.from('site_settings').upsert(rows, { onConflict: 'key' });
-    if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    const entries = Object.entries(body);
+    if (!entries.length) return Response.json({ error: 'No settings provided' }, { status: 400 });
+    await Promise.all(entries.map(([key, value]) =>
+        prisma.siteSetting.upsert({ where: { key }, create: { key, value: String(value) }, update: { value: String(value) } })
+    ));
+    return Response.json({ ok: true });
 }

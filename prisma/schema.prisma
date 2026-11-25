@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String?
+  fullName     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  markup       Float    @default(0)
+
+  workflows    Workflow[]
+  generations  Generation[]
+  mediaFiles   MediaFile[]
+  subscriptions UserSubscription[]
+  creditLedger CreditLedger[]
+  tickets      Ticket[]
+  ticketReplies TicketReply[]
+}
+
+model Plan {
+  id           Int      @id @default(autoincrement())
+  code         String   @unique
+  name         String
+  priceRub     Int
+  credits      Float
+  durationDays Int      @default(30)
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  subscriptions UserSubscription[]
+}
+
+model UserSubscription {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  planId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  status    String   @default("active")
+  user      User     @relation(fields: [userId], references: [id])
+  plan      Plan     @relation(fields: [planId], references: [id])
+}
+
+model CreditLedger {
+  id           Int      @id @default(autoincrement())
+  userId       String
+  type         String
+  amount       Float
+  description  String   @default("")
+  generationId Int?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model AiModel {
+  id             Int      @id @default(autoincrement())
+  key            String   @unique
+  name           String
+  providerKey    String   @default("")
+  mediaType      String   @default("image")
+  creditsPerUnit Float    @default(1)
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  thumbUrl       String   @default("")
+  description    String   @default("")
+}
+
+model Workflow {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  name        String   @default("Untitled")
+  description String   @default("")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  nodes       WorkflowNode[]
+  generations Generation[]
+}
+
+model WorkflowNode {
+  id         Int      @id @default(autoincrement())
+  workflowId Int
+  name       String   @default("")
+  type       String   @default("generate")
+  modelKey   String   @default("")
+  posX       Float    @default(100)
+  posY       Float    @default(100)
+  config     String   @default("{}")
+  outputUrl  String?
+  createdAt  DateTime @default(now())
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+}
+
+model Generation {
+  id          Int      @id @default(autoincrement())
+  userId      String
+  nodeId      Int?
+  workflowId  Int?
+  modelKey    String
+  prompt      String   @default("")
+  params      String   @default("{}")
+  status      String   @default("running")
+  outputUrl   String?
+  errorMsg    String?
+  creditsCost Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+  workflow    Workflow? @relation(fields: [workflowId], references: [id])
+}
+
+model MediaFile {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  type      String   @default("image")
+  filename  String
+  mimeType  String   @default("")
+  sizeBytes Int      @default(0)
+  url       String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Ticket {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  title     String
+  body      String
+  status    String   @default("open")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  replies   TicketReply[]
+}
+
+model TicketReply {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model SiteSetting {
+  key   String @id
+  value String
+}

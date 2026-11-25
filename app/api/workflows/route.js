@@ -1,30 +1,21 @@
-import { NextResponse } from 'next/server';
-import { requireAuth, getAdminClient } from '@/lib/supabaseServer';
+import { requireAuth } from '@/lib/supabaseServer';
+import { prisma } from '@/lib/db';
 
 export async function GET(request) {
     const { user, error } = await requireAuth(request);
-    if (error) return NextResponse.json({ error }, { status: 401 });
-    const sb = getAdminClient();
-    const { data, error: dbErr } = await sb
-        .from('workflows')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-    if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
-    return NextResponse.json({ workflows: data });
+    if (error) return Response.json({ error }, { status: 401 });
+    const workflows = await prisma.workflow.findMany({
+        where: { userId: user.id },
+        orderBy: { updatedAt: 'desc' },
+        include: { _count: { select: { nodes: true } } },
+    });
+    return Response.json({ workflows });
 }
 
 export async function POST(request) {
     const { user, error } = await requireAuth(request);
-    if (error) return NextResponse.json({ error }, { status: 401 });
-    const body = await request.json().catch(() => ({}));
-    const name = (body.name || 'Новый проект').trim().slice(0, 200);
-    const sb = getAdminClient();
-    const { data, error: dbErr } = await sb
-        .from('workflows')
-        .insert({ user_id: user.id, name })
-        .select()
-        .single();
-    if (dbErr) return NextResponse.json({ error: dbErr.message }, { status: 500 });
-    return NextResponse.json({ workflow: data }, { status: 201 });
+    if (error) return Response.json({ error }, { status: 401 });
+    const { name } = await request.json().catch(() => ({}));
+    const wf = await prisma.workflow.create({ data: { userId: user.id, name: (name || 'Новый проект').trim().slice(0, 200) } });
+    return Response.json({ workflow: wf }, { status: 201 });
 }
