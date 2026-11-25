@@ -197,6 +197,34 @@ function buildUpstreamHeaders(request, useTokengo) {
     return headers;
 }
 
+// Convert Google v1beta generateContent request to OpenAI format for TokenGo.
+// Returns { targetPath, body } where body is Uint8Array.
+function convertGoogleToOpenAI(pathParts, billingPayload) {
+    const rawModel = String(pathParts[2] || '');
+    const model = rawModel.replace(/:generateContent$/i, '');
+    const googleBody = billingPayload?.params || {};
+
+    const prompt = (googleBody.contents || [])
+        .flatMap(c => c.parts || [])
+        .filter(p => p.text)
+        .map(p => p.text)
+        .join('\n');
+
+    if (/image/i.test(model)) {
+        return {
+            targetPath: ['v1', 'images', 'generations'],
+            body: new TextEncoder().encode(JSON.stringify({ model, prompt, n: 1 })),
+        };
+    }
+    return {
+        targetPath: ['v1', 'chat', 'completions'],
+        body: new TextEncoder().encode(JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+        })),
+    };
+}
+
 async function proxyRequest(request, { params }) {
     const { path = [] } = await params;
     const method = request.method.toUpperCase();
@@ -206,8 +234,6 @@ async function proxyRequest(request, { params }) {
     // without needing a Memefast/MuAPI key.
     const bearerToken = getBearerKey(request);
     const useTokengo = !!(process.env.TOKENGO_API_KEY) && await isPlatformJwt(bearerToken);
-
-    const upstreamUrl = buildUpstreamUrl(request, path, useTokengo);
 
     // Read body FIRST, before anything else, and save billing payload
     let body = null;
@@ -220,7 +246,19 @@ async function proxyRequest(request, { params }) {
         console.log('MF proxy: billingPayload', billingPayload);
     }
 
+    // When routing to TokenGo, convert Google v1beta format to OpenAI format
+    let targetPath = path;
+    if (useTokengo && path[0] === 'v1beta' && path[1] === 'models' && method === 'POST') {
+        const converted = convertGoogleToOpenAI(path, billingPayload);
+        targetPath = converted.targetPath;
+        body = converted.body;
+        console.log('MF proxy: converted v1beta to OpenAI', { targetPath, model: billingPayload?.model });
+    }
+
+    const upstreamUrl = buildUpstreamUrl(request, targetPath, useTokengo);
     const headers = buildUpstreamHeaders(request, useTokengo);
+    // When body was converted (v1beta→OpenAI), enforce JSON content-type
+    if (targetPath !== path) headers.set('content-type', 'application/json');
     const init = {
         method,
         headers,

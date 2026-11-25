@@ -12,6 +12,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { isAdminUser, signBillToken, verifyBillAmount, verifyBillDataToken } from './balanceCore.js';
+import { verifyToken } from '@/lib/jwt';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
@@ -68,11 +69,22 @@ async function getUserForGallery(request) {
     if (!AUTH_ENABLED) return null;
     const token = getAccessToken(request);
     if (!token) return null;
+
+    // Try Supabase JWT first
+    if (AUTH_ENABLED) {
+        try {
+            const { data, error } = await anon().auth.getUser(token);
+            if (!error && data?.user) return data.user;
+        } catch {}
+    }
+
+    // Fallback: platform custom JWT (users who logged in via our own auth)
     try {
-        const { data, error } = await anon().auth.getUser(token);
-        if (error || !data?.user) return null;
-        return data.user;
-    } catch { return null; }
+        const payload = await verifyToken(token);
+        if (payload?.sub) return { id: payload.sub, email: payload.email || '' };
+    } catch {}
+
+    return null;
 }
 
 // ── Admin helpers ─────────────────────────────────────────────────────────────
