@@ -16,6 +16,17 @@ console.log('MF route init', {
 const MEMEFAST_BASE_URL = 'https://memefast.top';
 const TOKENGO_BASE_URL = 'https://tokengo.love';
 
+// Map Memefast/studio model IDs → TokenGo model IDs
+const TOKENGO_MODEL_MAP = {
+  'gemini-3.1-flash-image-preview': 'gemini-3-flash-image',
+  'gemini-3-pro-image-preview':     'gemini-3-pro-image',
+  'gpt-image-2':                    'gpt-image-2.6-sunburst',
+  'gpt-4o-mini-tts':                'tts-gpt-4o-mini',
+};
+function mapModelForTokenGo(model) {
+  return TOKENGO_MODEL_MAP[model] || model;
+}
+
 // Returns true if the bearer token is a valid platform JWT (not a Memefast API key)
 async function isPlatformJwt(token) {
     if (!token || token.length < 20) return false;
@@ -201,7 +212,7 @@ function buildUpstreamHeaders(request, useTokengo) {
 // Returns { targetPath, body } where body is Uint8Array.
 function convertGoogleToOpenAI(pathParts, billingPayload) {
     const rawModel = String(pathParts[2] || '');
-    const model = rawModel.replace(/:generateContent$/i, '');
+    const model = mapModelForTokenGo(rawModel.replace(/:generateContent$/i, ''));
     const googleBody = billingPayload?.params || {};
 
     const prompt = (googleBody.contents || [])
@@ -246,13 +257,22 @@ async function proxyRequest(request, { params }) {
         console.log('MF proxy: billingPayload', billingPayload);
     }
 
-    // When routing to TokenGo, convert Google v1beta format to OpenAI format
+    // When routing to TokenGo: convert formats and remap model IDs
     let targetPath = path;
-    if (useTokengo && path[0] === 'v1beta' && path[1] === 'models' && method === 'POST') {
-        const converted = convertGoogleToOpenAI(path, billingPayload);
-        targetPath = converted.targetPath;
-        body = converted.body;
-        console.log('MF proxy: converted v1beta to OpenAI', { targetPath, model: billingPayload?.model });
+    if (useTokengo && method === 'POST') {
+        if (path[0] === 'v1beta' && path[1] === 'models') {
+            // Google v1beta → OpenAI format
+            const converted = convertGoogleToOpenAI(path, billingPayload);
+            targetPath = converted.targetPath;
+            body = converted.body;
+            console.log('MF proxy: converted v1beta to OpenAI', { targetPath, model: billingPayload?.model });
+        } else if (billingPayload?.model && TOKENGO_MODEL_MAP[billingPayload.model]) {
+            // OpenAI format but model ID needs remapping (e.g. gpt-image-2 → gpt-image-2.6-sunburst)
+            const mapped = mapModelForTokenGo(billingPayload.model);
+            const newBodyObj = { ...billingPayload.params, model: mapped };
+            body = new TextEncoder().encode(JSON.stringify(newBodyObj));
+            console.log('MF proxy: remapped model for TokenGo', { from: billingPayload.model, to: mapped });
+        }
     }
 
     const upstreamUrl = buildUpstreamUrl(request, targetPath, useTokengo);
