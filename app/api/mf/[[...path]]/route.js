@@ -3,6 +3,7 @@ import { priceRub, ensureCnyRate, CNY_TO_RUB, loadPlatformMarkup } from '../../_
 import { BILLING_ENABLED, spendBalance, getUserForGallery } from '../../_lib/balance';
 import { saveGalleryEntry } from '../../_lib/tosGallery';
 import { buildImageChargeMeta, buildMfImageGalleryDedupeKey } from '../helpers.js';
+import { verifyToken } from '@/lib/jwt';
 
 // Debug: log env vars (without exposing secrets)
 console.log('MF route init', {
@@ -13,6 +14,16 @@ console.log('MF route init', {
 });
 
 const MEMEFAST_BASE_URL = 'https://memefast.top';
+const TOKENGO_BASE_URL = 'https://tokengo.love';
+
+// Returns true if the bearer token is a valid platform JWT (not a Memefast API key)
+async function isPlatformJwt(token) {
+    if (!token || token.length < 20) return false;
+    try {
+        const payload = await verifyToken(token);
+        return !!(payload?.sub);
+    } catch { return false; }
+}
 
 function normalizeModelId(raw) {
     return String(raw || '').split(':')[0].trim();
@@ -149,26 +160,32 @@ async function maybeChargeImageSuccess(request, pathParts, data, billingPayload)
     return { cost, model, source };
 }
 
-function buildUpstreamUrl(request, pathParts) {
+function buildUpstreamUrl(request, pathParts, useTokengo) {
     const pathname = Array.isArray(pathParts) && pathParts.length ? `/${pathParts.join('/')}` : '/';
-    const url = new URL(pathname, MEMEFAST_BASE_URL);
+    const base = useTokengo ? TOKENGO_BASE_URL : MEMEFAST_BASE_URL;
+    const url = new URL(pathname, base);
     const search = new URL(request.url).search;
     if (search) url.search = search;
     return url;
 }
 
-function getApiKey(request) {
+function getBearerKey(request) {
     const cookieKey = request.headers.get('cookie')?.match(/muapi_key=([^;]+)/)?.[1];
     const authHeader = request.headers.get('authorization');
     const bearerKey = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
     return bearerKey || cookieKey || '';
 }
+// Keep old name for the billing code that calls it
+function getApiKey(request) { return getBearerKey(request); }
 
-function buildUpstreamHeaders(request) {
+function buildUpstreamHeaders(request, useTokengo) {
     const headers = new Headers(request.headers);
-    const apiKey = getApiKey(request);
-    if (apiKey) {
-        headers.set('Authorization', `Bearer ${apiKey}`);
+    if (useTokengo) {
+        // Use server-side TokenGo key — never expose the client JWT upstream
+        headers.set('Authorization', `Bearer ${process.env.TOKENGO_API_KEY || ''}`);
+    } else {
+        const apiKey = getBearerKey(request);
+        if (apiKey) headers.set('Authorization', `Bearer ${apiKey}`);
     }
     headers.delete('host');
     headers.delete('connection');
@@ -182,21 +199,28 @@ function buildUpstreamHeaders(request) {
 
 async function proxyRequest(request, { params }) {
     const { path = [] } = await params;
-    const upstreamUrl = buildUpstreamUrl(request, path);
     const method = request.method.toUpperCase();
-    
+
+    // If the Authorization header carries a valid platform JWT, route to TokenGo
+    // using the server-side TOKENGO_API_KEY. This lets logged-in users generate
+    // without needing a Memefast/MuAPI key.
+    const bearerToken = getBearerKey(request);
+    const useTokengo = !!(process.env.TOKENGO_API_KEY) && await isPlatformJwt(bearerToken);
+
+    const upstreamUrl = buildUpstreamUrl(request, path, useTokengo);
+
     // Read body FIRST, before anything else, and save billing payload
     let body = null;
     let billingPayload = null;
     const billingRequestClone = request.clone();
-    
+
     if (method !== 'GET' && method !== 'HEAD') {
         body = await request.arrayBuffer();
         billingPayload = await getBillingPayload(billingRequestClone, path);
         console.log('MF proxy: billingPayload', billingPayload);
     }
 
-    const headers = buildUpstreamHeaders(request);
+    const headers = buildUpstreamHeaders(request, useTokengo);
     const init = {
         method,
         headers,

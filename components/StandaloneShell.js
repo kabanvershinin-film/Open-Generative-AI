@@ -155,7 +155,9 @@ export default function StandaloneShell() {
     setHasMounted(true);
     const stored = localStorage.getItem(STORAGE_KEY);
     const envKey = process.env.NEXT_PUBLIC_MUAPI_KEY;
-    const keyToUse = stored || envKey;
+    // Auto-use JWT from auth session so authenticated users skip the API-key modal
+    const jwtKey = (() => { try { return localStorage.getItem('app_access_token') || ''; } catch { return ''; } })();
+    const keyToUse = stored || envKey || jwtKey;
     if (keyToUse) {
       setApiKey(keyToUse);
       fetchBalance(keyToUse);
