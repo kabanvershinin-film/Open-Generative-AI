@@ -45,10 +45,12 @@ export async function GET(request, { params }) {
         });
 
         if (outputUrl) {
+            const model = await prisma.aiModel.findUnique({ where: { key: gen.modelKey } }).catch(() => null);
+            const mtype = model?.mediaType === 'audio' ? 'audio' : 'video';
             await prisma.mediaFile.create({ data: {
-                userId: user.id, type: 'video',
-                filename: `gen_${gen.id}.mp4`,
-                mimeType: 'video/mp4',
+                userId: user.id, type: mtype,
+                filename: `gen_${gen.id}.${mtype === 'audio' ? 'mp3' : 'mp4'}`,
+                mimeType: mtype === 'audio' ? 'audio/mpeg' : 'video/mp4',
                 sizeBytes: 0, url: outputUrl,
             }}).catch(() => {});
         }
